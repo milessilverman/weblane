@@ -49,6 +49,8 @@ M = 3310  # California Albers (meters)
 
 def rowtext(df):
     """Upper-cased text of every column per row (pandas 3 keeps NaN through astype(str))."""
+    if df.empty:
+        return pd.Series([], dtype=str, index=df.index)
     return df.apply(lambda r: " ".join("" if pd.isna(v) else str(v) for v in r.values), axis=1).str.upper()
 
 
@@ -630,7 +632,10 @@ def sm_crime(R):
         off += 10000
     df = pd.DataFrame(rows)
     df["when"] = pd.to_datetime(df[datec], errors="coerce")
+    note("santa_monica_crime", fetched=len(df), newest=str(df.when.max())[:10], oldest=str(df.when.min())[:10])
     df = df[df.when >= since]
+    if df.empty:
+        raise RuntimeError("no Santa Monica incidents in the last 12 months returned")
     df["lat"] = pd.to_numeric(df[latc], errors="coerce")
     df["lon"] = pd.to_numeric(df[lonc], errors="coerce")
     df = df[df.lat.notna() & (df.lat != 0)]

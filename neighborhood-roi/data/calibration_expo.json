@@ -1,0 +1,20 @@
+{
+ "treated_tracts": 3,
+ "control_tracts": 25,
+ "post_2015_2019_log_growth_gap": -0.0461,
+ "gap_pct": -4.5,
+ "gap_90ci_pct": [
+  -14.6,
+  8.4
+ ],
+ "trend_adjusted_did_pct": 1.4,
+ "stations": [
+  "17th Street/SMC",
+  "26th Street/Bergamot",
+  "Downtown Santa Monica",
+  "Expo/Bundy",
+  "Expo/Sepulveda",
+  "Palms",
+  "Westwood/Rancho Park"
+ ]
+}

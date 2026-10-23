@@ -37,7 +37,7 @@ def main():
     c = tr.geometry.representative_point()
     d2 = c.apply(lambda p: p2.to_crs(3310).distance(p).min())
     dall = c.apply(lambda p: allx.to_crs(3310).distance(p).min())
-    tr["group"] = np.where(d2 <= 800, "treated", np.where((dall >= 1500) & (dall <= 3000), "control", None))
+    tr["group"] = np.where(d2 <= 1000, "treated", np.where((dall >= 1500) & (dall <= 3000), "control", None))
     tr = tr[tr.group.notna()]
 
     def growth(s, a, b):
@@ -46,12 +46,12 @@ def main():
         return np.nan if not va or not vb else np.log(vb / va)
 
     tr["pre"] = tr.hpi_series.apply(lambda s: growth(s, 2010, 2015))     # construction years, before opening
-    tr["post"] = tr.hpi_series.apply(lambda s: growth(s, 2015, 2022))    # opening May 2016 onward
+    tr["post"] = tr.hpi_series.apply(lambda s: growth(s, 2015, 2019))    # opening May 2016 to pre-COVID
     tr = tr.dropna(subset=["pre", "post"])
     g = tr.groupby("group")[["pre", "post"]].agg(["mean", "count"])
     print(g)
-    did = (tr[tr.group == "treated"].post.mean() - tr[tr.group == "treated"].pre.mean() * 7 / 5) - \
-          (tr[tr.group == "control"].post.mean() - tr[tr.group == "control"].pre.mean() * 7 / 5)
+    did = (tr[tr.group == "treated"].post.mean() - tr[tr.group == "treated"].pre.mean() * 4 / 5) - \
+          (tr[tr.group == "control"].post.mean() - tr[tr.group == "control"].pre.mean() * 4 / 5)
     simple = tr[tr.group == "treated"].post.mean() - tr[tr.group == "control"].post.mean()
     # bootstrap CI on the simple post-period difference
     rng = np.random.default_rng(0)
@@ -59,7 +59,7 @@ def main():
     boots = [rng.choice(t, len(t)).mean() - rng.choice(c_, len(c_)).mean() for _ in range(2000)]
     lo, hi = np.percentile(boots, [5, 95])
     out = {"treated_tracts": int((tr.group == "treated").sum()), "control_tracts": int((tr.group == "control").sum()),
-           "post_2015_2022_log_growth_gap": round(float(simple), 4), "gap_pct": round(float(np.expm1(simple) * 100), 1),
+           "post_2015_2019_log_growth_gap": round(float(simple), 4), "gap_pct": round(float(np.expm1(simple) * 100), 1),
            "gap_90ci_pct": [round(float(np.expm1(lo) * 100), 1), round(float(np.expm1(hi) * 100), 1)],
            "trend_adjusted_did_pct": round(float(np.expm1(did) * 100), 1), "stations": sorted(p2.nm)}
     print(json.dumps(out, indent=1))
