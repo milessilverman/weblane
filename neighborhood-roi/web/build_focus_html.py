@@ -170,12 +170,32 @@ def main(region="la_westside"):
             break
     sites_total = int(blocks.vacant_planting_sites.sum()) if "vacant_planting_sites" in blocks else 0
     trees_total = int(blocks.street_trees.sum()) if "street_trees" in blocks else 0
+    focus_rows = []
+    for want in ("Carlson Park", "Beverlywood", "Palms", "Lindberg Park", "Cheviot Hills"):
+        g = bt[bt.name.str.contains(want, case=False, na=False)]
+        if not len(g):
+            continue
+        trees, sites = g.street_trees.sum(min_count=1), g.vacant_planting_sites.sum(min_count=1)
+        best = g.sort_values("top_vpd", ascending=False).iloc[0]
+        rec = details[best.block_id]["recs"][0] if details[best.block_id]["recs"] else None
+        focus_rows.append([want, f"{len(g)}", f"{g.homes.sum():,.0f}",
+                           f"{trees:,.0f} trees, {sites:,.0f} open sites ({100*trees/(trees+sites):.0f}% planted)" if pd.notna(trees) and pd.notna(sites) and trees + sites > 0 else "no inventory",
+                           f"{np.nanmedian(g.street_canopy_pct):.0f}%" if g.street_canopy_pct.notna().any() else "–",
+                           f"{lib[rec['id']]['name']} · {rec['project']}" if rec else "nothing clears the bar",
+                           f"${rec['vpd']:.1f}" if rec else "–"])
     rep_obj = {"title": "What this map shows",
                "paragraphs": [
                    f"{len(blocks):,} street-bounded blocks across the {region.replace('_', ' ').title().replace('La ', 'LA ')} area. Arterials, freeways, rail lines, creeks and city limits draw the boundaries. Each block is ranked by the nearby home value an improvement creates per $1, using real local data.",
                    f"Street trees are sized to the cities' own surveys: {trees_total:,} inventoried street trees and {sites_total:,} vacant planting sites or stumps in this area. A fully planted street now scores near zero for tree planting.",
                    "Click any block for its ranking, the math and the evidence. Turn layers on above the map. The street-map underlay needs an internet connection; everything else is inside this file."],
                "sections": [
+                   {"title": "What changed since the first draft", "list": [
+                       "<b>Real neighborhoods instead of census tracts.</b> Blocks are bounded by actual arterials, freeways, rail, creeks and city limits. LA blocks carry LA Times neighborhood names; Culver City blocks are named for the park they surround (Carlson, Lindberg, Tellefson, Veterans, Blanco…) or an OpenStreetMap label (Sunkist Park, Fox Hills, Culver Garden…).",
+                       "<b>Street trees come from the cities' own tree surveys.</b> The model now plants only the surveyed vacant sites and stumps. Where a street is already mostly planted, the effect is scaled down. Blocks with no inventory use Meta/WRI's 1 m canopy map, calibrated to streets the inventories show as fully planted.",
+                       "<b>Vacant lots, gardens and pocket parks need an actual vacant parcel</b> from the LA County Assessor. Blight fixes only rank where values and incomes are below the LA County median.",
+                       "<b>Lighting uses police data</b> (LAPD 2024 incidents with coordinates; Santa Monica PD where loaded).",
+                       "<b>The map has the detail you asked for:</b> arterials and residential streets with names, Ballona Creek and other channels, rail, parks, schools with test scores, open tree sites and vacant lots. All of it is inside this one file."]},
+                   {"title": "Your neighborhoods", "table": {"head": ["Neighborhood", "Blocks", "Homes", "Street trees (city inventory)", "Canopy over streets", "Best bet in its best block", "$ per $1"], "rows": focus_rows, "num": [1, 2, 4, 6]}},
                    {"title": "Neighborhoods at a glance", "paragraphs": ["Blocks grouped by name. In Los Angeles the names follow the LA Times Mapping L.A. boundaries. Culver City publishes no neighborhood GIS file, so its blocks are named for the park they surround."],
                     "table": {"head": ["Neighborhood", "City", "Homes", "Median value", "Street sites planted", "Open tree sites", "Most common best bet", "Best $/$1"],
                               "rows": hood_tbl, "num": [2, 3, 4, 5, 7]}},
