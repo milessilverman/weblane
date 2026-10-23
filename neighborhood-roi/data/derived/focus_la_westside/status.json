@@ -1,20 +1,20 @@
 {
-  "generated_at": "2026-10-23T22:47:09.865886+00:00",
+  "generated_at": "2026-10-23T23:05:25.628395+00:00",
   "sources": {
     "osm_layers": {
       "ok": true,
-      "seconds": 32.1
+      "seconds": 32.2
     },
     "boundaries": {
       "places": 9,
       "block_groups": 744,
       "la_times_hoods": 32,
       "ok": true,
-      "seconds": 0.7
+      "seconds": 0.6
     },
     "blocks": {
       "ok": true,
-      "seconds": 2.3,
+      "seconds": 2.4,
       "rows": 855,
       "columns": [
         "geometry",
@@ -42,7 +42,7 @@
     "acs_block_groups": {
       "vintage": "2020-2024 ACS 5-year block groups",
       "ok": true,
-      "seconds": 5.4,
+      "seconds": 5.5,
       "rows": 744,
       "columns": [
         "GEOID",
@@ -77,7 +77,7 @@
     },
     "street_trees": {
       "la_wfs_diagnostics": [
-        "v1.1.0 HTTP 200 application/json;charset=UTF-8 '{\"type\":\"FeatureCollection\",\"features\":[{\"type\":\"Feature\",\"id\":\"streetsla_UFDSpeciesLabel.fid--1fcd8a88_1a16aba2d1c_2734\",\"geometry\":{\"type\":\"Point\",\"coordinate'"
+        "v1.1.0 HTTP 200 application/json;charset=UTF-8 '{\"type\":\"FeatureCollection\",\"features\":[{\"type\":\"Feature\",\"id\":\"streetsla_UFDSpeciesLabel.fid--1fcd8a88_1a16af3484d_78ee\",\"geometry\":{\"type\":\"Point\",\"coordinate'"
       ],
       "la_city_live": 166311,
       "la_city_columns": [
@@ -130,7 +130,7 @@
       ],
       "sample_valid_share": 0.488,
       "ok": true,
-      "seconds": 41.3,
+      "seconds": 34.2,
       "rows": 855,
       "columns": [
         "block_id",
@@ -241,7 +241,7 @@
         "DesignType5"
       ],
       "ok": true,
-      "seconds": 751.7,
+      "seconds": 826.8,
       "columns": [
         "geometry",
         "OBJECTID",
@@ -353,7 +353,7 @@
       "rows": 19900,
       "window_start": "2023-12-31",
       "ok": true,
-      "seconds": 3.0,
+      "seconds": 11.9,
       "columns": [
         "violent",
         "geometry"
@@ -371,8 +371,11 @@
         "latitude",
         "longitude"
       ],
+      "fetched": 10000,
+      "newest": "2024-05-13",
+      "oldest": "2023-01-17",
       "ok": false,
-      "error": "Can only use .str accessor with string values, not floating"
+      "error": "no Santa Monica incidents in the last 12 months returned"
     }
   },
   "blocks": 855
