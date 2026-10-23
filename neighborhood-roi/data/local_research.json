@@ -52,6 +52,10 @@
       "local_angles": [
         "Already has a park, so a new park adds little. The better levers are canopy (street trees on blocks with gaps) and access to the Ballona Creek path, which a cheap, well-lit connection could improve.",
         "Culver City has its own Urban Forest Master Plan (2016) and ~15,000 city trees, so a street-tree program can go through Public Works rather than LA's StreetsLA."
+      ],
+      "point_approx": [
+        34.017,
+        -118.4035
       ]
     },
     {
@@ -95,6 +99,10 @@
         "With values above $2M, even a 1% gain is ~$23k per home. Value-per-dollar is highest for cheap, visible amenities: canopy gaps on parkways and sidewalk/crossing quality on Robertson and toward Cheviot Hills/Rancho Park.",
         "CC&Rs and the HOA make coordinated parkway planting easier to organize. The HOA is a natural partner.",
         "The tract next to the I-10 (Castle Heights side) is where noise mitigation and dense roadside vegetation pay off."
+      ],
+      "point_approx": [
+        34.0455,
+        -118.3945
       ]
     },
     {
@@ -127,6 +135,10 @@
       ],
       "local_angles": [
         "Land costs make a new park here ~$20M+. Cheaper ways to add park access: open LAUSD schoolyards after hours, add pocket greening on public right-of-way, and fill canopy gaps on apartment blocks."
+      ],
+      "point_approx": [
+        34.0225,
+        -118.4045
       ]
     },
     {
@@ -149,6 +161,10 @@
       "current_projects": [],
       "local_angles": [
         "The textbook case for trails: big value capture, real displacement risk. Pair any new trail with affordability tools."
+      ],
+      "point_approx": [
+        41.9135,
+        -87.702
       ]
     },
     {
@@ -167,6 +183,10 @@
       "current_projects": [],
       "local_angles": [
         "Most of the value is already priced in along the Eastside Trail. Remaining upside is on segments still being built."
+      ],
+      "point_approx": [
+        33.764,
+        -84.372
       ]
     },
     {
@@ -189,6 +209,10 @@
       "current_projects": [],
       "local_angles": [
         "Lots cost about $0.12/sq ft a year to maintain, the cheapest proven lever in the whole library."
+      ],
+      "point_approx": [
+        39.993,
+        -75.125
       ]
     },
     {
@@ -207,6 +231,10 @@
       "current_projects": [],
       "local_angles": [
         "Strong case for high-design downtown bike/ped corridors where vacant or underused frontage exists."
+      ],
+      "point_approx": [
+        39.759,
+        -86.145
       ]
     },
     {
@@ -231,6 +259,10 @@
       ],
       "local_angles": [
         "Freeway caps only pencil out where land is already very valuable on both sides."
+      ],
+      "point_approx": [
+        32.792,
+        -96.801
       ]
     },
     {
@@ -253,6 +285,10 @@
       "current_projects": [],
       "local_angles": [
         "Demolition alone is a weak value play. Side-lot sales plus greening of the cleared lot (the LandCare model) is the stronger bundle."
+      ],
+      "point_approx": [
+        42.401,
+        -83.23
       ]
     }
   ],

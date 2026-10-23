@@ -96,8 +96,13 @@ def fit_and_reason(iid, t):
     inc = t["income_ratio"]
     walk = t["walk_index"]
     if iid == "street_tree":
-        if np.isnan(canopy):
+        gap_pts = t["canopy_gap_pct"]
+        if np.isnan(canopy) and np.isnan(gap_pts):
             return 0.5, "Canopy not measured here; assumed an average gap."
+        if np.isnan(canopy):
+            gap = min(1.0, gap_pts / goal)
+            heat_boost = 0.0 if np.isnan(heat) else min(1.0, max(0.0, heat / 8))
+            return gap * (0.75 + 0.25 * heat_boost), f"Canopy {gap_pts:.0f} points below the Tree Equity goal" + (f"; {heat:+.1f}° vs. county average" if not np.isnan(heat) else "")
         gap = max(0.0, goal - canopy) / max(goal, 1)
         heat_boost = 0.0 if np.isnan(heat) else min(1.0, max(0.0, heat / 8))
         f = gap * (0.75 + 0.25 * heat_boost)
@@ -274,17 +279,19 @@ def main():
     sch = col("school_ela_pct_met_near3")
     mat = col("school_math_pct_met_near3")
     m["school_score"] = pd.concat([sch, mat], axis=1).mean(axis=1)
-    for c in ("canopy_pct", "canopy_goal_pct", "temp_diff_f", "nearest_park_m", "park_acres_within_half_mile",
+    for c in ("canopy_pct", "canopy_goal_pct", "canopy_gap_pct", "temp_diff_f", "nearest_park_m", "park_acres_within_half_mile",
               "walk_index", "nearest_freeway_m"):
         if c not in m:
             m[c] = np.nan
+    for c in ("canopy_pct", "canopy_goal_pct", "canopy_gap_pct"):
+        m.loc[m[c] < 0, c] = np.nan  # TES uses negative codes for missing
 
     index = {"counties": [], "generated_from": "data/derived/tract_metrics.csv"}
     for fips, sub in m.groupby("fips"):
         cf, cf_src = costs.get(fips, (1.0, "default"))
         details, props = {}, []
         for _, r in sub.iterrows():
-            t = {k: num(r.get(k)) for k in ("value_now", "housing_units", "homes_per_acre", "canopy_pct", "canopy_goal_pct",
+            t = {k: num(r.get(k)) for k in ("value_now", "housing_units", "homes_per_acre", "canopy_pct", "canopy_goal_pct", "canopy_gap_pct",
                                             "temp_diff_f", "vacancy_rate", "nearest_park_m", "park_acres_within_half_mile",
                                             "income_ratio", "walk_index", "school_score", "poverty_rate", "nearest_freeway_m")}
             recs = score_tract(t, lib, cf)
@@ -294,6 +301,7 @@ def main():
                           "top_vpd": top["vpd"] if top else None,
                           "value": None if np.isnan(t["value_now"]) else round(t["value_now"]),
                           "canopy": None if np.isnan(t["canopy_pct"]) else round(t["canopy_pct"], 1),
+                          "gap": None if np.isnan(t["canopy_gap_pct"]) else round(t["canopy_gap_pct"], 1),
                           "heat": None if np.isnan(t["temp_diff_f"]) else round(t["temp_diff_f"], 1),
                           "park_m": None if np.isnan(t["nearest_park_m"]) else int(t["nearest_park_m"]),
                           "vacancy": None if np.isnan(t["vacancy_rate"]) else round(t["vacancy_rate"] * 100, 1),
@@ -322,6 +330,11 @@ def main():
             if len(cand):
                 j = gpd.sjoin(geo, cand[["geometry"]], predicate="intersects")
                 hits = sorted(set(j.GEOID))
+        if not hits and r.get("point_approx"):
+            from shapely.geometry import Point
+            lat, lon = r["point_approx"]
+            hits = list(geo[geo.contains(Point(lon, lat))].GEOID)
+            r["matched_by"] = "approximate point"
         r["tracts"] = hits
     index["research"] = research
     first = next((r["tracts"][0] for r in research["neighborhoods"] if r.get("tracts")), None)
