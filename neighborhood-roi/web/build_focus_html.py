@@ -63,7 +63,8 @@ def labels_along(gdf_m, every_m=1400, min_len=500):
     return labs
 
 
-def main(region="la_westside"):
+def main(region="la_westside", mode="full"):
+    MAP_ONLY = mode == "map"
     src = ROOT / "data" / "derived" / f"focus_{region}"
     sc = ROOT / "web" / "focus_data" / region
     blocks = gpd.read_file(sc / "blocks_scored.geojson")
@@ -228,7 +229,10 @@ def main(region="la_westside"):
     html = html.replace("/*TITLE*/", "Westside Neighborhood ROI Map").replace("/*EYEBROW*/", f"NEIGHBORHOOD ROI · LA WESTSIDE & CULVER CITY · {date.today():%d %b %Y}".upper())
     html = html.replace("/*H1*/", "Which improvements raise home values most per dollar, block by block")
     html = html.replace("/*BUNDLE*/", b64)
-    out = ROOT / "reports" / f"{region.replace('_', '-')}-neighborhood-map.html"
+    if MAP_ONLY:
+        html = html.replace('<main class="report gutter" id="report"></main>', "")
+        html = html.replace(".main { display: grid;", ".main { height: calc(100vh - 92px) !important; display: grid;")
+    out = ROOT / "reports" / (f"{region.replace('_', '-')}-map.html" if MAP_ONLY else f"{region.replace('_', '-')}-neighborhood-map.html")
     out.write_text(html)
     print(f"wrote {out} ({len(html)/1e6:.1f} MB; data {len(raw)/1e6:.1f} MB raw)")
 

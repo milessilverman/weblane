@@ -119,6 +119,11 @@ jobs:
           # generated files replace whatever is on the branch (never merged line by line)
           git fetch origin "${GITHUB_REF_NAME}"
           git reset --hard "origin/${GITHUB_REF_NAME}"
+          # a focus region whose job failed keeps its last good data instead of being deleted
+          for d in neighborhood-roi/data/derived/focus_*; do
+            [ -d "$d" ] || continue
+            [ -f "$RUNNER_TEMP/derived/$(basename "$d")/status.json" ] || { rm -rf "$RUNNER_TEMP/derived/$(basename "$d")"; cp -r "$d" "$RUNNER_TEMP/derived/"; echo "kept previous $(basename "$d")"; }
+          done
           rm -rf neighborhood-roi/data/derived
           cp -r "$RUNNER_TEMP/derived" neighborhood-roi/data/derived
           git add -A neighborhood-roi/data/derived

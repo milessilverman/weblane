@@ -948,6 +948,18 @@ def run_stage(stage):
         geo = tr[["GEOID", "geometry"]].to_crs(5070)
         geo["geometry"] = geo.geometry.simplify(12, preserve_topology=True)
         geo.to_crs(4326).to_file(OUT / "tracts.geojson", driver="GeoJSON", COORDINATE_PRECISION=5)
+        # 2010-vintage tracts: FHFA's tract price index uses these IDs (needed for before/after calibration)
+        try:
+            old = []
+            for st in sorted({c[0] for c in COUNTIES}):
+                pth = cached_download(f"https://www2.census.gov/geo/tiger/GENZ2019/shp/cb_2019_{st}_tract_500k.zip", f"cb_2019_{st}_tract.zip", 300)
+                g = gpd.read_file(f"zip://{pth}")
+                old.append(g[g.COUNTYFP.isin([c[1] for c in COUNTIES if c[0] == st])][["GEOID", "geometry"]])
+            o = gpd.GeoDataFrame(pd.concat(old, ignore_index=True), crs=old[0].crs).to_crs(5070)
+            o["geometry"] = o.geometry.simplify(15, preserve_topology=True)
+            o.to_crs(4326).to_file(OUT / "tracts_2010.geojson", driver="GeoJSON", COORDINATE_PRECISION=5)
+        except Exception as e:  # noqa: BLE001
+            log(f"  2010 tracts: {e}")
     elif stage == "tes":
         stage_out("tes", tree_equity())
     elif stage == "fhfa":

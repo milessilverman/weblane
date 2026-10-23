@@ -98,6 +98,8 @@ def osm_layers(R):
     out["stations"] = layer("stations", "nwr/railway=station", "nwr/public_transport=station")
     out["landuse"] = layer("landuse", "wr/landuse=residential,commercial,retail,industrial")
     out["noise_walls"] = layer("noise_walls", "w/wall=noise_barrier", "w/barrier=noise_barrier")
+    tr = layer("trails", "w/highway=cycleway,path,footway,bridleway")
+    out["trails"] = tr[tr["name"].notna()] if "name" in tr else tr.iloc[0:0]
     return out
 
 
@@ -768,7 +770,7 @@ def run(region):
         zn.to_csv(out / "zillow_neighborhoods.csv", index=False)
     # write
     blocks.to_file(out / "blocks.geojson", driver="GeoJSON", COORDINATE_PRECISION=6)
-    for k in ("roads", "water", "rail", "parks", "schools", "places", "stations"):
+    for k in ("roads", "water", "rail", "parks", "schools", "places", "stations", "trails"):
         d = osm.get(k)
         if d is None or not len(d):
             continue

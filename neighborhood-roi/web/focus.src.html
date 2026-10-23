@@ -315,6 +315,7 @@ function select(id, fly) {
 }
 
 function report() {
+  if (!$("#report")) return;
   const R = D.report || {};
   let h = `<section><h2>${esc(R.title || "")}</h2>${(R.paragraphs || []).map(p => `<p>${p}</p>`).join("")}</section>`;
   (R.sections || []).forEach(s => {
