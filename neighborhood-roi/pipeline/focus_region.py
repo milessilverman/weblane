@@ -97,6 +97,7 @@ def osm_layers(R):
     out["places"] = layer("places", "nwr/place=neighbourhood,suburb,quarter")
     out["stations"] = layer("stations", "nwr/railway=station", "nwr/public_transport=station")
     out["landuse"] = layer("landuse", "wr/landuse=residential,commercial,retail,industrial")
+    out["noise_walls"] = layer("noise_walls", "w/wall=noise_barrier", "w/barrier=noise_barrier")
     return out
 
 
@@ -699,6 +700,11 @@ def run(region):
     fw = fw[fw.highway == "motorway"].to_crs(M)
     fu = unary_union(list(fw.geometry))
     blocks["freeway_m"] = [round(g.distance(fu)) for g in bm.geometry]
+    nw = osm.get("noise_walls")
+    if nw is not None and len(nw):
+        nu = unary_union(list(nw.to_crs(M).geometry))
+        blocks["noise_wall_m"] = [round(g.distance(nu)) for g in bm.geometry]
+        note("osm_layers", noise_walls=len(nw))
     # Zillow neighborhood values
     zn = bd.zillow_neighborhoods()
     if zn is not None:

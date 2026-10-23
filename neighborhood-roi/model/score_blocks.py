@@ -25,7 +25,7 @@ from score_tracts import pv_annuity, time_factor, DISTANCE_DECAY, ACRE_SQFT  # n
 
 CITY_COST = 1.119  # BLS-derived LA metro factor (see regional_costs_bls.csv)
 TREE_SPACING_M = 12
-TARGET_STREET_CANOPY = 35
+TARGET_STREET_CANOPY = 15  # replaced at run time by the canopy seen on streets the inventories call fully planted
 
 
 def num(v):
@@ -79,11 +79,12 @@ def recs_for(b, lib):
         sc = b["street_canopy_pct"]
         km = b["res_street_km"]
         if not np.isnan(sc) and not np.isnan(km) and km > 0:
-            gap = max(0.0, (TARGET_STREET_CANOPY - sc) / TARGET_STREET_CANOPY)
+            target = b["canopy_target"]
+            gap = max(0.0, (target - sc) / target)
             n = round(km * 1000 / TREE_SPACING_M * 2 * gap * 0.4)
             if n >= 5:
                 add("street_tree", min(n, 400), "trees (estimated open sites)", min(n, 400) * 2, (0.03 * 0.5 + 2 * 0.006) / 2, 0.8,
-                    f"No city inventory here; street canopy {sc:.0f}% (1 m canopy map) vs {TARGET_STREET_CANOPY}% target",
+                    f"No city inventory here; canopy over streets {sc:.0f}% (Meta/WRI 1 m map) vs {target:.0f}% on streets the city inventories show as fully planted",
                     mid_cost("street_tree") * min(n, 400), note="estimated from canopy")
 
     # --- blight / vacant land (needs actual vacant parcels)
@@ -136,7 +137,8 @@ def recs_for(b, lib):
             mid_cost("street_lighting") * 50)
 
     # --- freeway noise
-    if not np.isnan(b["freeway_m"]) and b["freeway_m"] < 150:
+    has_wall = not np.isnan(b["noise_wall_m"]) and b["noise_wall_m"] < 80
+    if not np.isnan(b["freeway_m"]) and b["freeway_m"] < 150 and not has_wall:
         hh = min(homes, 2 * 500 * 5280 / ACRE_SQFT * 0.5 * hpa)
         add("noise_barrier", 1, "mile of soundwall", hh, lo("noise_barrier") * DISTANCE_DECAY, 1 - b["freeway_m"] / 150 * 0.7,
             f"Freeway {b['freeway_m']:.0f} m away", mid_cost("noise_barrier"))
@@ -180,6 +182,9 @@ def main(region="la_westside"):
     b["violent_per_1k"] = col("violent_12mo") / (col("population").clip(lower=50) / 1000)
     b["canopy"] = col("canopy_pct_1m").fillna(col("treecanopy") * (100 if col("treecanopy").max() <= 1.5 else 1))
 
+    full = b[(col("street_trees") > 30) & (col("street_trees") / (col("street_trees") + col("vacant_planting_sites").fillna(0) + col("stumps").fillna(0)) >= 0.9)]
+    canopy_target = float(full.street_canopy_pct.quantile(0.6)) if len(full) >= 10 and "street_canopy_pct" in full else TARGET_STREET_CANOPY
+    print(f"street-canopy target from {len(full)} fully planted inventory blocks: {canopy_target:.1f}%")
     results, props = {}, []
     for _, r in b.iterrows():
         schools = json.loads(r["schools_near3"]) if isinstance(r.get("schools_near3"), str) else []
@@ -187,8 +192,9 @@ def main(region="la_westside"):
         t = {k: num(r.get(k)) for k in ("value", "homes", "acres", "vacant_planting_sites", "stumps", "street_trees",
                                          "street_canopy_pct", "res_street_km", "vacant_parcels", "vacant_parcel_sqft",
                                          "value_ratio", "income_ratio", "temp_diff_f", "canopy", "violent_12mo",
-                                         "violent_per_1k", "freeway_m")}
+                                         "violent_per_1k", "freeway_m", "noise_wall_m")}
         t["park_acres"] = num(r.get("park_acres_half_mile"))
+        t["canopy_target"] = max(5.0, canopy_target)
         t["land_psf"] = num(r.get("land_value_per_sqft_median"))
         for k in ("vacant_planting_sites", "stumps", "street_trees", "vacant_parcels"):
             t[k] = 0.0 if np.isnan(t[k]) and bool(r.get("tree_inventory")) else t[k]
