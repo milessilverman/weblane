@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-23T22:46:10.468695+00:00",
+  "generated_at": "2026-10-23T23:02:32.337811+00:00",
   "sources": {
     "census_tract_boundaries": {
       "ok": true,
@@ -17,7 +17,7 @@
     "census_acs_5yr": {
       "vintage": "2020-2024 ACS 5-year (table-based summary file)",
       "ok": true,
-      "seconds": 7.1,
+      "seconds": 9.7,
       "rows": 8505,
       "columns": [
         "GEOID",
@@ -42,7 +42,7 @@
     },
     "bls_oews_cost_factor": {
       "ok": true,
-      "seconds": 1.2,
+      "seconds": 1.6,
       "rows": 10,
       "columns": [
         "county_fips",
@@ -55,7 +55,7 @@
     },
     "usaspending_projects": {
       "ok": true,
-      "seconds": 38.6,
+      "seconds": 43.3,
       "rows": 1781,
       "columns": [
         "internal_id",
@@ -79,7 +79,7 @@
       "url": "https://www.fhfa.gov/hpi/download/annual/hpi_at_tract.csv",
       "latest_year": 2025,
       "ok": true,
-      "seconds": 3.4,
+      "seconds": 4.6,
       "rows": 5350,
       "columns": [
         "GEOID",
@@ -94,11 +94,24 @@
       "ok": false,
       "error": "NRI tract table not found"
     },
+    "openstreetmap": {
+      "method": "geofabrik+osmium",
+      "parks": 58731,
+      "points": {
+        "school": 23937,
+        "neighborhood": 9143,
+        "rail_station": 7865,
+        "grocery": 7292,
+        "library": 2470
+      },
+      "ok": true,
+      "seconds": 314.8
+    },
     "cdc_places": {
       "dataset": "PLACES: Census Tract Data (GIS Friendly Format), 2025 release",
       "dataset_id": "yjkw-uj5s",
       "ok": true,
-      "seconds": 17.1,
+      "seconds": 13.1,
       "rows": 8375,
       "columns": [
         "GEOID",
@@ -165,7 +178,7 @@
         "tesctyscor"
       ],
       "ok": true,
-      "seconds": 1.8,
+      "seconds": 1.7,
       "rows": 7483,
       "columns": [
         "GEOID",
@@ -180,7 +193,7 @@
     },
     "epa_walkability": {
       "ok": true,
-      "seconds": 2.8,
+      "seconds": 1.8,
       "rows": 8366,
       "columns": [
         "GEOID",
