@@ -35,7 +35,8 @@ def lines_layer(gdf, key, simplify_m, min_len_m=0):
     out = []
     g = gdf.to_crs(M)
     for (k, n), grp in g.groupby([key, g["name"].fillna("")], dropna=False):
-        geom = linemerge(unary_union(list(grp.geometry)))
+        u = unary_union(list(grp.geometry))
+        geom = linemerge(u) if u.geom_type == "MultiLineString" else u
         parts = list(geom.geoms) if hasattr(geom, "geoms") else [geom]
         for p in parts:
             if p.length >= min_len_m:
@@ -46,7 +47,7 @@ def lines_layer(gdf, key, simplify_m, min_len_m=0):
 def labels_along(gdf_m, every_m=1400, min_len=500):
     labs = []
     for _, r in gdf_m.iterrows():
-        if not r.n or r.geometry.length < min_len:
+        if not isinstance(r.n, str) or not r.n or r.geometry.length < min_len:
             continue
         L = r.geometry.length
         for d in np.arange(min(every_m / 2, L / 2), L, every_m):
@@ -66,6 +67,9 @@ def main(region="la_westside"):
     src = ROOT / "data" / "derived" / f"focus_{region}"
     sc = src / "scored"
     blocks = gpd.read_file(sc / "blocks_scored.geojson")
+    for c in ("street_trees", "vacant_planting_sites", "vacant_parcels", "violent_per_1k", "street_canopy_pct", "canopy", "temp_diff_f"):
+        if c not in blocks:
+            blocks[c] = np.nan
     details = json.loads((sc / "block_details.json").read_text())
     status = json.loads((src / "status.json").read_text()) if (src / "status.json").exists() else {"sources": {}}
     lib = {r["id"]: {"name": r["intervention"], "evidence": r["evidence_strength"], "basis": r["uplift_basis"], "sources": r["key_sources"]}
@@ -113,6 +117,7 @@ def main(region="la_westside"):
             layers[name] = json.loads(g[["geometry"]].to_json(drop_id=True))
 
     # neighborhood outlines + labels (dissolved block names)
+    blocks["geometry"] = blocks.geometry.make_valid()
     hoods = blocks.dissolve(by="name").reset_index()[["name", "geometry"]]
     hoods["geometry"] = hoods.to_crs(M).geometry.simplify(3).to_crs(4326)
     hood_labels = [[r["name"], round(p.y, 5), round(p.x, 5)] for r, p in
@@ -187,7 +192,7 @@ def main(region="la_westside"):
                   "blocks": json.loads(blocks.drop(columns=[c for c in ("value_created", "best") if c in blocks]).to_json(drop_id=True)),
                   "details": details, "library": lib, "layers": layers, "hoods": json.loads(hoods.to_json(drop_id=True)),
                   "hood_labels": hood_labels, "research": research, "report": rep_obj})
-    raw = json.dumps(bundle, separators=(",", ":")).encode()
+    raw = re.sub(r"\bNaN\b", "null", json.dumps(bundle, separators=(",", ":"))).encode()
     b64 = base64.b64encode(gzip.compress(raw, 9)).decode()
     html = (WEB / "focus.src.html").read_text()
     html = html.replace("/*LEAFLET_CSS*/", (WEB / "leaflet-1.9.4.css").read_text())

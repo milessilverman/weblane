@@ -45,6 +45,7 @@
   --cat-1: #3987e5; --cat-2: #d95926; --cat-3: #199e70; --none: #262d2b; --good-ink: #3fc23f; --warn-ink: #fab219;
   color-scheme: dark; }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body { margin: 0; background: var(--ground); color: var(--ink); font: 400 14px/1.5 var(--body); }
 a { color: var(--accent); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -295,7 +296,7 @@ function select(id, fly) {
     if (r.current_projects?.length) h += `<h3 style="margin-top:14px">Happening now</h3><ul class="facts">${r.current_projects.map(c => `<li><b>${esc(c.name)}.</b> ${esc(c.detail)} <a class="src" href="${esc(c.source)}" target="_blank" rel="noopener">source</a></li>`).join("")}</ul>`;
     h += `</div>`;
   });
-  const ns = m.schools_near3 ? JSON.parse(m.schools_near3) : [];
+  const ns = !m.schools_near3 ? [] : typeof m.schools_near3 === "string" ? JSON.parse(m.schools_near3) : m.schools_near3;
   if (ns.length) h += `<div class="section"><h3>Closest scored public schools</h3><div class="kv">${ns.map(s => `<span>${esc(s.name)} <span class="muted">· ${(s.dist_m / 1609).toFixed(1)} mi</span></span><span>${s.ela ?? "–"}% / ${s.math ?? "–"}%</span>`).join("")}</div><p class="small muted">% meeting standards, ELA / math, CAASPP 2024–25.</p></div>`;
   const kv = [], add = (k, v, f = x => x) => { if (v != null && v !== "" && !(typeof v === "number" && isNaN(v))) kv.push(`<span>${k}</span><span>${f(v)}</span>`); };
   add("Population (Census share)", m.population, fmtN); add("Median household income", m.median_household_income, fmt$);
