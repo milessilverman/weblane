@@ -158,6 +158,7 @@ ACS_VARS = {
     "B01003_001E": "population",
     "B25001_001E": "housing_units",
     "B25002_003E": "vacant_units",
+    "B25004_008E": "vacant_other_units",  # "other vacant": not for rent/sale/seasonal, the abandonment signal
     "B25003_001E": "occupied_units",
     "B25003_002E": "owner_units",
     "B25077_001E": "median_home_value",

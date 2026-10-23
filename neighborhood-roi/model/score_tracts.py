@@ -38,7 +38,7 @@ LINEAR = {"noise_barrier", "protected_bikeway", "power_undergrounding"}
 POCKET_PARK_ACRES = 0.25
 GARDEN_ACRES = 0.1
 
-DROP_COLS = {"STATEFP", "COUNTYFP", "NAMELSAD", "ALAND", "hpi_series", "county", "fips", "tes_block_groups",
+DROP_COLS = {"zip_zhvi_series_unused","STATEFP", "COUNTYFP", "NAMELSAD", "ALAND", "hpi_series", "county", "fips", "tes_block_groups",
              "zip_zhvi_date", "osm_neighborhoods"}
 COUNTY_METRO = {"06037": "Los Angeles CA", "42101": "Philadelphia PA", "17031": "Chicago IL", "48113": "Dallas TX",
                 "26163": "Detroit MI", "13121": "Atlanta GA", "53033": "Seattle WA", "36047": "New York NY",
@@ -110,9 +110,17 @@ def fit_and_reason(iid, t):
         f = gap * (0.75 + 0.25 * heat_boost)
         return f, f"Canopy {canopy:.0f}% vs a {goal:.0f}% goal" + (f"; {heat:+.1f}°F vs. area average" if not np.isnan(heat) else "")
     if iid in ("vacant_lot_greening", "blight_demolition", "abandoned_house_fix"):
-        if np.isnan(vac) or vac < 0.08:
-            return 0.0, "Vacancy too low to have many derelict lots."
-        f = min(1.0, (vac - 0.05) / 0.15)
+        other = t["other_vacant_rate"]
+        if not np.isnan(other):
+            if other < 0.03:
+                return 0.0, f"Only {other*100:.1f}% of homes are long-term vacant (ACS 'other vacant')."
+            f = min(1.0, (other - 0.02) / 0.10)
+            return f * (0.8 if iid == "abandoned_house_fix" else 1), f"{other*100:.1f}% of homes long-term vacant (ACS 'other vacant')"
+        # fallback until 'other vacant' is loaded: ACS vacancy counts rentals and for-sale homes,
+        # so only treat it as blight where values and incomes are also below the county median
+        if np.isnan(vac) or vac < 0.12 or not (t["value_ratio"] < 0.8 and inc < 0.8):
+            return 0.0, "No sign of derelict property (vacancy here is rentals/for-sale turnover)."
+        f = min(1.0, (vac - 0.08) / 0.15)
         if iid == "abandoned_house_fix":
             f *= 0.8
         return f, f"{vac*100:.0f}% of homes vacant (ACS)"
@@ -151,7 +159,7 @@ def fit_and_reason(iid, t):
         pov = t["poverty_rate"]
         if np.isnan(pov):
             return 0.3, "No crime data yet; poverty proxy unavailable."
-        f = min(1.0, max(0.0, (pov - 0.1) / 0.3)) * 0.8 + (0.2 if (not np.isnan(vac) and vac > 0.12) else 0)
+        f = min(1.0, max(0.0, (pov - 0.1) / 0.3))
         return f, f"Crime data not loaded yet; proxy: {pov*100:.0f}% poverty"
     if iid == "sidewalk_walkability":
         if np.isnan(walk):
@@ -254,7 +262,8 @@ def write_context(index, geo, parks):
 
 def main():
     lib = {r["id"]: r for r in csv.DictReader(open(DATA / "interventions.csv", newline=""))}
-    m = pd.read_csv(DERIVED / "tract_metrics.csv", dtype={"GEOID": str, "STATEFP": str, "COUNTYFP": str, "zip": str})
+    m = pd.read_csv(DERIVED / "tract_metrics.csv", dtype={"GEOID": str, "STATEFP": str, "COUNTYFP": str, "zip": str},
+                    low_memory=False)
     geo = gpd.read_file(DERIVED / "tracts.geojson")
     geo["GEOID"] = geo.GEOID.astype(str)
     costs = load_cost_factors()
@@ -266,6 +275,7 @@ def main():
     m["fips"] = m.STATEFP + m.COUNTYFP
     m["homes_per_acre"] = col("housing_units") / col("land_acres").clip(lower=1)
     m["vacancy_rate"] = col("vacant_units") / col("housing_units")
+    m["other_vacant_rate"] = col("vacant_other_units") / col("housing_units")
     m["poverty_rate"] = col("people_below_poverty") / col("population")
     m["owner_share"] = col("owner_units") / col("occupied_units")
     county_inc = m.groupby("fips")["median_household_income"].transform("median") if "median_household_income" in m else np.nan
@@ -286,6 +296,27 @@ def main():
                     f = ser[last] / ser[base_year]
         adj.append(v * f if not np.isnan(v) else num(r.get("zip_zhvi")))
     m["value_now"] = adj
+    m["value_ratio"] = m.value_now / m.groupby(m.STATEFP + m.COUNTYFP).value_now.transform("median")
+    m["value_source"] = np.where(m.get("zip_zhvi_series", pd.Series(index=m.index)).notna(), "ACS median × ZIP Zillow trend", "ACS median")
+    # Prefer Zillow's own neighborhood index when the tract's OSM neighborhood matches it by name
+    zn_path = DERIVED / "zillow_neighborhoods.csv"
+    if zn_path.exists():
+        zn = pd.read_csv(zn_path)
+        county_name = {"06037": "Los Angeles County", "42101": "Philadelphia County", "17031": "Cook County", "48113": "Dallas County",
+                       "26163": "Wayne County", "13121": "Fulton County", "53033": "King County", "36047": "Kings County",
+                       "48201": "Harris County", "18097": "Marion County"}
+        look = {(r.CountyName, str(r.RegionName).lower()): (r.zhvi, r.RegionName, r.City) for r in zn.itertuples() if not pd.isna(r.zhvi)}
+        for i, r in m.iterrows():
+            names = json.loads(r["osm_neighborhoods"]) if isinstance(r.get("osm_neighborhoods"), str) else []
+            for n in names:
+                hit = look.get((county_name.get(r.STATEFP + r.COUNTYFP), n.lower()))
+                if hit:
+                    m.at[i, "value_now"] = hit[0]
+                    m.at[i, "value_source"] = f"Zillow index for {hit[1]} ({hit[2]})"
+                    break
+        # ACS top-codes at $2M; use the ZIP index when it is higher
+        top = (col("median_home_value") >= 2_000_000) & ~m.value_source.str.startswith("Zillow index") & m.get("zip_zhvi", pd.Series(index=m.index)).notna()
+        m.loc[top, "value_now"] = np.maximum(m.loc[top, "value_now"], m.loc[top, "zip_zhvi"])
     sch = col("school_ela_pct_met_near3")
     mat = col("school_math_pct_met_near3")
     m["school_score"] = pd.concat([sch, mat], axis=1).mean(axis=1)
@@ -303,7 +334,8 @@ def main():
         for _, r in sub.iterrows():
             t = {k: num(r.get(k)) for k in ("value_now", "housing_units", "homes_per_acre", "canopy_pct", "canopy_goal_pct", "canopy_gap_pct",
                                             "temp_diff_f", "vacancy_rate", "nearest_park_m", "park_acres_within_half_mile",
-                                            "income_ratio", "walk_index", "school_score", "poverty_rate", "nearest_freeway_m")}
+                                            "income_ratio", "walk_index", "school_score", "poverty_rate", "nearest_freeway_m",
+                                            "other_vacant_rate", "value_ratio")}
             recs = score_tract(t, lib, cf)
             nbhds = json.loads(r["osm_neighborhoods"]) if isinstance(r.get("osm_neighborhoods"), str) else []
             top = recs[0] if recs else None
