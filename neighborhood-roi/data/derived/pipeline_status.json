@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-23T18:44:39.564883+00:00",
+  "generated_at": "2026-10-23T22:00:03.775886+00:00",
   "sources": {
     "census_tract_boundaries": {
       "ok": true,
@@ -42,7 +42,7 @@
     },
     "bls_oews_cost_factor": {
       "ok": true,
-      "seconds": 1.1,
+      "seconds": 0.9,
       "rows": 10,
       "columns": [
         "county_fips",
@@ -55,7 +55,7 @@
     },
     "usaspending_projects": {
       "ok": true,
-      "seconds": 35.7,
+      "seconds": 47.1,
       "rows": 1781,
       "columns": [
         "internal_id",
@@ -105,13 +105,13 @@
         "library": 2470
       },
       "ok": true,
-      "seconds": 314.7
+      "seconds": 318.8
     },
     "cdc_places": {
       "dataset": "PLACES: Census Tract Data (GIS Friendly Format), 2025 release",
       "dataset_id": "yjkw-uj5s",
       "ok": true,
-      "seconds": 13.0,
+      "seconds": 9.4,
       "rows": 8375,
       "columns": [
         "GEOID",
@@ -178,7 +178,7 @@
         "tesctyscor"
       ],
       "ok": true,
-      "seconds": 2.0,
+      "seconds": 1.9,
       "rows": 7483,
       "columns": [
         "GEOID",
@@ -193,7 +193,7 @@
     },
     "epa_walkability": {
       "ok": true,
-      "seconds": 1.6,
+      "seconds": 2.8,
       "rows": 8366,
       "columns": [
         "GEOID",
