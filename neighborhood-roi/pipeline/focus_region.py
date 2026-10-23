@@ -47,6 +47,11 @@ STATUS = {"generated_at": datetime.now(timezone.utc).isoformat(), "sources": {}}
 M = 3310  # California Albers (meters)
 
 
+def rowtext(df):
+    """Upper-cased text of every column per row (pandas 3 keeps NaN through astype(str))."""
+    return df.apply(lambda r: " ".join("" if pd.isna(v) else str(v) for v in r.values), axis=1).str.upper()
+
+
 def stage(name):
     def deco(fn):
         def run(*a, **k):
@@ -347,7 +352,7 @@ def street_trees(R):
     t = pd.concat(frames, ignore_index=True)
     t = gpd.GeoDataFrame(t, geometry="geometry", crs=4326)
     t = t[t.geometry.notna() & (t.geom_type == "Point")]
-    txt = t.drop(columns="geometry").astype(object).where(t.drop(columns="geometry").notna(), "").astype(str).agg(" ".join, axis=1).str.upper()
+    txt = rowtext(t.drop(columns="geometry"))
     t["vacant_site"] = txt.str.contains(r"VACANT|PLANTING SITE|EMPTY|NO TREE")
     t["stump"] = txt.str.contains(r"STUMP") & ~t.vacant_site
     t["palm"] = txt.str.contains(r"\bPALM\b|WASHINGTONIA|SYAGRUS|PHOENIX") & ~t.vacant_site
@@ -595,7 +600,7 @@ def crime(R):
         df["lat"] = pd.to_numeric(df[latc], errors="coerce")
         df["lon"] = pd.to_numeric(df[lonc], errors="coerce")
         df = df[(df.lat != 0) & df.lat.notna()]
-        txt = df.astype(object).where(df.notna(), "").astype(str).agg(" ".join, axis=1).str.upper()
+        txt = rowtext(df)
         df["violent"] = txt.str.contains(r"ASSAULT|ROBBERY|HOMICIDE|RAPE|SHOTS|BATTERY|KIDNAP")
         note("lapd_crime", dataset=c["name"], dataset_id=rid, rows=len(df), window_start=since[:10])
         return gpd.GeoDataFrame(df[["violent"]], geometry=gpd.points_from_xy(df.lon, df.lat), crs=4326)
@@ -629,7 +634,7 @@ def sm_crime(R):
     df["lat"] = pd.to_numeric(df[latc], errors="coerce")
     df["lon"] = pd.to_numeric(df[lonc], errors="coerce")
     df = df[df.lat.notna() & (df.lat != 0)]
-    txt = df.astype(object).where(df.notna(), "").astype(str).agg(" ".join, axis=1).str.upper()
+    txt = rowtext(df)
     df["violent"] = txt.str.contains(r"ASSAULT|ROBBERY|HOMICIDE|RAPE|SHOTS|BATTERY|KIDNAP")
     note("santa_monica_crime", rows=len(df), since=since.strftime("%Y-%m-%d"), latest=str(df.when.max())[:10])
     return gpd.GeoDataFrame(df[["violent"]], geometry=gpd.points_from_xy(df.lon, df.lat), crs=4326)
@@ -700,9 +705,9 @@ def run(region):
         landv = next((cols[k] for k in ("landvalue", "land_value", "roll_landvalue", "roll_landv") if k in cols), None)
         sqft = next((cols[k] for k in ("sqftlot", "lot_size", "land_sqft", "landsqft", "shape__area", "shape.starea()", "shape_area") if k in cols), None)
         desc = [cols[k] for k in cols if "desc" in k or "usetype" in k]
-        txt = pc[[c for c in [use] + desc if c]].astype(str).agg(" ".join, axis=1).str.upper()
-        pc["vacant_land"] = txt.str.contains(r"VACANT") | (pc[use].astype(str).str.upper().str.endswith("V") if use else False)
-        pc["residential"] = txt.str.contains(r"RESIDENTIAL|SINGLE|MULTI|CONDO|DUPLEX") | (pc[use].astype(str).str.startswith("0") if use else False)
+        txt = rowtext(pc[[c for c in [use] + desc if c]])
+        pc["vacant_land"] = txt.str.contains(r"VACANT") | (pc[use].fillna("").astype(str).str.upper().str.endswith("V") if use else False)
+        pc["residential"] = txt.str.contains(r"RESIDENTIAL|SINGLE|MULTI|CONDO|DUPLEX") | (pc[use].fillna("").astype(str).str.startswith("0") if use else False)
         pc["units_n"] = pd.to_numeric(pc[units], errors="coerce") if units else np.nan
         pc["land_value"] = pd.to_numeric(pc[landv], errors="coerce") if landv else np.nan
         pc["lot_sqft"] = pd.to_numeric(pc[sqft], errors="coerce") if sqft else np.nan
