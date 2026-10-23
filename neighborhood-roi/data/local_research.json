@@ -6,8 +6,7 @@
       "name": "Carlson Park",
       "city": "Culver City, CA",
       "match": {
-        "osm_park": "Carlson Park",
-        "osm_neighborhood": "Carlson Park"
+        "osm_park": "Carlson"
       },
       "facts": [
         {
@@ -56,7 +55,8 @@
       "point_approx": [
         34.017,
         -118.4035
-      ]
+      ],
+      "county_fips": "06037"
     },
     {
       "id": "beverlywood",
@@ -103,7 +103,8 @@
       "point_approx": [
         34.0455,
         -118.3945
-      ]
+      ],
+      "county_fips": "06037"
     },
     {
       "id": "palms",
@@ -139,7 +140,8 @@
       "point_approx": [
         34.0225,
         -118.4045
-      ]
+      ],
+      "county_fips": "06037"
     },
     {
       "id": "logan_humboldt",
@@ -165,7 +167,8 @@
       "point_approx": [
         41.9135,
         -87.702
-      ]
+      ],
+      "county_fips": "17031"
     },
     {
       "id": "old_fourth_ward",
@@ -187,7 +190,8 @@
       "point_approx": [
         33.764,
         -84.372
-      ]
+      ],
+      "county_fips": "13121"
     },
     {
       "id": "kensington_phl",
@@ -213,7 +217,8 @@
       "point_approx": [
         39.993,
         -75.125
-      ]
+      ],
+      "county_fips": "42101"
     },
     {
       "id": "fletcher_place",
@@ -235,7 +240,8 @@
       "point_approx": [
         39.759,
         -86.145
-      ]
+      ],
+      "county_fips": "18097"
     },
     {
       "id": "uptown_dallas",
@@ -263,7 +269,8 @@
       "point_approx": [
         32.792,
         -96.801
-      ]
+      ],
+      "county_fips": "48113"
     },
     {
       "id": "detroit_demolition",
@@ -289,7 +296,8 @@
       "point_approx": [
         42.401,
         -83.23
-      ]
+      ],
+      "county_fips": "26163"
     }
   ],
   "regional_projects": [

@@ -38,6 +38,8 @@ LINEAR = {"noise_barrier", "protected_bikeway", "power_undergrounding"}
 POCKET_PARK_ACRES = 0.25
 GARDEN_ACRES = 0.1
 
+DROP_COLS = {"STATEFP", "COUNTYFP", "NAMELSAD", "ALAND", "hpi_series", "county", "fips", "tes_block_groups",
+             "zip_zhvi_date", "osm_neighborhoods"}
 COUNTY_METRO = {"06037": "Los Angeles CA", "42101": "Philadelphia PA", "17031": "Chicago IL", "48113": "Dallas TX",
                 "26163": "Detroit MI", "13121": "Atlanta GA", "53033": "Seattle WA", "36047": "New York NY",
                 "48201": "Houston TX", "18097": "Indianapolis IN"}
@@ -227,12 +229,20 @@ def write_context(index, geo, parks):
         ctx = {}
         if parks is not None:
             pk = parks[parks.intersects(hull)].copy()
-            pk = pk[pk.to_crs(5070).area > 2000]
-            pk["geometry"] = pk.to_crs(5070).geometry.simplify(8).to_crs(4326)
+            pk = pk[pk.to_crs(5070).area > 4000]  # ~1 acre and up
+            pk["geometry"] = pk.to_crs(5070).geometry.simplify(12).to_crs(4326)
             ctx["parks"] = json.loads(pk[["name", "geometry"]].to_json(to_wgs84=True, drop_id=True))
         if roads is not None:
             rd = roads[roads.intersects(hull) & roads.kind.isin(["motorway", "trunk", "primary"])].copy()
-            rd = rd.rename(columns={"kind": "k"})[["k", "geometry"]]
+            rd["geometry"] = rd.to_crs(5070).geometry.simplify(25).to_crs(4326)
+            from shapely.ops import linemerge, unary_union
+            merged = []
+            for k, grp in rd.groupby("kind"):
+                g = linemerge(unary_union(list(grp.geometry)))
+                parts = list(g.geoms) if hasattr(g, "geoms") else [g]
+                merged += [{"k": k, "geometry": x} for x in parts if x.length > 0.0005]
+            rd = gpd.GeoDataFrame(merged, geometry="geometry", crs=4326)
+            rd["geometry"] = rd.to_crs(5070).geometry.simplify(25).to_crs(4326)
             ctx["roads"] = json.loads(rd.to_json(drop_id=True))
         if pts is not None:
             nb = pts[(pts.kind == "neighborhood") & pts.within(hull)]
@@ -308,8 +318,8 @@ def main():
                           "school": None if np.isnan(t["school_score"]) else round(t["school_score"], 1),
                           "growth10": None if pd.isna(r.get("zip_zhvi_growth_10y_pct")) else round(float(r["zip_zhvi_growth_10y_pct"]), 1),
                           "walk": None if np.isnan(t["walk_index"]) else round(t["walk_index"], 1)})
-            raw = {k: (None if (isinstance(v, float) and np.isnan(v)) else v) for k, v in r.items()
-                   if k not in ("STATEFP", "COUNTYFP")}
+            raw = {k: (None if (isinstance(v, float) and np.isnan(v)) else (round(v, 2) if isinstance(v, float) else v))
+                   for k, v in r.items() if k not in DROP_COLS and not (isinstance(v, float) and np.isnan(v))}
             details[r.GEOID] = {"metrics": raw, "recs": recs, "neighborhoods": nbhds}
         gsub = geo[geo.GEOID.isin(sub.GEOID)].merge(pd.DataFrame(props), on="GEOID")
         gsub.to_file(WEB / f"tracts_{fips}.geojson", driver="GeoJSON", COORDINATE_PRECISION=5)
@@ -322,14 +332,15 @@ def main():
     parks = gpd.read_file(DERIVED / "osm_parks.geojson") if (DERIVED / "osm_parks.geojson").exists() else None
     for r in research["neighborhoods"]:
         want = r["match"].get("osm_neighborhood", "").lower()
+        fips = r.get("county_fips", "")
         hits = [g for g, nb in zip(m.GEOID, m.get("osm_neighborhoods", pd.Series(["[]"] * len(m))))
-                if want and want in [x.lower() for x in json.loads(nb if isinstance(nb, str) else "[]")]]
+                if want and g.startswith(fips) and want in [x.lower() for x in json.loads(nb if isinstance(nb, str) else "[]")]]
         pk = r["match"].get("osm_park")
         if not hits and pk and parks is not None:
             cand = parks[parks.name.fillna("").str.contains(pk, case=False)]
             if len(cand):
                 j = gpd.sjoin(geo, cand[["geometry"]], predicate="intersects")
-                hits = sorted(set(j.GEOID))
+                hits = sorted(g for g in set(j.GEOID) if g.startswith(fips))
         if not hits and r.get("point_approx"):
             from shapely.geometry import Point
             lat, lon = r["point_approx"]
