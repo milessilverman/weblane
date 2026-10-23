@@ -1,0 +1,18 @@
+metro,cost_factor,note
+National average,1.00,baseline
+New York NY,1.30,approximate - replace with RSMeans CCI or BLS-derived index
+San Francisco CA,1.27,approximate
+Boston MA,1.17,approximate
+Chicago IL,1.17,approximate
+Philadelphia PA,1.15,approximate
+Los Angeles CA,1.13,approximate
+Seattle WA,1.08,approximate
+Detroit MI,1.03,approximate
+Cleveland OH,1.00,approximate
+Indianapolis IN,0.93,approximate
+Phoenix AZ,0.89,approximate
+Atlanta GA,0.90,approximate
+Miami FL,0.88,approximate
+Houston TX,0.87,approximate
+Dallas TX,0.86,approximate
+Memphis TN,0.86,approximate

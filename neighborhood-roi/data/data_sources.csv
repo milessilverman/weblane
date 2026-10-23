@@ -1,0 +1,20 @@
+layer,source,geography,refresh,access,what_it_feeds
+Home values (current),Zillow ZHVI,ZIP / neighborhood / city,monthly,free CSV download,Baseline value per home; momentum
+Home values (long run),FHFA House Price Index,census tract / ZIP,annual (tract) / quarterly,free CSV,Appreciation history; before/after of past projects
+Home values (survey),Census ACS 5-yr (B25077 median value; B25001 housing units),tract / block group,annual (December),free Census API,Value base + number of homes in each radius
+Sales,Redfin Data Center; county assessor/recorder open data,ZIP / parcel,weekly-monthly,free / varies,Parcel-level hedonic calibration
+Tree canopy gap,American Forests Tree Equity Score (+ UCLA shade layer),block group (urban),~every 2 yrs,free download,Street tree / canopy opportunity
+Land cover & canopy,USGS NLCD + USFS Tree Canopy Cover,30 m raster,~2-3 yrs,free,Canopy outside covered cities
+Heat,NASA/USGS Landsat land-surface temperature; CDC Heat & Health Tracker,raster / tract,each summer,free,Heat priority for trees and schoolyards
+Park access,Trust for Public Land ParkServe,10-min walk areas,annual,free (registration),Pocket park / schoolyard opportunity
+Vacancy,HUD Aggregated USPS Vacancy Data,tract,quarterly,free (HUD login),Vacant lot greening / blight opportunity
+Schools,NCES CCD + EDGE school locations & attendance zones; Stanford SEDA test scores,school / district,annual,free,School-quality channel; schoolyard candidates
+Walkability,EPA Smart Location Database; Walk Score API,block group / point,irregular / live,free / paid API,Sidewalk & mobility opportunity
+Environmental burden,EJScreen (unofficial PEDP mirror since EPA removed it Feb 2025); EPA ACRES brownfields; Superfund NPL,block group / site,irregular,free,Brownfield & noise opportunities
+Flood & hazard,FEMA NFHL flood zones; FEMA National Risk Index,parcel / tract,continuous / annual,free,Flood-mitigation interventions
+Crime,City open-data portals; FBI NIBRS,point / agency,daily-annual,free (coverage varies),Lighting & blight interventions
+Transit,GTFS feeds (Mobility Database); National Transit Database,stop / agency,weekly-annual,free,Transit proximity; planned stations
+Current projects,USAspending.gov API; Grants.gov; city capital-improvement-plan portals; state programs (e.g. CAL FIRE Green Schoolyards; LA Measure US / Measure W),award / project,daily-quarterly,free,"What is already being done, so we don't recommend duplicates and can track results"
+Construction costs,BLS OEWS wages (landscaping & construction); RSMeans City Cost Index (licensed),metro,annual,free / paid,Regional cost multiplier
+Land costs,AEI / FHFA land price dataset (Davis et al.),tract / ZIP,annual,free,Cost of park and garden land
+Boundaries,Census TIGER tracts & block groups; neighborhood names from OpenStreetMap / Who's On First,polygon,annual,free,Map units and click targets
