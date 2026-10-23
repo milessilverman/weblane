@@ -295,23 +295,39 @@ def street_trees(R):
     if R.get("la_city_wfs"):
         w, s, e, n = R["bbox"]
         url = "https://geola.daveytreekeeper.com/geoserver/Treekeeper/ows"
-        feats, start = [], 0
-        while True:
+        variants = [
+            {"service": "WFS", "version": "1.1.0", "request": "GetFeature", "typeName": "Treekeeper:streetsla_UFDSpeciesLabel",
+             "outputFormat": "application/json", "srsName": "EPSG:4326", "bbox": f"{w},{s},{e},{n},EPSG:4326", "maxFeatures": 50000},
+            {"service": "WFS", "version": "2.0.0", "request": "GetFeature", "typeNames": "Treekeeper:streetsla_UFDSpeciesLabel",
+             "outputFormat": "application/json", "srsName": "EPSG:4326", "bbox": f"{s},{w},{n},{e},urn:ogc:def:crs:EPSG::4326", "count": 50000},
+            {"service": "WFS", "version": "1.0.0", "request": "GetFeature", "typeName": "Treekeeper:streetsla_UFDSpeciesLabel",
+             "outputFormat": "json", "bbox": f"{w},{s},{e},{n}", "maxFeatures": 50000},
+        ]
+        feats, diag = [], []
+        for v in variants:
             try:
-                r = get(url, params={"service": "WFS", "version": "2.0.0", "request": "GetFeature",
-                                     "typeNames": "Treekeeper:streetsla_UFDSpeciesLabel", "outputFormat": "application/json",
-                                     "srsName": "EPSG:4326", "bbox": f"{s},{w},{n},{e},urn:ogc:def:crs:EPSG::4326",
-                                     "count": 50000, "startIndex": start}, timeout=300, tries=2)
-                js = r.json()
+                import requests as _rq
+                r = _rq.get(url, params=v, headers=bd.UA, timeout=300)
+                diag.append(f"v{v['version']} HTTP {r.status_code} {r.headers.get('content-type', '')[:40]} {r.text[:160]!r}")
+                if r.status_code == 200 and r.text.lstrip().startswith("{"):
+                    feats = r.json().get("features", [])
+                    if feats:
+                        break
             except Exception as ex:  # noqa: BLE001
-                log(f"  LA Treekeeper WFS failed at {start}: {ex}")
-                break
-            fs = js.get("features", [])
-            feats += fs
-            log(f"  LA Treekeeper page {start}: {len(fs)}")
-            if len(fs) < 50000:
-                break
-            start += 50000
+                diag.append(f"v{v['version']} {ex}"[:200])
+        note("street_trees", la_wfs_diagnostics=diag)
+        # tile the bbox if the server caps responses
+        if len(feats) >= 49000:
+            feats = []
+            for i in range(4):
+                for j in range(4):
+                    ww, ee = w + (e - w) * i / 4, w + (e - w) * (i + 1) / 4
+                    ss, nn = s + (n - s) * j / 4, s + (n - s) * (j + 1) / 4
+                    v = dict(variants[0], bbox=f"{ww},{ss},{ee},{nn},EPSG:4326")
+                    try:
+                        feats += get(url, params=v, timeout=300, tries=2).json().get("features", [])
+                    except Exception as ex:  # noqa: BLE001
+                        log(f"  WFS tile {i},{j}: {ex}")
         if feats:
             g = gpd.GeoDataFrame.from_features(feats, crs=4326)
             g["source_city"] = "los-angeles (StreetsLA Treekeeper, live)"
@@ -525,8 +541,9 @@ def parcels_arcgis(R):
             if not any(re.search(r"use", f, re.I) for f in flds):
                 continue
             log(f"  trying {u} fields {flds[:40]}")
-            g = arcgis_query(u, (w, s, e, n))
-            if g is not None and len(g) > 1000:
+            g = arcgis_query(u, (w, s, e, n), page=min(2000, int(meta.get("maxRecordCount") or 1000)))
+            note("assessor_parcels", **{"tried_" + u.split("/services/")[-1][:50]: 0 if g is None else len(g)})
+            if g is not None and len(g) > 5000:
                 g["geometry"] = g.to_crs(M).geometry.representative_point().to_crs(4326)
                 note("assessor_parcels", dataset=u, rows=len(g), fields=flds[:50])
                 return g
@@ -594,16 +611,25 @@ def sm_crime(R):
     datec = next(f for f in fields if re.search(r"date.*occ|occ.*date", f, re.I))
     latc = next(f for f in fields if re.search(r"^lat", f, re.I))
     lonc = next(f for f in fields if re.search(r"^lon|^lng", f, re.I))
-    since = (datetime.now() - timedelta(days=365)).strftime("%Y-%m-%d")
-    sql = f'SELECT * FROM "{rid}" WHERE "{datec}" >= \'{since}\''
-    rows = get(base + "datastore_search_sql", params={"sql": sql}, timeout=300).json()["result"]["records"]
+    since = datetime.now() - timedelta(days=365)
+    rows, off = [], 0
+    while off < 200000:
+        page = get(base + "datastore_search", params={"resource_id": rid, "limit": 10000, "offset": off,
+                                                     "sort": f"{datec} desc"}, timeout=300).json()["result"]["records"]
+        rows += page
+        dates = pd.to_datetime([r.get(datec) for r in page], errors="coerce")
+        if len(page) < 10000 or (len(dates) and dates.min() < since):
+            break
+        off += 10000
     df = pd.DataFrame(rows)
+    df["when"] = pd.to_datetime(df[datec], errors="coerce")
+    df = df[df.when >= since]
     df["lat"] = pd.to_numeric(df[latc], errors="coerce")
     df["lon"] = pd.to_numeric(df[lonc], errors="coerce")
     df = df[df.lat.notna() & (df.lat != 0)]
     txt = df.astype(object).where(df.notna(), "").astype(str).agg(" ".join, axis=1).str.upper()
     df["violent"] = txt.str.contains(r"ASSAULT|ROBBERY|HOMICIDE|RAPE|SHOTS|BATTERY|KIDNAP")
-    note("santa_monica_crime", rows=len(df), since=since)
+    note("santa_monica_crime", rows=len(df), since=since.strftime("%Y-%m-%d"), latest=str(df.when.max())[:10])
     return gpd.GeoDataFrame(df[["violent"]], geometry=gpd.points_from_xy(df.lon, df.lat), crs=4326)
 
 
