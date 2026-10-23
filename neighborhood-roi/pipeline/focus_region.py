@@ -328,7 +328,7 @@ def street_trees(R):
     t = pd.concat(frames, ignore_index=True)
     t = gpd.GeoDataFrame(t, geometry="geometry", crs=4326)
     t = t[t.geometry.notna() & (t.geom_type == "Point")]
-    txt = t.drop(columns="geometry").astype(str).agg(" ".join, axis=1).str.upper()
+    txt = t.drop(columns="geometry").astype(object).where(t.drop(columns="geometry").notna(), "").astype(str).agg(" ".join, axis=1).str.upper()
     t["vacant_site"] = txt.str.contains(r"VACANT|PLANTING SITE|EMPTY|NO TREE")
     t["stump"] = txt.str.contains(r"STUMP") & ~t.vacant_site
     t["palm"] = txt.str.contains(r"\bPALM\b|WASHINGTONIA|SYAGRUS|PHOENIX") & ~t.vacant_site
@@ -499,14 +499,29 @@ def parcels_arcgis(R):
                 params={"q": "(parcel OR assessor) AND (\"Los Angeles County\" OR LACounty) type:\"Feature Service\"", "num": 50, "f": "json",
                         "sortField": "modified", "sortOrder": "desc"}).json().get("results", [])
     urls = [f"{x['url']}/0" for x in found if x.get("url")]
-    urls = ["https://public.gis.lacounty.gov/public/rest/services/LACounty_Dynamic/Parcel/MapServer/0",
-            "https://public.gis.lacounty.gov/public/rest/services/LACounty_Cache/LACounty_Parcel/MapServer/0"] + urls
+    pais = []
+    try:
+        fold = get("https://assessor.gis.lacounty.gov/assessor/rest/services/PAIS", params={"f": "json"}, timeout=60, tries=1).json()
+        for sv in fold.get("services", []):
+            base = f"https://assessor.gis.lacounty.gov/assessor/rest/services/{sv['name']}/{sv['type']}"
+            try:
+                for ly in get(base, params={"f": "json"}, timeout=60, tries=1).json().get("layers", []):
+                    pais.append(f"{base}/{ly['id']}")
+            except Exception:  # noqa: BLE001
+                pais.append(base + "/0")
+        note("assessor_parcels", pais_layers=pais[:30])
+    except Exception as ex:  # noqa: BLE001
+        log(f"  PAIS folder: {ex}")
+    urls = ["https://assessor.gis.lacounty.gov/assessor/rest/services/PAIS/pais_sales_parcels/MapServer/0",
+            "https://public.gis.lacounty.gov/public/rest/services/LACounty_Cache/LACounty_Parcel/MapServer/0",
+            "https://arcgis.claritisoftware.com/server/rest/services/Hosted/LA_County_Parcels/FeatureServer/0"] + pais + urls
     log("  arcgis parcel candidates: " + "; ".join(urls[:12]))
     w, s, e, n = R["bbox"]
-    for u in urls[:15]:
+    for u in urls[:25]:
         try:
             meta = get(u, params={"f": "json"}, timeout=60, tries=1).json()
             flds = [f["name"] for f in meta.get("fields", [])]
+            note("assessor_parcels", **{"fields_" + u.split("/services/")[-1][:60]: flds[:40]})
             if not any(re.search(r"use", f, re.I) for f in flds):
                 continue
             log(f"  trying {u} fields {flds[:40]}")
@@ -544,6 +559,12 @@ def crime(R):
         note("lapd_crime", **{f"cols_{rid}": cols[:30]})
         if not (latc and datec):
             continue
+        try:
+            mx = get(f"https://data.lacity.org/resource/{rid}.json", params={"$select": f"max({datec}) as m"}).json()[0]["m"]
+            since = (datetime.fromisoformat(mx[:19]) - timedelta(days=365)).strftime("%Y-%m-%dT00:00:00")
+            note("lapd_crime", **{f"latest_{rid}": mx[:10]})
+        except Exception as ex:  # noqa: BLE001
+            log(f"  max date: {ex}")
         r = get(f"https://data.lacity.org/resource/{rid}.json",
                 params={"$where": f"{datec} > '{since}' and {latc} between {s} and {n} and {lonc} between {w} and {e}",
                         "$limit": 200000}, timeout=300)
@@ -557,7 +578,7 @@ def crime(R):
         df = df[(df.lat != 0) & df.lat.notna()]
         txt = df.astype(str).agg(" ".join, axis=1).str.upper()
         df["violent"] = txt.str.contains(r"ASSAULT|ROBBERY|HOMICIDE|RAPE|SHOTS|BATTERY|KIDNAP")
-        note("lapd_crime", dataset=c["name"], dataset_id=rid, rows=len(df))
+        note("lapd_crime", dataset=c["name"], dataset_id=rid, rows=len(df), window_start=since[:10])
         return gpd.GeoDataFrame(df[["violent"]], geometry=gpd.points_from_xy(df.lon, df.lat), crs=4326)
     raise RuntimeError("no usable LAPD crime dataset")
 
