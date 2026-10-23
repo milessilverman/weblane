@@ -107,8 +107,8 @@ input[type="search"] { width: 220px; max-width: 100%; }
 .rec .row1 { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
 .rec .nm { font-weight: 600; }
 .rec .vpd { font: 600 15px var(--mono); color: var(--accent); white-space: nowrap; font-variant-numeric: tabular-nums; }
-.rec .bar { height: 6px; background: var(--rule); border-radius: 3px; margin: 7px 0 6px; overflow: hidden; }
-.rec .bar i { display: block; height: 100%; background: var(--accent); border-radius: 0 3px 3px 0; }
+.rec .meter { height: 6px; background: var(--rule); border-radius: 3px; margin: 7px 0 6px; overflow: hidden; }
+.rec .meter i { display: block; height: 100%; background: var(--accent); border-radius: 0 3px 3px 0; }
 .rec .meta { font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .chip { display: inline-block; font: 500 10.5px/1 var(--body); padding: 3px 6px; border-radius: 99px; border: 1px solid var(--rule-strong); color: var(--ink-2); margin-left: 4px; vertical-align: 1px; }
 .chip.strong { border-color: var(--good); color: var(--good-ink); }
@@ -336,7 +336,7 @@ function renderPanel(geoid, d, p) {
   h += top ? `<p class="verdict">Best bet here: <b>${esc(top.name.toLowerCase())}</b>, about <b>$${top.vpd.toFixed(top.vpd < 10 ? 2 : 1)}</b> of nearby home value per $1 spent.</p>`
            : `<p class="verdict">Too few homes or too little data to rank improvements here.</p>`;
   h += `<div class="tiles">
-    ${tile("Typical home value", fmt$(p.value), m.median_home_value ? "ACS " + fmt$(m.median_home_value) + ", adj. by Zillow" : "")}
+    ${tile("Typical home value", fmt$(p.value), esc(m.value_source || ""))}
     ${tile("Homes", fmtN(m.housing_units), m.owner_units && m.occupied_units ? Math.round(100 * m.owner_units / m.occupied_units) + "% owner-occupied" : "")}
     ${m.canopy_pct != null && m.canopy_pct >= 0 ? tile("Tree canopy", Math.round(m.canopy_pct) + "%", canopyGoal)
       : tile("Canopy gap", m.canopy_gap_pct != null ? Math.round(m.canopy_gap_pct) + " pts" : "–", m.canopy_gap_pct != null ? "below Tree Equity goal" : "")}
@@ -349,7 +349,7 @@ function renderPanel(geoid, d, p) {
   if (!recs.length) h += `<p class="empty">Nothing scored for this tract.</p>`;
   h += `<div class="recs">${recs.map((r, i) => `<div class="rec${i === 0 ? " top" : ""}">
     <div class="row1"><span class="nm">${esc(r.name)}</span><span class="vpd">$${r.vpd.toFixed(r.vpd < 10 ? 2 : 1)} / $1</span></div>
-    <div class="bar"><i style="width:${Math.max(2, 100 * Math.log1p(r.vpd) / Math.log1p(maxV)).toFixed(1)}%"></i></div>
+    <div class="meter"><i style="width:${Math.max(2, 100 * Math.log1p(r.vpd) / Math.log1p(maxV)).toFixed(1)}%"></i></div>
     <div class="meta">${esc(r.project)} · costs ~${fmt$(r.cost)} · adds ~${fmt$(r.value)} across ~${fmtN(r.homes)} homes<span class="chip${/^strong/.test(r.evidence) ? " strong" : ""}">${esc(r.evidence.split(" (")[0])} evidence</span></div>
     <details><summary>Why here, and the math</summary>
       <p class="small"><b>Fit ${Math.round(r.fit * 100)}%:</b> ${esc(r.why)}</p>

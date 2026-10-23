@@ -760,6 +760,7 @@ ul.facts li { font-size: 13px; }
         <option value="top_vpd">Best value per $1</option>
         <option value="top">Best improvement type</option>
         <option value="value">Home value</option>
+        <option value="gap">Tree canopy gap</option>
         <option value="canopy">Tree canopy</option>
         <option value="heat">Heat vs. area average</option>
         <option value="park_m">Distance to a park</option>
@@ -791,6 +792,7 @@ const GROUP_NAME = { 1: "Greening: trees, gardens, parks, schoolyards", 2: "Blig
 const METRICS = {
   top_vpd: { label: "Best value per $1", unit: v => "$" + v.toFixed(v < 10 ? 1 : 0), ramp: "seq", log: true },
   value: { label: "Home value (adjusted to today)", unit: fmt$, ramp: "seq" },
+  gap: { label: "Canopy below Tree Equity goal", unit: v => v.toFixed(0) + " pts", ramp: "heat" },
   canopy: { label: "Tree canopy", unit: v => v.toFixed(0) + "%", ramp: "seq" },
   heat: { label: "Heat vs. area average", unit: v => (v > 0 ? "+" : "") + v.toFixed(1) + "°F", ramp: "heat" },
   park_m: { label: "Distance to nearest park", unit: v => v >= 1000 ? (v/1609).toFixed(1) + " mi" : Math.round(v) + " m", ramp: "seq" },
@@ -896,7 +898,7 @@ async function selectTract(geoid, fly) {
   selected = geoid; highlight();
   try { history.replaceState(null, "", "#t" + geoid); } catch (e) {}
   const f = geo.features.find(x => x.properties.GEOID === geoid);
-  if (fly && f) map.fitBounds(L.geoJSON(f).getBounds(), { maxZoom: 15, padding: [40, 40] });
+  if (fly && f) map.fitBounds(L.geoJSON(f).getBounds(), { maxZoom: 14, padding: [60, 60] });
   $("#panel").innerHTML = `<p class="empty">Loading tract ${esc(geoid)}…</p>`;
   const d = (await getJSON(`data/details_${county.fips}.json`))[geoid];
   renderPanel(geoid, d, f?.properties || {});
@@ -929,18 +931,20 @@ function spark(seriesObj, label) {
 function renderPanel(geoid, d, p) {
   if (!d) { $("#panel").innerHTML = `<p class="empty">No details for tract ${esc(geoid)}.</p>`; return; }
   const m = d.metrics, recs = d.recs || [];
-  const nb = d.neighborhoods?.length ? d.neighborhoods.slice(0, 3).join(" · ") : "Census tract " + geoid.slice(5, 9) + "." + geoid.slice(9);
   const research = (INDEX.research?.neighborhoods || []).filter(r => (r.tracts || []).includes(geoid));
+  const tractName = "Census tract " + (+geoid.slice(5, 9)) + (geoid.slice(9) !== "00" ? "." + geoid.slice(9) : "");
+  const nb = research.length ? research.map(r => r.name).join(" · ") : d.neighborhoods?.length ? d.neighborhoods.slice(0, 3).join(" · ") : tractName;
   const top = recs[0];
   const maxV = Math.max(...recs.map(r => r.vpd), 1);
-  const canopyGoal = m.canopy_goal_pct ? ` (goal ${Math.round(m.canopy_goal_pct)}%)` : "";
-  let h = `<div class="eyebrow">TRACT ${geoid} · ${esc(county.name)}</div><h2>${esc(nb)}</h2>`;
+  const canopyGoal = m.canopy_goal_pct > 0 ? ` (goal ${Math.round(m.canopy_goal_pct)}%)` : "";
+  let h = `<div class="eyebrow">${esc(tractName.toUpperCase())} · ${geoid} · ${esc(county.name)}</div><h2>${esc(nb)}</h2>`;
   h += top ? `<p class="verdict">Best bet here: <b>${esc(top.name.toLowerCase())}</b>, about <b>$${top.vpd.toFixed(top.vpd < 10 ? 2 : 1)}</b> of nearby home value per $1 spent.</p>`
            : `<p class="verdict">Too few homes or too little data to rank improvements here.</p>`;
   h += `<div class="tiles">
     ${tile("Typical home value", fmt$(p.value), m.median_home_value ? "ACS " + fmt$(m.median_home_value) + ", adj. by Zillow" : "")}
     ${tile("Homes", fmtN(m.housing_units), m.owner_units && m.occupied_units ? Math.round(100 * m.owner_units / m.occupied_units) + "% owner-occupied" : "")}
-    ${tile("Tree canopy", m.canopy_pct != null ? Math.round(m.canopy_pct) + "%" : "–", canopyGoal)}
+    ${m.canopy_pct != null && m.canopy_pct >= 0 ? tile("Tree canopy", Math.round(m.canopy_pct) + "%", canopyGoal)
+      : tile("Canopy gap", m.canopy_gap_pct != null ? Math.round(m.canopy_gap_pct) + " pts" : "–", m.canopy_gap_pct != null ? "below Tree Equity goal" : "")}
     ${tile("Heat", m.temp_diff_f != null ? (m.temp_diff_f > 0 ? "+" : "") + (+m.temp_diff_f).toFixed(1) + "°F" : "–", "vs. area average")}
     ${tile("Nearest park", m.nearest_park_m != null ? (m.nearest_park_m >= 1000 ? (m.nearest_park_m / 1609).toFixed(1) + " mi" : Math.round(m.nearest_park_m) + " m") : "–", esc(m.nearest_park_name || ""))}
     ${tile("Nearby schools", m.school_ela_pct_met_near3 != null ? Math.round(m.school_ela_pct_met_near3) + "% ELA" : "–", m.school_math_pct_met_near3 != null ? Math.round(m.school_math_pct_met_near3) + "% math meet standards" : "CA only for now")}
