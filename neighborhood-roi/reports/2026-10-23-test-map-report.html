@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Neighborhood ROI Test Map Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column, a field report from the survey office. Tables carry the numbers; prose stays short. */
+:root {
+  --ground: #f4f6f5; --sheet: #fcfcfb; --ink: #12201c; --ink-2: #4a5753; --ink-3: #7d8a86;
+  --rule: #dde3e0; --accent: #1c5cab; --accent-soft: #e3edf9; --good-ink: #006300; --warn-ink: #8a5a00;
+  --display: "Familjen Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --ground: #0f1312; --sheet: #161b1a; --ink: #eef2f0; --ink-2: #b9c4c0; --ink-3: #85918d;
+  --rule: #26302d; --accent: #6da7ec; --accent-soft: #15243a; --good-ink: #3fc23f; --warn-ink: #fab219; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --ground: #0f1312; --sheet: #161b1a; --ink: #eef2f0; --ink-2: #b9c4c0; --ink-3: #85918d;
+  --rule: #26302d; --accent: #6da7ec; --accent-soft: #15243a; --good-ink: #3fc23f; --warn-ink: #fab219; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--ground); color: var(--ink); font: 400 15px/1.6 var(--body); }
+.page { max-width: 880px; margin: 0 auto; padding-block: 40px 80px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+a { color: var(--accent); }
+.eyebrow { font: 500 12px/1.3 var(--mono); color: var(--ink-3); letter-spacing: .03em; }
+h1 { font: 700 clamp(28px, 5vw, 40px)/1.08 var(--display); letter-spacing: -0.02em; margin: 6px 0 12px; text-wrap: balance; }
+h2 { font: 700 22px/1.2 var(--display); letter-spacing: -0.01em; margin: 0 0 12px; text-wrap: balance; }
+h3 { font: 600 12px/1 var(--body); text-transform: uppercase; letter-spacing: .09em; color: var(--ink-3); margin: 22px 0 10px; }
+p { margin: 0 0 12px; max-width: 68ch; }
+.lede { font-size: 17px; color: var(--ink-2); }
+section { border-top: 1px solid var(--rule); padding-top: 26px; margin-top: 30px; }
+.cta { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; background: var(--sheet); border: 1px solid var(--accent);
+  border-radius: 10px; padding: 14px 16px; margin: 18px 0 4px; }
+.cta a { font-weight: 600; word-break: break-all; }
+.cta span { color: var(--ink-2); font-size: 13.5px; }
+.tablewrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: 8px; background: var(--sheet); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font: 600 11.5px/1.3 var(--body); text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); background: var(--ground); }
+tr:last-child td { border-bottom: 0; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; font-family: var(--mono); color: var(--accent); font-weight: 500; }
+ul { margin: 0 0 12px; padding-left: 20px; max-width: 70ch; }
+li { margin-bottom: 6px; }
+.pill { display: inline-block; font: 500 11px/1 var(--body); padding: 3px 7px; border-radius: 99px; border: 1px solid currentColor; vertical-align: 1px; }
+.ok { color: var(--good-ink); } .miss { color: var(--warn-ink); }
+.note { background: var(--accent-soft); border-radius: 8px; padding: 12px 14px; margin: 12px 0; max-width: 70ch; }
+.sources { font-size: 13px; columns: 2 260px; column-gap: 24px; }
+.sources li { break-inside: avoid; }
+code { font: 13px var(--mono); }
+footer { margin-top: 40px; color: var(--ink-3); font-size: 12.5px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="eyebrow">NEIGHBORHOOD ROI · TEST BUILD · 23 OCT 2026</div>
+  <h1>Which improvements raise home values the most per dollar, tract by tract</h1>
+  <p class="lede">A working map now covers 8,497 census tracts in 10 U.S. counties. Click any tract to see every improvement ranked by nearby home value created per $1, along with the math, local costs, sources, price history, schools and federal grants.</p>
+  <div class="cta"><a href="https://claude.ai/artifact/TPVnwH3c2dTWmZTqfcrKYR" target="_blank" rel="noopener">claude.ai/artifact/TPVnwH3c2dTWmZTqfcrKYR</a><span>Private until you share it. Opens on Beverlywood; search “Carlson Park”, “Palms”, “Humboldt Park”…</span></div>
+
+  <section>
+    <h2>Your neighborhoods</h2>
+    <p>These come from the real data, conservatively scored at the low end of each published effect.</p>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Neighborhood</th><th>Best bet</th><th>Value per $1</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td>Beverlywood<br><span class="eyebrow">tract 2695</span></td><td>Street trees</td><td class="num">$12.50</td><td>Canopy 18 pts below its Tree Equity goal; homes ≈ $2.3M (Zillow neighborhood index); park within 400 m already</td></tr>
+        <tr><td>Carlson Park, Culver City<br><span class="eyebrow">tract 7025.01</span></td><td>Street trees</td><td class="num">$8.20</td><td>Canopy 15 pts below goal; Carlson Park is 148 m away, so a new park adds little; nearby schools 73% meet the reading standard</td></tr>
+        <tr><td>Palms<br><span class="eyebrow">tract 2718.04</span></td><td>Street trees, then an open schoolyard or pocket park</td><td class="num">$8.30</td><td>Only 0.07 park acres within ½ mile. Schoolyard and pocket park each come out near $1 per $1.</td></tr>
+        <tr><td>Brightmoor, Detroit</td><td>Vacant-lot greening</td><td class="num">$9.80</td><td>21% of homes long-term vacant; ≈ $46k home values</td></tr>
+        <tr><td>Humboldt Park, Chicago</td><td>Community garden</td><td class="num">$71</td><td>Low income, park-poor, available lots (moderate evidence: one NYC study)</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Most common best bet, by county</h2>
+    <div class="tablewrap"><table>
+      <thead><tr><th>County</th><th>Tracts</th><th>Cost factor</th><th>Tracts where each is the #1 pick</th></tr></thead>
+      <tbody>
+        <tr><td>Los Angeles, CA</td><td class="num">2,495</td><td class="num">×1.12</td><td>Street trees 1,594 · Community garden 650 · Vacant lots 175</td></tr>
+        <tr><td>Cook (Chicago), IL</td><td class="num">1,331</td><td class="num">×1.15</td><td>Street trees 765 · Vacant lots 328 · Community garden 137</td></tr>
+        <tr><td>Harris (Houston), TX</td><td class="num">1,115</td><td class="num">×0.90</td><td>Street trees 500 · Community garden 282 · Vacant lots 166</td></tr>
+        <tr><td>Kings (Brooklyn), NY</td><td class="num">804</td><td class="num">×1.16</td><td>Street trees 261 · Street lighting 158 · Community garden 125</td></tr>
+        <tr><td>Dallas, TX</td><td class="num">645</td><td class="num">×0.91</td><td>Street trees 273 · Community garden 147 · Vacant lots 60</td></tr>
+        <tr><td>Wayne (Detroit), MI</td><td class="num">625</td><td class="num">×1.02</td><td>Street trees 312 · Vacant lots 221 · Community garden 33</td></tr>
+        <tr><td>King (Seattle), WA</td><td class="num">494</td><td class="num">×1.18</td><td>Street trees 335 · Community garden 68 · Vacant lots 37</td></tr>
+        <tr><td>Philadelphia, PA</td><td class="num">408</td><td class="num">×1.06</td><td>Street trees 204 · Vacant lots 94 · Community garden 41</td></tr>
+        <tr><td>Fulton (Atlanta), GA</td><td class="num">327</td><td class="num">×0.91</td><td>Street trees 189 · Vacant lots 57 · Community garden 55</td></tr>
+        <tr><td>Marion (Indianapolis), IN</td><td class="num">253</td><td class="num">×1.00</td><td>Street trees 134 · Vacant lots 80 · Community garden 34</td></tr>
+      </tbody>
+    </table></div>
+    <p style="margin-top:12px">The cost factor scales build and upkeep costs from BLS 2024 wages for landscapers, tree trimmers, construction laborers and equipment operators, against the national average.</p>
+  </section>
+
+  <section>
+    <h2>What's built</h2>
+    <h3>Data pipeline (GitHub Actions, monthly)</h3>
+    <p>This environment can't reach most government data sites, so all downloading runs on GitHub's servers in 11 parallel stages. The same job is the monthly refresh.</p>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Source</th><th>What it gives each tract</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>Census ACS 2020–24</td><td>Home value, homes, vacancy incl. long-term vacant, income, rent, tenure, commute</td><td><span class="pill ok">working</span></td></tr>
+        <tr><td>Tree Equity Score</td><td>Canopy gap vs. goal, heat vs. county average (°F)</td><td><span class="pill ok">working</span></td></tr>
+        <tr><td>Zillow ZHVI</td><td>ZIP and named-neighborhood values and trends (Beverlywood, Palms, Cheviot Hills…)</td><td><span class="pill ok">working</span></td></tr>
+        <tr><td>FHFA tract price index</td><td>Price growth 1/5/10/20 yrs, through 2025</td><td><span class="pill ok">working</span></td></tr>
+        <tr><td>OpenStreetMap (Geofabrik)</td><td>58,731 parks, 23,937 schools, 9,143 neighborhood names, 7,865 rail stations, freeways</td><td><span class="pill ok">working</span></td></tr>
+        <tr><td>CA Dept. of Ed. + CAASPP 2024–25</td><td>Test scores of the 3 nearest public schools</td><td><span class="pill ok">CA only</span></td></tr>
+        <tr><td>CDC PLACES 2025, EPA walkability</td><td>Health (mental health, asthma), walkability index</td><td><span class="pill ok">working</span></td></tr>
+        <tr><td>USAspending.gov</td><td>1,781 federal grants for parks, trees, trails and streets</td><td><span class="pill ok">working</span></td></tr>
+        <tr><td>BLS OEWS</td><td>Local labor-cost factor</td><td><span class="pill ok">working</span></td></tr>
+        <tr><td>FEMA National Risk Index</td><td>Flood, heat-wave, wildfire risk</td><td><span class="pill miss">link moved</span></td></tr>
+      </tbody>
+    </table></div>
+    <h3>Evidence library (18 improvements)</h3>
+    <ul>
+      <li><b>Vacant-lot greening:</b> +4.3% after a year, +13% over six years within 1,000 ft (Philadelphia LandCare).</li>
+      <li><b>Street trees:</b> ≈ +3% for the home fronting the tree, plus spillover to neighbors (Portland).</li>
+      <li><b>Green schoolyards:</b> +2.5–5% nearby (LA, Denver, Boston and Philadelphia studies). LAUSD Measure US spends $8–12M per project.</li>
+      <li><b>Trails:</b> the BeltLine added +18–27% faster appreciation within ½ mile, the 606 showed a 22% premium on the west end, and the Indy Cultural Trail gained ≈ $1B in assessed value on a $63M build.</li>
+      <li><b>Freeway caps:</b> Pittsburgh ≈ +10% within a mile.</li>
+      <li><b>Demolitions:</b> the evidence is contested. An early study claimed +4.2%; later work found ≈ $162 per nearby home.</li>
+    </ul>
+    <h3>Local research</h3>
+    <p>Sourced notes for Carlson Park, Beverlywood and Palms, plus the 606, the BeltLine, Kensington, Fletcher Place, Klyde Warren and Brightmoor. Current local projects include the Ballona Creek path work (Apr–Oct 2026), the path extension (≈ $24.7M), Culver City's FY26-27 capital plan, the Venice Blvd lanes and the Inglewood Oil Field phase-out.</p>
+    <div class="note"><b>Funding climate.</b> Most federal tree and greening money was frozen, cut or rescinded in 2025: USDA's urban forestry grants and DOT's Neighborhood Access program (≈ $3.1B clawed back). For now, local measures (Measure US, Measure W, Measure A), private money and HOAs are the realistic funders.</div>
+  </section>
+
+  <section>
+    <h2>Read the numbers carefully</h2>
+    <ul>
+      <li><b>Value created isn't your profit.</b> The scores count the gain to every nearby home. You capture only the share on property you own, or through taxes or assessments if you're a city.</li>
+      <li><b>The model is deliberately conservative but not yet calibrated.</b> It uses the low end of each study, a ⅓ distance decay and estimated fit factors. Testing against past projects comes next.</li>
+      <li><b>"Vacant" in the Census mostly means homes for rent or sale.</b> Blight fixes only rank where long-term vacancy is real and values and incomes are below the county median. That keeps vacant-lot greening out of Palms and Beverlywood.</li>
+      <li><b>Gaps:</b> no crime data yet (lighting uses poverty as a stand-in); exact canopy % exists for only 466 tracts (the gap is used elsewhere); school scores are California-only; FEMA risk is missing.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Next steps</h2>
+    <ul>
+      <li>Calibrate against history: compare prices near Park to Playa, LA street-tree plantings and the 606 with similar tracts, and replace the estimated factors with measured ones.</li>
+      <li>Add crime data (LAPD, Culver City PD, city portals) and LA's street-tree inventory.</li>
+      <li>Fix the FEMA link, and add school scores for other states.</li>
+      <li>Add a "what do I capture" calculator for parcels you own.</li>
+      <li>Add counties (one line each in the pipeline config), then go national.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Sources</h2>
+    <ul class="sources">
+      <li><a href="https://phillyvoice.com/philly-property-values-rise-green-vacant-lots-wharton-study-land-care" target="_blank" rel="noopener">Wharton LandCare study</a></li>
+      <li><a href="https://arxiv.org/pdf/2507.14232" target="_blank" rel="noopener">Schoolyard greening &amp; home prices (multi-city)</a></li>
+      <li><a href="https://arxiv.org/pdf/2507.19934" target="_blank" rel="noopener">Schoolyard greening systematic review</a></li>
+      <li><a href="https://www.wabe.org/beltline-housing-prices-rose-faster-those-elsewhere-atlanta/" target="_blank" rel="noopener">Atlanta BeltLine prices</a></li>
+      <li><a href="https://www.wbez.org/stories/_/92307e1b-33ba-4bb1-8bd5-a5dd78721c7e" target="_blank" rel="noopener">The 606 and property values</a></li>
+      <li><a href="https://www.wfyi.org/news/articles/study-indys-cultural-trail-boosting-profits-and-property-values" target="_blank" rel="noopener">Indianapolis Cultural Trail</a></li>
+      <li><a href="https://www.fhwa.dot.gov/ipd/project_profiles/tx_klyde_warren_park.aspx" target="_blank" rel="noopener">Klyde Warren Park (FHWA)</a></li>
+      <li><a href="https://theconversation.com/knocking-down-abandoned-buildings-has-a-lot-of-benefits-for-detroit-but-its-costly-for-cities-248994" target="_blank" rel="noopener">Detroit demolition critique</a></li>
+      <li><a href="https://www.culvercity.gov/Parks/Carlson-Park" target="_blank" rel="noopener">Carlson Park (Culver City)</a></li>
+      <li><a href="https://en.wikipedia.org/wiki/Beverlywood,_Los_Angeles" target="_blank" rel="noopener">Beverlywood</a></li>
+      <li><a href="https://needs.parks.lacity.gov/wp-content/uploads/250420_Palms-Neighboorhood-Council.pdf" target="_blank" rel="noopener">Palms park needs letter</a></li>
+      <li><a href="https://www.culvercity.gov/City-Projects/PW-Ballona-Creek-Bike-Path-Sustainability-and-Accessibility-Project" target="_blank" rel="noopener">Ballona Creek path project</a></li>
+      <li><a href="https://edsource.org/2026/lausd-school-tree-canopy-goals/767971" target="_blank" rel="noopener">LAUSD Measure US greening</a></li>
+      <li><a href="https://planning.org/planning/2025/sep/axed-federal-funding-leaves-urban-forests-out-on-a-limb/" target="_blank" rel="noopener">Federal tree-grant cuts</a></li>
+      <li><a href="https://www.enr.com/articles/61075-massdots-327m-grant-among-rescinded-awards-after-big-beautiful-bill" target="_blank" rel="noopener">Neighborhood Access rescissions</a></li>
+    </ul>
+  </section>
+
+  <footer>Code and data: <code>milessilverman/weblane</code>, branch <code>claude/serene-cannon-exc9om</code>, folder <code>neighborhood-roi/</code>.</footer>
+</div>
+</body>
+</html>
