@@ -325,7 +325,7 @@ function spark(seriesObj, label) {
 
 function renderPanel(geoid, d, p) {
   if (!d) { $("#panel").innerHTML = `<p class="empty">No details for tract ${esc(geoid)}.</p>`; return; }
-  const m = d.metrics, recs = d.recs || [];
+  const m = d.metrics, recs = (d.recs || []).map(r => ({ ...INDEX.library[r.id], ...r }));
   const research = (INDEX.research?.neighborhoods || []).filter(r => (r.tracts || []).includes(geoid));
   const tractName = "Census tract " + (+geoid.slice(5, 9)) + (geoid.slice(9) !== "00" ? "." + geoid.slice(9) : "");
   const nb = research.length ? research.map(r => r.name).join(" · ") : d.neighborhoods?.length ? d.neighborhoods.slice(0, 3).join(" · ") : tractName;

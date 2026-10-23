@@ -112,6 +112,10 @@ def fit_and_reason(iid, t):
     if iid in ("vacant_lot_greening", "blight_demolition", "abandoned_house_fix"):
         other = t["other_vacant_rate"]
         if not np.isnan(other):
+            # LandCare/Detroit evidence comes from low-value blocks with actual empty lots; in pricey markets
+            # "other vacant" is mostly units held off-market (renovation, rent-control turnover)
+            if not (t["value_ratio"] <= 1.0 and inc <= 1.0):
+                return 0.0, "Home values/incomes above the county median, so long-term vacancy here is rarely derelict lots."
             if other < 0.03:
                 return 0.0, f"Only {other*100:.1f}% of homes are long-term vacant (ACS 'other vacant')."
             f = min(1.0, (other - 0.02) / 0.10)
@@ -129,7 +133,8 @@ def fit_and_reason(iid, t):
             return 0.0, "No income data."
         low = 1.0 if inc <= 0.6 else max(0.0, 1 - (inc - 0.6) * 2)
         gap = 1.0 if np.isnan(park_ac) else max(0.0, 1 - park_ac / 10)
-        vac_ok = 1.0 if (not np.isnan(vac) and vac >= 0.06) else 0.4
+        other = t["other_vacant_rate"]
+        vac_ok = 1.0 if (not np.isnan(other) and other >= 0.03) else 0.3  # needs an available lot
         f = low * gap * vac_ok
         return f, f"Income {inc*100:.0f}% of county median; {0 if np.isnan(park_ac) else park_ac:.1f} park acres within ½ mile"
     if iid == "pocket_park":
@@ -217,12 +222,10 @@ def score_tract(t, lib, cost_factor):
         maint = pv_annuity(float(row["annual_maint_usd"]) * units * cost_factor)
         cost = capex + land + maint
         out.append({
-            "id": iid, "name": row["intervention"], "project": f"{units} {row['unit']}{'s' if units > 1 else ''}",
+            "id": iid, "project": f"{units} {row['unit']}{'s' if units > 1 else ''}",
             "homes": int(round(homes)), "fit": round(fit, 2), "why": why,
-            "uplift_pct": float(row["uplift_pct_low"]), "uplift_pct_high": float(row["uplift_pct_high"]),
             "capex": round(capex), "land": round(land), "maint_pv": round(maint), "cost": round(cost),
             "value": round(gain), "vpd": round(gain / cost, 2) if cost else 0,
-            "evidence": row["evidence_strength"], "basis": row["uplift_basis"], "sources": row["key_sources"],
         })
     return sorted(out, key=lambda r: r["vpd"], reverse=True)
 
@@ -380,6 +383,9 @@ def main():
             r["matched_by"] = "approximate point"
         r["tracts"] = hits
     index["research"] = research
+    index["library"] = {k: {"name": v["intervention"], "uplift_pct": float(v["uplift_pct_low"]), "uplift_pct_high": float(v["uplift_pct_high"]),
+                            "evidence": v["evidence_strength"], "basis": v["uplift_basis"], "sources": v["key_sources"],
+                            "radius_ft": float(v["radius_ft"]), "years": float(v["time_to_full_effect_yrs"])} for k, v in lib.items()}
     first = next((r["tracts"][0] for r in research["neighborhoods"] if r.get("tracts")), None)
     index["default_tract"] = next((r["tracts"][0] for r in research["neighborhoods"] if r["id"] == "beverlywood" and r.get("tracts")), first)
     write_context(index, geo, parks)

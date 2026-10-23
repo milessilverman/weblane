@@ -5348,13 +5348,195 @@
    }
   ]
  },
+ "library": {
+  "street_tree": {
+   "name": "Plant street trees",
+   "uplift_pct": 3.0,
+   "uplift_pct_high": 3.0,
+   "evidence": "strong",
+   "basis": "Home fronting the tree (+~$8,870 in Portland); neighbors within 100 ft gain ~+$1,688 each",
+   "sources": "Donovan & Butry 2010 (Portland, Landscape & Urban Planning); 2022 21-study meta-analysis: off-property canopy worth more than on-property",
+   "radius_ft": 100.0,
+   "years": 8.0
+  },
+  "canopy_10pct": {
+   "name": "Raise neighborhood canopy by 10 percentage points",
+   "uplift_pct": 0.29,
+   "uplift_pct_high": 0.48,
+   "evidence": "strong",
+   "basis": "+0.48% value per +10pp canopy within 100 m; +0.29% within 250 m",
+   "sources": "Sander, Polasky & Haight 2010 (Minneapolis, Ecological Economics)",
+   "radius_ft": 820.0,
+   "years": 10.0
+  },
+  "vacant_lot_greening": {
+   "name": "Clean & green vacant lots (LandCare model)",
+   "uplift_pct": 4.3,
+   "uplift_pct_high": 13.0,
+   "evidence": "strong",
+   "basis": "+4.3% after year 1, +13% cumulative by year 6 for homes within 1,000 ft; peaks ~15-19% in high-vacancy areas",
+   "sources": "Lin, Jensen & Wachter (Real Estate Economics; 4,651 greened vs 16,799 control lots); Heckert 2015 HUD Cityscape; Branas et al. 2018 RCT (gun violence -29%)",
+   "radius_ft": 1000.0,
+   "years": 6.0
+  },
+  "abandoned_house_fix": {
+   "name": "Board-up remediation of abandoned houses (working doors/windows)",
+   "uplift_pct": 0.5,
+   "uplift_pct_high": 2.0,
+   "evidence": "moderate (crime) / modeled (value)",
+   "basis": "Value effect not directly measured - modeled via crime reduction (gun violence -39% in RCT)",
+   "sources": "Branas et al. 2016 (Philadelphia RCT, Am J Public Health)",
+   "radius_ft": 500.0,
+   "years": 1.0
+  },
+  "blight_demolition": {
+   "name": "Demolish dangerous vacant structures",
+   "uplift_pct": 0.3,
+   "uplift_pct_high": 4.2,
+   "evidence": "contested",
+   "basis": "Dynamo Metrics 2015: +4.2% for homes within 500 ft (+13.8% when combined with nuisance abatement, side-lot sales, auctions). Later peer-reviewed work: only ~$162 per nearby home, not covering demolition cost.",
+   "sources": "Dynamo Metrics/Rock Ventures/Skillman 2015 (via DBusiness); The Conversation 2025 (economists' Detroit study)",
+   "radius_ft": 500.0,
+   "years": 2.0
+  },
+  "community_garden": {
+   "name": "Community garden on vacant parcel",
+   "uplift_pct": 9.4,
+   "uplift_pct_high": 9.4,
+   "evidence": "moderate",
+   "basis": "Up to +9.4% within 1,000 ft after ~5 years, concentrated in the poorest neighborhoods",
+   "sources": "Voicu & Been 2008 (NYC, Real Estate Economics)",
+   "radius_ft": 1000.0,
+   "years": 5.0
+  },
+  "pocket_park": {
+   "name": "Pocket / passive park",
+   "uplift_pct": 5.0,
+   "uplift_pct_high": 20.0,
+   "evidence": "strong",
+   "basis": "Up to ~20% premium adjacent to passive parks, fading to ~0 by 500-2,000 ft",
+   "sources": "Crompton 2001/2005 reviews (J. Leisure Research; Managing Leisure)",
+   "radius_ft": 600.0,
+   "years": 3.0
+  },
+  "green_schoolyard": {
+   "name": "Green & open schoolyard to public after hours",
+   "uplift_pct": 2.5,
+   "uplift_pct_high": 5.0,
+   "evidence": "moderate (newer direct studies + chain of studies)",
+   "basis": "Direct estimates: LA 2.5-4%; Denver 3-5% (DiD, gains concentrated within 250 m); Boston & Philadelphia ~+$7,400/home within 250 m; multi-city 4.1% within 400 m. Plus heat/test-score channel.",
+   "sources": "arXiv 2507.08894 (Denver); arXiv 2507.14232 (multi-city); arXiv 2507.19934 (systematic review of 15 studies); Grunewald et al. 2024 (Boston/Philadelphia); Black 1999 (QJE); Park et al. 2020 (AEJ heat & learning); LAUSD Measure US: $8-12M per project",
+   "radius_ft": 1300.0,
+   "years": 5.0
+  },
+  "rail_trail": {
+   "name": "Greenway / rail-trail on unused corridor",
+   "uplift_pct": 10.0,
+   "uplift_pct_high": 25.0,
+   "evidence": "strong (but displacement risk)",
+   "basis": "Atlanta BeltLine: +17.9-26.6% more appreciation within 0.5 mi, 2011-15 (Immergluck & Balan 2017); Chicago 606: 22% premium for single-family homes within 1/5 mi west of Western Ave; Indy Cultural Trail: +148% assessed value within 500 ft 2008-14 (~$1B on $63M)",
+   "sources": "Immergluck & Balan 2018 (Urban Geography); DePaul Institute for Housing Studies 2016; IU Public Policy Institute 2015",
+   "radius_ft": 2640.0,
+   "years": 4.0
+  },
+  "street_lighting": {
+   "name": "Add/upgrade pedestrian street lighting",
+   "uplift_pct": 0.5,
+   "uplift_pct_high": 2.0,
+   "evidence": "strong (crime) / modeled (value)",
+   "basis": "Modeled: -36% nighttime outdoor index crime (NYC RCT); ~10% less crime -> ~1% value",
+   "sources": "Chalfin et al. 2022 (NYC public-housing lighting RCT, J. Quant. Criminology); Gibbons 2004 (Economic Journal)",
+   "radius_ft": 300.0,
+   "years": 1.0
+  },
+  "sidewalk_walkability": {
+   "name": "Fill sidewalk gaps & crossings",
+   "uplift_pct": 0.5,
+   "uplift_pct_high": 3.0,
+   "evidence": "moderate",
+   "basis": "1 Walk Score point ~ +$700 to +$3,000 per home",
+   "sources": "Cortright 2009 (CEOs for Cities, Walking the Walk)",
+   "radius_ft": 1320.0,
+   "years": 1.0
+  },
+  "brownfield_cleanup": {
+   "name": "Clean up a brownfield",
+   "uplift_pct": 5.0,
+   "uplift_pct_high": 15.2,
+   "evidence": "strong",
+   "basis": "+5-15.2% for nearby homes",
+   "sources": "Haninger, Ma & Timmins 2017 (J. Assoc. Env. & Resource Economists)",
+   "radius_ft": 6560.0,
+   "years": 3.0
+  },
+  "noise_barrier": {
+   "name": "Highway noise wall",
+   "uplift_pct": 2.5,
+   "uplift_pct_high": 5.0,
+   "evidence": "moderate",
+   "basis": "~0.5-0.6% value per dB (NDSI); walls cut ~5-10 dB for first row",
+   "sources": "Nelson 1982/2008 noise depreciation reviews; FHWA noise barrier cost inventory",
+   "radius_ft": 500.0,
+   "years": 1.0
+  },
+  "bid_corridor": {
+   "name": "Business improvement district / commercial corridor upgrade",
+   "uplift_pct": 5.0,
+   "uplift_pct_high": 15.0,
+   "evidence": "moderate",
+   "basis": "NYC BIDs: ~15% commercial value gain for larger BIDs; residential spillover smaller",
+   "sources": "Ellen, Schwartz, Voicu & Brooks 2007 (Brookings-Wharton)",
+   "radius_ft": 1320.0,
+   "years": 3.0
+  },
+  "rail_station": {
+   "name": "New rail transit station",
+   "uplift_pct": 2.0,
+   "uplift_pct_high": 10.0,
+   "evidence": "strong but heterogeneous",
+   "basis": "Typical residential premium within 0.5 mi; higher for commercial; varies by system",
+   "sources": "Debrezion, Pels & Rietveld 2007 meta-analysis; Mohammad et al. 2013 meta-analysis",
+   "radius_ft": 2640.0,
+   "years": 6.0
+  },
+  "power_undergrounding": {
+   "name": "Underground overhead power lines",
+   "uplift_pct": 1.0,
+   "uplift_pct_high": 3.0,
+   "evidence": "weak",
+   "basis": "Small aesthetic premium",
+   "sources": "Utility & CPUC cost studies",
+   "radius_ft": 200.0,
+   "years": 1.0
+  },
+  "protected_bikeway": {
+   "name": "Protected bike lane / bike boulevard network",
+   "uplift_pct": 0.2,
+   "uplift_pct_high": 1.0,
+   "evidence": "moderate",
+   "basis": "Portland: +$686 per home for each quarter mile closer to an advanced bikeway (single-family); Manchester UK: +2.85% per km closer to a bike lane",
+   "sources": "Liu & Shi, Portland State TREC; Hearne & Yerushalmi 2024 (Environmental & Resource Economics)",
+   "radius_ft": 1320.0,
+   "years": 2.0
+  },
+  "highway_cap": {
+   "name": "Freeway cap park",
+   "uplift_pct": 5.0,
+   "uplift_pct_high": 10.0,
+   "evidence": "moderate (one rigorous study)",
+   "basis": "Pittsburgh cap: ~+10% for homes within 1 mile after the construction decision (DiD). Klyde Warren (Dallas, $110M) boosters claim $1.3-5.9B in surrounding value.",
+   "sources": "Lincoln Institute 2025 working paper (Pittsburgh highway cap); FHWA Klyde Warren project profile",
+   "radius_ft": 5280.0,
+   "years": 5.0
+  }
+ },
  "default_tract": "06037269500",
  "pipeline_status": {
-  "generated_at": "2026-10-23T04:02:02.311969+00:00",
+  "generated_at": "2026-10-23T04:13:13.396537+00:00",
   "sources": {
    "census_tract_boundaries": {
     "ok": true,
-    "seconds": 6.8,
+    "seconds": 0.7,
     "rows": 8497,
     "columns": [
      "GEOID",
@@ -5368,13 +5550,14 @@
    "census_acs_5yr": {
     "vintage": "2020-2024 ACS 5-year (table-based summary file)",
     "ok": true,
-    "seconds": 10.9,
+    "seconds": 9.7,
     "rows": 8505,
     "columns": [
      "GEOID",
      "population",
      "housing_units",
      "vacant_units",
+     "vacant_other_units",
      "occupied_units",
      "owner_units",
      "median_home_value",
@@ -5405,7 +5588,7 @@
    },
    "usaspending_projects": {
     "ok": true,
-    "seconds": 35.1,
+    "seconds": 40.1,
     "rows": 1781,
     "columns": [
      "internal_id",
@@ -5429,7 +5612,7 @@
     "url": "https://www.fhfa.gov/hpi/download/annual/hpi_at_tract.csv",
     "latest_year": 2025,
     "ok": true,
-    "seconds": 2.4,
+    "seconds": 3.5,
     "rows": 5350,
     "columns": [
      "GEOID",
@@ -5455,13 +5638,13 @@
      "library": 2470
     },
     "ok": true,
-    "seconds": 300.9
+    "seconds": 318.2
    },
    "cdc_places": {
     "dataset": "PLACES: Census Tract Data (GIS Friendly Format), 2025 release",
     "dataset_id": "yjkw-uj5s",
     "ok": true,
-    "seconds": 9.0,
+    "seconds": 22.7,
     "rows": 8375,
     "columns": [
      "GEOID",
@@ -5528,7 +5711,7 @@
      "tesctyscor"
     ],
     "ok": true,
-    "seconds": 4.1,
+    "seconds": 1.8,
     "rows": 7483,
     "columns": [
      "GEOID",
@@ -5543,7 +5726,7 @@
    },
    "epa_walkability": {
     "ok": true,
-    "seconds": 3.0,
+    "seconds": 2.8,
     "rows": 8366,
     "columns": [
      "GEOID",
@@ -5552,7 +5735,7 @@
    },
    "zillow_zhvi_zip": {
     "ok": true,
-    "seconds": 3.4,
+    "seconds": 0.3,
     "rows": 1057,
     "columns": [
      "RegionName",
@@ -5569,7 +5752,7 @@
    },
    "census_zcta_boundaries": {
     "ok": true,
-    "seconds": 1.9,
+    "seconds": 1.4,
     "rows": 33791,
     "columns": [
      "ZCTA5CE20",
@@ -5578,7 +5761,7 @@
    },
    "zillow_zhvi_neighborhood": {
     "ok": true,
-    "seconds": 2.9,
+    "seconds": 0.3,
     "rows": 2140,
     "columns": [
      "RegionID",
