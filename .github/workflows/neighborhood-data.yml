@@ -83,5 +83,5 @@ jobs:
           git add neighborhood-roi/data/derived
           git diff --cached --quiet && echo "no changes" && exit 0
           git commit -m "Refresh neighborhood data [skip ci]"
-          git pull --rebase origin ${GITHUB_REF_NAME}
+          git pull --rebase -X theirs origin ${GITHUB_REF_NAME}
           git push origin HEAD:${GITHUB_REF_NAME}
