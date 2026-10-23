@@ -50,6 +50,7 @@ ONLY = os.environ.get("ONLY_COUNTIES")  # e.g. "06037" for quick runs
 if ONLY:
     COUNTIES = [c for c in COUNTIES if c[0] + c[1] in ONLY.split(",")]
 
+ROADS = None
 STATUS = {"generated_at": datetime.now(timezone.utc).isoformat(), "sources": {}}
 
 
@@ -386,7 +387,7 @@ def overpass(q, name):
     last = None
     for ep in OVERPASS:
         try:
-            r = requests.post(ep, data={"data": q}, headers=UA, timeout=900)
+            r = requests.post(ep, data={"data": q}, headers=UA, timeout=420)
             if r.status_code == 200:
                 path.write_text(r.text)
                 return r.json()
@@ -424,16 +425,16 @@ def _rel_poly(el):
 
 @source("openstreetmap")
 def osm(tract_gdf):
-    parks, points = [], []
+    parks, points, roads = [], [], []
     for st, co, label, _ in COUNTIES:
         sub = tract_gdf[(tract_gdf.STATEFP == st) & (tract_gdf.COUNTYFP == co)]
         w, s, e, n = sub.total_bounds
         bbox = f"{s:.4f},{w:.4f},{n:.4f},{e:.4f}"
-        q_parks = f"""[out:json][timeout:600];
+        q_parks = f"""[out:json][timeout:400];
         (way["leisure"~"^(park|garden|nature_reserve|playground|recreation_ground)$"]({bbox});
          relation["leisure"~"^(park|nature_reserve|recreation_ground)$"]({bbox}););
         out geom;"""
-        q_pts = f"""[out:json][timeout:600];
+        q_pts = f"""[out:json][timeout:400];
         (nwr["place"~"^(neighbourhood|suburb|quarter)$"]({bbox});
          nwr["amenity"="school"]({bbox});
          nwr["railway"="station"]({bbox});
@@ -441,7 +442,23 @@ def osm(tract_gdf):
          nwr["amenity"="library"]({bbox});
          nwr["shop"~"^(supermarket|grocery)$"]({bbox}););
         out center tags;"""
+        q_roads = f"""[out:json][timeout:400];
+        (way["highway"~"^(motorway|trunk|primary)$"]({bbox});
+         way["waterway"~"^(river|canal)$"]["name"]({bbox}););
+        out geom tags;"""
         key = st + co
+        try:
+            rj = overpass(q_roads, f"roads_{key}")
+            from shapely.geometry import LineString
+            for el in rj.get("elements", []):
+                pts = [(p["lon"], p["lat"]) for p in el.get("geometry", [])]
+                if len(pts) >= 2:
+                    t = el.get("tags", {})
+                    roads.append({"kind": t.get("highway") or "water", "name": t.get("name") or t.get("ref"),
+                                  "geometry": LineString(pts)})
+        except Exception as e:  # noqa: BLE001
+            note("openstreetmap", roads_error=str(e)[:300])
+        time.sleep(10)
         pj = overpass(q_parks, f"parks_{key}")
         for el in pj.get("elements", []):
             geom = _way_poly(el) if el["type"] == "way" else _rel_poly(el)
@@ -471,6 +488,9 @@ def osm(tract_gdf):
         time.sleep(10)
     parks = gpd.GeoDataFrame(parks, geometry="geometry", crs=4326) if parks else None
     points = gpd.GeoDataFrame(points, geometry="geometry", crs=4326)
+    if roads:
+        global ROADS
+        ROADS = gpd.GeoDataFrame(roads, geometry="geometry", crs=4326)
     note("openstreetmap", parks=0 if parks is None else len(parks),
          points={k: int(v) for k, v in points.kind.value_counts().items()})
     return parks, points
@@ -522,6 +542,13 @@ def osm_metrics(tr, parks, points):
         res[f"nearest_{kind}_m"] = d
         res[f"nearest_{kind}_name"] = nm
         res[f"{kind}s_in_tract"] = gpd.sjoin(sub, t[["GEOID", "geometry"]], predicate="within").groupby("GEOID").size().reindex(res.GEOID).fillna(0).astype(int).values
+    rd = ROADS
+    if rd is not None:
+        fw = rd[rd.kind == "motorway"].to_crs(3857)
+        if len(fw):
+            fsi = fw.sindex
+            res["nearest_freeway_m"] = [round(fw.geometry.iloc[list(fsi.nearest(pt, return_all=False)[1])[0]].distance(pt)) for pt in rep]
+            res["freeway_through_tract"] = [bool(len(fsi.query(g, predicate="intersects"))) for g in t.geometry]
     nb = pts[pts.kind == "neighborhood"]
     j = gpd.sjoin(nb, t[["GEOID", "geometry"]], predicate="within")
     names = j.groupby("GEOID")["name"].apply(lambda s: sorted({x for x in s if isinstance(x, str)}))
@@ -693,79 +720,103 @@ def walkability(tr):
 
 
 # ---------------------------------------------------------------- assemble
-def main():
-    tr = tracts()
-    if tr is None:
-        sys.exit("no tract geometry - cannot continue")
-    metrics = tr[["GEOID", "STATEFP", "COUNTYFP", "NAMELSAD", "ALAND"]].copy()
-    metrics["county"] = metrics.apply(lambda r: next(c[2] for c in COUNTIES if c[0] == r.STATEFP and c[1] == r.COUNTYFP), axis=1)
-    metrics["land_acres"] = metrics.ALAND / 4046.86
+def stage_out(name, df):
+    if df is not None and len(df):
+        df.to_csv(OUT / f"stage_{name}.csv", index=False)
 
-    for df in (acs(), tree_equity(), fhfa(), nri(), places()):
-        if df is not None and len(df):
-            metrics = metrics.merge(df, on="GEOID", how="left")
 
-    w = walkability(tr)
-    if w is not None:
-        metrics = metrics.merge(w, on="GEOID", how="left")
-
-    o = osm(tr)
-    if o is not None:
-        parks, points = o
-        try:
-            metrics = metrics.merge(osm_metrics(tr, parks, points), on="GEOID", how="left")
+def run_stage(stage):
+    """Each stage writes its own files so stages can run as parallel CI jobs."""
+    tr = tracts() if stage not in ("federal", "bls", "merge") else None
+    if stage == "base":
+        metrics = tr[["GEOID", "STATEFP", "COUNTYFP", "NAMELSAD", "ALAND"]].copy()
+        metrics["county"] = metrics.apply(lambda r: next(c[2] for c in COUNTIES if c[0] == r.STATEFP and c[1] == r.COUNTYFP), axis=1)
+        metrics["land_acres"] = metrics.ALAND / 4046.86
+        a = acs()
+        if a is not None:
+            metrics = metrics.merge(a, on="GEOID", how="left")
+        metrics.to_csv(OUT / "stage_base.csv", index=False)
+        geo = tr[["GEOID", "geometry"]].to_crs(5070)
+        geo["geometry"] = geo.geometry.simplify(12, preserve_topology=True)
+        geo.to_crs(4326).to_file(OUT / "tracts.geojson", driver="GeoJSON", COORDINATE_PRECISION=5)
+    elif stage == "tes":
+        stage_out("tes", tree_equity())
+    elif stage == "fhfa":
+        stage_out("fhfa", fhfa())
+    elif stage == "nri":
+        stage_out("nri", nri())
+    elif stage == "places":
+        stage_out("places", places())
+    elif stage == "walk":
+        stage_out("walk", walkability(tr))
+    elif stage == "osm":
+        o = osm(tr)
+        if o is not None:
+            parks, points = o
+            stage_out("osm", osm_metrics(tr, parks, points).assign(
+                osm_neighborhoods=lambda d: d.osm_neighborhoods.apply(json.dumps)))
             if parks is not None:
                 pk = parks.copy()
-                pk["geometry"] = pk.geometry.simplify(0.0001)
-                pk.to_file(OUT / "osm_parks.geojson", driver="GeoJSON")
-            points.to_file(OUT / "osm_points.geojson", driver="GeoJSON")
-        except Exception as e:  # noqa: BLE001
-            traceback.print_exc()
-            note("openstreetmap", metrics_error=str(e)[:300])
+                pk["geometry"] = pk.to_crs(5070).geometry.simplify(5).to_crs(4326)
+                pk.to_file(OUT / "osm_parks.geojson", driver="GeoJSON", COORDINATE_PRECISION=5)
+            points.to_file(OUT / "osm_points.geojson", driver="GeoJSON", COORDINATE_PRECISION=5)
+            if ROADS is not None:
+                rd = ROADS.copy()
+                rd["geometry"] = rd.to_crs(5070).geometry.simplify(15).to_crs(4326)
+                rd.to_file(OUT / "osm_roads.geojson", driver="GeoJSON", COORDINATE_PRECISION=5)
+    elif stage == "schools":
+        sch = ca_schools()
+        if sch is not None and len(sch):
+            sch.to_csv(OUT / "ca_schools.csv", index=False)
+            stage_out("schools", school_metrics(tr, sch))
+    elif stage == "zillow":
+        zz, zc = zillow_zips(), zctas()
+        if zc is not None:
+            rep = gpd.GeoDataFrame(tr[["GEOID"]], geometry=tr.to_crs(3857).geometry.representative_point().to_crs(4326), crs=4326)
+            j = gpd.sjoin(rep, zc, predicate="within")[["GEOID", "ZCTA5CE20"]].drop_duplicates("GEOID")
+            out = j.rename(columns={"ZCTA5CE20": "zip"})
+            if zz is not None:
+                z2 = zz.rename(columns={"RegionName": "zip"}).drop(columns=["CountyName", "State"])
+                z2.columns = ["zip"] + [f"zip_{c}" for c in z2.columns[1:]]
+                out = out.merge(z2, on="zip", how="left")
+            stage_out("zillow", out)
+        zn = zillow_neighborhoods()
+        if zn is not None:
+            zn.to_csv(OUT / "zillow_neighborhoods.csv", index=False)
+    elif stage == "federal":
+        us = usaspending()
+        if us is not None:
+            us.to_csv(OUT / "federal_projects.csv", index=False)
+    elif stage == "bls":
+        bl = bls_costs()
+        if bl is not None:
+            bl.to_csv(OUT / "regional_costs_bls.csv", index=False)
+    elif stage == "merge":
+        metrics = pd.read_csv(OUT / "stage_base.csv", dtype={"GEOID": str, "STATEFP": str, "COUNTYFP": str})
+        for f in sorted(OUT.glob("stage_*.csv")):
+            if f.name == "stage_base.csv":
+                continue
+            df = pd.read_csv(f, dtype={"GEOID": str, "zip": str})
+            df = df.drop(columns=[c for c in df.columns if c in metrics.columns and c != "GEOID"])
+            metrics = metrics.merge(df, on="GEOID", how="left")
+            log(f"  merged {f.name}: {len(df.columns) - 1} columns")
+        metrics.to_csv(OUT / "tract_metrics.csv", index=False)
+        status = {"generated_at": STATUS["generated_at"], "sources": {}, "tracts": len(metrics),
+                  "counties": [c[2] for c in COUNTIES]}
+        for f in sorted(OUT.glob("status_*.json")):
+            status["sources"].update(json.loads(f.read_text()).get("sources", {}))
+        (OUT / "pipeline_status.json").write_text(json.dumps(status, indent=2, default=str))
+        log(json.dumps({k: v.get("ok") for k, v in status["sources"].items()}, indent=1))
+        return
+    (OUT / f"status_{stage}.json").write_text(json.dumps(STATUS, indent=2, default=str))
+    log(json.dumps(STATUS, indent=1, default=str)[:4000])
 
-    sch = ca_schools()
-    if sch is not None and len(sch):
-        sch.to_csv(OUT / "ca_schools.csv", index=False)
-        try:
-            metrics = metrics.merge(school_metrics(tr, sch), on="GEOID", how="left")
-        except Exception as e:  # noqa: BLE001
-            traceback.print_exc()
-            note("ca_school_scores", metrics_error=str(e)[:300])
 
-    # Zillow: ZIP by tract representative point; neighborhoods by name match to OSM names
-    zz = zillow_zips()
-    zc = zctas()
-    if zc is not None:
-        rep = gpd.GeoDataFrame(tr[["GEOID"]], geometry=tr.to_crs(3857).geometry.representative_point().to_crs(4326), crs=4326)
-        j = gpd.sjoin(rep, zc, predicate="within")[["GEOID", "ZCTA5CE20"]].drop_duplicates("GEOID")
-        metrics = metrics.merge(j.rename(columns={"ZCTA5CE20": "zip"}), on="GEOID", how="left")
-        if zz is not None:
-            z2 = zz.rename(columns={"RegionName": "zip"}).drop(columns=["CountyName", "State"])
-            z2.columns = ["zip"] + [f"zip_{c}" if c != "zip" else c for c in z2.columns[1:]]
-            metrics = metrics.merge(z2, on="zip", how="left")
-    zn = zillow_neighborhoods()
-    if zn is not None:
-        zn.to_csv(OUT / "zillow_neighborhoods.csv", index=False)
-
-    us = usaspending()
-    if us is not None:
-        us.to_csv(OUT / "federal_projects.csv", index=False)
-    bl = bls_costs()
-    if bl is not None:
-        bl.to_csv(OUT / "regional_costs_bls.csv", index=False)
-
-    # write outputs
-    metrics["osm_neighborhoods"] = metrics.get("osm_neighborhoods", pd.Series([[]] * len(metrics))).apply(
-        lambda v: json.dumps(v) if isinstance(v, list) else "[]")
-    metrics.to_csv(OUT / "tract_metrics.csv", index=False)
-    geo = tr[["GEOID", "geometry"]].to_crs(5070)
-    geo["geometry"] = geo.geometry.simplify(12, preserve_topology=True)
-    geo = geo.to_crs(4326)
-    geo.to_file(OUT / "tracts.geojson", driver="GeoJSON", COORDINATE_PRECISION=5)
-    STATUS["tracts"] = len(metrics)
-    STATUS["counties"] = [c[2] for c in COUNTIES]
-    (OUT / "pipeline_status.json").write_text(json.dumps(STATUS, indent=2, default=str))
-    log(json.dumps({k: v.get("ok") for k, v in STATUS["sources"].items()}, indent=1))
+def main():
+    stages = sys.argv[1:] or ["base", "tes", "fhfa", "nri", "places", "walk", "osm", "schools", "zillow",
+                              "federal", "bls", "merge"]
+    for st in stages:
+        run_stage(st)
 
 
 if __name__ == "__main__":

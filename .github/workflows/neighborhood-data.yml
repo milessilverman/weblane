@@ -20,32 +20,62 @@ permissions:
 
 concurrency:
   group: neighborhood-data
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
-  build:
+  stage:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        stage: [base, tes, fhfa, nri, places, walk, osm, schools, zillow, federal, bls]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Cache downloads
-        uses: actions/cache@v4
+          cache: pip
+          cache-dependency-path: neighborhood-roi/pipeline/requirements.txt
+      - uses: actions/cache@v4
         with:
           path: neighborhood-roi/.cache
-          key: nroi-cache-${{ github.run_id }}
-          restore-keys: nroi-cache-
-      - name: Install
-        run: pip install geopandas pyogrio shapely pandas requests openpyxl
-      - name: Build dataset
+          key: nroi-${{ matrix.stage }}-${{ github.run_id }}
+          restore-keys: nroi-${{ matrix.stage }}-
+      - run: pip install -r neighborhood-roi/pipeline/requirements.txt
+      - name: Run stage
+        continue-on-error: true
         env:
           ONLY_COUNTIES: ${{ github.event.inputs.only_counties }}
           CENSUS_API_KEY: ${{ secrets.CENSUS_API_KEY }}
-        run: python neighborhood-roi/pipeline/build_dataset.py
+        run: python -u neighborhood-roi/pipeline/build_dataset.py ${{ matrix.stage }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stage-${{ matrix.stage }}
+          path: neighborhood-roi/data/derived/
+          if-no-files-found: warn
+          retention-days: 7
+
+  merge:
+    needs: stage
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r neighborhood-roi/pipeline/requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: stage-*
+          path: neighborhood-roi/data/derived/
+          merge-multiple: true
+      - name: Merge
+        run: python -u neighborhood-roi/pipeline/build_dataset.py merge
       - name: Commit outputs
         run: |
+          rm -f neighborhood-roi/data/derived/status_*.json
           git config user.name "neighborhood-roi-bot"
           git config user.email "actions@users.noreply.github.com"
           git add neighborhood-roi/data/derived

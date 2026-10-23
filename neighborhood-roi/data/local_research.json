@@ -1,0 +1,61 @@
+{
+  "_note": "Hand-researched neighborhood notes (Oct 2026). Every fact carries its source. Matched to map tracts by OSM neighborhood/park name. Sale-price figures from brokerages rest on few sales; treat as signals.",
+  "neighborhoods": [
+    {
+      "id": "carlson_park",
+      "name": "Carlson Park",
+      "city": "Culver City, CA",
+      "match": {"osm_park": "Carlson Park", "osm_neighborhood": "Carlson Park"},
+      "facts": [
+        {"text": "Named for Dr. Paul Carlson Park, a 2.66-acre passive neighborhood park at Braddock Dr & Motor Ave; Culver City's first park (1927), on the site of a 1920s board-track speedway.", "source": "https://www.culvercity.gov/Parks/Carlson-Park"},
+        {"text": "Redfin's neighborhood median was ~$1.01M on only 3 sales; one broker reports ~$1,650/sq ft in early 2026. Thin sample, so read it as a signal.", "source": "https://www.redfin.com/neighborhood/64212/CA/Culver-City/Carlson-Park/housing-market"},
+        {"text": "Culver City overall: Zillow typical value ~$1.29M (+2.0% yr); Redfin 3-month median $1.4M (+10.4%) as of Sept 2026; single-family median ~$1.6M in Q1 2026.", "source": "https://www.redfin.com/city/4557/CA/Culver-City/housing-market"},
+        {"text": "Served by Culver City Unified. 2025 CAASPP-based rankings put El Marino and Farragut elementaries near the top of the district, La Ballona lower.", "source": "https://schoolscope.co/CA/schools/district/culver-city-unified"}
+      ],
+      "current_projects": [
+        {"name": "Ballona Creek Bike Path Sustainability & Accessibility Project", "detail": "Solar lighting, signage and wayfinding on the creek path; construction scheduled Apr–Oct 2026, funded by Baldwin Hills Conservancy + Culver City.", "source": "https://www.culvercity.gov/City-Projects/PW-Ballona-Creek-Bike-Path-Sustainability-and-Accessibility-Project"},
+        {"name": "Ballona Creek Bike Path Extension (~2 mi to Cochran/Venice)", "detail": "Design underway; ~$24.7M construction estimate; $6.4M CTC award in 2025.", "source": "https://culvercitycrossroads.com/2025/10/20/state-funds-to-extend-the-bike-path-support-citys-commitment/"},
+        {"name": "FY26-27 Culver City CIP", "detail": "70 capital projects; $4.65M pavement & concrete rehab; $3M street & right-of-way improvements; Bill Botts Fields renovation.", "source": "https://www.culvercity.gov/News/From-the-City-Managers-Desk-August-2026"},
+        {"name": "Inglewood Oil Field phase-out", "detail": "Culver City settlement bans new wells and ends production within city limits by 2030; County Park Needs Assessment lists converting parts of the ~1,000-acre field to parkland.", "source": "https://lacountyparkneeds.org/wp-content/uploads/2026/02/PNA_AppendixB_PriorityProjects_508.pdf"}
+      ],
+      "local_angles": [
+        "Already has a park, so a new park adds little. The better levers are canopy (street trees on blocks with gaps) and access to the Ballona Creek path, which a cheap, well-lit connection could improve.",
+        "Culver City has its own Urban Forest Master Plan (2016) and ~15,000 city trees, so a street-tree program can go through Public Works rather than LA's StreetsLA."
+      ]
+    },
+    {
+      "id": "beverlywood",
+      "name": "Beverlywood",
+      "city": "Los Angeles, CA",
+      "match": {"osm_neighborhood": "Beverlywood"},
+      "facts": [
+        {"text": "1,354 single-family homes developed by Walter Leimert from 1940. One of LA's first tracts with binding CC&Rs; the Beverlywood Homes Association reviews size, style, color, design and landscaping.", "source": "https://en.wikipedia.org/wiki/Beverlywood,_Los_Angeles"},
+        {"text": "HOA boundaries: Monte Mar Dr (N), Robertson Blvd (E), Hillcrest Country Club / Anchor Ave (W), Beverlywood St (S).", "source": "https://en.wikipedia.org/wiki/Beverlywood,_Los_Angeles"},
+        {"text": "Typical home value ~$2.29M (Zillow, June 2026, +3.3% yr). Redfin monthly median $2.3M on 7 sales.", "source": "https://www.zillow.com/home-values/403183/beverlywood-los-angeles-ca/"},
+        {"text": "Castle Heights, just south, borders the I-10 freeway. Caltrans built a $2.1M soundwall demonstration on westbound I-10 between Motor and Military Aves in 2006.", "source": "https://libraryarchives.metro.net/dpgtl/employeenews/mymetro/20060208-caltrans-i-10-freeway-soundwall.pdf"}
+      ],
+      "current_projects": [
+        {"name": "Venice Blvd Safety & Mobility Project (Palms–Mar Vista)", "detail": "4+ miles of parking-protected bike lanes, 24-hour bus lane, crosswalks and signals; completed, serves ~47,000 nearby residents.", "source": "https://www.metro.net/about/media-relations/ladot-and-metro-to-celebrate-the-completion-of-the-venice-blvd-safety-and-mobility-project/"},
+        {"name": "LAUSD Measure US green schoolyards", "detail": "~$1.2B for schoolyard and exterior upgrades; ~$8–12M per green-schoolyard project; priority goes to elementaries under 10% green with 275+ students.", "source": "https://edsource.org/2026/lausd-school-tree-canopy-goals/767971"}
+      ],
+      "local_angles": [
+        "With values above $2M, even a 1% gain is ~$23k per home. Value-per-dollar is highest for cheap, visible amenities: canopy gaps on parkways and sidewalk/crossing quality on Robertson and toward Cheviot Hills/Rancho Park.",
+        "CC&Rs and the HOA make coordinated parkway planting easier to organize. The HOA is a natural partner.",
+        "The tract next to the I-10 (Castle Heights side) is where noise mitigation and dense roadside vegetation pay off."
+      ]
+    }
+  ],
+  "regional_projects": [
+    {"name": "Park to Playa Trail", "detail": "13-mile trail from Baldwin Hills to the beach, completed Oct 2020 with the La Cienega pedestrian bridge. ~$23M trail plus $20.5M in amenities including the Stoneview Nature Center.", "source": "https://culvercitycrossroads.com/2020/11/09/bridge-opening-completes-park-to-playa-trail/"},
+    {"name": "Expo (E) Line Culver City station", "detail": "Opened 2012. A before/after study found households near new stations cut driving by ~14 miles/day. No rigorous home-price study of this station was found.", "source": "https://www.lincolninst.edu/app/uploads/legacy-files/pubfiles/2334_1674_Boarnet_WP13MB1.pdf"},
+    {"name": "MOVE Culver City (downtown bus/bike lanes)", "detail": "Inflation-adjusted sales tax on the corridor grew after 2019 while citywide stayed flat; politically contested (2023 survey: 58% strongly opposed).", "source": "https://cal.streetsblog.org/2023/04/24/showdown-looms-over-successful-culver-city-bus-bike-walk-improvements"},
+    {"name": "LAUSD greening program", "detail": "82 completed greening projects, 1,400+ trees planted, ~315 projects active or planned (Oct 2026); goal 30% green space systemwide.", "source": "https://citizenportal.ai/articles/10423983/California/School-Districts/Los-Angeles-Unified/Los-Angeles-Unified-officer-greening-program-has-planted-1400-trees-aims-to-reach-30-green-space-systemwide"}
+  ],
+  "local_costs": [
+    {"item": "Street tree, LA area", "value": "~$300–1,250 per tree (2025-26 LA County RFP: $0.5–2M for 1,600 trees incl. maintenance); one 2022 LA Board of Public Works item implied ~$4,351 per tree including concrete cutting", "source": "https://bidbanana.thebidlab.com/bid/AV6iX09W9FqQGABKCPD9"},
+    {"item": "Pocket park, LA", "value": "$27–44M per acre all-in for recent city projects (Brooklyn Heights Park 0.19 ac $5.2M; Pio Pico 0.6 ac $26.6M incl. garage)", "source": "https://urbanize.la/post/city-council-looks-allocate-more-funding-pio-pico-library-pocket-park"},
+    {"item": "LAUSD green schoolyard", "value": "$8–12M per project under Measure US", "source": "https://citizenportal.ai/articles/7762775/california/school-districts/los-angeles-unified/lausd-staff-prioritize-playground-greening-and-shade-shelters-under-measure-us-planning-design-and-phasing-detailed"},
+    {"item": "Freeway soundwall, LA", "value": "$2.1M for the 2006 I-10 demonstration segment (Motor–Military)", "source": "https://libraryarchives.metro.net/dpgtl/employeenews/mymetro/20060208-caltrans-i-10-freeway-soundwall.pdf"},
+    {"item": "Bike path extension, Culver City", "value": "~$24.7M for ~2 miles (~$12M/mi) on a flood-channel right of way", "source": "https://la.streetsblog.org/2023/03/03/feasibility-study-plans-extending-ballona-creek-path/"}
+  ]
+}
