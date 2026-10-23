@@ -583,6 +583,30 @@ def crime(R):
     raise RuntimeError("no usable LAPD crime dataset")
 
 
+@stage("santa_monica_crime")
+def sm_crime(R):
+    """Santa Monica PD incidents (CKAN datastore, daily), last 12 months."""
+    rid = "ff0f4877-3731-4476-b2ca-065f5819bf12"
+    base = "https://data.santamonica.gov/api/3/action/"
+    meta = get(base + "datastore_search", params={"resource_id": rid, "limit": 1}).json()["result"]
+    fields = [f["id"] for f in meta["fields"]]
+    note("santa_monica_crime", fields=fields)
+    datec = next(f for f in fields if re.search(r"date.*occ|occ.*date", f, re.I))
+    latc = next(f for f in fields if re.search(r"^lat", f, re.I))
+    lonc = next(f for f in fields if re.search(r"^lon|^lng", f, re.I))
+    since = (datetime.now() - timedelta(days=365)).strftime("%Y-%m-%d")
+    sql = f'SELECT * FROM "{rid}" WHERE "{datec}" >= \'{since}\''
+    rows = get(base + "datastore_search_sql", params={"sql": sql}, timeout=300).json()["result"]["records"]
+    df = pd.DataFrame(rows)
+    df["lat"] = pd.to_numeric(df[latc], errors="coerce")
+    df["lon"] = pd.to_numeric(df[lonc], errors="coerce")
+    df = df[df.lat.notna() & (df.lat != 0)]
+    txt = df.astype(object).where(df.notna(), "").astype(str).agg(" ".join, axis=1).str.upper()
+    df["violent"] = txt.str.contains(r"ASSAULT|ROBBERY|HOMICIDE|RAPE|SHOTS|BATTERY|KIDNAP")
+    note("santa_monica_crime", rows=len(df), since=since)
+    return gpd.GeoDataFrame(df[["violent"]], geometry=gpd.points_from_xy(df.lon, df.lat), crs=4326)
+
+
 # ------------------------------------------------------------------ assemble
 def run(region):
     R = REGIONS[region]
@@ -668,11 +692,18 @@ def run(region):
         vp[["geometry"]].to_file(out / "vacant_parcels.geojson", driver="GeoJSON", COORDINATE_PRECISION=6)
     # crime
     cr = crime(R)
+    smc = sm_crime(R)
+    covered = []
+    if cr is not None:
+        covered.append("Los Angeles")
+    if smc is not None:
+        covered.append("Santa Monica")
+        cr = smc if cr is None else pd.concat([cr, smc], ignore_index=True)
     if cr is not None:
         cj = gpd.sjoin(cr.to_crs(M), bm, predicate="within")
         blocks = blocks.merge(pd.DataFrame({"crimes_12mo": cj.groupby("block_id").size(),
                                             "violent_12mo": cj.groupby("block_id").violent.sum()}).reset_index(), on="block_id", how="left")
-        blocks["crime_coverage"] = blocks.city == "Los Angeles"
+        blocks["crime_coverage"] = blocks.city.isin(covered)
     # schools + scores
     sch = bd.ca_schools()
     if sch is not None:
