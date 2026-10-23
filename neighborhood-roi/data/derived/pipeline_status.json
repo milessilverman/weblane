@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-10-23T04:02:02.311969+00:00",
+  "generated_at": "2026-10-23T04:13:13.396537+00:00",
   "sources": {
     "census_tract_boundaries": {
       "ok": true,
-      "seconds": 6.8,
+      "seconds": 0.7,
       "rows": 8497,
       "columns": [
         "GEOID",
@@ -17,13 +17,14 @@
     "census_acs_5yr": {
       "vintage": "2020-2024 ACS 5-year (table-based summary file)",
       "ok": true,
-      "seconds": 10.9,
+      "seconds": 9.7,
       "rows": 8505,
       "columns": [
         "GEOID",
         "population",
         "housing_units",
         "vacant_units",
+        "vacant_other_units",
         "occupied_units",
         "owner_units",
         "median_home_value",
@@ -54,7 +55,7 @@
     },
     "usaspending_projects": {
       "ok": true,
-      "seconds": 35.1,
+      "seconds": 40.1,
       "rows": 1781,
       "columns": [
         "internal_id",
@@ -78,7 +79,7 @@
       "url": "https://www.fhfa.gov/hpi/download/annual/hpi_at_tract.csv",
       "latest_year": 2025,
       "ok": true,
-      "seconds": 2.4,
+      "seconds": 3.5,
       "rows": 5350,
       "columns": [
         "GEOID",
@@ -104,13 +105,13 @@
         "library": 2470
       },
       "ok": true,
-      "seconds": 300.9
+      "seconds": 318.2
     },
     "cdc_places": {
       "dataset": "PLACES: Census Tract Data (GIS Friendly Format), 2025 release",
       "dataset_id": "yjkw-uj5s",
       "ok": true,
-      "seconds": 9.0,
+      "seconds": 22.7,
       "rows": 8375,
       "columns": [
         "GEOID",
@@ -177,7 +178,7 @@
         "tesctyscor"
       ],
       "ok": true,
-      "seconds": 4.1,
+      "seconds": 1.8,
       "rows": 7483,
       "columns": [
         "GEOID",
@@ -192,7 +193,7 @@
     },
     "epa_walkability": {
       "ok": true,
-      "seconds": 3.0,
+      "seconds": 2.8,
       "rows": 8366,
       "columns": [
         "GEOID",
@@ -201,7 +202,7 @@
     },
     "zillow_zhvi_zip": {
       "ok": true,
-      "seconds": 3.4,
+      "seconds": 0.3,
       "rows": 1057,
       "columns": [
         "RegionName",
@@ -218,7 +219,7 @@
     },
     "census_zcta_boundaries": {
       "ok": true,
-      "seconds": 1.9,
+      "seconds": 1.4,
       "rows": 33791,
       "columns": [
         "ZCTA5CE20",
@@ -227,7 +228,7 @@
     },
     "zillow_zhvi_neighborhood": {
       "ok": true,
-      "seconds": 2.9,
+      "seconds": 0.3,
       "rows": 2140,
       "columns": [
         "RegionID",
