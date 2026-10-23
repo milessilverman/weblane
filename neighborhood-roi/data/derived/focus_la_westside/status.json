@@ -1,20 +1,20 @@
 {
-  "generated_at": "2026-10-23T17:56:16.425574+00:00",
+  "generated_at": "2026-10-23T18:05:50.587507+00:00",
   "sources": {
     "osm_layers": {
       "ok": true,
-      "seconds": 66.1
+      "seconds": 26.8
     },
     "boundaries": {
       "places": 9,
       "block_groups": 744,
       "la_times_hoods": 32,
       "ok": true,
-      "seconds": 1.4
+      "seconds": 0.6
     },
     "blocks": {
       "ok": true,
-      "seconds": 2.4,
+      "seconds": 2.3,
       "rows": 855,
       "columns": [
         "geometry",
@@ -42,7 +42,7 @@
     "acs_block_groups": {
       "vintage": "2020-2024 ACS 5-year block groups",
       "ok": true,
-      "seconds": 8.0,
+      "seconds": 5.5,
       "rows": 744,
       "columns": [
         "GEOID",
@@ -63,8 +63,8 @@
     },
     "tree_equity_bg": {
       "ok": true,
-      "seconds": 0.6,
-      "rows": 0,
+      "seconds": 0.3,
+      "rows": 701,
       "columns": [
         "GEOID",
         "treecanopy",
@@ -77,11 +77,31 @@
     },
     "street_trees": {
       "ok": false,
-      "error": "Cannot determine common CRS for concatenation inputs, got ['WGS 84', 'NAD83 / California zone 5 (ftUS)']. Use `to_crs()` to transform geometries to the same CRS before merging."
+      "error": "sequence item 11: expected str instance, float found"
     },
     "canopy_height": {
+      "quadkeys": [
+        "023012311"
+      ],
+      "tiles": [
+        "forests/v1/alsgedi_global_v6_float/chm/023012311.tif"
+      ],
+      "crs": "EPSG:3857",
+      "res": [
+        1.1943285669558747,
+        1.1943285669558605
+      ],
+      "nodata": "None",
+      "dtype": "uint8",
+      "sample_pctiles": [
+        0.0,
+        0.0,
+        3.0,
+        11.0
+      ],
+      "sample_valid_share": 0.488,
       "ok": true,
-      "seconds": 36.9,
+      "seconds": 36.2,
       "rows": 855,
       "columns": [
         "block_id",
@@ -91,9 +111,95 @@
     },
     "assessor_parcels": {
       "ok": false,
-      "error": "failed: https://api.us.socrata.com/api/catalog/v1"
+      "error": "no parcel source with use codes found"
     },
     "lapd_crime": {
+      "candidates": [
+        "2nrs-mtv8 Crime Data from 2020 to Present",
+        "gqf2-vm2j LAPD NIBRS Victims Dataset",
+        "k7nn-b2ep LAPD NIBRS Offenses Dataset",
+        "2nrs-mtv8 Crime Data from 2020 to 2024",
+        "hikj-664h Crime in Los Angeles in 2020 Bar Chart",
+        "en96-xs3r Crimes Reported-Suspect Homeless 2020 to Present",
+        "vjgb-8ift Crimes Reported-Victim Homeless 2020-Present",
+        "fs5a-69wz Types of Crime and their Amount in Areas within City of Los Angeles, 2020 to Present"
+      ],
+      "cols_2nrs-mtv8": [
+        "dr_no",
+        "date_rptd",
+        "date_occ",
+        "time_occ",
+        "area",
+        "area_name",
+        "rpt_dist_no",
+        "part_1_2",
+        "crm_cd",
+        "crm_cd_desc",
+        "mocodes",
+        "vict_age",
+        "vict_sex",
+        "vict_descent",
+        "premis_cd",
+        "premis_desc",
+        "status",
+        "status_desc",
+        "crm_cd_1",
+        "location",
+        "lat",
+        "lon"
+      ],
+      "rows_2nrs-mtv8": 0,
+      "cols_gqf2-vm2j": [
+        "caseno",
+        "uniquevictimno",
+        "date_rptd",
+        "date_occ",
+        "time_occ",
+        "area",
+        "area_name",
+        "rpt_dist_no",
+        "totalvictimcount",
+        "victimofslist",
+        "vict_descent",
+        "victim_type",
+        "victim_shot",
+        "status",
+        "status_desc"
+      ],
+      "cols_k7nn-b2ep": [
+        "caseno",
+        "uniquenibrno",
+        "date_rptd",
+        "date_occ",
+        "time_occ",
+        "area",
+        "area_name",
+        "rpt_dist_no",
+        "totaloffensecount",
+        "group",
+        "nibr_code",
+        "nibr_description",
+        "crime_against",
+        "premis_cd",
+        "premis_desc",
+        "weapon_used_cd",
+        "weapon_desc",
+        "status",
+        "status_desc",
+        "totalvictimcount",
+        "victim_shot",
+        "domestic_violence_crime",
+        "hate_crime",
+        "gang_related_crime",
+        "transit_related_crime",
+        "homeless_victim_crime",
+        "homeless_suspect_crime",
+        "homeless_arrestee_crime",
+        "hndrdth_loc_chk",
+        "hndrdth_lat"
+      ],
+      "cols_hikj-664h": [],
+      "cols_en96-xs3r": [],
       "ok": false,
       "error": "no usable LAPD crime dataset"
     }
