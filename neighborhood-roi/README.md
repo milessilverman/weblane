@@ -76,6 +76,31 @@ The full catalog is in `data/data_sources.csv`. The core layers:
 
 **Phase 5: keep it fresh.** A scheduled GitHub Action re-pulls each source on its own schedule and rebuilds the tiles. A scheduled Claude task scans news, CIPs and grant awards for new projects and flags evidence rows that new studies should update.
 
+## How the data flows (built)
+
+```
+GitHub Actions (monthly + on change)                         this repo
+┌──────────────────────────────────────────────┐
+│ 11 parallel stages, each a public source:     │   data/derived/tract_metrics.csv   (1 row per tract)
+│ base (Census tracts + ACS)  tes (canopy/heat) │   data/derived/tracts.geojson
+│ fhfa (tract prices)  nri (FEMA hazards)       │ → data/derived/osm_*.geojson        (parks, roads, places)
+│ places (CDC health)  walk (EPA walkability)   │   data/derived/federal_projects.csv
+│ osm (Geofabrik + osmium)  schools (CA CAASPP) │   data/derived/pipeline_status.json (what worked)
+│ zillow (ZIP + neighborhood ZHVI)              │
+│ federal (USAspending)  bls (labor costs)      │
+└──────────────────────────────────────────────┘
+        ↓  python3 model/score_tracts.py   (evidence library × tract data × local costs)
+web/data/tracts_<county>.geojson, details_<county>.json, context_<county>.json, index.json
+        ↓  python3 web/build.py
+web/index.html  (Leaflet map; click a tract → ranked improvements, the math, local notes, prices, schools, hazards)
+```
+
+The sandbox Claude works in can't reach most government data hosts, so all downloading happens in GitHub Actions. That runner has open internet, and the same job is the monthly refresh. Each stage fails independently, and `pipeline_status.json` records which sources worked and which vintage each one used.
+
+Test counties: Los Angeles (incl. Culver City, Beverlywood, Carlson Park), Philadelphia, Cook (Chicago), Dallas, Wayne (Detroit), Fulton (Atlanta), King (Seattle), Kings (Brooklyn), Harris (Houston), Marion (Indianapolis). Add a county by adding one line to `COUNTIES` in `pipeline/build_dataset.py`.
+
+`data/local_research.json` holds hand-researched notes per neighborhood (facts, current projects, local costs, all with sources). The map shows them when you click a matching tract.
+
 ## Files
 
 ```
@@ -83,5 +108,9 @@ data/interventions.csv          evidence library: uplift, radius, cost, maintena
 data/data_sources.csv           every data layer, where it comes from, how often it updates
 data/regional_cost_factors.csv  metro cost multipliers (approximate; to be replaced in Phase 1)
 data/example_neighborhoods.json three made-up neighborhood types for testing
-model/roi.py                    ranking model
+model/roi.py                    prototype ranking model (example archetypes)
+model/score_tracts.py           tract-level ranking on real data → web/data/
+pipeline/build_dataset.py       data pipeline (runs in .github/workflows/neighborhood-data.yml)
+data/local_research.json        neighborhood notes: Carlson Park, Beverlywood, 606, BeltLine, LandCare…
+web/index.src.html, build.py    the interactive map
 ```

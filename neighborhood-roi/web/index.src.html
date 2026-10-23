@@ -236,7 +236,7 @@ function drawLegend() {
     <div class="note">7 equal-count groups within ${esc(county.name)}. Gray = no data.</div>`;
 }
 
-function restyle() { breaks = $("#metric").value === "top" ? [] : computeBreaks($("#metric").value); tractLayer && tractLayer.setStyle(styleTract); drawLegend(); highlight(); }
+function restyle(theme) { if (theme === true) drawContext(); breaks = $("#metric").value === "top" ? [] : computeBreaks($("#metric").value); tractLayer && tractLayer.setStyle(styleTract); drawLegend(); highlight(); }
 
 function highlight() {
   if (selLayer) { selLayer.remove(); selLayer = null; }
@@ -258,18 +258,7 @@ async function loadCounty(fips, focusGeoid) {
       l.bindTooltip(`<b>${esc(p.nb || "Tract " + p.GEOID.slice(5))}</b><br>${p.top_vpd != null ? "Best: $" + p.top_vpd.toFixed(1) + " per $1" : "Not scored"}`, { sticky: true, direction: "top" });
       l.on("click", () => selectTract(p.GEOID, false));
   } }).addTo(map);
-  if (ctx) {
-    if (ctx.parks) ctxLayers.push(L.geoJSON(ctx.parks, { interactive: false, style: { fillColor: css("--park"), fillOpacity: .85, color: css("--park-line"), weight: .5 } }).addTo(map));
-    if (ctx.roads) {
-      const big = f => f.properties.k === "motorway";
-      ctxLayers.push(L.geoJSON(ctx.roads, { interactive: false, style: f => ({ color: big(f) ? css("--fw-casing") : css("--road-casing"), weight: big(f) ? 4 : 2.2, opacity: .9 }) }).addTo(map));
-      ctxLayers.push(L.geoJSON(ctx.roads, { interactive: false, style: f => ({ color: big(f) ? css("--fw") : css("--road"), weight: big(f) ? 2.4 : 1.1, opacity: 1 }) }).addTo(map));
-    }
-    labelLayer = L.layerGroup((ctx.labels || []).map(([n, lat, lon]) => L.marker([lat, lon], { interactive: false, keyboard: false,
-      icon: L.divIcon({ className: "", html: `<div class="nblabel">${esc(n)}</div>`, iconSize: null, iconAnchor: [0, 6] }) })));
-    ctxLayers.push(labelLayer);
-    updateLabels();
-  }
+  CTX = ctx; drawContext();
   drawLegend();
   const names = new Map();
   geo.features.forEach(f => (f.properties.nb || "").split(", ").filter(Boolean).forEach(n => { if (!names.has(n)) names.set(n, f.properties.GEOID); }));
@@ -278,6 +267,22 @@ async function loadCounty(fips, focusGeoid) {
   $("#names").innerHTML = [...names.keys()].sort().map(n => `<option value="${esc(n)}">`).join("");
   if (focusGeoid) selectTract(focusGeoid, true);
   else { const b = county.bounds; map.fitBounds([[b[1], b[0]], [b[3], b[2]]]); }
+}
+
+let CTX = null;
+function drawContext() {
+  ctxLayers.forEach(l => l.remove()); ctxLayers = [];
+  const ctx = CTX; if (!ctx) return;
+  if (ctx.parks) ctxLayers.push(L.geoJSON(ctx.parks, { interactive: false, style: { fillColor: css("--park"), fillOpacity: .85, color: css("--park-line"), weight: .5 } }).addTo(map));
+  if (ctx.roads) {
+    const big = f => f.properties.k === "motorway";
+    ctxLayers.push(L.geoJSON(ctx.roads, { interactive: false, style: f => ({ color: big(f) ? css("--fw-casing") : css("--road-casing"), weight: big(f) ? 4 : 2.2, opacity: .9 }) }).addTo(map));
+    ctxLayers.push(L.geoJSON(ctx.roads, { interactive: false, style: f => ({ color: big(f) ? css("--fw") : css("--road"), weight: big(f) ? 2.4 : 1.1, opacity: 1 }) }).addTo(map));
+  }
+  labelLayer = L.layerGroup((ctx.labels || []).map(([n, lat, lon]) => L.marker([lat, lon], { interactive: false, keyboard: false,
+    icon: L.divIcon({ className: "", html: `<div class="nblabel">${esc(n)}</div>`, iconSize: null, iconAnchor: [0, 6] }) })));
+  ctxLayers.push(labelLayer);
+  updateLabels();
 }
 
 function updateLabels() { if (!labelLayer) return; const show = map.getZoom() >= 13; if (show && !map.hasLayer(labelLayer)) labelLayer.addTo(map); if (!show && map.hasLayer(labelLayer)) labelLayer.remove(); }
@@ -394,6 +399,9 @@ function renderPanel(geoid, d, p) {
   if (fedAll.length) h += `<div class="section"><h3>Federal grants for parks, trees, trails & streets</h3>${fed.length ? `<p class="small">In ZIP ${esc(m.zip)}:</p>` : `<p class="small">None tagged to this ZIP. Largest in ${esc(county.name)}:</p>`}
     <ul class="facts">${(fed.length ? fed : fedAll.slice(0, 5)).map(x => `<li><b>${fmt$(x.amount)}</b> · ${esc(x.recipient)}: ${esc((x.desc || "").slice(0, 140))}${x.desc && x.desc.length > 140 ? "…" : ""} <span class="muted">(${esc(x.agency)}, ${esc(x.start)})</span></li>`).join("")}</ul></div>`;
 
+  const fund = INDEX.research?.funding_landscape || [];
+  if (fund.length) h += `<div class="section"><h3>Funding climate</h3><ul class="facts">${fund.map(f => `<li><b>${esc(f.name)}.</b> ${esc(f.detail)} <a class="src" href="${esc(f.source)}" target="_blank" rel="noopener">source</a></li>`).join("")}</ul></div>`;
+
   h += `<div class="section"><h3>Data</h3><p class="small muted">Census ACS 5-yr · Tree Equity Score (American Forests) · Zillow ZHVI · FHFA tract HPI · FEMA National Risk Index · CDC PLACES · EPA Walkability Index · CA Dept. of Education & CAASPP · USAspending.gov · BLS OEWS · © OpenStreetMap contributors. Refreshed monthly by the pipeline.</p></div>`;
   $("#panel").innerHTML = h;
   $("#panel").scrollTop = 0;
@@ -406,14 +414,14 @@ async function init() {
   INDEX = await getJSON("data/index.json");
   $("#county").innerHTML = INDEX.counties.map(c => `<option value="${c.fips}">${esc(c.name)} (${c.tracts.toLocaleString()} tracts)</option>`).join("");
   $("#county").onchange = e => { selected = null; loadCounty(e.target.value); };
-  $("#metric").onchange = restyle;
+  $("#metric").onchange = () => restyle(false);
   $("#q").onchange = e => { const g = window.NAME_TO_TRACT?.get(e.target.value); if (g) selectTract(g, true); };
   const h = location.hash.match(/^#t(\d{11})$/);
   const startGeoid = h ? h[1] : (INDEX.default_tract || null);
   const fips = startGeoid ? startGeoid.slice(0, 5) : INDEX.counties[0].fips;
   await loadCounty(fips, startGeoid);
-  matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", restyle);
-  new MutationObserver(restyle).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => restyle(true));
+  new MutationObserver(() => restyle(true)).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 }
 init().catch(e => { $("#panel").innerHTML = `<p class="empty">Could not load the map data (${esc(e.message)}).</p>`; });
 </script>

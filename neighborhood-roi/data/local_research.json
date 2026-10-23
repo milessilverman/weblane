@@ -98,6 +98,38 @@
       ]
     },
     {
+      "id": "palms",
+      "name": "Palms",
+      "city": "Los Angeles, CA",
+      "match": {
+        "osm_neighborhood": "Palms"
+      },
+      "facts": [
+        {
+          "text": "The Palms Neighborhood Council says the area has one park (Woodbine Park) for about 43,000 residents. Media Park, south of Venice Blvd, is leased to Culver City.",
+          "source": "https://needs.parks.lacity.gov/wp-content/uploads/250420_Palms-Neighboorhood-Council.pdf"
+        },
+        {
+          "text": "LA's 2025 Park Needs Assessment flags Palms among West LA's highest-density areas with the fewest nearby recreation resources.",
+          "source": "https://needs.parks.lacity.gov/community-needs/regional-snapshots/west/"
+        },
+        {
+          "text": "The County needs assessment lists two candidate new parks for Palms\u2013Mar Vista\u2013Del Rey at ~$20.7M each, mostly land acquisition.",
+          "source": "https://lacountyparkneeds.org/wp-content/root/FinalReportAppendixA/StudyArea_105.pdf"
+        }
+      ],
+      "current_projects": [
+        {
+          "name": "Venice Blvd Safety & Mobility Project",
+          "detail": "Protected bike lanes and a 24-hour bus lane between Palms and Mar Vista (completed).",
+          "source": "https://www.metro.net/about/media-relations/ladot-and-metro-to-celebrate-the-completion-of-the-venice-blvd-safety-and-mobility-project/"
+        }
+      ],
+      "local_angles": [
+        "Land costs make a new park here ~$20M+. Cheaper ways to add park access: open LAUSD schoolyards after hours, add pocket greening on public right-of-way, and fill canopy gaps on apartment blocks."
+      ]
+    },
+    {
       "id": "logan_humboldt",
       "name": "Logan Square / Humboldt Park (The 606)",
       "city": "Chicago, IL",
@@ -271,6 +303,23 @@
       "item": "Bike path extension, Culver City",
       "value": "~$24.7M for ~2 miles (~$12M/mi) on a flood-channel right of way",
       "source": "https://la.streetsblog.org/2023/03/03/feasibility-study-plans-extending-ballona-creek-path/"
+    }
+  ],
+  "funding_landscape": [
+    {
+      "name": "USDA Urban & Community Forestry (IRA)",
+      "detail": "$1.5B in IRA funds; >$1B awarded to 385 proposals in 2023. In 2025 many awards were frozen or terminated (e.g., Arbor Day Foundation's 105 sub-awards; Nashville's 5,000-tree grant). Lawsuits are pending, with no confirmed restoration found.",
+      "source": "https://planning.org/planning/2025/sep/axed-federal-funding-leaves-urban-forests-out-on-a-limb/"
+    },
+    {
+      "name": "DOT Neighborhood Access & Equity / Reconnecting Communities",
+      "detail": "Unobligated NAE funds (~$3.1B of $3.2B) rescinded in the July 2025 reconciliation bill; e.g., $327M of Boston's $335M Allston grant terminated.",
+      "source": "https://www.enr.com/articles/61075-massdots-327m-grant-among-rescinded-awards-after-big-beautiful-bill"
+    },
+    {
+      "name": "LA local money still flowing",
+      "detail": "Measure US (LAUSD, ~$1.2B for schoolyards and exteriors), Measure W (~$280M/yr stormwater and green infrastructure), County Measure A parks, CAL FIRE Green Schoolyards ($156M+ since 2022).",
+      "source": "https://edsource.org/2026/lausd-school-tree-canopy-goals/767971"
     }
   ]
 }
