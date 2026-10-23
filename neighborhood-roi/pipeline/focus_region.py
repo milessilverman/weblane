@@ -254,7 +254,7 @@ def tes_bg(R):
         with zipfile.ZipFile(inner) as z:
             z.extractall(inner.parent / inner.stem)
     shp = [f for f in d.rglob("*.shp")][0]
-    g = gpd.read_file(shp, bbox=R["bbox"])
+    g = gpd.read_file(shp, mask=gpd.GeoSeries([box(*R["bbox"])], crs=4326))
     keep = [c for c in ("geoid", "treecanopy", "tc_goal", "tc_gap", "avg_temp", "tes", "priority") if c in g.columns]
     g = pd.DataFrame(g[keep]).rename(columns={"geoid": "GEOID"})
     for c in keep[1:]:
@@ -284,7 +284,8 @@ def street_trees(R):
     for city in R["tree_sources"]:
         try:
             p = cached_download(base + f"{city}.geojson", f"trees_{city}.geojson", 60)
-            g = gpd.read_file(p, bbox=R["bbox"])
+            g = gpd.read_file(p, mask=gpd.GeoSeries([box(*R["bbox"])], crs=4326))
+            g = g.to_crs(4326) if g.crs else g.set_crs(4326)
             g["source_city"] = city
             frames.append(g)
             log(f"  {city}: {len(g)} records; columns {list(g.columns)[:12]}")
@@ -318,7 +319,8 @@ def street_trees(R):
         else:
             try:
                 p = cached_download(base + "los-angeles-city.geojson", "trees_la_city.geojson", 60)
-                g = gpd.read_file(p, bbox=R["bbox"])
+                g = gpd.read_file(p, mask=gpd.GeoSeries([box(*R["bbox"])], crs=4326))
+                g = g.to_crs(4326) if g.crs else g.set_crs(4326)
                 g["source_city"] = "los-angeles (stiles snapshot)"
                 frames.append(g)
             except Exception as e:  # noqa: BLE001
@@ -380,6 +382,7 @@ def canopy(R, blocks, roads):
                  if Path(k).stem.startswith(qk[:len(Path(k).stem)]) or qk.startswith(Path(k).stem) or Path(k).stem.startswith(qk)]
     keys = sorted(set(keys))
     log(f"  canopy tiles: {keys}")
+    note("canopy_height", quadkeys=paths, tiles=keys)
     tifs = ["/vsicurl/https://dataforgood-fb-data.s3.amazonaws.com/" + k for k in keys]
     res = {"canopy_pct": {}, "street_canopy_pct": {}}
     res_streets = roads[roads.highway.isin(["residential", "living_street", "unclassified", "tertiary", "secondary"])].to_crs(M)
@@ -396,18 +399,24 @@ def canopy(R, blocks, roads):
                 except ValueError:
                     continue
                 a = arr[0]
-                valid = ~a.mask
+                data = np.asarray(a.data, dtype="float32")
+                valid = ~np.ma.getmaskarray(a) & np.isfinite(data) & (data >= 0) & (data < 120)
+                if bid == bproj.block_id.iloc[0]:
+                    note("canopy_height", crs=str(src.crs), res=list(src.res), nodata=str(src.nodata), dtype=str(src.dtypes[0]),
+                         sample_pctiles=[float(x) for x in np.nanpercentile(np.where(valid, data, np.nan), [5, 50, 90, 99])] if valid.any() else None,
+                         sample_valid_share=round(float(valid.mean()), 3))
                 if valid.sum() < 100:
                     continue
-                res["canopy_pct"][bid] = round(float(((a >= 3) & valid).sum()) / float(valid.sum()) * 100, 1)
+                res["canopy_pct"][bid] = round(float(((data >= 3) & valid).sum()) / float(valid.sum()) * 100, 1)
                 gs = g.intersection(sb)
                 if not gs.is_empty:
                     try:
                         arr2, _ = rmask(src, [gs], crop=True, filled=False)
                         a2 = arr2[0]
-                        v2 = ~a2.mask
+                        d2 = np.asarray(a2.data, dtype="float32")
+                        v2 = ~np.ma.getmaskarray(a2) & np.isfinite(d2) & (d2 >= 0) & (d2 < 120)
                         if v2.sum() > 50:
-                            res["street_canopy_pct"][bid] = round(float(((a2 >= 3) & v2).sum()) / float(v2.sum()) * 100, 1)
+                            res["street_canopy_pct"][bid] = round(float(((d2 >= 3) & v2).sum()) / float(v2.sum()) * 100, 1)
                     except ValueError:
                         pass
     return pd.DataFrame({"block_id": list(res["canopy_pct"]),
@@ -418,7 +427,11 @@ def canopy(R, blocks, roads):
 
 # ------------------------------------------------------------------ assessor parcels
 def socrata_find(domain, query, must=()):
-    cat = get("https://api.us.socrata.com/api/catalog/v1", params={"domains": domain, "q": query, "limit": 40}).json()
+    try:
+        cat = get("https://api.us.socrata.com/api/catalog/v1", params={"domains": domain, "q": query, "limit": 40}).json()
+    except Exception as e:  # noqa: BLE001
+        log(f"  socrata catalog unavailable for {domain}: {e}")
+        return []
     res = [r["resource"] for r in cat["results"] if all(m.lower() in r["resource"]["name"].lower() for m in must)]
     res.sort(key=lambda r: r.get("data_updated_at") or r.get("updatedAt") or "", reverse=True)
     log("  socrata candidates: " + "; ".join(f"{r['id']} {r['name']} ({r.get('data_updated_at', '')[:10]})" for r in res[:6]))
@@ -511,13 +524,14 @@ def parcels_arcgis(R):
 @stage("lapd_crime")
 def crime(R):
     w, s, e, n = R["bbox"]
-    cands = socrata_find("data.lacity.org", "crime data", must=())
-    cands = [c for c in cands if re.search(r"crime|nibrs", c["name"], re.I)]
+    cands = [{"id": "2nrs-mtv8", "name": "Crime Data from 2020 to Present"}]
+    cands += [c for c in socrata_find("data.lacity.org", "crime", must=()) if re.search(r"crime|nibrs", c["name"], re.I)]
+    note("lapd_crime", candidates=[f"{c['id']} {c['name']}" for c in cands[:8]])
     since = (datetime.now() - timedelta(days=365)).strftime("%Y-%m-%dT00:00:00")
     for c in cands[:6]:
         rid = c["id"]
         try:
-            sample = get(f"https://data.lacity.org/resource/{rid}.json", params={"$limit": 1, "$order": ":updated_at DESC"}).json()
+            sample = get(f"https://data.lacity.org/resource/{rid}.json", params={"$limit": 1}).json()
         except Exception:  # noqa: BLE001
             continue
         if not sample:
@@ -527,6 +541,7 @@ def crime(R):
         lonc = next((k for k in cols if k.lower() in ("lon", "longitude")), None)
         datec = next((k for k in cols if re.search(r"date_occ|dateocc|occ_date|date_occurred|occurred", k, re.I)), None)
         log(f"  {rid} {c['name']} cols {cols[:30]}")
+        note("lapd_crime", **{f"cols_{rid}": cols[:30]})
         if not (latc and datec):
             continue
         r = get(f"https://data.lacity.org/resource/{rid}.json",
@@ -534,6 +549,7 @@ def crime(R):
                         "$limit": 200000}, timeout=300)
         df = pd.DataFrame(r.json())
         log(f"  crime rows last 12 months: {len(df)}")
+        note("lapd_crime", **{f"rows_{rid}": len(df)})
         if len(df) < 50:
             continue
         df["lat"] = pd.to_numeric(df[latc], errors="coerce")
