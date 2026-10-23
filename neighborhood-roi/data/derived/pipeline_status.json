@@ -1,0 +1,205 @@
+{
+  "generated_at": "2026-10-23T02:29:55.923198+00:00",
+  "sources": {
+    "census_tract_boundaries": {
+      "ok": true,
+      "seconds": 2.2,
+      "rows": 8497,
+      "columns": [
+        "GEOID",
+        "STATEFP",
+        "COUNTYFP",
+        "NAMELSAD",
+        "ALAND",
+        "geometry"
+      ]
+    },
+    "census_acs_5yr": {
+      "ok": false,
+      "error": "no ACS vintage worked"
+    },
+    "bls_oews_cost_factor": {
+      "ok": false,
+      "error": "failed: https://www.bls.gov/oes/special-requests/oesm24ma.zip"
+    },
+    "usaspending_projects": {
+      "ok": true,
+      "seconds": 50.1,
+      "rows": 1781,
+      "columns": [
+        "internal_id",
+        "Award ID",
+        "Recipient Name",
+        "Award Amount",
+        "Description",
+        "Start Date",
+        "End Date",
+        "Awarding Agency",
+        "Awarding Sub Agency",
+        "Place of Performance Zip5",
+        "generated_internal_id",
+        "awarding_agency_id",
+        "agency_slug",
+        "county_label",
+        "county_fips"
+      ]
+    },
+    "fhfa_tract_hpi": {
+      "ok": false,
+      "error": "FHFA tract file unavailable"
+    },
+    "fema_national_risk_index": {
+      "ok": false,
+      "error": "failed: https://hazards.fema.gov/nri/Content/StaticDocuments/DataDownload//NRI_Table_CensusTracts/NRI_Table_CensusTracts.zip"
+    },
+    "cdc_places": {
+      "dataset": "PLACES: Census Tract Data (GIS Friendly Format), 2025 release",
+      "dataset_id": "yjkw-uj5s",
+      "ok": true,
+      "seconds": 14.3,
+      "rows": 8375,
+      "columns": [
+        "GEOID",
+        "poor_mental_health_pct",
+        "no_leisure_activity_pct",
+        "asthma_pct",
+        "obesity_pct",
+        "depression_pct",
+        "poor_general_health_pct",
+        "lack_transport_pct"
+      ]
+    },
+    "ca_school_scores": {
+      "caaspp_year": "2024-25",
+      "ok": true,
+      "seconds": 7.5,
+      "rows": 11595,
+      "columns": [
+        "CDSCode",
+        "School",
+        "District",
+        "County",
+        "SOCType",
+        "lat",
+        "lon",
+        "ela_pct_met",
+        "math_pct_met"
+      ]
+    },
+    "tree_equity_score": {
+      "columns_raw": [
+        "geoid",
+        "total_pop",
+        "state",
+        "county",
+        "pctpov",
+        "pctpoc",
+        "unemplrate",
+        "medhhinc",
+        "dep_ratio",
+        "child_perc",
+        "seniorperc",
+        "treecanopy",
+        "area",
+        "source",
+        "avg_temp",
+        "ua_name",
+        "incorpname",
+        "congressio",
+        "biome",
+        "bgpopdense",
+        "popadjust",
+        "tc_gap",
+        "tc_goal",
+        "phys_hlth",
+        "ment_hlth",
+        "asthma",
+        "core_m",
+        "core_w",
+        "core_norm",
+        "healthnorm",
+        "priority",
+        "tes",
+        "tesctyscor"
+      ],
+      "ok": true,
+      "seconds": 8.6,
+      "rows": 7483,
+      "columns": [
+        "GEOID",
+        "tes",
+        "canopy_pct",
+        "canopy_goal_pct",
+        "canopy_gap_pct",
+        "tes_block_groups"
+      ]
+    },
+    "epa_walkability": {
+      "ok": true,
+      "seconds": 47.4,
+      "rows": 8366,
+      "columns": [
+        "GEOID",
+        "walk_index"
+      ]
+    },
+    "zillow_zhvi_zip": {
+      "ok": true,
+      "seconds": 3.6,
+      "rows": 1057,
+      "columns": [
+        "RegionName",
+        "City",
+        "CountyName",
+        "State",
+        "zhvi",
+        "zhvi_date",
+        "zhvi_growth_1y_pct",
+        "zhvi_growth_5y_pct",
+        "zhvi_growth_10y_pct",
+        "zhvi_series"
+      ]
+    },
+    "census_zcta_boundaries": {
+      "ok": true,
+      "seconds": 1.7,
+      "rows": 33791,
+      "columns": [
+        "ZCTA5CE20",
+        "geometry"
+      ]
+    },
+    "zillow_zhvi_neighborhood": {
+      "ok": true,
+      "seconds": 3.1,
+      "rows": 2140,
+      "columns": [
+        "RegionID",
+        "RegionName",
+        "City",
+        "CountyName",
+        "State",
+        "Metro",
+        "zhvi",
+        "zhvi_date",
+        "zhvi_growth_1y_pct",
+        "zhvi_growth_5y_pct",
+        "zhvi_growth_10y_pct",
+        "zhvi_series"
+      ]
+    }
+  },
+  "tracts": 8497,
+  "counties": [
+    "Los Angeles County, CA",
+    "Philadelphia County, PA",
+    "Cook County, IL",
+    "Dallas County, TX",
+    "Wayne County, MI",
+    "Fulton County, GA",
+    "King County, WA",
+    "Kings County (Brooklyn), NY",
+    "Harris County, TX",
+    "Marion County, IN"
+  ]
+}
