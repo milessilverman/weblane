@@ -1,0 +1,102 @@
+{
+  "generated_at": "2026-10-23T17:56:16.425574+00:00",
+  "sources": {
+    "osm_layers": {
+      "ok": true,
+      "seconds": 66.1
+    },
+    "boundaries": {
+      "places": 9,
+      "block_groups": 744,
+      "la_times_hoods": 32,
+      "ok": true,
+      "seconds": 1.4
+    },
+    "blocks": {
+      "ok": true,
+      "seconds": 2.4,
+      "rows": 855,
+      "columns": [
+        "geometry",
+        "acres",
+        "block_id"
+      ]
+    },
+    "naming": {
+      "ok": true,
+      "seconds": 0.4,
+      "rows": 855,
+      "columns": [
+        "geometry",
+        "acres",
+        "block_id",
+        "city",
+        "la_hood",
+        "osm_neighborhood",
+        "nearest_park",
+        "nearest_park_m",
+        "name",
+        "name_source"
+      ]
+    },
+    "acs_block_groups": {
+      "vintage": "2020-2024 ACS 5-year block groups",
+      "ok": true,
+      "seconds": 8.0,
+      "rows": 744,
+      "columns": [
+        "GEOID",
+        "ALAND",
+        "geometry",
+        "population",
+        "families",
+        "families_below_poverty",
+        "median_household_income",
+        "housing_units",
+        "vacant_units",
+        "occupied_units",
+        "owner_units",
+        "vacant_other_units",
+        "median_year_built",
+        "median_home_value"
+      ]
+    },
+    "tree_equity_bg": {
+      "ok": true,
+      "seconds": 0.6,
+      "rows": 0,
+      "columns": [
+        "GEOID",
+        "treecanopy",
+        "tc_goal",
+        "tc_gap",
+        "avg_temp",
+        "tes",
+        "priority"
+      ]
+    },
+    "street_trees": {
+      "ok": false,
+      "error": "Cannot determine common CRS for concatenation inputs, got ['WGS 84', 'NAD83 / California zone 5 (ftUS)']. Use `to_crs()` to transform geometries to the same CRS before merging."
+    },
+    "canopy_height": {
+      "ok": true,
+      "seconds": 36.9,
+      "rows": 855,
+      "columns": [
+        "block_id",
+        "canopy_pct_1m",
+        "street_canopy_pct"
+      ]
+    },
+    "assessor_parcels": {
+      "ok": false,
+      "error": "failed: https://api.us.socrata.com/api/catalog/v1"
+    },
+    "lapd_crime": {
+      "ok": false,
+      "error": "no usable LAPD crime dataset"
+    }
+  },
+  "blocks": 855
+}
