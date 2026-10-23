@@ -291,6 +291,11 @@ def tree_equity():
         c = _first(cols, *cands)
         if c is not None:
             out[k] = pd.to_numeric(raw[c], errors="coerce")
+    for k in ("canopy_pct", "canopy_goal_pct", "canopy_gap_pct", "avg_temp"):
+        if k in out:
+            neg = (out[k] < 0).mean()
+            log(f"  TES {k}: {neg:.0%} negative (treated as missing); sample {out[k].dropna().head(5).tolist()}")
+            out.loc[out[k] < 0, k] = np.nan
     out["GEOID"] = out.bg.str[:11]
     prefixes = tuple(c[0] + c[1] for c in COUNTIES)
     out = out[out.GEOID.str.startswith(prefixes)]

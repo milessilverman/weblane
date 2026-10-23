@@ -78,10 +78,15 @@ jobs:
       - name: Commit outputs
         run: |
           rm -f neighborhood-roi/data/derived/status_*.json
+          cp -r neighborhood-roi/data/derived "$RUNNER_TEMP/derived"
           git config user.name "neighborhood-roi-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add neighborhood-roi/data/derived
+          # generated files replace whatever is on the branch (never merged line by line)
+          git fetch origin "${GITHUB_REF_NAME}"
+          git reset --hard "origin/${GITHUB_REF_NAME}"
+          rm -rf neighborhood-roi/data/derived
+          cp -r "$RUNNER_TEMP/derived" neighborhood-roi/data/derived
+          git add -A neighborhood-roi/data/derived
           git diff --cached --quiet && echo "no changes" && exit 0
           git commit -m "Refresh neighborhood data [skip ci]"
-          git pull --rebase -X theirs origin ${GITHUB_REF_NAME}
-          git push origin HEAD:${GITHUB_REF_NAME}
+          git push origin "HEAD:${GITHUB_REF_NAME}"

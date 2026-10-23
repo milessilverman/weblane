@@ -10,8 +10,8 @@
     -117.64637,
     34.8233
    ],
-   "cost_factor": 1.13,
-   "cost_source": "approximate metro index",
+   "cost_factor": 1.119,
+   "cost_source": "BLS OEWS 2024 landscaping/construction wages vs national",
    "federal": [
     {
      "amount": 180942595.0,
@@ -505,8 +505,8 @@
     -84.09769,
     34.18629
    ],
-   "cost_factor": 0.9,
-   "cost_source": "approximate metro index",
+   "cost_factor": 0.914,
+   "cost_source": "BLS OEWS 2024 landscaping/construction wages vs national",
    "federal": [
     {
      "amount": 25000000.0,
@@ -1000,8 +1000,8 @@
     -87.52416,
     42.15425
    ],
-   "cost_factor": 1.17,
-   "cost_source": "approximate metro index",
+   "cost_factor": 1.148,
+   "cost_source": "BLS OEWS 2024 landscaping/construction wages vs national",
    "federal": [
     {
      "amount": 53739272.29,
@@ -1495,8 +1495,8 @@
     -85.93738,
     39.92738
    ],
-   "cost_factor": 0.93,
-   "cost_source": "approximate metro index",
+   "cost_factor": 1.0,
+   "cost_source": "BLS OEWS 2024 landscaping/construction wages vs national",
    "federal": [
     {
      "amount": 31136129.75,
@@ -1990,8 +1990,8 @@
     -82.87024,
     42.45101
    ],
-   "cost_factor": 1.03,
-   "cost_source": "approximate metro index",
+   "cost_factor": 1.017,
+   "cost_source": "BLS OEWS 2024 landscaping/construction wages vs national",
    "federal": [
     {
      "amount": 46177372.9,
@@ -2485,8 +2485,8 @@
     -73.83304,
     40.7394
    ],
-   "cost_factor": 1.3,
-   "cost_source": "approximate metro index",
+   "cost_factor": 1.164,
+   "cost_source": "BLS OEWS 2024 landscaping/construction wages vs national",
    "federal": [
     {
      "amount": 97949866.33,
@@ -2980,8 +2980,8 @@
     -74.95578,
     40.13799
    ],
-   "cost_factor": 1.15,
-   "cost_source": "approximate metro index",
+   "cost_factor": 1.062,
+   "cost_source": "BLS OEWS 2024 landscaping/construction wages vs national",
    "federal": [
     {
      "amount": 136143545.81,
@@ -3475,8 +3475,8 @@
     -96.51698,
     32.98969
    ],
-   "cost_factor": 0.86,
-   "cost_source": "approximate metro index",
+   "cost_factor": 0.906,
+   "cost_source": "BLS OEWS 2024 landscaping/construction wages vs national",
    "federal": [
     {
      "amount": 25000000.0,
@@ -3970,8 +3970,8 @@
     -94.9085,
     30.17061
    ],
-   "cost_factor": 0.87,
-   "cost_source": "approximate metro index",
+   "cost_factor": 0.897,
+   "cost_source": "BLS OEWS 2024 landscaping/construction wages vs national",
    "federal": [
     {
      "amount": 19999998.0,
@@ -4465,8 +4465,8 @@
     -121.06594,
     47.78058
    ],
-   "cost_factor": 1.08,
-   "cost_source": "approximate metro index",
+   "cost_factor": 1.179,
+   "cost_source": "BLS OEWS 2024 landscaping/construction wages vs national",
    "federal": [
     {
      "amount": 13474850.0,
@@ -5062,7 +5062,6 @@
      34.0455,
      -118.3945
     ],
-    "matched_by": "approximate point",
     "tracts": [
      "06037269500"
     ]
@@ -5102,9 +5101,8 @@
      34.0225,
      -118.4045
     ],
-    "matched_by": "approximate point",
     "tracts": [
-     "06037269905"
+     "06037271804"
     ]
    },
    {
@@ -5132,9 +5130,8 @@
      41.9135,
      -87.702
     ],
-    "matched_by": "approximate point",
     "tracts": [
-     "17031230100"
+     "17031230700"
     ]
    },
    {
@@ -5158,7 +5155,6 @@
      33.764,
      -84.372
     ],
-    "matched_by": "approximate point",
     "tracts": [
      "13121001701"
     ]
@@ -5188,9 +5184,10 @@
      39.993,
      -75.125
     ],
-    "matched_by": "approximate point",
     "tracts": [
-     "42101017702"
+     "17031540102",
+     "36047152200",
+     "42101016100"
     ]
    },
    {
@@ -5214,7 +5211,6 @@
      39.759,
      -86.145
     ],
-    "matched_by": "approximate point",
     "tracts": [
      "18097356200"
     ]
@@ -5246,9 +5242,12 @@
      32.792,
      -96.801
     ],
-    "matched_by": "approximate point",
     "tracts": [
-     "48113001705"
+     "17031830700",
+     "48201431804",
+     "48113001703",
+     "48201431803",
+     "53033007101"
     ]
    },
    {
@@ -5276,9 +5275,8 @@
      42.401,
      -83.23
     ],
-    "matched_by": "approximate point",
     "tracts": [
-     "26163542900"
+     "26163544800"
     ]
    }
   ],
@@ -5351,11 +5349,11 @@
  },
  "default_tract": "06037269500",
  "pipeline_status": {
-  "generated_at": "2026-10-23T02:29:55.923198+00:00",
+  "generated_at": "2026-10-23T03:42:26.272806+00:00",
   "sources": {
    "census_tract_boundaries": {
     "ok": true,
-    "seconds": 2.2,
+    "seconds": 0.7,
     "rows": 8497,
     "columns": [
      "GEOID",
@@ -5367,16 +5365,46 @@
     ]
    },
    "census_acs_5yr": {
-    "ok": false,
-    "error": "no ACS vintage worked"
+    "vintage": "2020-2024 ACS 5-year (table-based summary file)",
+    "ok": true,
+    "seconds": 9.4,
+    "rows": 8505,
+    "columns": [
+     "GEOID",
+     "population",
+     "housing_units",
+     "vacant_units",
+     "occupied_units",
+     "owner_units",
+     "median_home_value",
+     "median_gross_rent",
+     "median_household_income",
+     "median_year_built",
+     "units_single_family_detached",
+     "commuters",
+     "commuters_transit",
+     "commuters_walk",
+     "people_below_poverty",
+     "adults_bachelors",
+     "adults_25plus"
+    ]
    },
    "bls_oews_cost_factor": {
-    "ok": false,
-    "error": "failed: https://www.bls.gov/oes/special-requests/oesm24ma.zip"
+    "ok": true,
+    "seconds": 1.0,
+    "rows": 10,
+    "columns": [
+     "county_fips",
+     "county",
+     "msa",
+     "labor_ratio",
+     "cost_factor",
+     "source"
+    ]
    },
    "usaspending_projects": {
     "ok": true,
-    "seconds": 50.1,
+    "seconds": 38.6,
     "rows": 1781,
     "columns": [
      "internal_id",
@@ -5397,18 +5425,42 @@
     ]
    },
    "fhfa_tract_hpi": {
-    "ok": false,
-    "error": "FHFA tract file unavailable"
+    "url": "https://www.fhfa.gov/hpi/download/annual/hpi_at_tract.csv",
+    "latest_year": 2025,
+    "ok": true,
+    "seconds": 3.9,
+    "rows": 5350,
+    "columns": [
+     "GEOID",
+     "hpi_growth_1y_pct",
+     "hpi_growth_5y_pct",
+     "hpi_growth_10y_pct",
+     "hpi_growth_20y_pct",
+     "hpi_series"
+    ]
    },
    "fema_national_risk_index": {
     "ok": false,
-    "error": "failed: https://hazards.fema.gov/nri/Content/StaticDocuments/DataDownload//NRI_Table_CensusTracts/NRI_Table_CensusTracts.zip"
+    "error": "NRI tract table not found"
+   },
+   "openstreetmap": {
+    "method": "geofabrik+osmium",
+    "parks": 58731,
+    "points": {
+     "school": 23937,
+     "neighborhood": 9143,
+     "rail_station": 7865,
+     "grocery": 7292,
+     "library": 2470
+    },
+    "ok": true,
+    "seconds": 217.7
    },
    "cdc_places": {
     "dataset": "PLACES: Census Tract Data (GIS Friendly Format), 2025 release",
     "dataset_id": "yjkw-uj5s",
     "ok": true,
-    "seconds": 14.3,
+    "seconds": 9.2,
     "rows": 8375,
     "columns": [
      "GEOID",
@@ -5424,7 +5476,7 @@
    "ca_school_scores": {
     "caaspp_year": "2024-25",
     "ok": true,
-    "seconds": 7.5,
+    "seconds": 0.9,
     "rows": 11595,
     "columns": [
      "CDSCode",
@@ -5475,7 +5527,7 @@
      "tesctyscor"
     ],
     "ok": true,
-    "seconds": 8.6,
+    "seconds": 1.5,
     "rows": 7483,
     "columns": [
      "GEOID",
@@ -5483,12 +5535,14 @@
      "canopy_pct",
      "canopy_goal_pct",
      "canopy_gap_pct",
-     "tes_block_groups"
+     "avg_temp",
+     "tes_block_groups",
+     "temp_diff_f"
     ]
    },
    "epa_walkability": {
     "ok": true,
-    "seconds": 47.4,
+    "seconds": 2.8,
     "rows": 8366,
     "columns": [
      "GEOID",
@@ -5497,7 +5551,7 @@
    },
    "zillow_zhvi_zip": {
     "ok": true,
-    "seconds": 3.6,
+    "seconds": 0.3,
     "rows": 1057,
     "columns": [
      "RegionName",
@@ -5514,7 +5568,7 @@
    },
    "census_zcta_boundaries": {
     "ok": true,
-    "seconds": 1.7,
+    "seconds": 1.4,
     "rows": 33791,
     "columns": [
      "ZCTA5CE20",
@@ -5523,7 +5577,7 @@
    },
    "zillow_zhvi_neighborhood": {
     "ok": true,
-    "seconds": 3.1,
+    "seconds": 0.3,
     "rows": 2140,
     "columns": [
      "RegionID",
