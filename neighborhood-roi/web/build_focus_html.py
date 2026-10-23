@@ -83,6 +83,7 @@ def main(region="la_westside"):
 
     layers = {}
     roads = gpd.read_file(src / "osm_roads.geojson")
+    roads = roads[roads.geom_type.isin(["LineString", "MultiLineString"])]
     maj = lines_layer(roads[roads.highway.isin(MAJOR)], "highway", 4)
     res = lines_layer(roads[roads.highway.isin(["residential", "living_street", "unclassified"])], "highway", 3)
     order = {k: i for i, k in enumerate(reversed(MAJOR))}
@@ -97,6 +98,7 @@ def main(region="la_westside"):
     layers["water"] = {"type": "FeatureCollection", "features": json.loads(wl.to_json(drop_id=True))["features"] + json.loads(wp[["geometry"]].to_json(drop_id=True))["features"]}
     layers["water_labels"] = [[a, b, c] for a, b, c, _ in labels_along(wl.to_crs(M), every_m=2500, min_len=800)]
     rail = gpd.read_file(src / "osm_rail.geojson")
+    rail = rail[rail.geom_type.isin(["LineString", "MultiLineString"])]
     rail = lines_layer(rail.assign(k=rail.railway), "k", 5)
     layers["rail"] = json.loads(rail[["k", "geometry"]].to_json(drop_id=True))
     pk = gpd.read_file(src / "osm_parks.geojson")

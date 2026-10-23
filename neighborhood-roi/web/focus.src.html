@@ -219,12 +219,13 @@ function legend() {
 function drawContext() {
   Object.values(layers).forEach(l => l && map.removeLayer(l)); layers = {};
   const L_ = D.layers, on = id => $(id).checked;
+  const noPts = { pointToLayer: (f, ll) => L.circleMarker(ll, { radius: 0, opacity: 0, fillOpacity: 0, interactive: false }) };
   const roadW = { motorway: [5, 3], trunk: [4.5, 2.8], primary: [4, 2.6], secondary: [3.4, 2.2], tertiary: [2.6, 1.6] };
-  if (on("#l-parks") && L_.parks) layers.parks = L.geoJSON(L_.parks, { interactive: true, style: { fillColor: css("--park"), fillOpacity: .9, color: css("--park-line"), weight: .6 },
+  if (on("#l-parks") && L_.parks) layers.parks = L.geoJSON(L_.parks, { ...noPts, interactive: true, style: { fillColor: css("--park"), fillOpacity: .9, color: css("--park-line"), weight: .6 },
       onEachFeature: (f, l) => f.properties.n && l.bindTooltip(esc(f.properties.n), { sticky: true }) }).addTo(map);
   if (on("#l-water")) {
-    if (L_.water) layers.water = L.geoJSON(L_.water, { interactive: false, style: f => f.geometry.type.includes("Polygon") ? { fillColor: css("--water"), fillOpacity: 1, color: css("--water-line"), weight: .6 } : { color: css("--water-line"), weight: f.properties.k === "river" || f.properties.k === "canal" ? 3 : 1.6, opacity: .95 } }).addTo(map);
-    if (L_.rail) layers.rail = L.geoJSON(L_.rail, { interactive: false, style: { color: css("--rail"), weight: 1.6, dashArray: "6 4", opacity: .9 } }).addTo(map);
+    if (L_.water) layers.water = L.geoJSON(L_.water, { ...noPts, interactive: false, style: f => f.geometry.type.includes("Polygon") ? { fillColor: css("--water"), fillOpacity: 1, color: css("--water-line"), weight: .6 } : { color: css("--water-line"), weight: f.properties.k === "river" || f.properties.k === "canal" ? 3 : 1.6, opacity: .95 } }).addTo(map);
+    if (L_.rail) layers.rail = L.geoJSON(L_.rail, { ...noPts, interactive: false, style: { color: css("--rail"), weight: 1.6, dashArray: "6 4", opacity: .9 } }).addTo(map);
   }
   if (on("#l-streets") && L_.roads) {
     layers.res = L.geoJSON(L_.roads.residential, { interactive: false, style: { color: css("--res"), weight: 1, opacity: .9 } });
@@ -239,7 +240,7 @@ function drawContext() {
   if (on("#l-sites") && L_.sites) { layers.sites = L.geoJSON(L_.sites, { pointToLayer: (f, ll) => L.circleMarker(ll, { radius: 2.6, color: css("--site"), weight: 0, fillColor: css("--site"), fillOpacity: .95 }), interactive: false }); if (map.getZoom() >= 15) layers.sites.addTo(map); }
   if (on("#l-lots") && L_.lots) layers.lots = L.geoJSON(L_.lots, { pointToLayer: (f, ll) => L.circleMarker(ll, { radius: 3.5, color: css("--lot"), weight: 1.5, fillOpacity: 0 }), interactive: false }).addTo(map);
   layers.hoodLabels = L.layerGroup((D.hood_labels || []).map(([n, lat, lon]) => L.marker([lat, lon], { interactive: false, keyboard: false, icon: L.divIcon({ className: "", iconSize: null, html: `<div class="lbl-hood" style="transform:translate(-50%,-50%)">${esc(n)}</div>` }) }))).addTo(map);
-  layers.hoods = L.geoJSON(D.hoods, { interactive: false, style: { fill: false, color: css("--hood-line"), weight: 1.4, opacity: .55 } }).addTo(map);
+  layers.hoods = L.geoJSON(D.hoods, { ...noPts, interactive: false, style: { fill: false, color: css("--hood-line"), weight: 1.4, opacity: .55 } }).addTo(map);
   zoomed();
 }
 function zoomed() {

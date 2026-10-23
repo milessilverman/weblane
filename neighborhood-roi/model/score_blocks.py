@@ -102,7 +102,8 @@ def recs_for(b, lib):
                 mid_cost("vacant_lot_greening") * min(vp, 20))
         # community garden or pocket park on one vacant lot
         lot_sqft = b["vacant_parcel_sqft"] / vp if not np.isnan(b["vacant_parcel_sqft"]) and vp else 6000
-        land_cost = lot_sqft * (b["land_psf"] if not np.isnan(b["land_psf"]) else value * 0.5 / 6000)
+        # Prop 13 keeps assessed land far below market; an LA vacant lot trades near 60% of a typical home's value
+        land_cost = max(lot_sqft * (b["land_psf"] if not np.isnan(b["land_psf"]) else 0), value * 0.6)
         gap = max(0.0, 1 - b["park_acres"] / 8) if not np.isnan(b["park_acres"]) else 0.5
         r2 = float(lib["pocket_park"]["radius_ft"])
         hh2 = min(homes * 1.5, math.pi * r2 * r2 / ACRE_SQFT * hpa)
@@ -114,7 +115,7 @@ def recs_for(b, lib):
             r3 = float(lib["community_garden"]["radius_ft"])
             hh3 = min(homes * 1.5, math.pi * r3 * r3 / ACRE_SQFT * hpa)
             add("community_garden", 1, "community garden", hh3, lo("community_garden") * DISTANCE_DECAY, gap,
-                f"Lower-income area with few parks; uses a vacant parcel", mid_cost("community_garden"), land=land_cost * 0.3)
+                f"Lower-income area with few parks; uses a vacant parcel", mid_cost("community_garden"), land=land_cost)
 
     # --- schoolyard greening (nearest LAUSD/CCUSD campus)
     if b["school_score"] is not None:
