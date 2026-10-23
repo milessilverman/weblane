@@ -513,8 +513,7 @@ def parcels_arcgis(R):
         note("assessor_parcels", pais_layers=pais[:30])
     except Exception as ex:  # noqa: BLE001
         log(f"  PAIS folder: {ex}")
-    urls = ["https://assessor.gis.lacounty.gov/assessor/rest/services/PAIS/pais_sales_parcels/MapServer/0",
-            "https://public.gis.lacounty.gov/public/rest/services/LACounty_Cache/LACounty_Parcel/MapServer/0",
+    urls = ["https://public.gis.lacounty.gov/public/rest/services/LACounty_Cache/LACounty_Parcel/MapServer/0",
             "https://arcgis.claritisoftware.com/server/rest/services/Hosted/LA_County_Parcels/FeatureServer/0"] + pais + urls
     log("  arcgis parcel candidates: " + "; ".join(urls[:12]))
     w, s, e, n = R["bbox"]
@@ -577,7 +576,7 @@ def crime(R):
         df["lat"] = pd.to_numeric(df[latc], errors="coerce")
         df["lon"] = pd.to_numeric(df[lonc], errors="coerce")
         df = df[(df.lat != 0) & df.lat.notna()]
-        txt = df.astype(str).agg(" ".join, axis=1).str.upper()
+        txt = df.astype(object).where(df.notna(), "").astype(str).agg(" ".join, axis=1).str.upper()
         df["violent"] = txt.str.contains(r"ASSAULT|ROBBERY|HOMICIDE|RAPE|SHOTS|BATTERY|KIDNAP")
         note("lapd_crime", dataset=c["name"], dataset_id=rid, rows=len(df), window_start=since[:10])
         return gpd.GeoDataFrame(df[["violent"]], geometry=gpd.points_from_xy(df.lon, df.lat), crs=4326)
@@ -645,9 +644,9 @@ def run(region):
     if pc is not None:
         cols = {c.lower(): c for c in pc.columns}
         use = next((cols[k] for k in ("usecode", "use_code", "usetype", "use_type", "usecodedescchar1") if k in cols), None)
-        units = next((cols[k] for k in ("units", "unitcount", "number_of_units") if k in cols), None)
-        landv = next((cols[k] for k in ("landvalue", "land_value", "roll_landvalue") if k in cols), None)
-        sqft = next((cols[k] for k in ("sqftlot", "lot_size", "land_sqft", "landsqft") if k in cols), None)
+        units = next((cols[k] for k in ("units1", "units", "unitcount", "number_of_units") if k in cols), None)
+        landv = next((cols[k] for k in ("landvalue", "land_value", "roll_landvalue", "roll_landv") if k in cols), None)
+        sqft = next((cols[k] for k in ("sqftlot", "lot_size", "land_sqft", "landsqft", "shape__area", "shape.starea()", "shape_area") if k in cols), None)
         desc = [cols[k] for k in cols if "desc" in k or "usetype" in k]
         txt = pc[[c for c in [use] + desc if c]].astype(str).agg(" ".join, axis=1).str.upper()
         pc["vacant_land"] = txt.str.contains(r"VACANT") | (pc[use].astype(str).str.upper().str.endswith("V") if use else False)

@@ -73,8 +73,10 @@ def recs_for(b, lib):
         n = min(sites, 400)
         if n >= 3:
             gain_frac = 0.03 * 0.5 + 2 * 0.006
-            add("street_tree", n, "trees on vacant sites", n * 2, gain_frac / 2, 1.0, why, mid_cost("street_tree") * n,
-                note="sized to surveyed vacant sites")
+            # diminishing returns: a mostly planted street already delivers most of the canopy amenity
+            sat = min(1.0, max(0.3, 1.2 - stock))
+            add("street_tree", n, "trees on vacant sites", n * 2, gain_frac / 2, sat, why + f"; effect scaled to {sat*100:.0f}% because the street is {stock*100:.0f}% planted",
+                mid_cost("street_tree") * n, note="sized to surveyed vacant sites")
     else:
         sc = b["street_canopy_pct"]
         km = b["res_street_km"]
@@ -177,8 +179,12 @@ def main(region="la_westside"):
     b["value"], b["value_source"] = vals, srcs
     b["homes"] = np.where(col("assessor_units").fillna(0) > 0, col("assessor_units"), col("housing_units"))
     b["homes_source"] = np.where(col("assessor_units").fillna(0) > 0, "LA County Assessor units", "Census (block-group share)")
-    b["value_ratio"] = b.value / b.value.median()
-    b["income_ratio"] = col("median_household_income") / col("median_household_income").median()
+    # compare with LA County as a whole (the Westside is far above the county median)
+    tvals = [v[0] for v in tv.values() if not np.isnan(v[0])]
+    tinc = pd.read_csv(DATA / "derived" / "tract_metrics.csv", usecols=["GEOID", "median_household_income"], dtype={"GEOID": str})
+    county_inc = tinc[tinc.GEOID.str.startswith("06037")].median_household_income.median()
+    b["value_ratio"] = b.value / float(np.median(tvals))
+    b["income_ratio"] = col("median_household_income") / county_inc
     b["violent_per_1k"] = col("violent_12mo") / (col("population").clip(lower=50) / 1000)
     b["canopy"] = col("canopy_pct_1m").fillna(col("treecanopy") * (100 if col("treecanopy").max() <= 1.5 else 1))
 
