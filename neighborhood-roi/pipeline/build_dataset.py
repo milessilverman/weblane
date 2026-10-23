@@ -79,6 +79,28 @@ def get(url, *, params=None, timeout=300, tries=3, stream_to=None, method="GET",
     raise RuntimeError(f"failed: {url}")
 
 
+def find_links(pages, pattern):
+    """Scrape download pages for links matching a regex (agencies move files around)."""
+    found = []
+    for page in pages:
+        try:
+            html = get(page, timeout=60, tries=2).text
+        except Exception:  # noqa: BLE001
+            continue
+        for href in re.findall(r'href=["\']([^"\']+)["\']', html):
+            if re.search(pattern, href, re.I):
+                if href.startswith("/"):
+                    href = re.match(r"https?://[^/]+", page).group(0) + href
+                found.append(href)
+    log(f"  links matching {pattern}: {found[:8]}")
+    return list(dict.fromkeys(found))
+
+
+def is_zip(path):
+    with open(path, "rb") as f:
+        return f.read(2) == b"PK"
+
+
 def cached_download(url, name, max_age_days=25):
     path = CACHE / name
     if path.exists() and (time.time() - path.stat().st_mtime) < max_age_days * 86400 and path.stat().st_size > 0:
@@ -163,7 +185,10 @@ def acs():
                 if key:
                     params["key"] = key
                 r = get(f"https://api.census.gov/data/{year}/acs/acs5", params=params, timeout=120)
-                data = r.json()
+                try:
+                    data = r.json()
+                except ValueError:
+                    raise RuntimeError(f"non-JSON reply: {r.text[:300]!r}")
                 rows += [dict(zip(data[0], d)) for d in data[1:]]
             df = pd.DataFrame(rows)
             df["GEOID"] = df.state + df.county + df.tract
@@ -174,8 +199,42 @@ def acs():
             note("census_acs_5yr", vintage=f"{year - 4}-{year} ACS 5-year")
             return df[["GEOID"] + list(ACS_VARS.values())]
         except Exception as e:  # noqa: BLE001
-            log(f"  ACS {year} failed: {e}")
-    raise RuntimeError("no ACS vintage worked")
+            log(f"  ACS API {year} failed: {e}")
+    return acs_summary_file()
+
+
+def acs_summary_file():
+    """Fallback without an API key: ACS table-based summary files (pipe-delimited, all geographies)."""
+    tables = sorted({v.split("_")[0] for v in ACS_VARS})
+    prefixes = tuple("1400000US" + c[0] + c[1] for c in COUNTIES)
+    for year in (2024, 2023):
+        try:
+            out = None
+            for t in tables:
+                url = (f"https://www2.census.gov/programs-surveys/acs/summary_file/{year}/table-based-SF/data/"
+                       f"5YRData/acsdt5y{year}-{t.lower()}.dat")
+                p = cached_download(url, f"acs{year}_{t}.dat", 200)
+                df = pd.read_csv(p, sep="|", dtype=str)
+                df = df[df.GEO_ID.str.startswith(prefixes)]
+                keep = {"GEO_ID": "GEO_ID"}
+                for v, name in ACS_VARS.items():
+                    tbl, rest = v.split("_")
+                    if tbl == t:
+                        col = f"{tbl}_E{rest[:-1]}"
+                        if col in df.columns:
+                            keep[col] = name
+                df = df[list(keep)].rename(columns=keep)
+                out = df if out is None else out.merge(df, on="GEO_ID", how="outer")
+            out["GEOID"] = out.GEO_ID.str[-11:]
+            for c in ACS_VARS.values():
+                if c in out:
+                    out[c] = pd.to_numeric(out[c], errors="coerce")
+                    out.loc[out[c] < 0, c] = np.nan
+            note("census_acs_5yr", vintage=f"{year - 4}-{year} ACS 5-year (table-based summary file)")
+            return out[["GEOID"] + [c for c in ACS_VARS.values() if c in out]]
+        except Exception as e:  # noqa: BLE001
+            log(f"  ACS summary file {year} failed: {e}")
+    raise RuntimeError("no ACS source worked")
 
 
 # ---------------------------------------------------------------- Tree Equity Score
@@ -225,6 +284,7 @@ def tree_equity():
         "canopy_goal_pct": ("tc_goal", "goal", "canopy_goal"),
         "canopy_gap_pct": ("tc_gap", "gap", "canopy_gap"),
         "temp_diff_f": ("temp_diff", "tempdiff", "heat_diff", "temp_diff_f"),
+        "avg_temp": ("avg_temp", "avgtemp"),
         "tes_pop": ("total_pop", "pop", "population", "totalpop"),
     }
     for k, cands in mapping.items():
@@ -240,11 +300,15 @@ def tree_equity():
             out[k] = out[k] * 100
     w = out["tes_pop"].fillna(1).clip(lower=1) if "tes_pop" in out else 1
     agg = {}
-    for k in ("tes", "canopy_pct", "canopy_goal_pct", "canopy_gap_pct", "temp_diff_f"):
+    for k in ("tes", "canopy_pct", "canopy_goal_pct", "canopy_gap_pct", "temp_diff_f", "avg_temp"):
         if k in out:
             agg[k] = (out[k] * w).groupby(out.GEOID).sum() / (w * out[k].notna()).groupby(out.GEOID).sum()
     res = pd.DataFrame(agg).reset_index()
     res["tes_block_groups"] = out.groupby("GEOID").size().reindex(res.GEOID).values
+    if "avg_temp" in res and "temp_diff_f" not in res:
+        # heat relative to the county average (TES reports block-group average temperature)
+        res["temp_diff_f"] = res.avg_temp - res.groupby(res.GEOID.str[:5]).avg_temp.transform("mean")
+        log(f"  avg_temp range {res.avg_temp.min():.1f}-{res.avg_temp.max():.1f}")
     return res
 
 
@@ -252,17 +316,25 @@ def tree_equity():
 @source("fhfa_tract_hpi")
 def fhfa():
     p = None
-    for url in ("https://www.fhfa.gov/hpi/download/annually/hpi_at_bdl_tract.csv",
-                "https://www.fhfa.gov/DataTools/Downloads/Documents/HPI/HPI_AT_BDL_tract.csv"):
+    urls = find_links(["https://www.fhfa.gov/data/hpi/datasets?tab=additional-data",
+                       "https://www.fhfa.gov/data/hpi/datasets?tab=hpi-datasets",
+                       "https://www.fhfa.gov/data/hpi/datasets"], r"tract.*\.(csv|xlsx)")
+    urls = sorted(urls, key=lambda u: ("bdl" not in u.lower(), not u.lower().endswith(".csv")))
+    for url in urls + ["https://www.fhfa.gov/hpi/download/annually/hpi_at_bdl_tract.csv"]:
         try:
-            p = cached_download(url, "hpi_at_bdl_tract.csv", 60)
+            p = cached_download(url, "fhfa_tract" + Path(url).suffix, 60)
+            note("fhfa_tract_hpi", url=url)
             break
         except Exception:  # noqa: BLE001
             continue
     if p is None:
         raise RuntimeError("FHFA tract file unavailable")
-    df = pd.read_csv(p, dtype={"tract": str})
+    df = pd.read_excel(p, dtype=str) if str(p).endswith(".xlsx") else pd.read_csv(p, dtype=str)
     log(f"  FHFA columns {list(df.columns)}")
+    df.columns = [c.lower().strip() for c in df.columns]
+    tcol = next(c for c in df.columns if "tract" in c)
+    df = df.rename(columns={tcol: "tract"})
+    df["year"] = pd.to_numeric(df["year"], errors="coerce").astype("Int64")
     df["tract"] = df["tract"].str.zfill(11)
     prefixes = tuple(c[0] + c[1] for c in COUNTIES)
     df = df[df.tract.str.startswith(prefixes)]
@@ -283,8 +355,24 @@ def fhfa():
 # ---------------------------------------------------------------- FEMA NRI
 @source("fema_national_risk_index")
 def nri():
-    p = cached_download("https://hazards.fema.gov/nri/Content/StaticDocuments/DataDownload//NRI_Table_CensusTracts/NRI_Table_CensusTracts.zip",
-                        "NRI_Table_CensusTracts.zip", 120)
+    cands = ["https://hazards.fema.gov/nri/Content/StaticDocuments/DataDownload//NRI_Table_CensusTracts/NRI_Table_CensusTracts.zip",
+             "https://hazards.fema.gov/nri/Content/StaticDocuments/DataDownload/NRI_Table_CensusTracts/NRI_Table_CensusTracts.zip"]
+    cands += find_links(["https://hazards.fema.gov/nri/data-resources", "https://www.fema.gov/flood-maps/products-tools/national-risk-index/data-resources"],
+                        r"censustract.*\.zip")
+    p = None
+    for i, url in enumerate(dict.fromkeys(cands)):
+        try:
+            q = cached_download(url, f"nri_tracts_{i}.zip", 120)
+            if is_zip(q):
+                p = q
+                note("fema_national_risk_index", url=url)
+                break
+            log(f"  not a zip: {url} :: {q.read_bytes()[:200]!r}")
+            q.unlink()
+        except Exception:  # noqa: BLE001
+            continue
+    if p is None:
+        raise RuntimeError("NRI tract table not found")
     with zipfile.ZipFile(p) as z:
         name = [n for n in z.namelist() if n.lower().endswith(".csv") and "dictionary" not in n.lower()][0]
         df = pd.read_csv(z.open(name), dtype={"TRACTFIPS": str}, low_memory=False)
@@ -423,8 +511,87 @@ def _rel_poly(el):
     return unary_union(polys)
 
 
+GEOFABRIK = {"06": "north-america/us/california/socal", "13": "north-america/us/georgia",
+             "17": "north-america/us/illinois", "18": "north-america/us/indiana", "26": "north-america/us/michigan",
+             "36": "north-america/us/new-york", "42": "north-america/us/pennsylvania", "48": "north-america/us/texas",
+             "53": "north-america/us/washington"}
+
+
+def _sh(*cmd):
+    import subprocess
+    r = subprocess.run(cmd, capture_output=True, text=True)
+    if r.returncode:
+        raise RuntimeError(f"{' '.join(cmd[:3])}: {r.stderr[-400:]}")
+
+
+def osm_osmium(tract_gdf):
+    """OSM layers from Geofabrik extracts via osmium-tool (no rate-limited API)."""
+    parks, points, roads = [], [], []
+    from shapely.geometry import LineString  # noqa: F401
+    for st, co, label, _ in COUNTIES:
+        sub = tract_gdf[(tract_gdf.STATEFP == st) & (tract_gdf.COUNTYFP == co)]
+        w, s_, e, n = sub.total_bounds
+        pbf = cached_download(f"https://download.geofabrik.de/{GEOFABRIK[st]}-latest.osm.pbf", f"geofabrik_{st}.osm.pbf", 25)
+        key = st + co
+        cut = CACHE / f"osm_{key}.pbf"
+        _sh("osmium", "extract", "-b", f"{w:.4f},{s_:.4f},{e:.4f},{n:.4f}", str(pbf), "-o", str(cut), "--overwrite", "-s", "smart")
+
+        def layer(name, *exprs):
+            f, g = CACHE / f"osm_{key}_{name}.pbf", CACHE / f"osm_{key}_{name}.geojson"
+            _sh("osmium", "tags-filter", str(cut), *exprs, "-o", str(f), "--overwrite")
+            _sh("osmium", "export", str(f), "-o", str(g), "--overwrite", "-f", "geojson", "-a", "type,id")
+            d = gpd.read_file(g)
+            log(f"  {key} {name}: {len(d)} features")
+            return d
+
+        pk = layer("parks", "wr/leisure=park,garden,nature_reserve,playground,recreation_ground")
+        pk = pk[pk.geom_type.isin(["Polygon", "MultiPolygon"])]
+        for _, r in pk.iterrows():
+            parks.append({"name": r.get("name"), "kind": r.get("leisure"), "osm_id": f"{r.get('@type')}/{r.get('@id')}",
+                          "geometry": r.geometry})
+        pt = layer("points", "nwr/place=neighbourhood,suburb,quarter", "nwr/amenity=school,library", "nwr/railway=station",
+                   "nwr/public_transport=station", "nwr/shop=supermarket,grocery")
+        for _, r in pt.iterrows():
+            g = r.geometry if r.geometry.geom_type == "Point" else r.geometry.representative_point()
+            if isinstance(r.get("place"), str):
+                kind = "neighborhood"
+            elif r.get("amenity") == "school":
+                kind = "school"
+            elif r.get("amenity") == "library":
+                kind = "library"
+            elif isinstance(r.get("shop"), str):
+                kind = "grocery"
+            else:
+                kind = "rail_station"
+            points.append({"kind": kind, "name": r.get("name"), "osm_id": f"{r.get('@type')}/{r.get('@id')}", "geometry": g})
+        rd = layer("roads", "w/highway=motorway,trunk,primary", "w/waterway=river,canal")
+        rd = rd[rd.geom_type.isin(["LineString", "MultiLineString"])]
+        for _, r in rd.iterrows():
+            hw = r.get("highway")
+            roads.append({"kind": hw if isinstance(hw, str) else "water", "name": r.get("name") if isinstance(r.get("name"), str) else r.get("ref"),
+                          "geometry": r.geometry})
+    return parks, points, roads
+
+
 @source("openstreetmap")
 def osm(tract_gdf):
+    try:
+        parks, points, roads = osm_osmium(tract_gdf)
+        note("openstreetmap", method="geofabrik+osmium")
+        global ROADS  # noqa: PLW0603
+        ROADS = gpd.GeoDataFrame(roads, geometry="geometry", crs=4326) if roads else None
+        parks = gpd.GeoDataFrame(parks, geometry="geometry", crs=4326) if parks else None
+        points = gpd.GeoDataFrame(points, geometry="geometry", crs=4326)
+        note("openstreetmap", parks=0 if parks is None else len(parks),
+             points={k: int(v) for k, v in points.kind.value_counts().items()})
+        return parks, points
+    except Exception as e:  # noqa: BLE001
+        traceback.print_exc()
+        note("openstreetmap", osmium_error=str(e)[:300])
+    return osm_overpass(tract_gdf)
+
+
+def osm_overpass(tract_gdf):
     parks, points, roads = [], [], []
     for st, co, label, _ in COUNTIES:
         sub = tract_gdf[(tract_gdf.STATEFP == st) & (tract_gdf.COUNTYFP == co)]
@@ -489,7 +656,7 @@ def osm(tract_gdf):
     parks = gpd.GeoDataFrame(parks, geometry="geometry", crs=4326) if parks else None
     points = gpd.GeoDataFrame(points, geometry="geometry", crs=4326)
     if roads:
-        global ROADS
+        global ROADS  # noqa: PLW0603
         ROADS = gpd.GeoDataFrame(roads, geometry="geometry", crs=4326)
     note("openstreetmap", parks=0 if parks is None else len(parks),
          points={k: int(v) for k, v in points.kind.value_counts().items()})
@@ -662,8 +829,44 @@ def usaspending():
 
 
 # ---------------------------------------------------------------- BLS wages -> regional cost factor
+def bls_api_wages(occ):
+    """Fallback: BLS public API v1 (no key) for OEWS hourly mean wages."""
+    series = {}
+    for st, co, label, code in COUNTIES:
+        for o in occ:
+            series[f"OEUM{code.zfill(7)}000000{o.replace('-', '')}03"] = (st + co, o)
+    for o in occ:
+        series[f"OEUN0000000000000{o.replace('-', '')}03"] = ("nat", o)
+    ids, out = list(series), {}
+    for i in range(0, len(ids), 25):
+        r = get("https://api.bls.gov/publicAPI/v1/timeseries/data/", method="POST",
+                json_body={"seriesid": ids[i:i + 25]}, timeout=120)
+        js = r.json()
+        log(f"  BLS API status {js.get('status')} {js.get('message', '')[:200]}")
+        for sr in js.get("Results", {}).get("series", []):
+            if sr.get("data"):
+                out[series[sr["seriesID"]]] = float(sr["data"][0]["value"])
+    return out
+
+
 @source("bls_oews_cost_factor")
 def bls_costs():
+    try:
+        return bls_costs_files()
+    except Exception as e:  # noqa: BLE001
+        log(f"  OEWS files failed ({e}); trying BLS API")
+    occ = ["37-3011", "37-3013", "47-2061", "47-2073"]
+    w = bls_api_wages(occ)
+    rows = []
+    for st, co, label, code in COUNTIES:
+        ratios = [w[(st + co, o)] / w[("nat", o)] for o in occ if (st + co, o) in w and ("nat", o) in w]
+        labor = float(np.mean(ratios)) if ratios else np.nan
+        rows.append({"county_fips": st + co, "county": label, "msa": code, "labor_ratio": labor,
+                     "cost_factor": round(0.6 * labor + 0.4, 3) if ratios else np.nan, "source": "BLS API v1 OEWS"})
+    return pd.DataFrame(rows)
+
+
+def bls_costs_files():
     occ = {"37-3011": "landscaping_worker", "37-3013": "tree_trimmer", "47-2061": "construction_laborer",
            "47-2073": "equipment_operator"}
     frames = {}
