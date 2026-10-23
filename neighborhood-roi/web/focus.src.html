@@ -150,7 +150,7 @@ tr:last-child td { border-bottom: 0; } td.num { font-family: var(--mono); color:
   <div class="ctl grow"><label for="q">Find a neighborhood</label><input id="q" type="search" list="names" placeholder="Carlson Park, Beverlywood…" autocomplete="off"><datalist id="names"></datalist></div>
   <fieldset class="layers"><legend>Show on map</legend>
     <label><input type="checkbox" id="l-streets" checked> Streets</label>
-    <label><input type="checkbox" id="l-water" checked> Creeks &amp; rail</label>
+    <label><input type="checkbox" id="l-water" checked> Creeks, trails &amp; rail</label>
     <label><input type="checkbox" id="l-parks" checked> Parks</label>
     <label><input type="checkbox" id="l-schools" checked> Schools</label>
     <label><input type="checkbox" id="l-sites" checked> Open tree sites</label>
@@ -225,6 +225,8 @@ function drawContext() {
       onEachFeature: (f, l) => f.properties.n && l.bindTooltip(esc(f.properties.n), { sticky: true }) }).addTo(map);
   if (on("#l-water")) {
     if (L_.water) layers.water = L.geoJSON(L_.water, { ...noPts, interactive: false, style: f => f.geometry.type.includes("Polygon") ? { fillColor: css("--water"), fillOpacity: 1, color: css("--water-line"), weight: .6 } : { color: css("--water-line"), weight: f.properties.k === "river" || f.properties.k === "canal" ? 3 : 1.6, opacity: .95 } }).addTo(map);
+    if (L_.trails) layers.trails = L.geoJSON(L_.trails, { ...noPts, interactive: true, style: { color: css("--good"), weight: 2.2, dashArray: "2 4", opacity: .95 },
+      onEachFeature: (f, l) => f.properties.n && l.bindTooltip(esc(f.properties.n), { sticky: true }) }).addTo(map);
     if (L_.rail) layers.rail = L.geoJSON(L_.rail, { ...noPts, interactive: false, style: { color: css("--rail"), weight: 1.6, dashArray: "6 4", opacity: .9 } }).addTo(map);
   }
   if (on("#l-streets") && L_.roads) {

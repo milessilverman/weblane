@@ -101,6 +101,12 @@ def main(region="la_westside"):
     rail = rail[rail.geom_type.isin(["LineString", "MultiLineString"])]
     rail = lines_layer(rail.assign(k=rail.railway), "k", 5)
     layers["rail"] = json.loads(rail[["k", "geometry"]].to_json(drop_id=True))
+    if (src / "osm_trails.geojson").exists():
+        tl = gpd.read_file(src / "osm_trails.geojson")
+        tl = tl[tl.geom_type.isin(["LineString", "MultiLineString"])]
+        if len(tl):
+            tl = lines_layer(tl.assign(k="trail"), "k", 4, 150)
+            layers["trails"] = json.loads(tl.to_json(drop_id=True))
     pk = gpd.read_file(src / "osm_parks.geojson")
     pk = pk[pk.geom_type.isin(["Polygon", "MultiPolygon"])].copy()
     pk = pk[pk.to_crs(M).area > 600]
