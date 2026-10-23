@@ -158,6 +158,22 @@ def main(region="la_westside"):
     def col(c):
         return b[c] if c in b else pd.Series(np.nan, index=b.index)
 
+    # street sites only: drop inventory points that fall inside parks
+    vs_path = src / "vacant_planting_sites.geojson"
+    if vs_path.exists() and "vacant_planting_sites" in b:
+        vs = gpd.read_file(vs_path)
+        pk = gpd.read_file(src / "osm_parks.geojson")
+        pk = pk[pk.geom_type.isin(["Polygon", "MultiPolygon"])]
+        inpark = gpd.sjoin(vs, pk[["geometry"]], predicate="within").index.unique()
+        vs = vs.drop(index=inpark)
+        vs.to_file(src / "vacant_street_sites.geojson", driver="GeoJSON")
+        sj = gpd.sjoin(vs, b[["block_id", "geometry"]], predicate="within")
+        cnt = sj.groupby("block_id").size()
+        stumps = sj[sj.get("stump", False) == True].groupby("block_id").size() if "stump" in sj else None  # noqa: E712
+        has = b.vacant_planting_sites.notna()
+        b.loc[has, "vacant_planting_sites"] = b.loc[has, "block_id"].map(cnt).fillna(0) - (b.loc[has, "block_id"].map(stumps).fillna(0) if stumps is not None else 0)
+        print(f"open street sites after removing {len(inpark)} in parks: {int(b.vacant_planting_sites.sum())}")
+
     # value: Zillow neighborhood index > BG ACS median × tract trend > tract value
     rep = b.to_crs(3310).geometry.representative_point().to_crs(4326)
     tracts = gpd.read_file(DATA / "derived" / "tracts.geojson")
@@ -177,8 +193,10 @@ def main(region="la_westside"):
         else:
             vals.append(acs); srcs.append("Census block-group median")
     b["value"], b["value_source"] = vals, srcs
-    b["homes"] = np.where(col("assessor_units").fillna(0) > 0, col("assessor_units"), col("housing_units"))
-    b["homes_source"] = np.where(col("assessor_units").fillna(0) > 0, "LA County Assessor units", "Census (block-group share)")
+    au = pd.to_numeric(col("assessor_units"), errors="coerce")
+    hu = pd.to_numeric(col("housing_units"), errors="coerce")
+    b["homes"] = np.where(au.fillna(0) > 0, au, hu).astype(float)
+    b["homes_source"] = np.where(au.fillna(0) > 0, "LA County Assessor units", "Census (block-group share)")
     # compare with LA County as a whole (the Westside is far above the county median)
     tvals = [v[0] for v in tv.values() if not np.isnan(v[0])]
     tinc = pd.read_csv(DATA / "derived" / "tract_metrics.csv", usecols=["GEOID", "median_household_income"], dtype={"GEOID": str})
@@ -213,8 +231,8 @@ def main(region="la_westside"):
                                                          for k, v in r.drop(labels=["geometry"]).items()}}
         props.append({"block_id": r.block_id, "top": top["id"] if top else None, "top_vpd": top["vpd"] if top else None})
     b = b.merge(pd.DataFrame(props), on="block_id")
-    out = src / "scored"
-    out.mkdir(exist_ok=True)
+    out = ROOT / "web" / "focus_data" / region
+    out.mkdir(parents=True, exist_ok=True)
     keep = ["block_id", "name", "city", "la_hood", "name_source", "top", "top_vpd", "value", "homes", "canopy", "street_canopy_pct",
             "vacant_planting_sites", "street_trees", "vacant_parcels", "violent_per_1k", "temp_diff_f", "park_acres_half_mile", "acres", "geometry"]
     b[[c for c in keep if c in b]].to_file(out / "blocks_scored.geojson", driver="GeoJSON", COORDINATE_PRECISION=5)

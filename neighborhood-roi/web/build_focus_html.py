@@ -65,7 +65,7 @@ def labels_along(gdf_m, every_m=1400, min_len=500):
 
 def main(region="la_westside"):
     src = ROOT / "data" / "derived" / f"focus_{region}"
-    sc = src / "scored"
+    sc = ROOT / "web" / "focus_data" / region
     blocks = gpd.read_file(sc / "blocks_scored.geojson")
     for c in ("street_trees", "vacant_planting_sites", "vacant_parcels", "violent_per_1k", "street_canopy_pct", "canopy", "temp_diff_f"):
         if c not in blocks:
@@ -111,7 +111,7 @@ def main(region="la_westside"):
                   "properties": {"n": r.School, "ela": None if pd.isna(r.get("ela_pct_met")) else round(r.ela_pct_met),
                                  "math": None if pd.isna(r.get("math_pct_met")) else round(r.math_pct_met)}} for _, r in s.iterrows()]
         layers["schools"] = {"type": "FeatureCollection", "features": feats}
-    for name, f in (("sites", "vacant_planting_sites.geojson"), ("lots", "vacant_parcels.geojson")):
+    for name, f in (("sites", "vacant_street_sites.geojson"), ("lots", "vacant_parcels.geojson")):
         if (src / f).exists():
             g = gpd.read_file(src / f)
             layers[name] = json.loads(g[["geometry"]].to_json(drop_id=True))
