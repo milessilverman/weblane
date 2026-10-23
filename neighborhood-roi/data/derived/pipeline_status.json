@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-10-23T02:29:55.923198+00:00",
+  "generated_at": "2026-10-23T03:42:26.272806+00:00",
   "sources": {
     "census_tract_boundaries": {
       "ok": true,
-      "seconds": 2.2,
+      "seconds": 0.7,
       "rows": 8497,
       "columns": [
         "GEOID",
@@ -15,16 +15,46 @@
       ]
     },
     "census_acs_5yr": {
-      "ok": false,
-      "error": "no ACS vintage worked"
+      "vintage": "2020-2024 ACS 5-year (table-based summary file)",
+      "ok": true,
+      "seconds": 9.4,
+      "rows": 8505,
+      "columns": [
+        "GEOID",
+        "population",
+        "housing_units",
+        "vacant_units",
+        "occupied_units",
+        "owner_units",
+        "median_home_value",
+        "median_gross_rent",
+        "median_household_income",
+        "median_year_built",
+        "units_single_family_detached",
+        "commuters",
+        "commuters_transit",
+        "commuters_walk",
+        "people_below_poverty",
+        "adults_bachelors",
+        "adults_25plus"
+      ]
     },
     "bls_oews_cost_factor": {
-      "ok": false,
-      "error": "failed: https://www.bls.gov/oes/special-requests/oesm24ma.zip"
+      "ok": true,
+      "seconds": 1.0,
+      "rows": 10,
+      "columns": [
+        "county_fips",
+        "county",
+        "msa",
+        "labor_ratio",
+        "cost_factor",
+        "source"
+      ]
     },
     "usaspending_projects": {
       "ok": true,
-      "seconds": 50.1,
+      "seconds": 38.6,
       "rows": 1781,
       "columns": [
         "internal_id",
@@ -45,18 +75,42 @@
       ]
     },
     "fhfa_tract_hpi": {
-      "ok": false,
-      "error": "FHFA tract file unavailable"
+      "url": "https://www.fhfa.gov/hpi/download/annual/hpi_at_tract.csv",
+      "latest_year": 2025,
+      "ok": true,
+      "seconds": 3.9,
+      "rows": 5350,
+      "columns": [
+        "GEOID",
+        "hpi_growth_1y_pct",
+        "hpi_growth_5y_pct",
+        "hpi_growth_10y_pct",
+        "hpi_growth_20y_pct",
+        "hpi_series"
+      ]
     },
     "fema_national_risk_index": {
       "ok": false,
-      "error": "failed: https://hazards.fema.gov/nri/Content/StaticDocuments/DataDownload//NRI_Table_CensusTracts/NRI_Table_CensusTracts.zip"
+      "error": "NRI tract table not found"
+    },
+    "openstreetmap": {
+      "method": "geofabrik+osmium",
+      "parks": 58731,
+      "points": {
+        "school": 23937,
+        "neighborhood": 9143,
+        "rail_station": 7865,
+        "grocery": 7292,
+        "library": 2470
+      },
+      "ok": true,
+      "seconds": 217.7
     },
     "cdc_places": {
       "dataset": "PLACES: Census Tract Data (GIS Friendly Format), 2025 release",
       "dataset_id": "yjkw-uj5s",
       "ok": true,
-      "seconds": 14.3,
+      "seconds": 9.2,
       "rows": 8375,
       "columns": [
         "GEOID",
@@ -72,7 +126,7 @@
     "ca_school_scores": {
       "caaspp_year": "2024-25",
       "ok": true,
-      "seconds": 7.5,
+      "seconds": 0.9,
       "rows": 11595,
       "columns": [
         "CDSCode",
@@ -123,7 +177,7 @@
         "tesctyscor"
       ],
       "ok": true,
-      "seconds": 8.6,
+      "seconds": 1.5,
       "rows": 7483,
       "columns": [
         "GEOID",
@@ -131,12 +185,14 @@
         "canopy_pct",
         "canopy_goal_pct",
         "canopy_gap_pct",
-        "tes_block_groups"
+        "avg_temp",
+        "tes_block_groups",
+        "temp_diff_f"
       ]
     },
     "epa_walkability": {
       "ok": true,
-      "seconds": 47.4,
+      "seconds": 2.8,
       "rows": 8366,
       "columns": [
         "GEOID",
@@ -145,7 +201,7 @@
     },
     "zillow_zhvi_zip": {
       "ok": true,
-      "seconds": 3.6,
+      "seconds": 0.3,
       "rows": 1057,
       "columns": [
         "RegionName",
@@ -162,7 +218,7 @@
     },
     "census_zcta_boundaries": {
       "ok": true,
-      "seconds": 1.7,
+      "seconds": 1.4,
       "rows": 33791,
       "columns": [
         "ZCTA5CE20",
@@ -171,7 +227,7 @@
     },
     "zillow_zhvi_neighborhood": {
       "ok": true,
-      "seconds": 3.1,
+      "seconds": 0.3,
       "rows": 2140,
       "columns": [
         "RegionID",
