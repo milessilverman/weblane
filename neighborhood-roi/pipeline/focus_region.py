@@ -703,6 +703,8 @@ def run(region):
             "stumps": g.stump.sum().astype(int),
             "palms": g.palm.sum().astype(int)}).reset_index(), on="block_id", how="left")
         blocks["tree_inventory"] = blocks.city.isin(["Culver City", "Los Angeles", "Beverly Hills", "Santa Monica", "Inglewood", "West Hollywood"])
+        live = trees[~trees.vacant_site & ~trees.stump]
+        live.assign(palm=live.palm.astype(int))[["palm", "geometry"]].to_file(out / "street_trees.geojson", driver="GeoJSON", COORDINATE_PRECISION=6)
         vs = trees[trees.vacant_site | trees.stump]
         vs.to_file(out / "vacant_planting_sites.geojson", driver="GeoJSON", COORDINATE_PRECISION=6)
     # residential street length per block
