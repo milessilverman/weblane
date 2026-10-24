@@ -25,6 +25,9 @@ from score_tracts import pv_annuity, time_factor, DISTANCE_DECAY, ACRE_SQFT  # n
 
 CITY_COST = 1.119  # BLS-derived LA metro factor (see regional_costs_bls.csv)
 TREE_SPACING_M = 12
+_cal = ROOT / "data" / "calibration_trees_la_westside.json"
+# low end of the 95% range from local sales (0.24%); falls back to the Sander et al. canopy-scale figure
+TREE_50M_PCT = json.loads(_cal.read_text())["trees_within_50m"]["ci95_pct"][0] if _cal.exists() else 0.2
 TARGET_STREET_CANOPY = 15  # replaced at run time by the canopy seen on streets the inventories call fully planted
 
 
@@ -72,11 +75,12 @@ def recs_for(b, lib):
                f"({stock*100:.0f}% of planting sites filled)")
         n = min(sites, 400)
         if n >= 3:
-            gain_frac = 0.03 * 0.5 + 2 * 0.006
-            # diminishing returns: a mostly planted street already delivers most of the canopy amenity
-            sat = min(1.0, max(0.3, 1.2 - stock))
-            add("street_tree", n, "trees on vacant sites", n * 2, gain_frac / 2, sat, why + f"; effect scaled to {sat*100:.0f}% because the street is {stock*100:.0f}% planted",
-                mid_cost("street_tree") * n, note="sized to surveyed vacant sites")
+            # local hedonic estimate (model/hedonic_trees.py): each extra street tree within 50 m of a home
+            # adds TREE_50M_PCT to its sale price; homes within 50 m of a new tree ~ density x 50 m circle, halved for overlap
+            homes_near = max(1.0, hpa * math.pi * 50 ** 2 / 4046.86 * 0.5)
+            add("street_tree", n, "trees on vacant sites", n * homes_near, TREE_50M_PCT / 100, 1.0,
+                why + f"; each tree lifts ~{homes_near:.0f} homes within 50 m by {TREE_50M_PCT}% (local sales estimate, low end)",
+                mid_cost("street_tree") * n, note="sized to surveyed vacant sites; calibrated on local sales")
     else:
         sc = b["street_canopy_pct"]
         km = b["res_street_km"]
@@ -85,7 +89,8 @@ def recs_for(b, lib):
             gap = max(0.0, (target - sc) / target)
             n = round(km * 1000 / TREE_SPACING_M * 2 * gap * 0.4)
             if n >= 5:
-                add("street_tree", min(n, 400), "trees (estimated open sites)", min(n, 400) * 2, (0.03 * 0.5 + 2 * 0.006) / 2, 0.8,
+                homes_near = max(1.0, hpa * math.pi * 50 ** 2 / 4046.86 * 0.5)
+                add("street_tree", min(n, 400), "trees (estimated open sites)", min(n, 400) * homes_near, TREE_50M_PCT / 100, 0.8,
                     f"No city inventory here; canopy over streets {sc:.0f}% (Meta/WRI 1 m map) vs {target:.0f}% on streets the city inventories show as fully planted",
                     mid_cost("street_tree") * min(n, 400), note="estimated from canopy")
 
