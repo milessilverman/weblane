@@ -609,6 +609,20 @@ def crime(R):
     raise RuntimeError("no usable LAPD crime dataset")
 
 
+@stage("assessor_sales")
+def sales(R):
+    """Recent recorded sales with size/beds/baths/year built (LA County Assessor PAIS) for local hedonic calibration."""
+    url = "https://assessor.gis.lacounty.gov/assessor/rest/services/PAIS/pais_sales_parcels/MapServer/0"
+    meta = get(url, params={"f": "json"}, timeout=60).json()
+    g = arcgis_query(url, R["bbox"], fields="AIN,SALEDATE,SALEPRICE,SIZE,BEDROOMS,BATHROOMS,YEARBUILT,EFFECTIVE_YEARBUILT,USECODE,USETYPE",
+                     page=min(2000, int(meta.get("maxRecordCount") or 1000)), max_rows=300000)
+    if g is None or not len(g):
+        raise RuntimeError("no sales returned")
+    g["geometry"] = g.to_crs(M).geometry.representative_point().to_crs(4326)
+    note("assessor_sales", rows=len(g), fields=list(g.columns)[:20])
+    return g
+
+
 @stage("santa_monica_crime")
 def sm_crime(R):
     """Santa Monica PD incidents (CKAN datastore, daily), last 12 months."""
@@ -620,7 +634,8 @@ def sm_crime(R):
     datec = next(f for f in fields if re.search(r"date.*occ|occ.*date", f, re.I))
     latc = next(f for f in fields if re.search(r"^lat", f, re.I))
     lonc = next(f for f in fields if re.search(r"^lon|^lng", f, re.I))
-    since = datetime.now() - timedelta(days=365)
+    newest = pd.to_datetime(get(base + "datastore_search", params={"resource_id": rid, "limit": 1, "sort": f"{datec} desc"}).json()["result"]["records"][0][datec])
+    since = newest - timedelta(days=365)   # the feed can lag; use its latest 12 months
     rows, off = [], 0
     while off < 200000:
         page = get(base + "datastore_search", params={"resource_id": rid, "limit": 10000, "offset": off,
@@ -728,6 +743,9 @@ def run(region):
         }).reset_index(), on="block_id", how="left")
         vp = pc[pc.vacant_land]
         vp[["geometry"]].to_file(out / "vacant_parcels.geojson", driver="GeoJSON", COORDINATE_PRECISION=6)
+    sl = sales(R)
+    if sl is not None:
+        sl.to_file(out / "sales.geojson", driver="GeoJSON", COORDINATE_PRECISION=6)
     # crime
     cr = crime(R)
     smc = sm_crime(R)
