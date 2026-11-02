@@ -393,8 +393,8 @@ def size_projects(r, ref, tree_rate):
         add("pocket_park", 1, "0.25-acre pocket park", reach(150, dens, H), 0.03 * crime_pen, 850_000, 25_000, land=10_890 * land_psf(r),
             why=f"nearest park {pn:,.0f} m away; dense" + ("; reduced for high violent crime" if crime_pen < 1 else ""))
     if pn < 400:
-        add("park_upgrade", 1, "new playground and paths at the nearest park", reach(400, dens, H), 0.01, 760_000, 0,
-            why=f"park {pn:,.0f} m away; renovations capitalize within ~400 m", fit=0.8)
+        add("park_upgrade", 1, "new playground and paths at the nearest park", reach(400, dens, H), 0.005, 760_000, 0,
+            why=f"park {pn:,.0f} m away; renovations capitalize within ~400 m (uses +0.5%)", fit=0.8)
 
     # --- recreation facilities (quality-of-life items; value not measured)
     if g(r, "pickleball_nearest_m") > 2000 and g(r, "tennis_nearest_m") < 1200:
@@ -407,7 +407,7 @@ def size_projects(r, ref, tree_rate):
         add("basketball", 1, "1 full court", reach(800, dens, H), 0, 580_000, 3_000,
             why=f"nearest public basketball court {g(r, 'basketball_nearest_m', 0):,.0f} m away")
     if g(r, "dog_park_nearest_m") > 2000 and dens > 0.0025:
-        add("dog_park", 1, "0.5-acre dog park in an existing park", reach(400, dens, H), 0.005, 350_000, 15_000,
+        add("dog_park", 1, "0.5-acre dog park in an existing park", reach(400, dens, H), 0.0025, 350_000, 15_000,
             why=f"nearest dog park {g(r, 'dog_park_nearest_m', 0)/1609:,.1f} mi away; dense area")
     if g(r, "pool_nearest_m") > 3000 and dens > 0.002:
         add("pool", 1, "1 public pool", reach(2000, dens, H), 0, 20_000_000, 1_000_000,
@@ -536,10 +536,9 @@ def size_projects(r, ref, tree_rate):
 
     # --- schools & services
     if g(r, "school_nearest_m") < 800 and yb <= 1970:
-        homes = reach(800, dens, H)
-        cost = homes * r.home_value * 0.06 / 1.5  # Cellini: >= $1.50 of value per $1 of school capital
-        add("school_bond", 1, "modernize the nearby school (local share)", homes, 0.06, cost, 0,
-            why="older area served by a nearby public school; California bond passage raised prices ~6%")
+        share = min(1.0, H / 4000)  # a campus serves roughly 4,000 homes
+        add("school_bond", 1, f"modernize the nearby school (this area's {share:.0%} share of ~$40M)", H, 0.03, 40_000_000 * share, 0,
+            why="older area served by a nearby public school; California bond passage raised prices ~6% (half used here, for one campus)")
     if g(r, "library_nearest_m") > 2000 and dens > 0.002:
         add("library", 1, "branch upgrade + Sunday hours, 10 years", reach(2000, dens, H), 0, 2_000_000, 250_000, why="no library within 2 km")
     if g(r, "clinic_nearest_m") > 2500 and poor:

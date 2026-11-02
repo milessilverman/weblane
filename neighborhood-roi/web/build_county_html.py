@@ -47,6 +47,20 @@ def layer(name, tol=None, keep=(), rename=None, min_area_ac=None, prec=5):
     return json.loads(re.sub(r"(-?\d+\.\d{%d})\d+" % prec, r"\1", json.dumps(js)))
 
 
+def merged_lines(name, tol, prec=4):
+    """Dissolve many small OSM ways into long merged lines (far fewer vertices than per-way simplification)."""
+    from shapely.ops import linemerge, unary_union
+    p = SRC / f"map_{name}.geojson"
+    if not p.exists():
+        return None
+    g = gpd.read_file(p).to_crs(M)
+    g = g[g.geom_type.isin(["LineString", "MultiLineString"])]
+    u = linemerge(unary_union(list(g.geometry)))
+    parts = [x.simplify(tol) for x in (u.geoms if hasattr(u, "geoms") else [u]) if x.length > 150]
+    out = gpd.GeoDataFrame(geometry=parts, crs=M).to_crs(4326)
+    return json.loads(re.sub(r"(-?\d+\.\d{%d})\d+" % prec, r"\1", out.to_json(drop_id=True)))
+
+
 def labels(g, col):
     g = g[g[col].notna()].copy()
     g["a"] = g.to_crs(M).area
@@ -103,9 +117,9 @@ def main():
         m = {k: v for k, v in m.items() if v is not None and not (isinstance(v, float) and np.isnan(v))}
         det[gid] = {"r": [[num(rec[k], 3) if isinstance(rec[k], float) else rec[k] for k in keys] for rec in x["recs"]], "m": m}
 
-    L = {"freeways": layer("freeways", 40, ["name"], {"name": "n"}, prec=4), "arterials": layer("arterials", 30, [], prec=4),
+    L = {"freeways": layer("freeways", 40, ["name"], {"name": "n"}, prec=4), "arterials": merged_lines("arterials", 25),
          "parks": layer("parks", 20, ["name", "acres"], {"name": "n", "acres": "a"}, min_area_ac=2, prec=5), "water": layer("water", 40, [], prec=4),
-         "rail": layer("rail", 30, [], prec=4), "stations": layer("stations", None, ["name"], {"name": "n"}),
+         "rail": merged_lines("rail", 25), "stations": layer("stations", None, ["name"], {"name": "n"}),
          "walls": layer("noise_walls", 10, [], prec=5), "amenities": layer("amenities", None, ["kind", "name"], {"kind": "k", "name": "n"})}
     fs = SRC / "map_frequent_stops.geojson"
     if fs.exists():

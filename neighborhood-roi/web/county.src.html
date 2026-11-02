@@ -188,7 +188,7 @@ function select(id, fly) {
   const top = val.find(r => kind(r) === "value");
   let h = `<div class="eyebrow">BLOCK GROUP ${esc(id)} · ${esc(p.c)} · ${fmtN(m.acres)} acres</div><h2>${esc(p.n)}</h2>
     <p class="subname">Name from ${esc(m.ns || "")}${m.csa && m.csa !== p.n ? " · County area: " + esc(m.csa) : ""}</p>`;
-  h += top && top.vpd >= 1 ? `<p class="verdict">Best bet: <b>${esc(D.catalog[top.id].name.toLowerCase())}</b> (${esc(top.project)}). It adds about <b>${fvpd(top.vpd)}</b> of home value for every $1 it costs.</p>`
+  h += top && top.vpd >= 1 ? `<p class="verdict">Best bet: <b>${esc(D.catalog[top.id].name.toLowerCase())}</b>${/\d/.test(top.project) ? ` (${esc(top.project)})` : ""}. It adds about <b>${fvpd(top.vpd)}</b> of home value for every $1 it costs.</p>`
     : `<p class="verdict">Nothing here returns $1 of home value per $1 spent. The quality-of-life projects below are still worth a look.</p>`;
   if (pkg.length) h += `<div class="pkg">${tile("Projects that pay back", pkg.length, "≥ $1 of value per $1")}${tile("Total cost", fmt$(pkg.reduce((s, r) => s + r.cost, 0)), "build + land + 10-yr upkeep")}${tile("Value added", fmt$(pkg.reduce((s, r) => s + r.value, 0)), "nearby homes, combined")}</div>`;
   h += `<div class="section"><div class="tiles">
