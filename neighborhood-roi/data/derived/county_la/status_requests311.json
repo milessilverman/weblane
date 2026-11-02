@@ -1,18 +1,18 @@
 {
- "generated_at": "2026-11-02T05:43:48.599947+00:00",
+ "generated_at": "2026-11-02T06:01:16.855429+00:00",
  "sources": {
   "requests311": {
    "2cy6-i7zn_cols": [
     "casenumber",
     "createddate",
     "systemmodstamp",
+    "action_taken__c",
     "department_name__c",
     "type",
     "status",
     "origin",
     "created_by_user_organization",
     "reported_anonymously__c",
-    "assigned_to__c",
     "closeddate",
     "resolution_code__c",
     "locator_gis_returned_address",
@@ -118,7 +118,7 @@
     "FEEDBACK": 180
    },
    "ok": true,
-   "seconds": 286.6
+   "seconds": 338.4
   }
  }
 }
