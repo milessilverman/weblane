@@ -5,7 +5,7 @@ Current deliverable: `reports/city-pretty-la-county.html` (V2.3: real EIFD input
 
 ## How it's built
 - Data: `.github/workflows/neighborhood-data.yml` runs `pipeline/county_la.py` stages in GitHub Actions
-  (geo, osm, transit, sales, crime, requests311, crashes, trees, parcels, assets, tra, assessed) and commits
+  (geo, osm, transit, sales, crime, requests311, crashes, trees, parcels, assets, tra, assessed, basemap) and commits
   `data/derived/county_la/`. Dispatch with input `county_only=true` to skip the slow tract/Westside jobs, and
   `county_stages=tra,assessed` (comma list) to run only some county stages; the rest keep their last data.
   This sandbox can't reach County/ArcGIS hosts, so data pulls must run in Actions.
@@ -30,11 +30,22 @@ Current deliverable: `reports/city-pretty-la-county.html` (V2.3: real EIFD input
 - Checks: TRA 01519 County share 30.46% = West Carson IFP; Pasadena 21.0%/27.9% vs draft IFP 21.09%/27.88%.
 - Still assumptions: growth, new development, pledge %, rate, coverage; base year = 2026 roll, not formation year.
 
+## Map orientation (done in V2.4)
+- `basemap` stage: every named OSM street merged per name and class (`map_streets.geojson.gz`), and all parks of any
+  size from OSM plus the LA County DPR "Countywide Parks and Open Space" layer, which OSM lacks
+  (`map_parks_all.geojson`). The County layer also has amenity fields (TENIS, BSKTB, POOLS, PLGND, DGPRK, RSTRM...)
+  that aren't used yet.
+- Page: streets are encoded polylines in 0.05° cells, drawn only on screen (collectors from z13, locals from z14).
+  Rotated street names (arterials z13, collectors z14, locals z15), freeway shields from z10.5, park names sized by
+  acreage, scale bar, "Find me" (geolocation, opens your block group).
+- Round 6 research prompt: `research/round6_research_prompt.md` (zoning, new improvements, QoL pricing, per-house).
+
 ## Next steps
 1. (done) EIFD tax-rate-area data.
 2. Add corridor right-of-way layers (abandoned rail, transmission, flood channels, Class I paths)
    so rail/creek trails can be sited.
 3. Add FCC broadband data so fiber/5G is only suggested where service is poor.
 4. Replace "unverified" costs with the sourced figures from round 5's Part 4.
-5. Map-orientation features (street labels overlay, freeway shields, scale bar, locate-me,
-   mini-map, breadcrumb, hover outline, shareable link).
+5. Map orientation: remaining items are mini-map, breadcrumb, hover outline, shareable link.
+6. When round-6 research arrives: zoning layer and "what can be built" panel, new improvements, QoL prices,
+   per-house analysis.

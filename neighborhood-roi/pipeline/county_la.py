@@ -1310,7 +1310,8 @@ def stage_basemap():
     pk = pk[pk.acres >= 0.02]
     pk["src"] = "OpenStreetMap"
     official = None
-    for url in _agol_find("Los Angeles County parks open space", ["park"])[:4]:
+    county_parks = "https://services.arcgis.com/RmCCgQtiZLDCtblq/arcgis/rest/services/Countywide_Parks_and_Open_Space__(Public_-_Hosted2)/FeatureServer/0"
+    for url in [county_parks] + _agol_find("Los Angeles County parks open space", ["park"])[:4]:
         try:
             lyr = url.rstrip("/") + ("/0" if not re.search(r"/\d+$", url) else "")
             g = arcgis_all(lyr, bbox=BBOX, max_rows=60000)

@@ -61,6 +61,74 @@ def merged_lines(name, tol, prec=4):
     return json.loads(re.sub(r"(-?\d+\.\d{%d})\d+" % prec, r"\1", out.to_json(drop_id=True)))
 
 
+def encode_line(coords, prec=5):
+    """Google encoded-polyline string for [(lon, lat), ...] (about 4-6 bytes per vertex)."""
+    out, plat, plon, f = [], 0, 0, 10 ** prec
+    for lon, lat in coords:
+        la, lo = int(round(lat * f)), int(round(lon * f))
+        for d in (la - plat, lo - plon):
+            v = ~(d << 1) if d < 0 else d << 1
+            while v >= 0x20:
+                out.append(chr((0x20 | (v & 0x1f)) + 63))
+                v >>= 5
+            out.append(chr(v + 63))
+        plat, plon = la, lo
+    return "".join(out)
+
+
+CELL = 0.05  # degrees; streets are grouped in ~5 km cells so the page only draws what is on screen
+
+
+def streets_bundle():
+    """Named streets by class (0 freeway refs, 1 arterial, 2 collector, 3 local) as encoded polylines per grid cell."""
+    p = SRC / "map_streets.geojson.gz"
+    if not p.exists():
+        return None
+    g = gpd.read_file(f"/vsigzip/{p}")
+    g = g[g.geom_type == "LineString"]
+    names, idx, cells, fwy = [], {}, {}, []
+    for cls, nm, geom in zip(g.cls.astype(int), g.name.astype(str), g.geometry):
+        if nm not in idx:
+            idx[nm] = len(names)
+            names.append(nm)
+        if cls == 0:  # freeways: kept whole (few lines) so route shields show at any zoom
+            fwy.append([0, idx[nm], encode_line(list(geom.simplify(0.0003).coords))])
+            continue
+        cs = list(geom.coords)
+        if len(cs) < 2:
+            continue
+        # split long lines at cell borders so each piece lives in one cell
+        piece, key = [cs[0]], None
+        for a in cs[1:] + [None]:
+            k = None if a is None else (int((a[0] + 180) // CELL), int((a[1] + 90) // CELL))
+            k0 = (int((piece[0][0] + 180) // CELL), int((piece[0][1] + 90) // CELL))
+            if a is not None and k == k0:
+                piece.append(a)
+                continue
+            if a is not None:
+                piece.append(a)
+            if len(piece) >= 2:
+                cells.setdefault(f"{k0[0]},{k0[1]}", []).append([int(cls), idx[nm], encode_line(piece)])
+            piece = [a] if a is not None else []
+    return {"cell": CELL, "names": names, "cells": cells, "fwy": fwy}
+
+
+def parks_bundle():
+    """All parks (any size) with kind and name, plus label points sized by acreage."""
+    p = SRC / "map_parks_all.geojson"
+    if not p.exists():
+        return None, []
+    g = gpd.read_file(p)
+    g["geometry"] = g.to_crs(M).geometry.simplify(4).to_crs(4326)
+    g = g[g.geometry.notna() & ~g.geometry.is_empty]
+    js = json.loads(g.rename(columns={"name": "n", "kind": "k", "acres": "a"})[["n", "k", "a", "geometry"]].to_json(drop_id=True))
+    js = json.loads(re.sub(r"(-?\d+\.\d{5})\d+", r"\1", json.dumps(js)))
+    named = g[g.name.notna()].copy()
+    pts = named.to_crs(M).geometry.representative_point().to_crs(4326)
+    lab = sorted([[n, round(q.y, 5), round(q.x, 5), round(float(a), 1)] for n, q, a in zip(named.name, pts, named.acres)], key=lambda r: -r[3])
+    return js, lab
+
+
 def labels(g, col):
     g = g[g[col].notna()].copy()
     g["a"] = g.to_crs(M).area
@@ -125,6 +193,11 @@ def main():
          "parks": layer("parks", 20, ["name", "acres"], {"name": "n", "acres": "a"}, min_area_ac=2, prec=5), "water": layer("water", 40, [], prec=4),
          "rail": merged_lines("rail", 25), "stations": layer("stations", None, ["name"], {"name": "n"}),
          "walls": layer("noise_walls", 10, [], prec=5), "amenities": layer("amenities", None, ["kind", "name"], {"kind": "k", "name": "n"})}
+    pk_all, park_labels = parks_bundle()
+    if pk_all:
+        L["parks"] = pk_all
+    L["park_labels"] = park_labels
+    L["streets"] = streets_bundle()
     fs = SRC / "map_frequent_stops.geojson"
     if fs.exists():
         s = gpd.read_file(fs)
@@ -175,6 +248,15 @@ def main():
         det_txt = {kk: vv for kk, vv in s.items() if kk not in ("ok", "seconds", "error") and not isinstance(vv, (list, dict))}
         src_rows.append([lab, '<span class="pill ok">loaded</span>' if ok else '<span class="pill miss">missing</span>',
                          "; ".join(f"{a.replace('_', ' ')}: {b}" for a, b in list(det_txt.items())[:6]) or (s.get("error") or "")[:200]])
+    if L.get("streets"):
+        nst = sum(len(v) for v in L["streets"]["cells"].values())
+        src_rows.append(["Street names and freeway route numbers (OpenStreetMap)", '<span class="pill ok">loaded</span>',
+                         f"{len(L['streets']['names']):,} named streets in {nst:,} map pieces; local streets appear from zoom 14, names from zoom 15"])
+    if pk_all:
+        kinds = pd.Series([f["properties"]["k"] for f in pk_all["features"]]).value_counts()
+        small = sum(1 for f in pk_all["features"] if (f["properties"]["a"] or 0) < 1)
+        src_rows.append(["Parks: OpenStreetMap plus LA County Countywide Parks and Open Space (DPR)", '<span class="pill ok">loaded</span>',
+                         f"{len(pk_all['features']):,} parks and open spaces ({small:,} under an acre); " + ", ".join(f"{k}: {v:,}" for k, v in kinds.items())])
     em = eifd.get("meta", {})
     if em:
         src_rows.append(["EIFD calculator: Assessor roll values by parcel and tax-rate area", '<span class="pill ok">loaded</span>',

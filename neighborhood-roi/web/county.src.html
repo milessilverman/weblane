@@ -22,6 +22,17 @@
 .more { margin-top: 8px; }
 .lbl-city { font: 700 11px/1 var(--display); color: var(--ink-3); text-transform: uppercase; letter-spacing: .08em; text-shadow: 0 0 3px var(--sheet), 0 0 3px var(--sheet); white-space: nowrap; pointer-events: none; }
 .amen { font-size: 11px; line-height: 1; }
+:root { --park-ink: #2f6b3a; --sand: #eadfbf; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --park-ink: #9fd3a8; --sand: #5b5236; } }
+:root[data-theme="dark"] { --park-ink: #9fd3a8; --sand: #5b5236; }
+.lbl-st { font: 500 11px/1 var(--body); color: var(--ink-2); white-space: nowrap; pointer-events: none; text-shadow: 0 0 2px var(--sheet), 0 0 2px var(--sheet), 0 0 3px var(--sheet); }
+.lbl-st.art { font-weight: 600; color: var(--ink); font-size: 11.5px; }
+.lbl-park { font: italic 600 11px/1.1 var(--body); color: var(--park-ink, #2f6b3a); white-space: nowrap; pointer-events: none; text-shadow: 0 0 2px var(--sheet), 0 0 3px var(--sheet); }
+.shield { font: 700 10px/1 var(--mono); padding: 2px 4px; border-radius: 4px; background: #1f4e9c; color: #fff; border: 1.5px solid #fff; white-space: nowrap; pointer-events: none; box-shadow: 0 0 0 1px #1f4e9c; }
+.shield.us { background: #fff; color: #111; box-shadow: 0 0 0 1px #111; border-color: #fff; }
+.shield.sr { background: #2a7a3b; box-shadow: 0 0 0 1px #2a7a3b; }
+.locate { background: var(--sheet); border: 1px solid var(--rule-strong); border-radius: 6px; padding: 5px 8px; font: 500 12px var(--body); color: var(--ink); cursor: pointer; }
+.you { width: 14px; height: 14px; border-radius: 50%; background: #2b7de9; border: 3px solid #fff; box-shadow: 0 0 0 2px #2b7de9; }
 </style>
 </head>
 <body>
@@ -48,9 +59,9 @@
     </select></div>
   <div class="ctl grow"><label for="q">Find a neighborhood or city</label><input id="q" type="search" list="names" placeholder="Carlson Park, Boyle Heights, Pasadena…" autocomplete="off"><datalist id="names"></datalist></div>
   <fieldset class="layers"><legend>Show on map</legend>
-    <label><input type="checkbox" id="l-roads" checked> Freeways &amp; arterials</label>
+    <label><input type="checkbox" id="l-roads" checked> Streets &amp; names</label>
     <label><input type="checkbox" id="l-transit" checked> Rail &amp; frequent buses</label>
-    <label><input type="checkbox" id="l-parks" checked> Parks &amp; rivers</label>
+    <label><input type="checkbox" id="l-parks" checked> Parks, beaches &amp; rivers</label>
     <label><input type="checkbox" id="l-amen"> Courts, pools, dog parks</label>
     <label><input type="checkbox" id="l-hoods" checked> Neighborhood lines</label>
     <label><input type="checkbox" id="l-tiles"> Street map underlay (online)</label>
@@ -66,7 +77,7 @@
 <script type="application/octet-stream" id="bundle">/*BUNDLE*/</script>
 <script>
 const $ = s => document.querySelector(s);
-const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const css = (n, fb) => getComputedStyle(document.documentElement).getPropertyValue(n).trim() || fb;
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const fmt$ = v => v == null || isNaN(v) ? "–" : v >= 1e9 ? "$" + (v/1e9).toFixed(1) + "B" : v >= 1e6 ? "$" + (v/1e6).toFixed(v >= 1e7 ? 0 : 1) + "M" : v >= 1e3 ? "$" + Math.round(v/1e3) + "k" : "$" + Math.round(v);
 const fmtN = v => v == null || isNaN(v) ? "–" : Math.round(v).toLocaleString();
@@ -122,12 +133,16 @@ function drawContext() {
   const L_ = D.layers, on = id => $(id).checked;
   const noPts = { pointToLayer: (f, ll) => L.circleMarker(ll, { radius: 0, opacity: 0, fillOpacity: 0, interactive: false }) };
   if (on("#l-parks")) {
-    if (L_.parks) layers.parks = L.geoJSON(L_.parks, { ...noPts, style: { fillColor: css("--park"), fillOpacity: .85, color: css("--park-line"), weight: .5 },
-      onEachFeature: (f, l) => f.properties.n && l.bindTooltip(`${esc(f.properties.n)} · ${f.properties.a} ac`, { sticky: true }) }).addTo(map);
+    if (L_.parks) layers.parks = L.geoJSON(L_.parks, { ...noPts, renderer: parkCanvas(),
+      style: f => ({ fillColor: f.properties.k === "beach" ? css("--sand", "#eadfbf") : css("--park"), fillOpacity: f.properties.k === "open space" ? .55 : .85,
+                     color: css("--park-line"), weight: f.properties.a < 2 ? 1.2 : .6 }),
+      onEachFeature: (f, l) => l.bindTooltip(`${f.properties.n ? esc(f.properties.n) : "Unnamed " + esc(f.properties.k || "park")} · ${f.properties.k && f.properties.k !== "park" ? esc(f.properties.k) + " · " : ""}${f.properties.a < 1 ? f.properties.a.toFixed(2) : Math.round(f.properties.a * 10) / 10} ac`, { sticky: true }) }).addTo(map);
+    if (L_.park_labels && L_.park_labels.length) layers.parkLabels = L.layerGroup().addTo(map);
     if (L_.water) layers.water = L.geoJSON(L_.water, { ...noPts, interactive: false, style: { color: css("--water-line"), weight: 1.8, opacity: .9 } }).addTo(map);
   }
   if (on("#l-roads")) {
     if (L_.arterials) layers.art = L.geoJSON(L_.arterials, { ...noPts, interactive: false, style: { color: css("--road-casing"), weight: 1, opacity: .8 } });
+    if (L_.streets) { layers.streets = L.layerGroup().addTo(map); layers.stLabels = L.layerGroup().addTo(map); }
     if (L_.freeways) { layers.fwC = L.geoJSON(L_.freeways, { ...noPts, interactive: false, style: { color: css("--fw-casing"), weight: 3.6, opacity: .9 } }).addTo(map);
       layers.fw = L.geoJSON(L_.freeways, { ...noPts, interactive: false, style: { color: css("--fw"), weight: 2.2, opacity: 1 } }).addTo(map); }
     if (L_.walls) layers.walls = L.geoJSON(L_.walls, { ...noPts, interactive: false, style: { color: css("--ink"), weight: 2, opacity: .8 } });
@@ -156,7 +171,135 @@ function zoomed() {
   const z = map.getZoom();
   const toggle = (l, show) => { if (!l) return; if (show && !map.hasLayer(l)) l.addTo(map); if (!show && map.hasLayer(l)) map.removeLayer(l); };
   toggle(layers.art, z >= 12); toggle(layers.walls, z >= 14); toggle(layers.stops, z >= 13); toggle(layers.amen, z >= 13);
-  toggle(layers.hoods, z >= 12); toggle(layers.hoodLabels, z >= 13); toggle(layers.cityLabels, z >= 10 && z < 13);
+  toggle(layers.hoods, z >= 12); toggle(layers.hoodLabels, z >= 13 && z < 15); toggle(layers.cityLabels, z >= 10 && z < 13);
+  drawStreets(); drawLabels();
+}
+
+// ---------------- streets, names, shields and park labels (drawn only for what's on screen)
+let _parkCanvas = null, _stCanvas = null;
+const parkCanvas = () => _parkCanvas || (_parkCanvas = L.canvas({ padding: .3 }));
+function decodeLine(str) {
+  const pts = []; let i = 0, lat = 0, lon = 0;
+  while (i < str.length) {
+    for (const k of [0, 1]) { let b, sh = 0, r = 0;
+      do { b = str.charCodeAt(i++) - 63; r |= (b & 0x1f) << sh; sh += 5; } while (b >= 0x20);
+      const d = r & 1 ? ~(r >> 1) : r >> 1; if (k === 0) lat += d; else lon += d; }
+    pts.push([lat / 1e5, lon / 1e5]);
+  }
+  return pts;
+}
+const _cellCache = new Map(); let _fwyLines = null;
+function cellLines(key) {
+  if (!_cellCache.has(key)) _cellCache.set(key, (D.layers.streets.cells[key] || []).map(([c, n, e]) => ({ c, n: D.layers.streets.names[n], pts: decodeLine(e) })));
+  return _cellCache.get(key);
+}
+function visibleCells(pad = 0) {
+  const S = D.layers.streets, b = map.getBounds().pad(pad), k = [];
+  for (let x = Math.floor((b.getWest() + 180) / S.cell); x <= Math.floor((b.getEast() + 180) / S.cell); x++)
+    for (let y = Math.floor((b.getSouth() + 90) / S.cell); y <= Math.floor((b.getNorth() + 90) / S.cell); y++) k.push(x + "," + y);
+  return k;
+}
+const _drawn = new Map();
+function drawStreets() {
+  if (!map._loaded) return;
+  if (!layers.streets) return;
+  const z = map.getZoom(), want = new Set();
+  // collectors (class 2) from zoom 13, local streets (class 3) from zoom 14; arterials/freeways already drawn
+  if (z >= 13 && visibleCells(0).length <= 40) visibleCells(.2).forEach(k => { want.add(k + "|2"); if (z >= 14) want.add(k + "|3"); });
+  for (const [key, lyr] of _drawn) if (!want.has(key)) { layers.streets.removeLayer(lyr); _drawn.delete(key); }
+  _stCanvas = _stCanvas || L.canvas({ padding: .3 });
+  for (const key of want) {
+    if (_drawn.has(key)) continue;
+    const [cell, c] = key.split("|"), lines = cellLines(cell).filter(l => l.c === +c).map(l => l.pts);
+    if (!lines.length) continue;
+    const lyr = L.polyline(lines, { renderer: _stCanvas, interactive: false, color: css(+c === 2 ? "--road-casing" : "--res"), weight: +c === 2 ? 1.6 : 1.1, opacity: .95 });
+    layers.streets.addLayer(lyr); _drawn.set(key, lyr);
+  }
+}
+function shieldHtml(ref) {
+  const r = (String(ref).split(";").map(x => x.trim()).find(x => !/hist/i.test(x)) || ""), m = r.match(/^(I|US|CA|SR)[ -]?(\d+[A-Z]?)\b/i);
+  if (!m) return null;
+  const t = m[1].toUpperCase(), cls = t === "I" ? "" : t === "US" ? " us" : " sr";
+  return `<div class="shield${cls}" style="transform:translate(-50%,-50%)">${t === "I" ? "I-" : t === "US" ? "US " : ""}${m[2]}</div>`;
+}
+function drawLabels() {
+  if (!map._loaded) return;
+  const z = map.getZoom(), taken = [], fits = (p, r) => { if (taken.some(q => Math.abs(q.x - p.x) < r && Math.abs(q.y - p.y) < r * .5)) return false; taken.push(p); return true; };
+  const mk = (ll, html) => L.marker(ll, { interactive: false, keyboard: false, icon: L.divIcon({ className: "", iconSize: null, html }) });
+  if (layers.stLabels) {
+    layers.stLabels.clearLayers();
+    const size = map.getSize(), inView = p => p.x > 0 && p.y > 0 && p.x < size.x && p.y < size.y;
+    if (z >= 10.5) {
+      // spacing between repeated labels of the same street, in screen pixels
+      const gap = { 0: 380, 1: 420, 2: 380, 3: 300 }, minZ = { 0: 10.5, 1: 13, 2: 14, 3: 15 };
+      if (!_fwyLines) _fwyLines = (D.layers.streets.fwy || []).map(([c, n, e]) => ({ c, n: D.layers.streets.names[n], pts: decodeLine(e) }));
+      const vb = map.getBounds().pad(.1);
+      const lines = _fwyLines.filter(l => l.pts.some(p => vb.contains(p)))
+        .concat(z >= 13 && visibleCells(0).length <= 60 ? visibleCells(0).flatMap(cellLines).filter(l => z >= minZ[l.c]).sort((a, b) => a.c - b.c) : []);
+      let count = 0;
+      const placed = new Map(); // street name -> screen points already labeled
+      const farFromSame = (n, p, g) => !(placed.get(n) || []).some(q => q.distanceTo(p) < g);
+      for (const l of lines) {
+        if (count > 500) break;
+        const px = l.pts.map(p => map.latLngToContainerPoint(p)), g = gap[l.c];
+        let since = g / 3;
+        for (let i = 1; i < px.length; i++) {
+          const a = px[i - 1], b = px[i], seg = a.distanceTo(b);
+          since += seg;
+          if (since < g / 3 || seg < (l.c === 0 ? 4 : l.n.length * 6.2)) continue;
+          const mid = L.point((a.x + b.x) / 2, (a.y + b.y) / 2);
+          const key = l.c === 0 ? (shieldHtml(l.n) || l.n) : l.n;
+          if (!inView(mid) || !farFromSame(key, mid, g)) continue;
+          let html;
+          if (l.c === 0) { html = shieldHtml(l.n); if (!html || !fits(mid, 50)) continue; }
+          else {
+            let ang = Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI; if (ang > 90) ang -= 180; if (ang < -90) ang += 180;
+            if (!fits(mid, Math.max(70, l.n.length * 6))) continue;
+            html = `<div class="lbl-st${l.c === 1 ? " art" : ""}" style="transform:translate(-50%,-50%) rotate(${ang.toFixed(1)}deg)">${esc(l.n)}</div>`;
+          }
+          layers.stLabels.addLayer(mk(map.containerPointToLatLng(mid), html)); since = 0; count++;
+          if (!placed.has(key)) placed.set(key, []); placed.get(key).push(mid);
+        }
+      }
+    }
+  }
+  if (layers.parkLabels) {
+    layers.parkLabels.clearLayers();
+    const b = map.getBounds(), minAc = z >= 15 ? 0 : z >= 14 ? 1 : z >= 13 ? 5 : z >= 12 ? 25 : z >= 11 ? 150 : 1e9;
+    let n = 0;
+    for (const [nm, lat, lon, ac] of D.layers.park_labels) {
+      if (ac < minAc) break;
+      if (!b.contains([lat, lon])) continue;
+      const p = map.latLngToContainerPoint([lat, lon]);
+      if (!fits(p, Math.max(60, nm.length * 6))) continue;
+      layers.parkLabels.addLayer(mk([lat, lon], `<div class="lbl-park" style="transform:translate(-50%,-50%)">${esc(nm)}</div>`));
+      if (++n > 150) break;
+    }
+  }
+}
+
+// ---------------- find me
+function pointInFeature(f, lon, lat) {
+  const inRing = ring => { let c = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) { const [xi, yi] = ring[i], [xj, yj] = ring[j];
+      if ((yi > lat) !== (yj > lat) && lon < (xj - xi) * (lat - yi) / (yj - yi) + xi) c = !c; }
+    return c; };
+  const polys = f.geometry.type === "Polygon" ? [f.geometry.coordinates] : f.geometry.coordinates;
+  return polys.some(([outer, ...holes]) => inRing(outer) && !holes.some(inRing));
+}
+let youMarker = null;
+function locateMe(btn) {
+  if (!navigator.geolocation) { btn.textContent = "Location not available"; return; }
+  btn.textContent = "Finding you…";
+  navigator.geolocation.getCurrentPosition(pos => {
+    const { latitude: lat, longitude: lon } = pos.coords;
+    if (youMarker) map.removeLayer(youMarker);
+    youMarker = L.marker([lat, lon], { interactive: false, icon: L.divIcon({ className: "", iconSize: [14, 14], html: '<div class="you"></div>' }) }).addTo(map);
+    const f = D.bgs.features.find(f => pointInFeature(f, lon, lat));
+    if (f) select(f.properties.id, false);
+    map.setView([lat, lon], 16);
+    btn.textContent = f ? "📍 Find me" : "You're outside LA County";
+  }, () => { btn.textContent = "Location blocked"; }, { enableHighAccuracy: true, timeout: 10000 });
 }
 function retop() {
   // best improvement and the cost of every project returning >= $1, under the current evidence filter
@@ -338,7 +481,7 @@ function report() {
 async function init() {
   D = await unpack();
   map = L.map("map", { preferCanvas: true, zoomSnap: 0.5, minZoom: 9, maxZoom: 17 });
-  map.attributionControl.setPrefix(false).addAttribution("© OpenStreetMap contributors · US Census · LA County Assessor · LAPD · LASD · MyLA311 · CHP · LA Metro · city tree surveys · Tree Equity Score");
+  map.attributionControl.setPrefix(false).addAttribution("© OpenStreetMap contributors · US Census · LA County Assessor, Auditor-Controller and Parks · LAPD · LASD · MyLA311 · CHP · LA Metro · city tree surveys · Tree Equity Score");
   D.bgs.features.forEach(f => byId.set(f.properties.id, f));
   retop();
   breaks = computeBreaks();
@@ -360,6 +503,11 @@ async function init() {
     restyle();
   };
   map.on("zoomend", zoomed);
+  map.on("moveend", () => { drawStreets(); drawLabels(); });
+  L.control.scale({ imperial: true, metric: false, maxWidth: 140, position: "bottomleft" }).addTo(map);
+  const Loc = L.Control.extend({ options: { position: "topleft" }, onAdd() { const b = L.DomUtil.create("button", "locate"); b.type = "button"; b.textContent = "📍 Find me";
+    b.title = "Center the map on where you are and open your block group"; L.DomEvent.disableClickPropagation(b); b.onclick = () => locateMe(b); return b; } });
+  new Loc().addTo(map);
   map.fitBounds(L.geoJSON(D.bgs).getBounds());
   const start = D.meta.default_bg && byId.has(D.meta.default_bg) ? D.meta.default_bg : D.bgs.features[0].properties.id;
   select(start, false);
