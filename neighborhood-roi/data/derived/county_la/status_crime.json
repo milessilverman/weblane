@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-02T05:21:17.251741+00:00",
+ "generated_at": "2026-11-02T05:43:54.177538+00:00",
  "sources": {
   "crime": {
    "lapd_k7nn-b2ep_cols": [
@@ -185,17 +185,17 @@
    "lasd_rows_Sheriff Part 1 and 2 Crimes (Y": 96082,
    "lasd_stale_Sheriff Part 1 and 2 Crimes (H": "2012-05-04",
    "lasd_arc_err_Sheriff Part 1 and 2 Crimes (H": "failed: https://services.arcgis.com/RmCCgQtiZLDCtblq/arcgis/rest/services/PART_I_AND_II_CRIMES-HISTORICAL/FeatureServer/",
-   "lasd_rows_Sheriff Officer Contacts _ Per": 600000,
-   "lasd_dataset": "Sheriff Officer Contacts _ Person Details  https://services.arcgis.com/RmCCgQtiZLDCtblq/arcgis/rest/services/LASD_Officer_Contacts___Person_Details_/FeatureServer/0",
-   "lasd_rows": 0,
+   "lasd_dataset": "Sheriff Part 1 and 2 Crimes (Year to Date) https://services.arcgis.com/RmCCgQtiZLDCtblq/arcgis/rest/services/PART_I_AND_II_CRIMES-YTD/FeatureServer/0",
+   "lasd_rows": 90632,
    "santa_monica_rows": 7116,
    "santa_monica_latest": "2024-05-13",
    "rows_by_agency": {
     "LAPD": 80732,
+    "LASD": 90632,
     "Santa Monica PD": 7116
    },
    "ok": true,
-   "seconds": 1206.8
+   "seconds": 494.3
   }
  }
 }

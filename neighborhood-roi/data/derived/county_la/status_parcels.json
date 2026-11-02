@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-02T05:21:28.421476+00:00",
+ "generated_at": "2026-11-02T05:43:49.930099+00:00",
  "sources": {
   "parcels": {
    "fields": [
@@ -94,7 +94,7 @@
     "commercial": 8935
    },
    "ok": true,
-   "seconds": 809.5
+   "seconds": 833.4
   }
  }
 }
