@@ -153,7 +153,7 @@ def zoning_bundle():
         return None
     g = gpd.read_file(f"/vsigzip/{p}")
     g = g[g.geometry.notna() & ~g.geometry.is_empty]
-    g["geometry"] = g.to_crs(M).geometry.simplify(6).to_crs(4326)
+    g["geometry"] = g.to_crs(M).geometry.simplify(8).to_crs(4326)
     zones, zi, cells = [], {}, {}
     for z, cat, juris, geom in zip(g.zone.astype(str), g.cat, g.juris, g.geometry):
         if geom is None or geom.is_empty:
@@ -166,8 +166,62 @@ def zoning_bundle():
         key = f"{int((pt.x + 180) // CELL)},{int((pt.y + 90) // CELL)}"
         for poly in (geom.geoms if geom.geom_type == "MultiPolygon" else [geom]):
             rings = [encode_line(list(poly.exterior.coords))] + [encode_line(list(r.coords)) for r in poly.interiors]
-            cells.setdefault(key, []).append([ci, zi[z], rings, round(pt.y, 5), round(pt.x, 5)])
+            cells.setdefault(key, []).append([ci, zi[z], rings])
     return {"cell": CELL, "zones": zones, "cats": ZCATS, "cells": cells}
+
+
+def polys_in_cells(g, attrs, tol=2, cell=None):
+    """Polygons as encoded rings grouped by grid cell: {cell: [[attr..., [rings]]]} (drawn only on screen)."""
+    cell = cell or CELL
+    g = g[g.geometry.notna() & ~g.geometry.is_empty].copy()
+    g["geometry"] = g.to_crs(M).geometry.simplify(tol).to_crs(4326)
+    cells = {}
+    for row in g.itertuples():
+        geom = row.geometry
+        if geom is None or geom.is_empty:
+            continue
+        pt = geom.representative_point()
+        key = f"{int((pt.x + 180) // cell)},{int((pt.y + 90) // cell)}"
+        rings = [encode_line(list(pl.exterior.coords)) for pl in (geom.geoms if geom.geom_type == "MultiPolygon" else [geom]) if pl.geom_type == "Polygon"]
+        cells.setdefault(key, []).append([getattr(row, a) for a in attrs] + [rings])
+    return cells
+
+
+def facility_areas_bundle():
+    p = SRC / "map_facility_areas.geojson"
+    if not p.exists():
+        return None
+    g = gpd.read_file(p)
+    g = g[g.kind.isin(FAC_KINDS)]
+    g["k"] = g.kind.map(FAC_KINDS.index)
+    return {"cell": CELL, "cells": polys_in_cells(g, ["k"], tol=1.5)}
+
+
+def underused_bundle():
+    p, q = MOD / "underused.json", MOD / "underused_sites.geojson"
+    if not (p.exists() and q.exists()):
+        return None, None
+    u = json.loads(p.read_text())
+    g = gpd.read_file(q)
+    return u, {"cell": CELL, "cells": polys_in_cells(g, ["sid"], tol=1.5)}
+
+
+def lines_bundle(name, keep):
+    p = SRC / f"map_{name}.geojson"
+    if not p.exists():
+        return None
+    g = gpd.read_file(p)
+    out = []
+    for row in g.itertuples():
+        geom = row.geometry
+        if geom is None or geom.is_empty:
+            continue
+        if geom.geom_type == "Point":
+            out.append([getattr(row, k) if isinstance(getattr(row, k, None), str) else None for k in keep] + [round(geom.y, 5), round(geom.x, 5)])
+            continue
+        for ln in (geom.geoms if hasattr(geom, "geoms") else [geom]):
+            out.append([getattr(row, k) if isinstance(getattr(row, k, None), str) else None for k in keep] + [encode_line(list(ln.simplify(0.00005).coords))])
+    return out
 
 
 def labels(g, col):
@@ -182,6 +236,7 @@ def main():
     d = pd.read_csv(MOD / "bg_scored.csv", dtype={"GEOID": str})
     details = json.loads((MOD / "details.json").read_text())
     meta = json.loads((MOD / "meta.json").read_text())
+    und = json.loads((MOD / "underused.json").read_text()) if (MOD / "underused.json").exists() else {"sites": [], "bg": {}, "profit": {}, "bg_pct": {}, "soon": {}}
     cat = meta["catalog"]
     bg = gpd.read_file(SRC / "map_block_groups.geojson")
     bg["geometry"] = bg.to_crs(M).geometry.simplify(14).to_crs(4326)
@@ -190,6 +245,7 @@ def main():
     props = pd.DataFrame({"id": bg.GEOID, "n": bg.hood.fillna(bg.city), "c": bg.city, "h": col("homes"), "v": col("top_vpd"), "t": col("top"),
                           "pc": col("pkg_cost"), "hv": col("home_value"), "ht": col("temp_diff_f"), "vc": col("violent_per_1k"),
                           "pa": col("park_acres_half_mile"), "bt": col("bus_max_tph_400m"), "ts": col("vacant_tree_sites")})
+    props["pp"] = props["id"].map(lambda x: (und.get("bg_pct") or {}).get(x))
     feats = []
     for (_, p), geom in zip(props.iterrows(), bg.geometry):
         q = {k: num(v, 2) for k, v in p.items()}
@@ -230,7 +286,8 @@ def main():
         if gid in eifd["bg"]:
             m["e"] = eifd["bg"][gid]
         if gid in gp["bg"]:
-            m["gp"] = gp["bg"][gid]
+            gg = gp["bg"][gid]
+            m["gp"] = {"g": [[r_[0]] + r_[2:8] for r_ in gg["g"]], "s": [[r_[0]] + r_[2:] for r_ in gg["s"]]}
         fc = {k: num(r[f"fac_{k.replace(' ', '_')}_m"], 0) for k in FAC_KINDS if f"fac_{k.replace(' ', '_')}_m" in r.index}
         fc = {k: v for k, v in fc.items() if v is not None}
         if fc:
@@ -254,6 +311,10 @@ def main():
     L["facilities"] = facilities_bundle()
     L["fac_kinds"] = FAC_KINDS
     L["zoning"] = zoning_bundle()
+    L["fac_areas"] = facility_areas_bundle()
+    under, L["underused"] = underused_bundle()
+    L["rail_con"] = lines_bundle("rail_construction", ["name"])
+    L["stations_con"] = lines_bundle("stations_construction", ["name"])
     fs = SRC / "map_frequent_stops.geojson"
     if fs.exists():
         s = gpd.read_file(fs)
@@ -337,6 +398,13 @@ def main():
                          f"{em.get('roll_value_matched_share', 0):.2%} of it matched to a tax-rate area with factors"])
         src_rows.append([f"EIFD calculator: Auditor-Controller {em.get('factor_year')} Modified ATI ratios (AF49)", '<span class="pill ok">loaded</span>',
                          f"{em.get('tras_with_factors', 0):,} tax-rate areas; {em.get('rows', 0):,} agency shares; report dated {em.get('prepared')}"])
+    pr = sorted((und.get("profit") or {}).items(), key=lambda kv: -kv[1]["total"])[:30]
+    profit_rows = [[k.split("|")[0], k.split("|")[1], f"${v['total'] / 1e6:,.1f}M", f"{v['pct']:.1%}", f"${v['per_home']:,.0f}",
+                    f"${v['proj'] / 1e6:,.1f}M", f"${v['land'] / 1e6:,.1f}M", ", ".join(v.get("soon") or []) or "–"] for k, v in pr]
+    bg_hood = dict(zip(d.GEOID, d.hood.fillna(d.city) + ", " + d.city))
+    site_rows = [[s_["k"] + (f" ({s_['nm']})" if s_.get("nm") else ""), (s_.get("ad") or bg_hood.get(s_["gid"], "")), f"{s_['ac']:,.1f}",
+                  f"${s_['lav'] / 1e6:,.1f}M" if s_.get("lav") else "–", f"${s_['mkt'] / 1e6:,.1f}M" if s_.get("mkt") else "–",
+                  s_.get("z") or s_.get("zc") or "–", s_["idea"]] for s_ in sorted(und.get("sites", []), key=lambda x: -(x.get("mkt") or 0))[:25]]
     from collections import Counter
     gcnt = Counter(r[1] for v in gp["bg"].values() for r in v["g"])
     gap_rows = [[k[0].upper() + k[1:], f"{v:,}", f"{v / max(len(gp['bg']), 1):.0%}"] for k, v in gcnt.most_common(22)]
@@ -348,6 +416,11 @@ def main():
                "Click any area for its ranked list, the total cost, the reasoning and the sources. Use the category buttons to see just transit, safety, parks and so on."],
            "sections": [
                {"title": "Your neighborhoods", "table": {"head": ["Area", "Block groups", "Homes", "Median home value", "Best bet in its best block group", "$ per $1", "Cost of all paying projects"], "rows": focus, "num": [1, 2, 3, 5, 6]}},
+               {"title": "Most profitable neighborhoods", "paragraphs": [
+                   "Value created if every project that returns at least $1 per $1 were built (net of its cost), plus the rough development margin on the neighborhood's underused land. The margin uses stated assumptions for build cost and new-home prices until round-7 research replaces them. Pick <b>Profit potential</b> under 'Color areas by' to see it on the map."],
+                "table": {"head": ["Neighborhood", "City", "Value created", "% of home value", "Per home", "From projects", "From underused land", "Rail coming"], "rows": profit_rows, "num": [2, 3, 4, 5, 6]}},
+               {"title": "Largest underused sites", "paragraphs": [f"{len(und.get('sites', [])):,} sites of a quarter acre or more: Assessor parcels coded as parking or golf, vacant parcels of half an acre or more, commercial and industrial lots where buildings are worth less than 20% of the land, and surface lots of an acre or more mapped in OpenStreetMap. Turn on <b>Underused land</b> and click a site for details."],
+                "table": {"head": ["Site", "Where", "Acres", "Assessed land", "Market land (est.)", "Zoning", "Could be"], "rows": site_rows, "num": [2, 3, 4]}},
                {"title": "What neighborhoods are missing most often", "paragraphs": ["Each block group is compared with the 50 most similar block groups in the county. A gap means it is worse than at least 80% of them by a meaningful margin. Click any area for its own gaps and a plan for its neighborhood."],
                 "table": {"head": ["Gap", "Block groups with it", "Share"], "rows": gap_rows, "num": [1, 2]}},
                {"title": "What comes out on top, county-wide", "paragraphs": ["How many block groups each improvement ranks first in (counting only where it returns at least $1 per $1)."],
@@ -392,7 +465,8 @@ def main():
             pts = cent.loc[idx]
             c = pts.union_all().centroid if hasattr(pts, "union_all") else pts.unary_union.centroid
             search[nm] = bg.GEOID.loc[pts.distance(c).idxmin()]
-    bundle = {"meta": {"built": date.today().isoformat(), "default_bg": default, "search": search}, "bgs": bgs, "details": det, "catalog": lib, "funding": meta.get("funding", {}), "eifd": eifd["meta"], "upgrades": meta.get("owner_upgrades", []), "plans": gp["plans"],
+    bundle = {"meta": {"built": date.today().isoformat(), "default_bg": default, "search": search}, "bgs": bgs, "details": det, "catalog": lib, "funding": meta.get("funding", {}), "eifd": eifd["meta"], "upgrades": meta.get("owner_upgrades", []), "plans": gp["plans"], "gap_labels": {r_[0]: r_[1] for v in gp["bg"].values() for r_ in v["g"] + v["s"]},
+              "under": {"sites": und.get("sites", []), "profit": und.get("profit", {}), "soon": und.get("soon", {}), "assumptions": und.get("assumptions", {})},
               "zone_rules": pd.read_csv(ROOT / "model" / "round6" / "zone_rules.csv").to_dict("records"),
               "layers": L, "hoods": hoods_js, "hood_labels": labels(bgn, "hood"), "cities": city_js,
               "city_labels": labels(cities.rename(columns={"name": "nm"}), "nm"), "report": rep}

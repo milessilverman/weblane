@@ -5,11 +5,12 @@ Current deliverable: `reports/city-pretty-la-county.html` (V2.3: real EIFD input
 
 ## How it's built
 - Data: `.github/workflows/neighborhood-data.yml` runs `pipeline/county_la.py` stages in GitHub Actions
-  (geo, osm, transit, sales, crime, requests311, crashes, trees, parcels, assets, tra, assessed, basemap, research_check, zoning) and commits
+  (geo, osm, transit, sales, crime, requests311, crashes, trees, parcels, assets, tra, assessed, basemap, research_check, zoning, underused) and commits
   `data/derived/county_la/`. Dispatch with input `county_only=true` to skip the slow tract/Westside jobs, and
   `county_stages=tra,assessed` (comma list) to run only some county stages; the rest keep their last data.
   This sandbox can't reach County/ArcGIS hosts, so data pulls must run in Actions.
-- Model: `python3 model/score_county.py`, `python3 model/eifd_tra.py`, then `python3 model/gaps.py` → `web/county_data/`.
+- Model: `python3 model/score_county.py`, `python3 model/eifd_tra.py`, `python3 model/gaps.py`, then
+  `python3 model/underused.py` → `web/county_data/`.
 - Page: `python3 web/build_county_html.py` → `reports/city-pretty-la-county.html`.
 
 ## Research in this folder
@@ -61,6 +62,19 @@ Current deliverable: `reports/city-pretty-la-county.html` (V2.3: real EIFD input
   park, school, library and rail station. Cheapest step first ("quick win"), then by return. `web/county_data/gaps.json`.
 - Planned: rewrite these plans monthly with Claude in the pipeline (needs an ANTHROPIC_API_KEY secret) and add an
   on-page assistant once the map is hosted.
+
+## Profit, underused land, facility footprints (done in V2.7)
+- `underused` stage: Assessor parcels coded parking / golf, vacant >= 0.5 ac, commercial lots whose buildings are
+  < 20% of land value (all with roll values); `basemap` adds OSM surface lots >= 1 acre, facility footprints
+  (`map_facility_areas.geojson`), rail lines and stations under construction.
+- `model/underused.py`: merges stacked (condo) parcels, drops airport land and active industrial uses, keeps vacant
+  land only in built-up areas; per site: assessed land, market land estimate (never below assessed), zone, rail
+  distance (incl. stations under construction), homes possible (zone densities; SB 79 assumption near rail), rough
+  margin = homes x (new-unit price - build cost) - land. Assumptions are in `ASSUMPTIONS` and shown on the page;
+  replace with round-7 research (`research/round7_research_prompt.md`). Neighborhood profit = paying projects net
+  of cost + positive site margins.
+- Page: per-type facility switches + footprints (z14+), underused layer (z13+, click for details; also selects the
+  area), "Profit potential" map color and report ranking, rail under construction in the transit layer.
 
 ## Next steps
 1. (done) EIFD tax-rate-area data.

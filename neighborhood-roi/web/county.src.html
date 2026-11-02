@@ -32,6 +32,7 @@
 .shield.us { background: #fff; color: #111; box-shadow: 0 0 0 1px #111; border-color: #fff; }
 .shield.sr { background: #2a7a3b; box-shadow: 0 0 0 1px #2a7a3b; }
 .locate { background: var(--sheet); border: 1px solid var(--rule-strong); border-radius: 6px; padding: 5px 8px; font: 500 12px var(--body); color: var(--ink); cursor: pointer; }
+.fac-pick { display: inline-block; } .fac-pick summary { cursor: pointer; color: var(--ink-2); } .fac-pick > div { position: absolute; z-index: 1000; background: var(--sheet); border: 1px solid var(--rule-strong); border-radius: 8px; padding: 6px 10px; box-shadow: 0 4px 14px rgba(0,0,0,.15); }
 .fac { font: 700 9px/14px var(--mono); width: 14px; height: 14px; border-radius: 50%; color: #fff; text-align: center; border: 1.5px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.35); }
 .lbl-zone { font: 600 10px/1 var(--mono); color: var(--ink-2); white-space: nowrap; pointer-events: none; text-shadow: 0 0 2px var(--sheet), 0 0 3px var(--sheet); }
 .zkey { display: inline-flex; align-items: center; gap: 4px; margin-right: 10px; } .zkey i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
@@ -52,6 +53,7 @@
   <div class="ctl"><label for="metric">Color areas by</label>
     <select id="metric">
       <option value="top_vpd">Best value per $1</option>
+      <option value="profit">Profit potential</option>
       <option value="top">Best improvement type</option>
       <option value="pkg_cost">Cost of every project that pays back</option>
       <option value="value">Typical home value</option>
@@ -66,7 +68,9 @@
     <label><input type="checkbox" id="l-roads" checked> Streets &amp; names</label>
     <label><input type="checkbox" id="l-transit" checked> Rail &amp; frequent buses</label>
     <label><input type="checkbox" id="l-parks" checked> Parks, beaches &amp; rivers</label>
-    <label><input type="checkbox" id="l-fac" checked> Schools, libraries &amp; civic buildings</label>
+    <label><input type="checkbox" id="l-fac" checked> Public facilities</label>
+    <details class="fac-pick"><summary class="small">choose types</summary><div id="fac-kinds" class="small"></div></details>
+    <label><input type="checkbox" id="l-under" checked> Underused land (parking, golf, vacant)</label>
     <label><input type="checkbox" id="l-zone"> Zoning (zoom in)</label>
     <label><input type="checkbox" id="l-amen"> Courts, pools, dog parks</label>
     <label><input type="checkbox" id="l-hoods" checked> Neighborhood lines</label>
@@ -101,6 +105,7 @@ const METRICS = {
   park: { label: "Park acres within ½ mile", f: p => p.pa, unit: v => v.toFixed(1) + " ac", ramp: "seq" },
   bus: { label: "Buses per hour, busiest stop within 400 m (7–9am)", f: p => p.bt, unit: v => Math.round(v) + "/hr", ramp: "seq" },
   sites: { label: "Open street-tree sites", f: p => p.ts, unit: v => fmtN(v), ramp: "heat" },
+  profit: { label: "Profit potential: value created, % of home value", f: p => p.pp > 0 ? p.pp * 100 : null, unit: v => v.toFixed(1) + "%", ramp: "seq", none: "No paying projects or sites" },
 };
 let D, map, bgs, layers = {}, selected = null, selLayer = null, breaks = [], tiles = null, byId = new Map();
 
@@ -166,7 +171,12 @@ function drawContext() {
     layers.amen = L.geoJSON(L_.amenities, { pointToLayer: (f, ll) => L.circleMarker(ll, { radius: 3.5, color: css("--sheet"), weight: 1, fillColor: css("--school"), fillOpacity: 1 }),
       onEachFeature: (f, l) => l.bindTooltip(`<b>${esc(f.properties.k)}</b>${f.properties.n ? " · " + esc(f.properties.n) : ""}`) });
   }
-  if (on("#l-fac") && L_.facilities) layers.fac = L.layerGroup();
+  if (on("#l-fac") && L_.facilities) { layers.fac = L.layerGroup(); layers.facArea = L.layerGroup().addTo(map); _fDrawn.clear(); }
+  if (on("#l-under") && L_.underused) { layers.under = L.layerGroup().addTo(map); _uDrawn.clear(); }
+  if (on("#l-transit") && L_.rail_con) {
+    layers.railCon = L.layerGroup(L_.rail_con.filter(r => r.length === 2).map(([n, e]) => L.polyline(decodeLine(e), { interactive: !!n, color: "#e8590c", weight: 2.4, dashArray: "2 6", opacity: .95 }).bindTooltip(`${n ? esc(n) + " · " : ""}rail under construction`))).addTo(map);
+    (L_.stations_con || []).filter(r => r.length === 3).forEach(([n, lat, lon]) => layers.railCon.addLayer(L.circleMarker([lat, lon], { radius: 5, color: "#e8590c", weight: 2, fillColor: css("--sheet"), fillOpacity: 1 }).bindTooltip(`<b>${esc(n)}</b> · station under construction`)));
+  }
   if (on("#l-zone") && L_.zoning) { layers.zone = L.layerGroup().addTo(map); layers.zoneLabels = L.layerGroup().addTo(map); }
   if (on("#l-hoods") && D.hoods) {
     layers.hoods = L.geoJSON(D.hoods, { ...noPts, interactive: false, style: { fill: false, color: css("--hood-line"), weight: 1.1, opacity: .5 } });
@@ -181,7 +191,7 @@ function zoomed() {
   const toggle = (l, show) => { if (!l) return; if (show && !map.hasLayer(l)) l.addTo(map); if (!show && map.hasLayer(l)) map.removeLayer(l); };
   toggle(layers.art, z >= 12); toggle(layers.walls, z >= 14); toggle(layers.stops, z >= 13); toggle(layers.amen, z >= 13);
   toggle(layers.hoods, z >= 12); toggle(layers.hoodLabels, z >= 13 && z < 15); toggle(layers.cityLabels, z >= 10 && z < 13);
-  drawStreets(); drawLabels(); drawZoning(); drawFacilities();
+  drawStreets(); drawLabels(); drawZoning(); drawFacilities(); drawUnder();
   const zon = zoningOn(); if (bgs && zon !== zoomed._last) { zoomed._last = zon; bgs.setStyle(styleBg); }
 }
 
@@ -300,12 +310,14 @@ const FAC_STYLE = { "school": ["#2563eb", "S"], "college": ["#4338ca", "U"], "li
   "community center": ["#ea580c", "R"], "museum": ["#0f766e", "M"], "courthouse": ["#78350f", "J"] };
 function drawFacilities() {
   if (!map._loaded || !layers.fac) return;
+  drawFacilityAreas();
   const z = map.getZoom(), b = map.getBounds().pad(.1), K = D.layers.fac_kinds;
   layers.fac.clearLayers();
   if (z < 12) { if (map.hasLayer(layers.fac)) map.removeLayer(layers.fac); return; }
   if (!map.hasLayer(layers.fac)) layers.fac.addTo(map);
   // schools are numerous: from zoom 13; civic buildings from zoom 12
   for (const [k, n, lat, lon] of D.layers.facilities) {
+    if (!facOn.has(k)) continue;
     const kind = K[k]; if (z < 13 && (kind === "school" || kind === "clinic")) continue;
     if (!b.contains([lat, lon])) continue;
     const [col, ch] = FAC_STYLE[kind] || ["#444", "•"];
@@ -314,12 +326,63 @@ function drawFacilities() {
   }
 }
 
+let facOn = new Set(Array.from({ length: 20 }, (_, i) => i));
+const _fDrawn = new Map(); let _fCanvas = null;
+function cellKeys(cell, pad) {
+  const b = map.getBounds().pad(pad), k = [];
+  for (let x = Math.floor((b.getWest() + 180) / cell); x <= Math.floor((b.getEast() + 180) / cell); x++)
+    for (let y = Math.floor((b.getSouth() + 90) / cell); y <= Math.floor((b.getNorth() + 90) / cell); y++) k.push(x + "," + y);
+  return k;
+}
+function drawFacilityAreas() {
+  // footprints (school grounds, library and civic buildings) from zoom 14, colored like their markers
+  const A = D.layers.fac_areas; if (!A || !layers.facArea) return;
+  const want = new Set(map.getZoom() >= 14 ? cellKeys(A.cell, .2) : []);
+  for (const [k, l] of _fDrawn) if (!want.has(k)) { layers.facArea.removeLayer(l); _fDrawn.delete(k); }
+  _fCanvas = _fCanvas || L.canvas({ padding: .3, pane: passPane("facPane", 407) });
+  for (const k of want) {
+    if (_fDrawn.has(k)) continue;
+    const polys = (A.cells[k] || []).filter(([fk]) => facOn.has(fk)).map(([fk, rings]) => { const col = (FAC_STYLE[D.layers.fac_kinds[fk]] || ["#444"])[0];
+      return L.polygon(rings.map(decodeLine), { renderer: _fCanvas, interactive: false, color: col, weight: 1.6, fillColor: col, fillOpacity: .18 }); });
+    const g = L.layerGroup(polys); layers.facArea.addLayer(g); _fDrawn.set(k, g);
+  }
+}
+
+// ---------------- underused land: parking lots, golf courses, vacant parcels, lightly built commercial lots
+const UCOL = { "parking lot": "#6b7280", "golf course": "#65a30d", "vacant": "#d97706", "lightly built commercial": "#9333ea" };
+const _uDrawn = new Map();
+function siteHtml(s) {
+  const A = D.under.assumptions || {};
+  return `<div class="small" style="max-width:300px"><b>${esc(s.k[0].toUpperCase() + s.k.slice(1))}</b>${s.nm ? " · " + esc(s.nm) : ""}${s.ad ? "<br>" + esc(s.ad) : ""}
+    <br>${s.ac.toFixed(s.ac < 10 ? 2 : 0)} acres${s.use ? " · " + esc(s.use) : ""}
+    ${s.lav != null ? `<br>Assessed land value: <b>${fmt$(s.lav)}</b>${s.by ? ` (Prop 13 base from ${s.by})` : ""}` : ""}
+    ${s.mkt != null ? `<br>Estimated market land value: <b>~${fmt$(s.mkt)}</b>` : ""}
+    <br>Zoning: ${esc(s.z || s.zc || "unknown")}${s.rail != null && s.rail < 805 ? ` · ${(s.rail / 1609).toFixed(2)} mi from ${esc(s.st || "rail")}${s.sts === "coming" ? " (station under construction)" : ""}` : ""}
+    <br><b>Could be:</b> ${esc(s.idea)}
+    ${s.margin != null && s.homes ? `<br>Rough development margin: <b>${s.margin >= 0 ? "~" + fmt$(s.margin) : "negative (" + fmt$(s.margin) + ")"}</b> (${fmtN(s.homes)} homes)` : ""}
+    <br><span class="muted">Screening estimate: build cost and new-home prices are assumptions until round-7 research.</span></div>`;
+}
+function drawUnder() {
+  const U = D.layers.underused; if (!map._loaded || !U || !layers.under) return;
+  const want = new Set(map.getZoom() >= 13 ? cellKeys(U.cell, .2) : []);
+  for (const [k, l] of _uDrawn) if (!want.has(k)) { layers.under.removeLayer(l); _uDrawn.delete(k); }
+  for (const k of want) {
+    if (_uDrawn.has(k)) continue;
+    const g = L.layerGroup((U.cells[k] || []).map(([sid, rings]) => { const s = D.under.sites[sid]; if (!s) return null; const col = UCOL[s.k] || "#888";
+      return L.polygon(rings.map(decodeLine), { color: col, weight: 1.4, fillColor: col, fillOpacity: .35, dashArray: s.k === "parking lot" ? "3 3" : null })
+        .bindTooltip(`${esc(s.k)} · ${s.ac.toFixed(1)} ac${s.mkt ? " · ~" + fmt$(s.mkt) + " land" : ""} (click for more)`, { sticky: true }).bindPopup(() => siteHtml(s), { maxWidth: 320 })
+        .on("click", () => { if (selected !== s.gid) select(s.gid, false); }); }).filter(Boolean));
+    layers.under.addLayer(g); _uDrawn.set(k, g);
+  }
+}
+
 // ---------------- zoning polygons (zoom 14+), colored by what each zone allows
 const ZCOL = { "single-family": "#f6d36b", "multifamily": "#e8833a", "commercial / mixed use": "#d4383c", "industrial": "#8e6bbf",
   "open space / public": "#4f9d5d", "agricultural": "#b9c97a", "parking": "#9aa0a6", "other": "#c7c7c7" };
 let _zCanvas = null; const _zDrawn = new Map(), _zDec = new Map();
 function zCell(key) {
-  if (!_zDec.has(key)) _zDec.set(key, (D.layers.zoning.cells[key] || []).map(([c, z, rings, lat, lon]) => ({ cat: D.layers.zoning.cats[c], zone: D.layers.zoning.zones[z], rings: rings.map(decodeLine), lat, lon })));
+  if (!_zDec.has(key)) _zDec.set(key, (D.layers.zoning.cells[key] || []).map(([c, z, rings]) => { const rr = rings.map(decodeLine), b = L.latLngBounds(rr[0]), cc = b.getCenter();
+    return { cat: D.layers.zoning.cats[c], zone: D.layers.zoning.zones[z], rings: rr, lat: cc.lat, lon: cc.lng }; }));
   return _zDec.get(key);
 }
 function drawZoning() {
@@ -366,6 +429,12 @@ function zoningSection(m) {
   if (m.city === "Los Angeles" && (rail <= 805 || tph >= 8)) L_.push("<b>LA City CHIP:</b> mixed-income and 100%-affordable projects near transit and on corridors get density and height bonuses.");
   h += `<ul class="small" style="margin:6px 0 0 18px;padding:0">${L_.map(x => `<li>${x}</li>`).join("")}</ul><p class="small muted">Transit distances are approximate (rail stations and bus frequency); official eligibility depends on the parcel.</p></div>`;
   return h;
+}
+function underSection(p) {
+  const S = (D.under.sites || []).filter(s => s.gid === p.id).sort((a, b) => (b.mkt || 0) - (a.mkt || 0));
+  if (!S.length) return "";
+  return `<div class="section"><h3>Underused land here</h3><p class="small muted">${S.length} site${S.length > 1 ? "s" : ""} in this block group: parking lots, golf courses, vacant parcels or lightly built commercial lots. Click one to zoom to it.</p>
+    <div class="recs">${S.slice(0, 6).map(s => `<div class="rec qolrec" style="cursor:pointer" data-site="${s.i}"><div class="small">${siteHtml(s)}</div></div>`).join("")}</div></div>`;
 }
 function facilitySection(m) {
   if (!m.fc) return "";
@@ -440,16 +509,21 @@ function gapSection(p, m) {
   const G = m.gp || { g: [], s: [] }, plan = (D.plans || {})[p.n + "|" + p.c];
   const fixName = id => D.catalog[id] ? D.catalog[id].name : id;
   let h = `<div class="section"><h3>What this area is missing</h3>`;
-  if (G.g.length) h += `<ul class="small" style="margin:4px 0 0 18px;padding:0">${G.g.map(([k, lab, x, med, sev, fix, why, cost]) =>
+  if (G.g.length) h += `<ul class="small" style="margin:4px 0 0 18px;padding:0">${G.g.map(([k, x, med, sev, fix, why, cost]) =>
       `<li style="margin-bottom:4px">${esc(why)} <span class="muted">${sev >= 0.995 ? "Worse than every similar area." : "Worse than " + Math.round(sev * 100) + "% of similar areas."}</span> <b>Fix:</b> ${esc(fixName(fix))}${cost ? ` (~${fmt$(cost)})` : ""}.</li>`).join("")}</ul>`;
   else h += `<p class="small">Nothing stands out: this block group is at or above similar areas on parks, shade, shops, schools, services, transit, safety and street safety.</p>`;
-  if (G.s.length) h += `<p class="small"><b>Already strong:</b> ${G.s.map(([k, lab, x, med]) => `${esc(lab)} (${esc(x)}; similar areas ${esc(med)})`).join("; ")}.</p>`;
+  if (G.s.length) h += `<p class="small"><b>Already strong:</b> ${G.s.map(([k, x, med]) => `${esc((D.gap_labels || {})[k] || k)} (${esc(x)}; similar areas ${esc(med)})`).join("; ")}.</p>`;
   h += `<p class="small muted">Compared with the 50 block groups county-wide most like this one in income, density, home values, housing age, children, car ownership and single-family share.</p>`;
   if (plan) {
     const steps = plan.steps || [];
     h += `<div class="pkg" style="display:block;margin-top:10px"><div class="small" style="font-weight:600;margin-bottom:6px">A plan for ${esc(p.n)} (${plan.bgs} block group${plan.bgs > 1 ? "s" : ""}, ${fmtN(plan.homes)} homes)</div>`;
     if (steps.length) h += `<ol class="small" style="margin:0 0 0 18px;padding:0">${steps.map((st, i) => `<li style="margin-bottom:6px"><b>${i === 0 && steps.length > 1 ? "Quick win: " : ""}${esc(st.name)}</b>${st.project ? ` (${esc(st.project)}${st.near ? ", " + esc(st.near) : ""})` : ""}. ${esc(st.why)} This gap shows up in ${st.parts} of ${plan.bgs} parts of the neighborhood.${st.cost ? ` About ${fmt$(st.cost)}` : " Not costed here yet"}${st.vpd ? `, returning ${fvpd(st.vpd)} of home value per $1` : ""}${st.funding && D.funding[st.funding] ? `; could be paid for by ${esc(D.funding[st.funding][0])}` : ""}.</li>`).join("")}</ol>`;
     else h += `<p class="small">No neighborhood-wide gaps compared with similar areas. The best value-per-dollar projects are ranked below.</p>`;
+    const pf = (D.under.profit || {})[p.n + "|" + p.c];
+    if (pf && pf.total > 0) {
+      const all = Object.values(D.under.profit).map(x => x.total).sort((a, b) => b - a), rank = all.indexOf(pf.total) + 1;
+      h += `<p class="small"><b>Profit potential:</b> about <b>${fmt$(pf.total)}</b> of value created (${(pf.pct * 100).toFixed(1)}% of the neighborhood's home value, ~${fmt$(pf.per_home)} per home), #${rank} of ${all.length} neighborhoods. ${fmt$(pf.proj)} from projects that pay back, net of cost${pf.land ? `, and ${fmt$(pf.land)} from developing ${pf.sites} underused site${pf.sites > 1 ? "s" : ""} (~${fmtN(pf.site_homes)} homes)` : ""}.${pf.soon && pf.soon.length ? ` Already under way: rail stations under construction nearby (${pf.soon.map(esc).join(", ")}), which usually lift nearby values.` : ""}</p>`;
+    }
     if ((plan.ctx || []).length) h += plan.ctx.map(c => `<p class="small">${esc(c)}</p>`).join("");
     if ((plan.strong || []).length) h += `<p class="small"><b>Strengths to build on:</b> ${plan.strong.map(x => esc(x[1])).join("; ")}.</p>`;
     h += `<p class="small muted">Steps tackle the gaps shared by the most homes. The first is the cheapest, then the rest are ordered by return. Each is a project City Pretty already sized for the most affected part of the neighborhood. These plans will be rewritten monthly, with an assistant on this page later.</p></div>`;
@@ -581,6 +655,7 @@ function select(id, fly) {
   if (pol.length) h += `<div class="section"><h3>Zoning and policy</h3><div class="recs">${pol.map((r, i) => recCard(r, i, "policy")).join("")}</div></div>`;
   if (own.length || (D.upgrades || []).length) h += `<div class="section"><h3>For an individual homeowner here</h3><div class="recs">${own.map((r, i) => recCard(r, i, "owner")).join("")}</div>${upgradeTable(m)}</div>`;
   h += zoningSection({ ...m, city: p.c });
+  h += underSection(p);
   h += facilitySection(m);
   h += eifdSection(p, m);
   const kv = [], add = (k, v, f = x => x) => { if (v != null && v !== "" && !(typeof v === "number" && isNaN(v))) kv.push(`<span>${k}</span><span>${f(v)}</span>`); };
@@ -594,6 +669,8 @@ function select(id, fly) {
   if (kv.length) h += `<div class="section"><h3>Area profile</h3><div class="kv">${kv.join("")}</div></div>`;
   $("#panel").innerHTML = h; $("#panel").scrollTop = 0;
   eifdWire(p);
+  $("#panel").querySelectorAll("[data-site]").forEach(el => el.onclick = () => { const U = D.layers.underused, sid = +el.dataset.site;
+    for (const k in U.cells) for (const [id, rings] of U.cells[k]) if (id === sid) { if (!$("#l-under").checked) { $("#l-under").checked = true; drawContext(); } map.fitBounds(L.polygon(rings.map(decodeLine)).getBounds(), { maxZoom: 17, padding: [80, 80] }); return; } });
   const draw = cat => { const list = val.filter(r => cat === "All" || D.catalog[r.id].category === cat);
     $("#valrecs").innerHTML = list.length ? list.slice(0, 12).map((r, i) => recCard(r, i, "value")).join("") + (list.length > 12 ? `<details class="more"><summary>${list.length - 12} more</summary><div class="recs">${list.slice(12).map((r, i) => recCard(r, i + 12, "value")).join("")}</div></details>` : "") : `<p class="empty">Nothing in this category applies here.</p>`; };
   draw("All");
@@ -629,7 +706,9 @@ async function init() {
   $("#q").onchange = e => { const id = names.get(e.target.value); if (id) select(id, true); };
   $("#metric").onchange = restyle;
   $("#evid").onchange = () => { retop(); restyle(); if (selected) select(selected, false); };
-  ["#l-roads", "#l-transit", "#l-parks", "#l-amen", "#l-hoods", "#l-fac", "#l-zone"].forEach(id => $(id).onchange = drawContext);
+  ["#l-roads", "#l-transit", "#l-parks", "#l-amen", "#l-hoods", "#l-fac", "#l-zone", "#l-under"].forEach(id => $(id).onchange = drawContext);
+  $("#fac-kinds").innerHTML = D.layers.fac_kinds.map((k, i) => `<label style="display:block"><input type="checkbox" data-fk="${i}" checked> <span class="fac" style="display:inline-block;vertical-align:middle;background:${(FAC_STYLE[k] || ["#444"])[0]}">${(FAC_STYLE[k] || ["", "•"])[1]}</span> ${esc(k)}</label>`).join("");
+  $("#fac-kinds").querySelectorAll("input").forEach(x => x.onchange = () => { facOn = new Set([...$("#fac-kinds").querySelectorAll("input:checked")].map(y => +y.dataset.fk)); _fDrawn.forEach(l => layers.facArea && layers.facArea.removeLayer(l)); _fDrawn.clear(); drawFacilities(); });
   $("#l-tiles").onchange = e => {
     if (e.target.checked) { const dark = matchMedia("(prefers-color-scheme: dark)").matches && document.documentElement.dataset.theme !== "light";
       tiles = L.tileLayer(`https://{s}.basemaps.cartocdn.com/${dark ? "dark_all" : "rastertiles/voyager"}/{z}/{x}/{y}{r}.png`, { attribution: "© CARTO", subdomains: "abcd", maxZoom: 19 }).addTo(map); tiles.bringToBack(); }
@@ -637,7 +716,7 @@ async function init() {
     restyle();
   };
   map.on("zoomend", zoomed);
-  map.on("moveend", () => { drawStreets(); drawLabels(); drawZoning(); drawFacilities(); });
+  map.on("moveend", () => { drawStreets(); drawLabels(); drawZoning(); drawFacilities(); drawUnder(); });
   L.control.scale({ imperial: true, metric: false, maxWidth: 140, position: "bottomleft" }).addTo(map);
   const Loc = L.Control.extend({ options: { position: "topleft" }, onAdd() { const b = L.DomUtil.create("button", "locate"); b.type = "button"; b.textContent = "📍 Find me";
     b.title = "Center the map on where you are and open your block group"; L.DomEvent.disableClickPropagation(b); b.onclick = () => locateMe(b); return b; } });
