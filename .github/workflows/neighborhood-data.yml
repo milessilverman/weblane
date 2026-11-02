@@ -16,6 +16,10 @@ on:
         description: "Only rebuild the county-wide (City Pretty v2) data"
         required: false
         default: "false"
+      county_stages:
+        description: "Comma-separated county stages to run (blank = all); others keep their last data"
+        required: false
+        default: ""
   schedule:
     - cron: "17 9 3 * *" # monthly
 
@@ -104,7 +108,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        stage: [geo, osm, transit, sales, crime, requests311, crashes, trees, parcels, assets]
+        stage: [geo, osm, transit, sales, crime, requests311, crashes, trees, parcels, assets, tra, assessed]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -122,6 +126,7 @@ jobs:
         run: sudo apt-get update -qq && sudo apt-get install -y -qq osmium-tool
       - run: rm -rf neighborhood-roi/data/derived && mkdir -p neighborhood-roi/data/derived
       - name: Build county stage
+        if: github.event.inputs.county_stages == '' || contains(format(',{0},', github.event.inputs.county_stages), format(',{0},', matrix.stage))
         continue-on-error: true
         run: python -u neighborhood-roi/pipeline/county_la.py ${{ matrix.stage }}
       - uses: actions/upload-artifact@v4

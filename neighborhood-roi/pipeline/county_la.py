@@ -4,7 +4,7 @@ Each stage runs as its own GitHub Actions job (so one failing source never block
 the rest) and writes block-group metrics keyed by 12-digit GEOID into
 data/derived/county_la/, plus simplified map layers for the web page.
 
-    python neighborhood-roi/pipeline/county_la.py geo|osm|transit|sales|crime|requests311|crashes|trees
+    python neighborhood-roi/pipeline/county_la.py geo|osm|transit|sales|crime|requests311|crashes|trees|parcels|assets|tra|assessed
 """
 import io
 import json
@@ -1051,9 +1051,186 @@ def stage_assets():
     save(out.reset_index(), "bg_assets")
 
 
+# ------------------------------------------------------------------ EIFD inputs: tax-rate areas and assessed values
+AUDITOR = "https://auditor.lacounty.gov"
+TRA_FILES = {  # fallbacks if the report pages can't be scraped (round-5 research, 2026-11-02)
+    "af91": AUDITOR + "/wp-content/uploads/2026/10/AF91.zip",
+    "af49": AUDITOR + "/wp-content/uploads/2026/09/AF49PRPT.YR26.zip",
+    "tra_lookup": AUDITOR + "/wp-content/uploads/2026/09/TRA-2026-2027.zip",
+}
+BOE_TRA = "https://services7.arcgis.com/iwxhJVOFEKDxO7gk/ArcGIS/rest/services/Los_Angeles_2026_Roll_Year/FeatureServer"
+RAW = OUT / "raw"
+
+
+def _latest_link(page, pattern):
+    try:
+        html = get(page, timeout=90).text
+        hits = sorted(set(re.findall(r'href="([^"]*' + pattern + r'[^"]*)"', html, re.I)))
+        return hits[-1] if hits else None
+    except Exception as e:  # noqa: BLE001
+        log(f"  could not read {page}: {e}")
+        return None
+
+
+def _keep_zip(key, url):
+    """Download a zip, record its members and first lines, and keep every text member (gzipped) in raw/."""
+    import gzip
+    path = cached_download(url, f"tra_{key}.zip", max_age_days=10)
+    info = {"url": url, "bytes": path.stat().st_size, "members": []}
+    with zipfile.ZipFile(path) as z:
+        for m in z.infolist():
+            data = z.read(m)
+            head = data[:6000].decode("latin-1", "replace").splitlines()[:25]
+            info["members"].append({"name": m.filename, "bytes": m.file_size, "head": head})
+            if m.file_size and m.file_size < 400e6:
+                safe = re.sub(r"[^A-Za-z0-9._-]", "_", Path(m.filename).name)
+                with gzip.open(RAW / f"{key}__{safe}.gz", "wb") as f:
+                    f.write(data)
+    return info
+
+
+def stage_tra():
+    """Auditor-Controller AB8 apportionment factors (AF91), companion AF49, TRA lookup, BOE TRA district table."""
+    RAW.mkdir(parents=True, exist_ok=True)
+    probe = {}
+    links = {
+        "af91": _latest_link(AUDITOR + "/property-tax-report-central/", r"AF91[^\"]*\.zip"),
+        "af49": _latest_link(AUDITOR + "/property-tax-report-central/", r"AF49[^\"]*\.zip"),
+        "tra_lookup": _latest_link(AUDITOR + "/tax-rate-area-lookup/", r"TRA-\d{4}-\d{4}\.zip"),
+    }
+    for key, url in TRA_FILES.items():
+        url = links.get(key) or url
+        try:
+            probe[key] = _keep_zip(key, url)
+            note("tra", **{f"{key}_url": url, f"{key}_members": [m["name"] for m in probe[key]["members"]]})
+        except Exception as e:  # noqa: BLE001
+            probe[key] = {"url": url, "error": str(e)[:300]}
+            note("tra", **{f"{key}_error": str(e)[:200]})
+    # BOE TRA district table: which districts (city, county, special districts, schools) levy in each TRA
+    try:
+        meta = get(BOE_TRA + "/2", params={"f": "json"}, timeout=90).json()
+        probe["boe_table_fields"] = [f["name"] for f in meta.get("fields", [])]
+        rows, off = [], 0
+        while True:
+            r = get(BOE_TRA + "/2/query", params={"where": "1=1", "outFields": "*", "f": "json", "resultOffset": off,
+                                                  "resultRecordCount": 2000}, timeout=300).json()
+            fs = [f["attributes"] for f in r.get("features", [])]
+            rows += fs
+            if len(fs) < 2000 and not r.get("exceededTransferLimit"):
+                break
+            off += len(fs)
+            if not fs:
+                break
+        df = pd.DataFrame(rows)
+        df.to_csv(RAW / "boe_tra_districts.csv.gz", index=False)
+        probe["boe_table_rows"] = len(df)
+        probe["boe_table_sample"] = df.head(15).astype(str).to_dict("records")
+        note("tra", boe_district_rows=len(df))
+    except Exception as e:  # noqa: BLE001
+        probe["boe_table_error"] = str(e)[:300]
+        note("tra", boe_error=str(e)[:200])
+    (OUT / "tra_probe.json").write_text(json.dumps(probe, indent=1, default=str))
+
+
+ROLL_FIELDS = ["AIN", "TaxRateArea", "TaxRateCity", "UseCode", "Roll_Year", "Roll_LandValue", "Roll_ImpValue",
+               "Roll_PersPropValue", "Roll_FixtureValue", "Roll_HomeOwnersExemp", "Roll_RealEstateExemp",
+               "Roll_PersPropExemp", "Roll_FixtureExemp", "Roll_LandBaseYear", "Roll_ImpBaseYear"]
+
+
+def _roll_tile(url, fields, bb, want_geom, page):
+    rows, off = [], 0
+    while True:
+        p = {"where": "1=1", "outFields": ",".join(fields), "returnGeometry": "true" if want_geom else "false",
+             "outSR": 4326, "f": "json", "resultOffset": off, "resultRecordCount": page,
+             "geometry": ",".join(map(str, bb)), "geometryType": "esriGeometryEnvelope", "inSR": 4326,
+             "spatialRel": "esriSpatialRelIntersects"}
+        if want_geom:
+            p.update({"maxAllowableOffset": 0.00005, "geometryPrecision": 5})
+        js = get(url + "/query", params=p, timeout=300).json()
+        if "error" in js:
+            raise RuntimeError(str(js["error"])[:200])
+        for f in js.get("features", []):
+            a = f["attributes"]
+            if want_geom:
+                ring = ((f.get("geometry") or {}).get("rings") or [[]])[0]
+                if ring:
+                    a["_lon"] = sum(x for x, _ in ring) / len(ring)
+                    a["_lat"] = sum(y for _, y in ring) / len(ring)
+            rows.append(a)
+        n = len(js.get("features", []))
+        if n == 0 or (n < page and not js.get("exceededTransferLimit")):
+            break
+        off += n
+    return rows
+
+
+def stage_assessed():
+    """Every parcel's secured-roll value and tax-rate area, summed to block groups (EIFD base value)."""
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    url = "https://public.gis.lacounty.gov/public/rest/services/LACounty_Cache/LACounty_Parcel/MapServer/0"
+    meta = get(url, params={"f": "json"}, timeout=90).json()
+    flds = [f["name"] for f in meta.get("fields", [])]
+    lat = next((f for f in flds if re.fullmatch(r"center_?lat", f, re.I)), None)
+    lon = next((f for f in flds if re.fullmatch(r"center_?lon", f, re.I)), None)
+    fields = [f for f in ROLL_FIELDS if f in flds] + ([lat, lon] if lat and lon else [])
+    page = min(2000, int(meta.get("maxRecordCount") or 1000))
+    note("assessed", all_fields=flds, used=fields, centroid_fields=bool(lat and lon), page=page)
+    w, s, e, n = BBOX
+    k = 8
+    xs, ys = np.linspace(w, e, k + 1), np.linspace(s, n, k + 1)
+    tiles = [(xs[i], ys[j], xs[i + 1], ys[j + 1]) for i in range(k) for j in range(k)]
+    rows, errs = [], {}
+    with ThreadPoolExecutor(8) as ex:
+        futs = {ex.submit(_roll_tile, url, fields, t, not (lat and lon), page): t for t in tiles}
+        for i, fu in enumerate(as_completed(futs)):
+            try:
+                r = fu.result()
+                rows += r
+                log(f"  tile {i + 1}/{len(tiles)}: {len(r):,} (total {len(rows):,})")
+            except Exception as ex2:  # noqa: BLE001
+                errs[str(futs[fu])] = str(ex2)[:160]
+    if errs:
+        note("assessed", tile_errors=errs)
+    df = pd.DataFrame(rows).drop_duplicates("AIN")
+    if lat and lon:
+        df["_lat"], df["_lon"] = pd.to_numeric(df[lat], errors="coerce"), pd.to_numeric(df[lon], errors="coerce")
+    num = [c for c in fields if c.startswith("Roll_") and ("Value" in c or "Exemp" in c)]
+    for c in num:
+        df[c] = pd.to_numeric(df[c], errors="coerce").fillna(0)
+    df["gross"] = df[[c for c in num if "Value" in c]].sum(axis=1)
+    df["exempt"] = df[[c for c in num if "Exemp" in c]].sum(axis=1)
+    df["net"] = (df.gross - df.exempt).clip(lower=0)
+    df["tra"] = df["TaxRateArea"].astype(str).str.replace(r"\.0$", "", regex=True).str.strip().str.zfill(5)
+    df["kind"] = np.where(df.UseCode.astype(str).str.startswith("0"), "res",
+                          np.where(df.UseCode.astype(str).str.match(r"^[12]"), "com", "other"))
+    df["ry"] = pd.to_numeric(df.get("Roll_Year"), errors="coerce")
+    note("assessed", parcels=len(df), roll_years={str(k2): int(v) for k2, v in df.ry.value_counts().head(5).items()},
+         net_total=float(df.net.sum()), tras=int(df.tra.nunique()))
+    pts = points_from(df[["AIN", "tra", "kind", "gross", "exempt", "net", "Roll_LandValue", "Roll_ImpValue",
+                          "Roll_HomeOwnersExemp", "_lat", "_lon"]], "_lat", "_lon")
+    j = gpd.sjoin(pts.to_crs(M), block_groups().to_crs(M)[["GEOID", "geometry"]], predicate="within")
+    note("assessed", parcels_in_bg=len(j))
+    g = j.groupby("GEOID")
+    out = pd.DataFrame({"av_parcels": g.size(), "av_land": g.Roll_LandValue.sum(), "av_imp": g.Roll_ImpValue.sum(),
+                        "av_gross": g.gross.sum(), "av_exempt": g.exempt.sum(), "av_net": g.net.sum(),
+                        "av_net_res": j[j.kind == "res"].groupby("GEOID").net.sum(),
+                        "av_net_com": j[j.kind == "com"].groupby("GEOID").net.sum(),
+                        "av_hox_parcels": j[j.Roll_HomeOwnersExemp > 0].groupby("GEOID").size()})
+    out = out.reindex(block_groups().GEOID).fillna(0)
+    out["roll_year"] = int(df.ry.mode().iloc[0]) if df.ry.notna().any() else None
+    save(out.reset_index(), "bg_assessed")
+    # net taxable value by block group and TRA: joined to the Auditor's apportionment factors in the model
+    by = j.groupby(["GEOID", "tra"]).agg(parcels=("net", "size"), net=("net", "sum")).reset_index()
+    by.to_csv(OUT / "bg_tra_av.csv.gz", index=False)
+    log(f"  wrote bg_tra_av.csv.gz {by.shape}")
+    df.groupby("tra").agg(parcels=("net", "size"), net=("net", "sum"), city=("TaxRateCity", "first")).reset_index() \
+        .to_csv(OUT / "tra_av.csv", index=False)
+
+
 STAGES = {"geo": stage_geo, "osm": stage_osm, "transit": stage_transit, "sales": stage_sales, "crime": stage_crime,
           "requests311": stage_requests311, "crashes": stage_crashes, "trees": stage_trees,
-          "parcels": stage_parcels, "assets": stage_assets}
+          "parcels": stage_parcels, "assets": stage_assets,
+          "tra": stage_tra, "assessed": stage_assessed}
 
 
 def main():
