@@ -1516,7 +1516,7 @@ ZONING_SOURCES = [  # jurisdiction, layer URL, zone field candidates (first matc
     ("Long Beach", "https://gis.longbeach.gov/arcgis/rest/services/DevelopmentServices/Zoning/MapServer/0", ["ZONE_CODE", "ZONING", "ZONE"]),
     ("Glendale", "https://gis.glendaleca.gov/arcgis/rest/services/Zoning/MapServer/0", ["ZONING", "ZONE"]),
     ("Pasadena", "https://gis.cityofpasadena.net/arcgis/rest/services/Zoning_Map/FeatureServer/0", ["ZONING", "ZONE"]),
-    ("Santa Clarita", "https://services.arcgis.com/RmCCgQtiZLDCtblq/arcgis/rest/services/City_of_Santa_Clarita_Layers/FeatureServer/2", ["ZONING_CODE", "ZONING", "ZONE"]),
+    ("Santa Clarita", "https://services.arcgis.com/RmCCgQtiZLDCtblq/arcgis/rest/services/City_of_Santa_Clarita_Layers/FeatureServer/2", ["NEWCODE", "ZONING_CODE", "ZONING", "ZONE"]),
     ("Lancaster", "https://gis.cityoflancasterca.gov/arcgis/rest/services/Zoning/MapServer/0", ["ZONE_CLASS", "ZONING", "ZONE"]),
     ("Palmdale", "https://gis.cityofpalmdale.org/arcgis/rest/services/Public/Zoning/MapServer/0", ["ZONE", "ZONING"]),
     ("Torrance", "https://gis.torranceca.gov/arcgis/rest/services/Public_Services/Torrance_Zoning/MapServer/0", ["ZONE", "ZONING"]),
@@ -1545,7 +1545,7 @@ def zone_category(z):
         return "commercial / mixed use"
     if re.match(r"^(RAS|R ?[2-5]|R-[2-5])", t):
         return "multifamily"
-    if re.match(r"^(R ?1|R-1|RS|RE|RA|R-A|RU|RZ|RW1|R1|SF|RL|RR|E-|A-?1|A1|A2|A-2|RVL|RLD|R-7|R-10|R-20|UR1|UR2)", t):
+    if re.match(r"^(R ?1|R-1|RS|RE|RA|R-A|RU|RZ|RW1|R1|SF|RL|RR|E-|A-?1|A1|A2|A-2|RVL|RLD|R-7|R-10|R-20|UR1|UR2|NU)", t):
         return "single-family"
     if re.match(r"^(R ?[2-5]|R-[2-5]|RD|RW2|RAS|RM|MF|RMD|RH|MD|HD|R-M|R-3|UR[3-5]|RPD|R-?\d{4})", t):
         return "multifamily"
@@ -1554,6 +1554,61 @@ def zone_category(z):
     if re.match(r"^A", t):
         return "agricultural"
     return "other"
+
+
+SCAG_LU = "https://services5.arcgis.com/vYSHcRQuTn4O8o35/arcgis/rest/services/2019_Regional_Land_Use_Information_for_Los_Angeles_County/FeatureServer"
+
+
+def _scag_zoning():
+    """SCAG 2019 parcel land use for LA County: each parcel's city zoning code (fills cities with no live zoning layer)."""
+    from concurrent.futures import ThreadPoolExecutor
+    try:
+        root = get(SCAG_LU, params={"f": "json"}, timeout=60).json()
+        lid = (root.get("layers") or [{"id": 0}])[0]["id"]
+        url = f"{SCAG_LU}/{lid}"
+        meta = get(url, params={"f": "json"}, timeout=60).json()
+        flds = [f["name"] for f in meta.get("fields", [])]
+        zf = next((f for f in flds if re.search(r"(city|local).*(zn|zon)|^zn_|zoning|^zn", f, re.I) and not re.search(r"scag|desc|_gp|gp_", f, re.I)), None)
+        cf = next((f for f in flds if re.search(r"^city|city_name|juris|^cityname", f, re.I)), None)
+        af = next((f for f in flds if re.search(r"shape__area|shape_area|acres", f, re.I)), None)
+        note("zoning", scag_fields=flds[:60], scag_zone_field=zf, scag_city_field=cf)
+        if not zf:
+            return None
+        page = min(2000, int(meta.get("maxRecordCount") or 1000))
+        w, s_, e, n = BBOX
+        k = 8
+        xs, ys = np.linspace(w, e, k + 1), np.linspace(s_, n, k + 1)
+        tiles = [(xs[i], ys[j], xs[i + 1], ys[j + 1]) for i in range(k) for j in range(k)]
+        fields = [f for f in (zf, cf, af) if f]
+
+        def fetch(t, depth=0):
+            try:
+                return _roll_tile(url, fields, t, True, page)
+            except Exception:  # noqa: BLE001
+                if depth >= 2:
+                    return []
+                x0, y0, x1, y1 = t
+                xm, ym = (x0 + x1) / 2, (y0 + y1) / 2
+                return sum((fetch(q, depth + 1) for q in [(x0, y0, xm, ym), (xm, y0, x1, ym), (x0, ym, xm, y1), (xm, ym, x1, y1)]), [])
+
+        rows = []
+        with ThreadPoolExecutor(8) as ex:
+            for r in ex.map(fetch, tiles):
+                rows += r
+        df = pd.DataFrame(rows)
+        if df.empty or "_lat" not in df:
+            return None
+        df = df[df[zf].notna() & df["_lat"].notna()]
+        g = points_from(df, "_lat", "_lon")
+        g["zone"] = g[zf].astype(str).str.strip()
+        g["juris"] = g[cf].astype(str).str.title() if cf else "SCAG"
+        g["a"] = pd.to_numeric(g[af], errors="coerce").fillna(1) if af else 1.0
+        g["cat"] = g.zone.map(zone_category).fillna("other")
+        note("zoning", scag_parcels=len(g))
+        return g[["zone", "juris", "a", "cat", "geometry"]]
+    except Exception as e:  # noqa: BLE001
+        note("zoning", scag_error=str(e)[:200])
+        return None
 
 
 def stage_zoning():
@@ -1600,6 +1655,7 @@ def stage_zoning():
         raise RuntimeError("no zoning layer answered: " + json.dumps(status)[:500])
     z = gpd.GeoDataFrame(pd.concat(frames, ignore_index=True), crs=4326)
     z["cat"] = z.zone.map(zone_category)
+    scag = _scag_zoning()
     zm = z.to_crs(M)
     zm["geometry"] = zm.geometry.make_valid().simplify(2)
     zm = zm[zm.geom_type.isin(["Polygon", "MultiPolygon"]) & ~zm.is_empty]
@@ -1618,6 +1674,26 @@ def stage_zoning():
     jur = ov.groupby("GEOID").juris.agg(lambda s: s.mode().iat[0])
     out = shares.join(topz.rename("zone_top")).join(jur.rename("zone_juris")).join((tot / bg.set_index("GEOID").area).clip(0, 1).rename("zone_coverage"))
     out = out.reindex(bg.GEOID)
+    if scag is not None:
+        # block groups the official layers don't cover: parcel-based shares from SCAG's 2019 regional dataset
+        need = out.index[out.zone_coverage.fillna(0) < 0.2]
+        j = gpd.sjoin(scag.to_crs(M), bg[["GEOID", "geometry"]], predicate="within")
+        j = j[j.GEOID.isin(need)]
+        if len(j):
+            w = j.groupby(["GEOID", "cat"]).a.sum()
+            sh = (w / j.groupby("GEOID").a.sum()).unstack().round(3)
+            sh.columns = ["zshare_" + re.sub(r"\W+", "_", c).strip("_") for c in sh.columns]
+            tz = j.groupby(["GEOID", "zone"]).a.sum().reset_index().sort_values("a", ascending=False)
+            tops = tz.groupby("GEOID").apply(lambda d: "; ".join(f"{z} {a / d.a.sum():.0%}" for z, a in zip(d.zone.head(4), d.a.head(4))))
+            ju = j.groupby("GEOID").juris.agg(lambda s_: s_.mode().iat[0])
+            for c in sh.columns:
+                if c not in out:
+                    out[c] = np.nan
+            out.loc[sh.index, sh.columns] = sh
+            out.loc[tops.index, "zone_top"] = tops
+            out.loc[ju.index, "zone_juris"] = ju + " (SCAG 2019)"
+            out.loc[sh.index, "zone_coverage"] = 1.0
+            note("zoning", scag_bgs_filled=int(len(sh)))
     save(out.reset_index(), "bg_zoning")
     note("zoning", polygons=len(zm), bgs_covered=int(out.zone_coverage.gt(0.2).sum()),
          categories={k: int(v) for k, v in z.cat.value_counts().items()})
