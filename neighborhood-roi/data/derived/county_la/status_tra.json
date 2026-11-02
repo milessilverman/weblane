@@ -1,0 +1,22 @@
+{
+ "generated_at": "2026-11-02T16:59:06.244394+00:00",
+ "sources": {
+  "tra": {
+   "af91_url": "https://auditor.lacounty.gov/wp-content/uploads/2026/10/AF91.zip",
+   "af91_members": [
+    "AF91.txt"
+   ],
+   "af49_url": "https://auditor.lacounty.gov/wp-content/uploads/2026/09/AF49PRPT.YR26.zip",
+   "af49_members": [
+    "AF49PRPT.YR26.txt"
+   ],
+   "tra_lookup_url": "https://auditor.lacounty.gov/wp-content/uploads/2026/09/TRA-2026-2027.zip",
+   "tra_lookup_members": [
+    "TRA-2026-2027.csv"
+   ],
+   "boe_district_rows": 180004,
+   "ok": true,
+   "seconds": 24.5
+  }
+ }
+}

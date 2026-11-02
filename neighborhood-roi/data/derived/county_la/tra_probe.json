@@ -1,0 +1,276 @@
+{
+ "af91": {
+  "url": "https://auditor.lacounty.gov/wp-content/uploads/2026/10/AF91.zip",
+  "bytes": 23925,
+  "members": [
+   {
+    "name": "AF91.txt",
+    "bytes": 90864,
+    "head": [
+     " PAGE     1                                                                                                                         ",
+     "                                                                                                                                    ",
+     " AUDITOR AF91            APPORTIONMENT FACTOR FILE                              PREPARED 09/30/2026         FY 2026 - 2027          ",
+     "                                                                                                                                    ",
+     " AGENCY                                                              GROSS          COMBINED            NET OF         NET          ",
+     " ACCT NO  AGENCY NAME                               GROSS PTR        RATIO            LOSS             LOSS PTR        RATIO        ",
+     " -------  -----------                               ---------        -----          --------          ---------        -----        ",
+     "  001.05  LOS ANGELES COUNTY GENERAL         6,553,270,714.95   .287939050  1,241,000,123.39   5,312,270,591.56   .272222299        ",
+     "  003.01  L A COUNTY LIBRARY                   133,649,711.13   .005872330     22,919,071.17     110,730,639.96   .005674310        ",
+     "  005.05  ROAD DIST # 1                          1,808,893.01   .000079480         32,208.00       1,776,685.01   .000091045        ",
+     "  005.10  ROAD DIST # 2                          1,609,020.42   .000070697         22,837.91       1,586,182.51   .000081283        ",
+     "  005.15  ROAD DIST # 3                            790,533.10   .000034735               .00         790,533.10   .000040510        ",
+     "  005.20  ROAD DIST # 4                          1,720,724.87   .000075606               .82       1,720,724.05   .000088177        ",
+     "  005.25  ROAD DIST # 5                          3,790,883.23   .000166565               .00       3,790,883.23   .000194261        ",
+     "  007.30  CONSOL. FIRE PRO.DIST.OF L.A.CO.   1,038,401,065.38   .045625492    158,532,977.89     879,868,087.49   .045088191        ",
+     "  007.31  L A C FIRE-FFW                       178,343,023.29   .007836075     22,091,607.19     156,251,416.10   .008006988        ",
+     "  009.55  BELL GARDENS LIGHTING DISTRICT           773,390.04   .000033981        195,714.51         577,675.53   .000029603        ",
+     "  011.20  LAWNDALE LIGHTING DISTRICT               996,588.68   .000043788        396,767.40         599,821.28   .000030737        ",
+     "  011.45  LONGDEN LIGHTING DISTRICT                 73,062.47   .000003210          8,417.16          64,645.31   .000003313        ",
+     "  016.45  CO LIGHTING MAINT DIST NO 1472           544,978.85   .000023945         17,306.42         527,672.43   .000027040        ",
+     "  017.70  CO LIGHTING MAINT DIST NO 1575           562,033.47   .000024695               .00         562,033.47   .000028801        ",
+     "  019.40  CO LIGHTING MAINT DIST NO 1687        24,553,464.77   .001078835        502,147.84      24,051,316.93   .001232492        ",
+     "  019.56  CO LIGHTING MAINT DIST NO 1697         2,206,674.60   .000096957        533,341.25       1,673,333.35   .000085749        ",
+     "  021.66  CO LIGHTING MAINT DIST NO 1866           388,194.32   .000017057               .00         388,194.32   .000019893        ",
+     "  023.06  CO LIGHTING MAINT DIST NO 10006        1,453,127.23   .000063848               .00       1,453,127.23   .000074464        "
+    ]
+   }
+  ]
+ },
+ "af49": {
+  "url": "https://auditor.lacounty.gov/wp-content/uploads/2026/09/AF49PRPT.YR26.zip",
+  "bytes": 2319168,
+  "members": [
+   {
+    "name": "AF49PRPT.YR26.txt",
+    "bytes": 44559180,
+    "head": [
+     "1 AUDITOR-CONTROLLER                                                                                                    09/17/2026   ",
+     "  ACAF49PT                FY 2026-27 MODIFIED ATI  RATIO REPORT                                                         PAGE     1   ",
+     "   TRA      ACCOUNT #     AGENCY NAME                                          RATIO                                                 ",
+     "                                                                                                                                     ",
+     "   00004    001.05        LOS ANGELES COUNTY GENERAL                          .244559502                                             ",
+     "            001.20        L.A. COUNTY ACCUM CAP OUTLAY                        .000097444                                             ",
+     "            007.31        L A C FIRE-FFW                                      .005617945                                             ",
+     "            030.10        L.A.CO.FL.CON.DR.IMP.DIST.MAINT.                    .001344720                                             ",
+     "            030.70        LA CO FLOOD CONTROL MAINT                           .007609695                                             ",
+     "            061.80        GREATER L A CO VECTOR CONTROL                       .000301980                                             ",
+     "            188.01        CITY-LOS ANGELES TD #1                              .262762096                                             ",
+     "            400.00        EDUCATIONAL REV AUGMENTATION FD                     .081519118                                             ",
+     "            400.01        EDUCATIONAL AUG FD IMPOUND                          .172433158                                             ",
+     "            400.15        COUNTY SCHOOL SERVICES                              .001208559                                             ",
+     "            400.21        CHILDREN'S INSTIL TUITION FUND                      .002398564                                             ",
+     "            805.04        L.A.CITY COMMUNITY COLLEGE DIST                     .025791903                                             ",
+     "            805.20        L.A.COMM.COLL.CHILDREN'S CTR FD                     .000266689                                             ",
+     "            887.03        LOS ANGELES UNIFIED SCHOOL DIST                     .189891161                                             ",
+     "            887.06        CO.SCH.SERV.FD.- LOS ANGELES                        .000010585                                             ",
+     "            887.07        DEV. CTR. HDCPD MINOR-L A UNIF.                     .001071063                                             ",
+     "            887.20        LOS ANGELES CHILDRENS CENTER FD                     .003115818                                             ",
+     "                                                         TOTAL RATIO:  1.000000000                                                   ",
+     "                                                                                                                                     ",
+     "   00005    001.05        LOS ANGELES COUNTY GENERAL                          .244637653                                             ",
+     "            001.20        L.A. COUNTY ACCUM CAP OUTLAY                        .000097445                                             "
+    ]
+   }
+  ]
+ },
+ "tra_lookup": {
+  "url": "https://auditor.lacounty.gov/wp-content/uploads/2026/09/TRA-2026-2027.zip",
+  "bytes": 284725,
+  "members": [
+   {
+    "name": "TRA-2026-2027.csv",
+    "bytes": 2781573,
+    "head": [
+     "\u00ef\u00bb\u00bfFY,Area,Legend,Rate",
+     "2026/2027,10064,CITY-DIAMOND BAR,0",
+     "2026/2027,10064,COMMNTY COLLEGE,0.059725",
+     "2026/2027,10064,COUNTY,0",
+     "2026/2027,10064,GENERAL,1",
+     "2026/2027,10064,METRO WATER DIST,0.0085",
+     "2026/2027,10064,UNIFIED SCHOOLS,0.105585",
+     "2026/2027,10065,CITY-DIAMOND BAR,0",
+     "2026/2027,10065,COMMNTY COLLEGE,0.059725",
+     "2026/2027,10065,COUNTY,0",
+     "2026/2027,10065,GENERAL,1",
+     "2026/2027,10065,METRO WATER DIST,0.0085",
+     "2026/2027,10065,UNIFIED SCHOOLS,0.105585",
+     "2026/2027,10066,CITY-DIAMOND BAR,0",
+     "2026/2027,10066,COMMNTY COLLEGE,0.059725",
+     "2026/2027,10066,COUNTY,0",
+     "2026/2027,10066,GENERAL,1",
+     "2026/2027,10066,METRO WATER DIST,0.0085",
+     "2026/2027,10066,UNIFIED SCHOOLS,0.105585",
+     "2026/2027,10067,CITY-DIAMOND BAR,0",
+     "2026/2027,10067,COMMNTY COLLEGE,0.059725",
+     "2026/2027,10067,COUNTY,0",
+     "2026/2027,10067,GENERAL,1",
+     "2026/2027,10067,METRO WATER DIST,0.0085",
+     "2026/2027,10067,UNIFIED SCHOOLS,0.105585"
+    ]
+   }
+  ]
+ },
+ "boe_table_fields": [
+  "OBJECTID",
+  "CO",
+  "TRA",
+  "DISTRICT",
+  "DIST_CAT",
+  "DIST_TYPE",
+  "PARENT",
+  "D_CODE"
+ ],
+ "boe_table_rows": 180004,
+ "boe_table_sample": [
+  {
+   "OBJECTID": "1",
+   "CO": "19",
+   "TRA": "055001",
+   "DISTRICT": "ARCADIA",
+   "DIST_CAT": "UNIFIED SCHOOL",
+   "DIST_TYPE": "04",
+   "PARENT": "True",
+   "D_CODE": "0176"
+  },
+  {
+   "OBJECTID": "2",
+   "CO": "19",
+   "TRA": "055001",
+   "DISTRICT": "PASADENA AREA",
+   "DIST_CAT": "COMM. COLLEGE",
+   "DIST_TYPE": "05",
+   "PARENT": "True",
+   "D_CODE": "0249"
+  },
+  {
+   "OBJECTID": "3",
+   "CO": "19",
+   "TRA": "055001",
+   "DISTRICT": "LOS ANGELES COUNTY",
+   "DIST_CAT": "FLOOD CONTROL",
+   "DIST_TYPE": "15",
+   "PARENT": "True",
+   "D_CODE": "0269"
+  },
+  {
+   "OBJECTID": "4",
+   "CO": "19",
+   "TRA": "055001",
+   "DISTRICT": "CONSOLIDATED CO. (UNINCORP)",
+   "DIST_CAT": "FIRE PROTECTION",
+   "DIST_TYPE": "21",
+   "PARENT": "True",
+   "D_CODE": "1084"
+  },
+  {
+   "OBJECTID": "5",
+   "CO": "19",
+   "TRA": "055001",
+   "DISTRICT": "LACO-FORESTER & FIRE WARDEN ACC 7.31",
+   "DIST_CAT": "FIRE PROTECTION",
+   "DIST_TYPE": "21",
+   "PARENT": "True",
+   "D_CODE": "0933"
+  },
+  {
+   "OBJECTID": "6",
+   "CO": "19",
+   "TRA": "055001",
+   "DISTRICT": "COUNTY PUBLIC",
+   "DIST_CAT": "LIBRARY",
+   "DIST_TYPE": "38",
+   "PARENT": "True",
+   "D_CODE": "0300"
+  },
+  {
+   "OBJECTID": "7",
+   "CO": "19",
+   "TRA": "055001",
+   "DISTRICT": "CO-NO.  1687",
+   "DIST_CAT": "MUN LIGHT MAINT",
+   "DIST_TYPE": "43",
+   "PARENT": "True",
+   "D_CODE": "0344"
+  },
+  {
+   "OBJECTID": "8",
+   "CO": "19",
+   "TRA": "055001",
+   "DISTRICT": "SPECIAL-NO. 5",
+   "DIST_CAT": "ROAD-CO/SUPVR",
+   "DIST_TYPE": "59",
+   "PARENT": "True",
+   "D_CODE": "0707"
+  },
+  {
+   "OBJECTID": "9",
+   "CO": "19",
+   "TRA": "055001",
+   "DISTRICT": "COUNTY-NO. 15",
+   "DIST_CAT": "SANITATION",
+   "DIST_TYPE": "61",
+   "PARENT": "True",
+   "D_CODE": "0711"
+  },
+  {
+   "OBJECTID": "10",
+   "CO": "19",
+   "TRA": "055001",
+   "DISTRICT": "COUNTY-NO. 15, REFUSE T & D SYSTEM",
+   "DIST_CAT": "SANITATION",
+   "DIST_TYPE": "61",
+   "PARENT": "False",
+   "D_CODE": "0712"
+  },
+  {
+   "OBJECTID": "11",
+   "CO": "19",
+   "TRA": "055001",
+   "DISTRICT": "SOUTHERN CALIFORNIA RAPID",
+   "DIST_CAT": "TRANSIT",
+   "DIST_TYPE": "67",
+   "PARENT": "True",
+   "D_CODE": "0745"
+  },
+  {
+   "OBJECTID": "12",
+   "CO": "19",
+   "TRA": "055001",
+   "DISTRICT": "SOUTHERN CALIFORNIA-337.05",
+   "DIST_CAT": "METRO WATER",
+   "DIST_TYPE": "73",
+   "PARENT": "True",
+   "D_CODE": "0829"
+  },
+  {
+   "OBJECTID": "13",
+   "CO": "19",
+   "TRA": "055001",
+   "DISTRICT": "SOUTHERN CALIF. JT(19,30,33,36,37,56)",
+   "DIST_CAT": "METRO WATER",
+   "DIST_TYPE": "73",
+   "PARENT": "True",
+   "D_CODE": "0810"
+  },
+  {
+   "OBJECTID": "14",
+   "CO": "19",
+   "TRA": "055001",
+   "DISTRICT": "UPPER SAN GABRIEL VAL",
+   "DIST_CAT": "MUNICIPAL WATER",
+   "DIST_TYPE": "74",
+   "PARENT": "True",
+   "D_CODE": "0889"
+  },
+  {
+   "OBJECTID": "15",
+   "CO": "19",
+   "TRA": "055005",
+   "DISTRICT": "ARCADIA",
+   "DIST_CAT": "UNIFIED SCHOOL",
+   "DIST_TYPE": "04",
+   "PARENT": "True",
+   "D_CODE": "0176"
+  }
+ ]
+}
