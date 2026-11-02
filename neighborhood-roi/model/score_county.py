@@ -346,7 +346,9 @@ def size_projects(r, ref, tree_rate):
         how = f"~{n} open sites estimated from the canopy gap (no city tree survey here)"
     n = min(n, 3000)
     if n >= 5:
-        hn = max(1.0, dens * math.pi * 50 ** 2 * 0.5)
+        # calibrated on single-family sales: count apartments at 30% weight
+        sfw = r.sf_share + 0.3 * (1 - r.sf_share) if r.sf_share == r.sf_share else 0.6
+        hn = max(1.0, dens * sfw * math.pi * 50 ** 2 * 0.5)
         add("street_trees", n, f"{n:,} street trees", n * hn, TREE_50M_PCT / 100, 1945 * n, 65 * n,
             why=f"{how}; each tree lifts ~{hn:.0f} homes within 50 m by {TREE_50M_PCT}% (local sales estimate, low end)")
 
@@ -556,7 +558,9 @@ def size_projects(r, ref, tree_rate):
 
 def tree_rate_fn(d):
     """Open street-tree sites per km of residential street vs. canopy gap, learned where inventories exist."""
-    inv = d[d.tree_inventory_src.notna() & (d.get("street_trees", 0) > 20) & (d.res_street_km > 0.3)] if "tree_inventory_src" in d else d.iloc[0:0]
+    if "tree_inventory_src" not in d or "res_street_km" not in d:
+        return (lambda gap: 15.0), {"n": 0}
+    inv = d[d.tree_inventory_src.notna() & (d.street_trees > 20) & (d.res_street_km > 0.3)]
     if len(inv) < 50 or "tc_gap" not in d:
         return lambda gap: 15.0, {"n": len(inv)}
     inv = inv.assign(rate=inv.vacant_tree_sites / inv.res_street_km, q=pd.qcut(inv.tc_gap.rank(method="first"), 5, labels=False))
