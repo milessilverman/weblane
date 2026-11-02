@@ -136,7 +136,7 @@ function drawContext() {
     if (L_.parks) layers.parks = L.geoJSON(L_.parks, { ...noPts, renderer: parkCanvas(),
       style: f => ({ fillColor: f.properties.k === "beach" ? css("--sand", "#eadfbf") : css("--park"), fillOpacity: f.properties.k === "open space" ? .55 : .85,
                      color: css("--park-line"), weight: f.properties.a < 2 ? 1.2 : .6 }),
-      onEachFeature: (f, l) => l.bindTooltip(`${f.properties.n ? esc(f.properties.n) : "Unnamed " + esc(f.properties.k || "park")} · ${f.properties.k && f.properties.k !== "park" ? esc(f.properties.k) + " · " : ""}${f.properties.a < 1 ? f.properties.a.toFixed(2) : Math.round(f.properties.a * 10) / 10} ac`, { sticky: true }) }).addTo(map);
+      interactive: false }).addTo(map);
     if (L_.park_labels && L_.park_labels.length) layers.parkLabels = L.layerGroup().addTo(map);
     if (L_.water) layers.water = L.geoJSON(L_.water, { ...noPts, interactive: false, style: { color: css("--water-line"), weight: 1.8, opacity: .9 } }).addTo(map);
   }
@@ -177,7 +177,13 @@ function zoomed() {
 
 // ---------------- streets, names, shields and park labels (drawn only for what's on screen)
 let _parkCanvas = null, _stCanvas = null;
-const parkCanvas = () => _parkCanvas || (_parkCanvas = L.canvas({ padding: .3 }));
+// Parks and streets draw on their own canvases in panes that ignore the pointer, so clicks and hovers always
+// reach the block groups underneath (a canvas on top would otherwise swallow every click).
+function passPane(name, z) {
+  if (!map.getPane(name)) { const p = map.createPane(name); p.style.zIndex = z; p.style.pointerEvents = "none"; }
+  return name;
+}
+const parkCanvas = () => _parkCanvas || (_parkCanvas = L.canvas({ padding: .3, pane: passPane("parksPane", 405) }));
 function decodeLine(str) {
   const pts = []; let i = 0, lat = 0, lon = 0;
   while (i < str.length) {
@@ -207,7 +213,7 @@ function drawStreets() {
   // collectors (class 2) from zoom 13, local streets (class 3) from zoom 14; arterials/freeways already drawn
   if (z >= 13 && visibleCells(0).length <= 40) visibleCells(.2).forEach(k => { want.add(k + "|2"); if (z >= 14) want.add(k + "|3"); });
   for (const [key, lyr] of _drawn) if (!want.has(key)) { layers.streets.removeLayer(lyr); _drawn.delete(key); }
-  _stCanvas = _stCanvas || L.canvas({ padding: .3 });
+  _stCanvas = _stCanvas || L.canvas({ padding: .3, pane: passPane("streetsPane", 406) });
   for (const key of want) {
     if (_drawn.has(key)) continue;
     const [cell, c] = key.split("|"), lines = cellLines(cell).filter(l => l.c === +c).map(l => l.pts);
