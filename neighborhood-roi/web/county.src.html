@@ -196,44 +196,74 @@ function recCard(r, i, mode) {
 }
 
 // ---------------- EIFD calculator (Gov. Code 53398.50 et seq.)
+// m.e (from the pipeline): av = net taxable assessed value on the Assessor roll, avr/avc = residential/commercial part,
+// np = parcels, ry = roll year, sh = AV-weighted shares of the 1% levy [city, County General, other districts, schools+ERAF]
+// from the Auditor-Controller AF49 Modified ATI ratios for the tax-rate areas here, t = largest TRAs [tra, net AV].
 function eifdArea(p, scope) {
   const fs = scope === "hood" ? D.bgs.features.filter(f => f.properties.n === p.n && f.properties.c === p.c) : [byId.get(p.id)];
-  let mv = 0, homes = 0;
-  fs.forEach(f => { const m = (D.details[f.properties.id] || {}).m || {}; if (m.hv && m.homes) { mv += m.hv * m.homes; homes += m.homes; } });
-  return { n: fs.length, mv, homes };
+  let mv = 0, homes = 0, av = 0, avr = 0, avc = 0, np = 0, ry = null, shw = [0, 0, 0, 0], shav = 0, n = 0;
+  const tras = new Map(), ex = new Set();
+  fs.forEach(f => { const m = (D.details[f.properties.id] || {}).m || {};
+    if (m.hv && m.homes) { mv += m.hv * m.homes; homes += m.homes; }
+    const e = m.e; if (!e) return; n++;
+    av += e.av || 0; avr += e.avr || 0; avc += e.avc || 0; np += e.np || 0; ry = e.ry || ry;
+    if (e.sh) { e.sh.forEach((x, i) => shw[i] += x * e.av); shav += e.av; }
+    (e.t || []).forEach(([t, v]) => tras.set(t, (tras.get(t) || 0) + v)); (e.x || []).forEach(x => ex.add(x)); });
+  const sh = shav > 0 ? shw.map(x => x / shav) : null;
+  return { n: fs.length, withRoll: n, mv, homes, av, avr, avc, np, ry, sh, tras: [...tras].sort((a, b) => b[1] - a[1]), ex: [...ex] };
 }
 function eifdSection(p, m) {
-  const la = p.c === "Los Angeles";
-  const fld = (id, label, val, step, note) => `<label class="small" style="display:grid;grid-template-columns:1fr 110px;gap:8px;align-items:center;margin:4px 0">${label}${note ? ` <span class="muted">${note}</span>` : ""}<input id="${id}" type="number" step="${step}" value="${val}" style="font:500 13px var(--mono);padding:4px 6px;border:1px solid var(--rule-strong);border-radius:6px;background:var(--ground);color:var(--ink)"></label>`;
+  const fld = (id, label, val, step, note) => `<label class="small" style="display:grid;grid-template-columns:1fr 110px;gap:8px;align-items:center;margin:4px 0"><span>${label}${note ? ` <span class="muted" id="${id}-n">${note}</span>` : ""}</span><input id="${id}" type="number" step="${step}" value="${val}" style="font:500 13px var(--mono);padding:4px 6px;border:1px solid var(--rule-strong);border-radius:6px;background:var(--ground);color:var(--ink)"></label>`;
   return `<div class="section"><h3>EIFD calculator: tax-increment financing for this area</h3>
-    <p class="small muted">An Enhanced Infrastructure Financing District pledges part of the future growth in the 1% property tax to pay for projects. No vote is needed to form one; since AB 116 (2019) bonds need 3 hearings and fail only on a 50% protest. Schools can't take part. The state law has no housing set-aside, but LA County requires 20% when the County joins.</p>
+    <p class="small muted">An Enhanced Infrastructure Financing District pledges part of the future growth in the 1% property tax to pay for projects. No vote is needed to form one; since AB 116 (2019) bonds need 3 hearings and fail only on a 50% protest. Schools can't take part. State law has no housing set-aside, but LA County Board Policy 3.106 sets conditions when the County joins (see below).</p>
     <div class="cat-tabs" role="group" aria-label="EIFD area"><button type="button" data-scope="bg" aria-pressed="true">This block group</button><button type="button" data-scope="hood" aria-pressed="false">All of ${esc(p.n)}</button></div>
-    ${fld("e-av", "Base assessed value ($M)", "", 0.1, "estimate: replace with the Assessor roll")}
+    ${fld("e-av", "Base assessed value ($M)", "", 0.1, "")}
     ${fld("e-g", "Yearly value growth (%)", 3.0, 0.1, "2% Prop 13 cap + resales")}
     ${fld("e-new", "New development, year 3 ($M)", 0, 1, "")}
-    ${fld("e-city", "City share of the 1% tax (%)", la ? 26 : 20, 0.5, "placeholder: use Auditor-Controller TRA factors")}
+    ${fld("e-city", "City share of the 1% tax (%)", "", 0.01, "")}
     ${fld("e-cp", "City pledge (%)", 100, 5, "")}
-    ${fld("e-county", "County share of the 1% tax (%)", 24, 0.5, "placeholder")}
+    ${fld("e-county", "County General share of the 1% tax (%)", "", 0.01, "")}
     ${fld("e-kp", "County pledge (%)", 50, 5, "")}
     ${fld("e-rate", "Bond interest rate (%)", 5.25, 0.05, "")}
     ${fld("e-dscr", "Debt-service coverage (x)", 1.35, 0.05, "")}
     <div class="pkg" id="e-out" style="margin-top:10px"></div>
-    <p class="small muted" id="e-note"></p></div>`;
+    <div id="e-split"></div>
+    <p class="small muted" id="e-note"></p><p class="small" id="e-warn"></p></div>`;
 }
 function eifdWire(p) {
   let scope = "bg";
   const v = id => parseFloat($("#" + id).value) || 0;
-  const setAV = () => { const a = eifdArea(p, scope); $("#e-av").value = (a.mv * 0.55 / 1e6).toFixed(1);
-    $("#e-note").textContent = `Base value estimated as 55% of market value (${a.homes.toLocaleString()} homes in ${a.n} block group${a.n > 1 ? "s" : ""}), because Prop 13 keeps assessed values below market. Commercial property isn't counted yet. All figures are a screening estimate, not a financing plan.`; };
+  const pct = x => (100 * x).toFixed(1) + "%";
+  const setAV = () => {
+    const a = eifdArea(p, scope), unincorp = /^Unincorporated/i.test(p.c) || p.c === "Los Angeles County";
+    const real = a.withRoll > 0 && a.av > 0;
+    $("#e-av").value = ((real ? a.av : a.mv * 0.55) / 1e6).toFixed(1);
+    $("#e-av-n") && ($("#e-av-n").textContent = "");
+    if (a.sh) { $("#e-city").value = (a.sh[0] * 100).toFixed(2); $("#e-county").value = (a.sh[1] * 100).toFixed(2); }
+    else { $("#e-city").value = unincorp ? 0 : 20; $("#e-county").value = 24; }
+    const split = a.sh ? `<div class="kv small" style="margin-top:8px"><span>City${unincorp ? " (none: unincorporated)" : ""}</span><span>${pct(a.sh[0])}</span><span>County General Fund</span><span>${pct(a.sh[1])}</span><span>Other districts (fire, flood, water, library, parks...)</span><span>${pct(a.sh[2])}</span><span>Schools, colleges and ERAF (can't join an EIFD)</span><span>${pct(a.sh[3])}</span></div>
+      <p class="small muted">Where each $1 of the 1% tax goes here, weighted by assessed value across ${a.tras.length} tax-rate area${a.tras.length > 1 ? "s" : ""} (largest: ${a.tras.filter(t => t[1] > 0).slice(0, 3).map(([t, x]) => `TRA ${esc(t)}, ${fmt$(x)}`).join("; ")}). Source: LA County Auditor-Controller ${esc((D.eifd || {}).factor_year || "")} Modified ATI ratios (AF49 report), the shares the Auditor uses to split tax increment. Special districts can also join; their shares are shown but not pledged in this screen.</p>` : "";
+    $("#e-split").innerHTML = split + (a.ex.length ? `<p class="small"><b>Already in a district:</b> part of this area is in the ${a.ex.map(esc).join(" and ")}, so its increment is already pledged there. A new district here would need to avoid or amend it.</p>` : "");
+    $("#e-note").textContent = real
+      ? `Base value is the net taxable value on the ${a.ry || ""} Assessor roll (land + improvements + fixtures, less exemptions) for ${a.np.toLocaleString()} parcels in ${a.n} block group${a.n > 1 ? "s" : ""}: ${fmt$(a.avr)} residential, ${fmt$(a.avc)} commercial/industrial, the rest other uses. A real district's base is the roll in its formation year. All figures are a screening estimate, not a financing plan.`
+      : `No Assessor roll value matched this area, so the base is estimated as 55% of market value (${a.homes.toLocaleString()} homes). ${a.sh ? "" : "Tax shares are placeholders: no apportionment factors matched. "}All figures are a screening estimate, not a financing plan.`;
+  };
   const run = () => {
     const base = v("e-av") * 1e6, gr = v("e-g") / 100, nd = v("e-new") * 1e6, r = v("e-rate") / 100, dscr = Math.max(v("e-dscr"), 1);
-    const county = v("e-kp") > 0, capture = v("e-city") / 100 * v("e-cp") / 100 + v("e-county") / 100 * v("e-kp") / 100;
+    const cityC = v("e-city") / 100 * v("e-cp") / 100, cntyC = v("e-county") / 100 * v("e-kp") / 100;
+    const county = cntyC > 0, capture = cityC + cntyC;
     const housing = county ? 0.20 : 0, admin = 0.03;
     let av = base, tot = 0, y10 = 0;
     for (let t = 1; t <= 30; t++) { av = av * (1 + gr) + (t === 3 ? nd : 0);
       const net = Math.max(0, av - base) * 0.01 * capture * (1 - admin); tot += net; if (t === 10) y10 = net; }
-    const bond = y10 * (1 - housing) / dscr * (1 - Math.pow(1 + r, -30)) / r;
-    $("#e-out").innerHTML = `${tile("Year-10 increment", fmt$(y10), "per year, after 3% admin")}${tile("30-year total", fmt$(tot), county ? "incl. 20% for housing (County policy)" : "")}${tile("Bond capacity", fmt$(bond), "30-yr bonds sized on year 10")}`;
+    const bond = r > 0 ? y10 * (1 - housing) / dscr * (1 - Math.pow(1 + r, -30)) / r : y10 * (1 - housing) / dscr * 30;
+    $("#e-out").innerHTML = `${tile("Year-10 increment", fmt$(y10), "per year, after 3% admin")}${tile("30-year total", fmt$(tot), county ? "before the County's housing condition" : "")}${tile("Bond capacity", fmt$(bond), county ? "30-yr, sized on year 10, 20% held for housing" : "30-yr bonds sized on year 10")}`;
+    const w = [];
+    const uninc = v("e-city") === 0;
+    if (county && !uninc && cntyC > cityC + 1e-9) w.push(`The County would put in more than the city (${(cntyC * 100).toFixed(2)}¢ vs ${(cityC * 100).toFixed(2)}¢ of each $1 of increment). Board Policy 3.106 requires the city's contribution to at least equal the County General Fund's plus any special districts'.`);
+    if (county && !uninc && capture > 0 && cityC / capture < 0.15 - 1e-9) w.push("Policy 3.106 also expects at least 15¢ of each captured $1 from the city, with limited exceptions.");
+    if (uninc) w.push("No city share here (unincorporated), so the County would form and run the district itself, as it did for West Carson.");
+    $("#e-warn").innerHTML = w.length ? (uninc ? "<b>Note:</b> " : "<b>County policy check:</b> ") + w.map(esc).join(" ") : "";
   };
   $("#panel").querySelectorAll("[data-scope]").forEach(b => b.onclick = () => { scope = b.dataset.scope;
     $("#panel").querySelectorAll("[data-scope]").forEach(x => x.setAttribute("aria-pressed", x === b)); setAV(); run(); });

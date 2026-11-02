@@ -93,6 +93,8 @@ def main():
     acres = bg.set_index("GEOID").to_crs(M).area / 4046.86
     det = {}
     dd = d.set_index("GEOID")
+    ef = MOD / "eifd.json"
+    eifd = json.loads(ef.read_text()) if ef.exists() else {"meta": {}, "bg": {}}
     for gid, x in details.items():
         r = dd.loc[gid] if gid in dd.index else None
         if r is None:
@@ -115,6 +117,8 @@ def main():
         if m["rm"] and m["rm"] >= 1e9:
             m["rm"] = None
         m = {k: v for k, v in m.items() if v is not None and not (isinstance(v, float) and np.isnan(v))}
+        if gid in eifd["bg"]:
+            m["e"] = eifd["bg"][gid]
         det[gid] = {"r": [[num(rec[k], 3) if isinstance(rec[k], float) else rec[k] for k in keys] for rec in x["recs"]], "m": m}
 
     L = {"freeways": layer("freeways", 40, ["name"], {"name": "n"}, prec=4), "arterials": merged_lines("arterials", 25),
@@ -171,6 +175,13 @@ def main():
         det_txt = {kk: vv for kk, vv in s.items() if kk not in ("ok", "seconds", "error") and not isinstance(vv, (list, dict))}
         src_rows.append([lab, '<span class="pill ok">loaded</span>' if ok else '<span class="pill miss">missing</span>',
                          "; ".join(f"{a.replace('_', ' ')}: {b}" for a, b in list(det_txt.items())[:6]) or (s.get("error") or "")[:200]])
+    em = eifd.get("meta", {})
+    if em:
+        src_rows.append(["EIFD calculator: Assessor roll values by parcel and tax-rate area", '<span class="pill ok">loaded</span>',
+                         f"roll year {em.get('roll_year')}; net taxable value ${em.get('county_net_av', 0) / 1e12:.2f} trillion; "
+                         f"{em.get('roll_value_matched_share', 0):.2%} of it matched to a tax-rate area with factors"])
+        src_rows.append([f"EIFD calculator: Auditor-Controller {em.get('factor_year')} Modified ATI ratios (AF49)", '<span class="pill ok">loaded</span>',
+                         f"{em.get('tras_with_factors', 0):,} tax-rate areas; {em.get('rows', 0):,} agency shares; report dated {em.get('prepared')}"])
     named = d.hood_source.value_counts()
     rep = {"title": "City Pretty: Los Angeles County",
            "paragraphs": [
@@ -201,6 +212,7 @@ def main():
                    "<b>Home values</b> come from recorded single-family sales in each block group (2022-24) where there are at least 5, then from the surrounding tract, then from the Census. Census values stop at $2M.",
                    "<b>Regional projects</b> (rail stations, freeway caps) show this area's rough share of a much larger project. Treat them as a signal, not a budget.",
                    "<b>Dollars.</b> Costs are in 2024 dollars (CPI-U) where the source year is known; costs marked as estimates in the caveats have no matched LA record yet.",
+                   "<b>EIFD calculator.</b> The base value is the net taxable value on the 2026 Assessor roll for every parcel in the area. City and County shares are the Auditor-Controller's FY 2026-27 tax-increment ratios for the area's actual tax-rate areas, weighted by value. They match the published West Carson plan (County 30.46%) and Pasadena's draft plan (city 21.1%, County 27.9%). Growth, interest and coverage are still your assumptions, and areas already in an EIFD are flagged.",
                    "<b>Policy changes</b> such as rezoning cost the public little to adopt, so no per-dollar return is shown for them.",
                    "<b>Unknowns are left out, not guessed.</b> Where the research has no price effect (pools, crosswalks, litter crews), the item gets no value number. Where a cost isn't on record, the estimate is flagged in its sources."]}]}
 
@@ -218,7 +230,7 @@ def main():
             pts = cent.loc[idx]
             c = pts.union_all().centroid if hasattr(pts, "union_all") else pts.unary_union.centroid
             search[nm] = bg.GEOID.loc[pts.distance(c).idxmin()]
-    bundle = {"meta": {"built": date.today().isoformat(), "default_bg": default, "search": search}, "bgs": bgs, "details": det, "catalog": lib, "funding": meta.get("funding", {}),
+    bundle = {"meta": {"built": date.today().isoformat(), "default_bg": default, "search": search}, "bgs": bgs, "details": det, "catalog": lib, "funding": meta.get("funding", {}), "eifd": eifd["meta"],
               "layers": L, "hoods": hoods_js, "hood_labels": labels(bgn, "hood"), "cities": city_js,
               "city_labels": labels(cities.rename(columns={"name": "nm"}), "nm"), "report": rep}
     raw = json.dumps(bundle, separators=(",", ":"), default=str)
