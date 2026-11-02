@@ -226,7 +226,7 @@ def main(region="la_westside", mode="full"):
     html = (WEB / "focus.src.html").read_text()
     html = html.replace("/*LEAFLET_CSS*/", (WEB / "leaflet-1.9.4.css").read_text())
     html = html.replace("/*LEAFLET_JS*/", (WEB / "leaflet-1.9.4.js").read_text().replace("</script", "<\\/script"))
-    html = html.replace("/*TITLE*/", "Westside Neighborhood ROI Map").replace("/*EYEBROW*/", f"NEIGHBORHOOD ROI · LA WESTSIDE & CULVER CITY · {date.today():%d %b %Y}".upper())
+    html = html.replace("/*TITLE*/", "City Pretty").replace("/*EYEBROW*/", f"CITY PRETTY · LA WESTSIDE & CULVER CITY · {date.today():%d %b %Y}".upper())
     html = html.replace("/*H1*/", "Which improvements raise home values most per dollar, block by block")
     html = html.replace("/*BUNDLE*/", b64)
     if MAP_ONLY:
