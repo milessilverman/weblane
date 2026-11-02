@@ -194,7 +194,7 @@ def refine_names(d):
     bg = gpd.read_file(bgp).set_index("GEOID").loc[d.GEOID[generic]]
     pts = gpd.GeoDataFrame(geometry=bg.to_crs(3310).geometry.representative_point(), crs=3310).reset_index()
     got = pd.Series(dtype=str)
-    labs = [gpd.read_file(SRC / f) for f in ("map_labels_city.geojson", "map_places.geojson") if (SRC / f).exists()]
+    labs = [gpd.read_file(SRC / f) for f in ("map_places.geojson",) if (SRC / f).exists()]
     if labs:
         lab = pd.concat([x[["label", "geometry"]] for x in labs], ignore_index=True)
         lab = gpd.GeoDataFrame(lab, geometry="geometry", crs=4326).to_crs(3310)
@@ -361,10 +361,17 @@ def size_projects(r, ref, tree_rate):
     ov = g(r, "vacant_other_units", 0)
     vlots = g(r, "vacant_parcels", np.nan)
     low = r.home_value < ref["value"] and poor
+    dump_d = g(r, "illegal_dumping", 0) / max(r.area_km2, 0.05)
     if low and vlots == vlots and vlots >= 2:
         lots = int(min(15, vlots))
-        add("vacant_lot_green", lots, f"{lots} vacant lots cleaned and greened", lots * reach(150, dens, H) / max(1, lots ** 0.5), 0.043,
-            2400 * lots, 480 * lots, why=f"{int(vlots)} small vacant parcels on the Assessor roll; values and incomes below county median")
+        avg_sqft = float(np.clip(g(r, "vacant_sqft", 5000 * vlots) / max(vlots, 1), 1500, 20000))
+        blight = r.in_311 and dump_d > 300  # the Philadelphia effect is for trash-strewn, overgrown lots
+        homes = min(H, lots * reach(100, dens, H) / max(1, lots ** 0.5))
+        add("vacant_lot_green", lots, f"{lots} vacant lots (~{avg_sqft:,.0f} sq ft each) cleaned, fenced and greened", homes, 0.043 if blight else 0.01,
+            1.6 * avg_sqft * lots, 0.32 * avg_sqft * lots,
+            why=f"{int(vlots)} small vacant parcels on the Assessor roll; values and incomes below county median"
+                + ("; heavy dumping reported, so the full blight effect applies" if blight else "; no sign of heavy dumping, so a reduced 1% effect is used"),
+            fit=0.7)
     if low and g(r, "other_vacant_rate", 0) > max(2 * ref["other_vacant"], 0.05) and ov >= 8:
         houses = int(min(8, max(1, ov * 0.2)))
         add("blight_rehab", houses, f"{houses} homes rehabbed", houses * reach(150, dens, H) / max(1, houses ** 0.5), 0.023,
@@ -429,7 +436,7 @@ def size_projects(r, ref, tree_rate):
     tph = g(r, "bus_max_tph_400m", 0)
     rail_m = min(g(r, "rail_stop_nearest_m"), g(r, "rail_station_nearest_m"))
     if tph >= 12 and rail_m > 800:
-        add("bus_lane", 1, "0.5 mile of peak bus lanes (both directions)", reach(400, dens, H), 0.01, 1_000_000, 20_000,
+        add("bus_lane", 1, "0.5 mile of peak bus lanes (both directions)", reach(400, dens, H), 0.005, 1_000_000, 20_000,
             why=f"{tph:.0f} buses an hour at the busiest nearby stop (7-9am); no rail within 800 m")
     if tph >= 15 and rail_m > 1500:
         add("brt", 1, "0.5 mile of BRT corridor (local share)", reach(800, dens, H), 0.05, 7_500_000, 100_000,
@@ -482,10 +489,10 @@ def size_projects(r, ref, tree_rate):
         if dd > 200:
             add("litter", 1, "weekly cleanup crew (local share)", H, 0, 0, 60_000, why=f"{int(dump)} dumping/litter reports a year ({dd:,.0f} per km²)")
         gd = graf / max(r.area_km2, 0.05)
-        if gd > 50:
-            pct = min(0.015, 0.00031 * 0.5 * gd / 10)
-            add("graffiti", 1, "48-hour graffiti removal", H, pct, 0, max(5_000, 123_000 * graf / 3000),
-                why=f"{int(graf)} graffiti reports a year ({gd:,.0f} per km²); assumes 1 in 10 reports is a criminal-damage incident (Gibbons)")
+        if gd > 100:
+            pct = min(0.003, 0.00031 * 0.5 * gd / 20)
+            add("graffiti", 1, "48-hour graffiti removal", H, pct, 0, max(20_000, 123_000 * graf / 1500),
+                why=f"{int(graf)} graffiti reports a year ({gd:,.0f} per km²); assumes 1 in 20 reports is a criminal-damage incident (Gibbons), capped at +0.3%")
         if enc >= 25:
             add("encampment", 1, "outreach + housing for ~10 people, 10 years", reach(320, dens, H), 0.0141 * 0.5, 0, 300_000,
                 why=f"{int(enc)} encampment reports a year; homes within 0.2 mi sell ~1.4% lower (counts a 50% success rate)")
