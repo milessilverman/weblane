@@ -381,7 +381,7 @@ def stage_osm():
 
     am = layer("amenities",
                "nwr/leisure=pitch,playground,dog_park,swimming_pool,sports_centre,fitness_station,skatepark",
-               "nwr/amenity=library,toilets,drinking_water,marketplace,restaurant,cafe,fast_food,bar,pub,nightclub,community_centre,school,college,university,childcare,clinic,doctors,cinema,theatre,arts_centre",
+               "nwr/amenity=library,toilets,drinking_water,marketplace,restaurant,cafe,fast_food,bar,pub,nightclub,community_centre,school,college,university,childcare,clinic,doctors,cinema,theatre,arts_centre,charging_station",
                "nwr/shop=supermarket,greengrocer,convenience,alcohol",
                "nwr/landuse=allotments", "nwr/garden:type=community")
     am = pts(am)
@@ -412,13 +412,14 @@ def stage_osm():
         "childcare": amen == "childcare",
         "clinic": amen.isin(["clinic", "doctors"]),
         "culture": amen.isin(["cinema", "theatre", "arts_centre"]),
+        "ev_charger": amen == "charging_station",
         "community_garden": (col(am, "landuse") == "allotments") | (col(am, "garden:type") == "community"),
     }
     for k, m in kinds.items():
         f = am[m]
         note("osm", **{f"n_{k}": int(m.sum())})
         out[f"{k}_nearest_m"] = nearest_m(f, k)
-        if k in ("dining", "nightlife", "grocery", "liquor", "fast_food", "culture"):
+        if k in ("dining", "nightlife", "grocery", "liquor", "fast_food", "culture", "ev_charger"):
             out[f"{k}_within_400m"] = within_m(f, k, 400)
             out[f"{k}_within_800m"] = within_m(f, k, 800)
     save_layer(am[kinds["tennis"] | kinds["pickleball"] | kinds["basketball"] | kinds["playground"] | kinds["dog_park"] | kinds["pool"]
