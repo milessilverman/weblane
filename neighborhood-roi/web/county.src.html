@@ -344,6 +344,7 @@ function drawZoning() {
 // ---------------- panel: zoning and state housing laws, public facilities nearby
 function zoneRules(code, juris) {
   const t = String(code).toUpperCase().replace(/\[[^\]]*\]|\([^)]*\)/g, "").replace(/^[QTD]+(?=[A-Z])/, "");
+  juris = String(juris).replace(/ \(SCAG 2019\)$/, "");
   return (D.zone_rules || []).find(r => r.jurisdiction === juris && new RegExp("^" + r.zone_prefix.replace(/[.]/g, "\\.") + "(?![0-9.])").test(t));
 }
 function zoningSection(m) {
@@ -351,7 +352,7 @@ function zoningSection(m) {
   let h = `<div class="section"><h3>Zoning: what can be built here</h3>`;
   if (z) {
     h += `<div class="small" style="margin:4px 0 6px">${Object.entries(z.sh).sort((a, b) => b[1] - a[1]).map(([c, v]) => `<span class="zkey"><i style="background:${ZCOL[c]}"></i>${esc(c)} ${Math.round(v * 100)}%</span>`).join("")}</div>
-      <p class="small">Most common zones (${esc(z.j)}): <b>${esc(String(z.top || "").split("; ").filter(x => !/ 0%$/.test(x)).join("; "))}</b>. Turn on <b>Zoning</b> above and zoom in to see each parcel's zone.</p>`;
+      <p class="small">Most common zones (${esc(z.j)}): <b>${esc(String(z.top || "").split("; ").filter(x => !/ 0%$/.test(x)).join("; "))}</b>. ${/SCAG/.test(z.j) ? "From SCAG's 2019 parcel data (this city's own zoning map isn't loaded yet, so recent rezonings may be missing)." : "Turn on <b>Zoning</b> above and zoom in to see each parcel's zone."}</p>`;
     const seen = new Set(), rules = String(z.top || "").split("; ").map(x => x.replace(/ \d+%$/, "")).map(c => zoneRules(c, z.j)).filter(r => r && !seen.has(r.zone_prefix) && seen.add(r.zone_prefix));
     if (rules.length) h += `<div style="overflow-x:auto"><table class="small" style="width:100%;border-collapse:collapse"><thead><tr style="text-align:left"><th>Zone</th><th>Allows</th><th>Homes/acre</th><th>Height</th><th>FAR</th><th>Setbacks F/S/R</th></tr></thead><tbody>
       ${rules.map(r => `<tr style="border-top:1px solid var(--rule)"><td><b>${esc(r.zone_prefix)}</b> ${esc(r.zone_name)}</td><td>${esc(r.allowed)}</td><td>${esc(r.units_per_acre)}</td><td>${esc(r.max_height_ft)} ft</td><td>${esc(r.max_far)}</td><td>${esc(r.front_ft)}/${esc(r.side_ft)}/${esc(r.rear_ft)} ft</td></tr>`).join("")}</tbody></table></div>
