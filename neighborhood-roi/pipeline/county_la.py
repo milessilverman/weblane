@@ -93,6 +93,11 @@ def within_m(feats, name, radius):
     return j.groupby("GEOID").size().reindex(p.GEOID).fillna(0).astype(int).rename(name)
 
 
+def lines_only(g):
+    g = g[g.geometry.notna()].explode(index_parts=False)
+    return g[g.geom_type.isin(["LineString", "MultiLineString"])]
+
+
 def save(df, name):
     df = df.reset_index() if "GEOID" not in df.columns else df
     df.to_csv(OUT / f"{name}.csv", index=False)
@@ -460,12 +465,12 @@ def stage_osm():
     walls = layer("walls", "w/wall=noise_barrier", "w/barrier=noise_barrier")
     # share of freeway frontage near homes that already has a sound wall: freeway length within 150 m of the BG
     bgm = block_groups().to_crs(M)
-    fwm = fw.to_crs(M)
+    fwm = lines_only(fw.to_crs(M))
     near = gpd.GeoDataFrame({"GEOID": bgm.GEOID}, geometry=bgm.buffer(150), crs=M)
     fj = gpd.overlay(fwm[["geometry"]], near, how="intersection", keep_geom_type=True)
     out["freeway_m_within_150m"] = fj.length.groupby(fj.GEOID).sum().reindex(bgm.GEOID).fillna(0)
     if len(walls):
-        wj = gpd.overlay(walls.to_crs(M)[["geometry"]], near, how="intersection", keep_geom_type=True)
+        wj = gpd.overlay(lines_only(walls.to_crs(M)[["geometry"]]), near, how="intersection", keep_geom_type=True)
         out["noise_wall_m"] = wj.length.groupby(wj.GEOID).sum().reindex(bgm.GEOID).fillna(0)
     power = layer("power", "w/power=line")
     out["hv_line_nearest_m"] = nearest_m(power, "hv")
@@ -481,7 +486,7 @@ def stage_osm():
     lamps = layer("lamps", "n/highway=street_lamp")
     out["street_lamps"] = count_in_bg(lamps, "lamps") if len(lamps) else pd.Series(dtype=float)
     res = layer("resroads", "w/highway=residential,living_street")
-    rj = gpd.overlay(res.to_crs(M)[["geometry"]], bgm[["GEOID", "geometry"]], how="intersection", keep_geom_type=True)
+    rj = gpd.overlay(lines_only(res.to_crs(M)[["geometry"]]), bgm[["GEOID", "geometry"]], how="intersection", keep_geom_type=True)
     out["res_street_km"] = (rj.length / 1000).groupby(rj.GEOID).sum().reindex(bgm.GEOID).fillna(0)
 
     df = pd.DataFrame({k: v.reindex(bg_points().GEOID).values if hasattr(v, "reindex") else v for k, v in out.items()})
@@ -714,7 +719,7 @@ def stage_crime():
             since = datetime.now() - timedelta(days=400)
             best_g = None
             for x in found[:8]:
-                if not x.get("url"):
+                if not x.get("url") or not re.search(r"crime", x.get("title", "") + x["url"], re.I):
                     continue
                 u = x["url"].rstrip("/") + "/0"
                 try:

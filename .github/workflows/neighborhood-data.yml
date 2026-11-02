@@ -133,7 +133,7 @@ jobs:
 
   merge:
     needs: [stage, focus, county]
-    if: always()
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
