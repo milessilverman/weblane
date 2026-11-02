@@ -1,0 +1,19 @@
+{
+ "generated_at": "2026-11-02T06:23:21.077136+00:00",
+ "sources": {
+  "assets": {
+   "bus_lanes_rows": 31,
+   "ladwp_overhead_rows": 164182,
+   "ladwp_underground_rows": 87583,
+   "streetlights": 222099,
+   "fire_polygons": 1128,
+   "very_high": 288,
+   "lausd_schools": 670,
+   "low_green": 345,
+   "ev_stations": 6470,
+   "dc_fast_public": 673,
+   "ok": true,
+   "seconds": 392.4
+  }
+ }
+}
