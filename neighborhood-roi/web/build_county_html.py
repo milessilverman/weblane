@@ -218,7 +218,7 @@ def main():
             pts = cent.loc[idx]
             c = pts.union_all().centroid if hasattr(pts, "union_all") else pts.unary_union.centroid
             search[nm] = bg.GEOID.loc[pts.distance(c).idxmin()]
-    bundle = {"meta": {"built": date.today().isoformat(), "default_bg": default, "search": search}, "bgs": bgs, "details": det, "catalog": lib,
+    bundle = {"meta": {"built": date.today().isoformat(), "default_bg": default, "search": search}, "bgs": bgs, "details": det, "catalog": lib, "funding": meta.get("funding", {}),
               "layers": L, "hoods": hoods_js, "hood_labels": labels(bgn, "hood"), "cities": city_js,
               "city_labels": labels(cities.rename(columns={"name": "nm"}), "nm"), "report": rep}
     raw = json.dumps(bundle, separators=(",", ":"), default=str)

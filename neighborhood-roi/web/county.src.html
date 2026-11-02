@@ -190,8 +190,55 @@ function recCard(r, i, mode) {
       <div class="costline">total = ${costs}${r.om ? " (10 yrs, present value)" : ""}</div>
       ${r.pct > 0 ? `<p class="small"><b>Price effect used:</b> +${r.pct}% for homes reached${c.years ? `, full effect after ~${c.years} yr (discounted)` : ""}.</p>` : `<p class="small"><b>Home-value effect:</b> not measured in the research, so it is ranked by how much this area needs it, not by value per $1.</p>`}
       ${c.grade !== "none" ? `<p class="small"><b>Evidence grade ${c.grade}:</b> ${esc(GRADE_TXT[c.grade].slice(4))}.${c.caveat ? " " + esc(c.caveat) : ""}</p>` : c.caveat ? `<p class="small">${esc(c.caveat)}</p>` : ""}
+      ${(c.funding || []).length ? `<p class="small"><b>Who pays:</b> ${c.funding.map(k => { const f = D.funding[k]; return f ? `${f[2] ? `<a href="${esc(f[2])}" target="_blank" rel="noopener">${esc(f[0])}</a>` : esc(f[0])} (${esc(f[1])})` : ""; }).filter(Boolean).join("; ")}</p>` : ""}
       <p class="src muted">${c.sources.map(esc).join("<br>")}</p>
     </details></div>`;
+}
+
+// ---------------- EIFD calculator (Gov. Code 53398.50 et seq.)
+function eifdArea(p, scope) {
+  const fs = scope === "hood" ? D.bgs.features.filter(f => f.properties.n === p.n && f.properties.c === p.c) : [byId.get(p.id)];
+  let mv = 0, homes = 0;
+  fs.forEach(f => { const m = (D.details[f.properties.id] || {}).m || {}; if (m.hv && m.homes) { mv += m.hv * m.homes; homes += m.homes; } });
+  return { n: fs.length, mv, homes };
+}
+function eifdSection(p, m) {
+  const la = p.c === "Los Angeles";
+  const fld = (id, label, val, step, note) => `<label class="small" style="display:grid;grid-template-columns:1fr 110px;gap:8px;align-items:center;margin:4px 0">${label}${note ? ` <span class="muted">${note}</span>` : ""}<input id="${id}" type="number" step="${step}" value="${val}" style="font:500 13px var(--mono);padding:4px 6px;border:1px solid var(--rule-strong);border-radius:6px;background:var(--ground);color:var(--ink)"></label>`;
+  return `<div class="section"><h3>EIFD calculator: tax-increment financing for this area</h3>
+    <p class="small muted">An Enhanced Infrastructure Financing District pledges part of the future growth in the 1% property tax to pay for projects. No vote is needed to form one; since AB 116 (2019) bonds need 3 hearings and fail only on a 50% protest. Schools can't take part. The state law has no housing set-aside, but LA County requires 20% when the County joins.</p>
+    <div class="cat-tabs" role="group" aria-label="EIFD area"><button type="button" data-scope="bg" aria-pressed="true">This block group</button><button type="button" data-scope="hood" aria-pressed="false">All of ${esc(p.n)}</button></div>
+    ${fld("e-av", "Base assessed value ($M)", "", 0.1, "estimate: replace with the Assessor roll")}
+    ${fld("e-g", "Yearly value growth (%)", 3.0, 0.1, "2% Prop 13 cap + resales")}
+    ${fld("e-new", "New development, year 3 ($M)", 0, 1, "")}
+    ${fld("e-city", "City share of the 1% tax (%)", la ? 26 : 20, 0.5, "placeholder: use Auditor-Controller TRA factors")}
+    ${fld("e-cp", "City pledge (%)", 100, 5, "")}
+    ${fld("e-county", "County share of the 1% tax (%)", 24, 0.5, "placeholder")}
+    ${fld("e-kp", "County pledge (%)", 50, 5, "")}
+    ${fld("e-rate", "Bond interest rate (%)", 5.25, 0.05, "")}
+    ${fld("e-dscr", "Debt-service coverage (x)", 1.35, 0.05, "")}
+    <div class="pkg" id="e-out" style="margin-top:10px"></div>
+    <p class="small muted" id="e-note"></p></div>`;
+}
+function eifdWire(p) {
+  let scope = "bg";
+  const v = id => parseFloat($("#" + id).value) || 0;
+  const setAV = () => { const a = eifdArea(p, scope); $("#e-av").value = (a.mv * 0.55 / 1e6).toFixed(1);
+    $("#e-note").textContent = `Base value estimated as 55% of market value (${a.homes.toLocaleString()} homes in ${a.n} block group${a.n > 1 ? "s" : ""}), because Prop 13 keeps assessed values below market. Commercial property isn't counted yet. All figures are a screening estimate, not a financing plan.`; };
+  const run = () => {
+    const base = v("e-av") * 1e6, gr = v("e-g") / 100, nd = v("e-new") * 1e6, r = v("e-rate") / 100, dscr = Math.max(v("e-dscr"), 1);
+    const county = v("e-kp") > 0, capture = v("e-city") / 100 * v("e-cp") / 100 + v("e-county") / 100 * v("e-kp") / 100;
+    const housing = county ? 0.20 : 0, admin = 0.03;
+    let av = base, tot = 0, y10 = 0;
+    for (let t = 1; t <= 30; t++) { av = av * (1 + gr) + (t === 3 ? nd : 0);
+      const net = Math.max(0, av - base) * 0.01 * capture * (1 - admin); tot += net; if (t === 10) y10 = net; }
+    const bond = y10 * (1 - housing) / dscr * (1 - Math.pow(1 + r, -30)) / r;
+    $("#e-out").innerHTML = `${tile("Year-10 increment", fmt$(y10), "per year, after 3% admin")}${tile("30-year total", fmt$(tot), county ? "incl. 20% for housing (County policy)" : "")}${tile("Bond capacity", fmt$(bond), "30-yr bonds sized on year 10")}`;
+  };
+  $("#panel").querySelectorAll("[data-scope]").forEach(b => b.onclick = () => { scope = b.dataset.scope;
+    $("#panel").querySelectorAll("[data-scope]").forEach(x => x.setAttribute("aria-pressed", x === b)); setAV(); run(); });
+  ["e-av", "e-g", "e-new", "e-city", "e-cp", "e-county", "e-kp", "e-rate", "e-dscr"].forEach(id => $("#" + id).oninput = run);
+  setAV(); run();
 }
 
 function select(id, fly) {
@@ -228,6 +275,7 @@ function select(id, fly) {
   if (qol.length) h += `<div class="section"><h3>Quality-of-life projects (no measured price effect)</h3><p class="small muted">Sorted by how much this area needs each one compared with the rest of the county.</p><div class="recs">${qol.map((r, i) => recCard(r, i, "qol")).join("")}</div></div>`;
   if (pol.length) h += `<div class="section"><h3>Zoning and policy</h3><div class="recs">${pol.map((r, i) => recCard(r, i, "policy")).join("")}</div></div>`;
   if (own.length) h += `<div class="section"><h3>For an individual homeowner here</h3><div class="recs">${own.map((r, i) => recCard(r, i, "owner")).join("")}</div></div>`;
+  h += eifdSection(p, m);
   const kv = [], add = (k, v, f = x => x) => { if (v != null && v !== "" && !(typeof v === "number" && isNaN(v))) kv.push(`<span>${k}</span><span>${f(v)}</span>`); };
   add("Population", m.pop, fmtN); add("Median household income", m.inc, fmt$); add("Median rent", m.rent, v => fmt$(v) + "/mo"); add("Median year built", m.yb, v => Math.round(v));
   add("Single-family share", m.sf, v => Math.round(v) + "%"); add("Households without a car", m.nocar, v => Math.round(v) + "%");
@@ -238,10 +286,11 @@ function select(id, fly) {
   add("Nearest EV fast charger mapped", m.ev, v => (v / 1609).toFixed(1) + " mi");
   if (kv.length) h += `<div class="section"><h3>Area profile</h3><div class="kv">${kv.join("")}</div></div>`;
   $("#panel").innerHTML = h; $("#panel").scrollTop = 0;
+  eifdWire(p);
   const draw = cat => { const list = val.filter(r => cat === "All" || D.catalog[r.id].category === cat);
     $("#valrecs").innerHTML = list.length ? list.slice(0, 12).map((r, i) => recCard(r, i, "value")).join("") + (list.length > 12 ? `<details class="more"><summary>${list.length - 12} more</summary><div class="recs">${list.slice(12).map((r, i) => recCard(r, i + 12, "value")).join("")}</div></details>` : "") : `<p class="empty">Nothing in this category applies here.</p>`; };
   draw("All");
-  $("#panel").querySelectorAll(".cat-tabs button").forEach(b => b.onclick = () => { $("#panel").querySelectorAll(".cat-tabs button").forEach(x => x.setAttribute("aria-pressed", x === b)); draw(b.dataset.cat); });
+  $("#panel").querySelectorAll(".cat-tabs button[data-cat]").forEach(b => b.onclick = () => { $("#panel").querySelectorAll(".cat-tabs button[data-cat]").forEach(x => x.setAttribute("aria-pressed", x === b)); draw(b.dataset.cat); });
 }
 
 function report() {

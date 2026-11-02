@@ -36,7 +36,18 @@ OWN_POLICE = {"Alhambra", "Arcadia", "Azusa", "Baldwin Park", "Bell", "Bell Gard
               "San Gabriel", "San Marino", "Santa Monica", "Sierra Madre", "Signal Hill", "South Gate", "South Pasadena",
               "Torrance", "Vernon", "West Covina", "Whittier", "Los Angeles"}
 
+GEM = "Cost from a Gemini research pass, unverified (re-audit kept the figure but quoted no source); "
 S = {  # sources, cited by key in the catalog
+    "gem_bike": GEM + "$1.85M per mile with concrete curbs and bike signals; MyFigueroa $20.5M / 4 mi (2018). FHWA: protected lanes cut crashes; no price study",
+    "gem_trail": GEM + "$2.4M per mile (power-line ROW) to $4.5M (river); Immergluck 2009 (Atlanta BeltLine) found rising nearby prices, varying by area",
+    "gem_tsp": GEM + "$42,000 per signal for priority, $115,000 per bus bulb; LADOT: bus delay at signals cut ~33%",
+    "gem_cam": GEM + "$65,000 per site + $28,000/yr; FHWA / Cochrane review: large crash reductions; AB 645 pilots in LA, Long Beach, Glendale",
+    "gem_round": GEM + "$550,000 per intersection; Retting et al. 2001: injury crashes -78% at converted intersections",
+    "gem_lpi": GEM + "$8,500 per signal retiming, $1,800 per daylit corner (AB 413); Fayish & Gross 2012: pedestrian crashes reduced",
+    "gem_school": GEM + "$85,000 per block + $4,800/yr; London school streets: traffic and NO2 down near schools",
+    "gem_art": GEM + "$35,000 per 1,000 sq ft mural; LA Mural Ordinance registry; no causal price study",
+    "gem_forest": GEM + "$65,000 per 0.1-acre site + $8,500/yr; no price study",
+    "gem_fiber": GEM + "$3,200 per home passed (fiber); no causal price study for small cells (earlier cited study was fabricated)",
     "local_trees": "City Pretty local hedonic: 3,386 Westside sales 2022-24, block fixed effects; each street tree within 50 m +0.51% (95% CI 0.24-0.79)",
     "lamc_tree": "LAMC 62.177 in-lieu fee: $1,945 per public-works tree incl. planting and 3-yr establishment",
     "usfs_tree": "USFS / California street-tree costing: $52-79 per tree-year upkeep",
@@ -123,9 +134,9 @@ CAT = [
     ("sports_field", "Natural-grass sports field", "Parks & recreation", "qol", "limited", ["turf"], ["kids", "rec"], 0),
     ("rec_center", "Recreation center", "Parks & recreation", "qol", "limited", ["pasadena_pna"], ["kids", "rec"], 0),
     ("restroom", "Park restroom and drinking fountains", "Parks & recreation", "qol", "limited", ["restroom"], ["parks"], 0),
-    ("bus_lane", "Peak-hour bus lanes on the busy corridor", "Transit", "value", "modeled (from BRT studies)", ["wilshire", "flower", "brt"], ["transit"], 1),
+    ("bus_lane", "Paint red bus-only lanes on the busy corridor", "Transit", "value", "modeled (from BRT studies)", ["wilshire", "flower", "brt"], ["transit"], 1),
     ("brt", "Bus rapid transit (stations, lanes, signal priority)", "Transit", "value", "moderate", ["brt"], ["transit"], 2),
-    ("rail_station", "New rail station (regional project, local share)", "Transit", "regional", "strong", ["rail"], ["transit"], 5),
+    ("rail_station", "New light rail line and station (regional project, local share)", "Transit", "regional", "strong", ["rail"], ["transit"], 5),
     ("bus_shelters", "Bus shelters with shade at busy stops", "Transit", "qol", "limited", ["stap"], ["heat", "transit"], 0),
     ("traffic_calming", "Speed humps and traffic calming", "Streets & safety", "value", "moderate", ["humps", "polloni"], ["traffic"], 0),
     ("crosswalks", "Safer crossings (bulb-outs, ramps, refuges)", "Streets & safety", "qol", "strong", ["smbulb", "fhwa"], ["traffic"], 0),
@@ -157,6 +168,16 @@ CAT = [
     ("outdoor_dining", "Outdoor dining and parklets", "Amenities & economy", "qol", "moderate (business) / not measured (value)", ["parklet"], ["economy"], 0),
     ("farmers_market", "Weekly farmers market", "Amenities & economy", "value", "limited", ["market"], ["food"], 1),
     ("upzone_transit", "Allow more homes near transit (SB 79 / TOC zoning)", "Zoning", "policy", "moderate", ["upzone"], ["housing"], 3),
+    ("protected_bike", "Protected bike lanes (concrete curbs)", "Transit", "qol", "safety studied / price not measured", ["gem_bike"], ["traffic"], 0),
+    ("corridor_trail", "Trail on a power-line, rail or creek corridor", "Parks & recreation", "qol", "association only (BeltLine, trails)", ["gem_trail"], ["parks", "rec"], 0),
+    ("transit_priority", "Transit signal priority and bus bulbs", "Transit", "qol", "speed studied / price not measured", ["gem_tsp"], ["transit"], 0),
+    ("speed_cameras", "Speed safety cameras (AB 645 pilot cities)", "Streets & safety", "qol", "safety studied / price not measured", ["gem_cam"], ["traffic"], 0),
+    ("roundabout", "Neighborhood roundabout", "Streets & safety", "qol", "safety studied / price not measured", ["gem_round"], ["traffic"], 0),
+    ("ped_signals", "Leading pedestrian signals and corner daylighting", "Streets & safety", "qol", "safety studied / price not measured", ["gem_lpi"], ["traffic"], 0),
+    ("school_street", "School street (car-free at drop-off)", "Streets & safety", "qol", "safety studied / price not measured", ["gem_school"], ["kids", "traffic"], 0),
+    ("murals", "Public murals and art", "Amenities & economy", "qol", "association only", ["gem_art"], ["litter", "economy"], 0),
+    ("tiny_forest", "Miyawaki tiny forest", "Greening", "qol", "ecology studied / price not measured", ["gem_forest"], ["heat", "parks"], 0),
+    ("fiber_5g", "Fiber to the home and 5G small cells", "Energy", "qol", "price not measured", ["gem_fiber"], ["economy"], 0),
 ]
 CATALOG = {c[0]: dict(zip(("id", "name", "category", "kind", "evidence", "sources", "qol", "years"), c)) for c in CAT}
 
@@ -202,6 +223,46 @@ CAVEAT = {
 for k, c in CATALOG.items():
     c["grade"] = GRADE.get(k, "none")
     c["caveat"] = CAVEAT.get(k, "")
+
+
+FUNDING = {
+    "W": ("Measure W (Safe Clean Water)", "Regional 50% via 110-point scoring, 60 to qualify; Municipal 40% goes straight to cities for green streets", "https://safecleanwaterla.org"),
+    "A": ("Measure A (county parks)", "competitive grants, priority for high park-need areas", "https://rposd.lacounty.gov"),
+    "M": ("Measure M / R (Metro sales tax)", "local return to every city plus capital programs", "https://www.metro.net"),
+    "ATP": ("Active Transportation Program", "state, biennial, favors disadvantaged communities", "https://catc.ca.gov"),
+    "SS4A": ("Safe Streets and Roads for All", "federal, 20% match; authorized through FY2026", "https://www.transportation.gov/grants/ss4a"),
+    "TCC": ("Transformative Climate Communities", "state cap-and-trade, whole-neighborhood plans in top-25% CalEnviroScreen areas", "https://sgc.ca.gov"),
+    "AHSC": ("Affordable Housing & Sustainable Communities", "state cap-and-trade: housing plus transit/bike/walk projects", "https://sgc.ca.gov"),
+    "UCF": ("CAL FIRE Urban & Community Forestry", "state tree grants; $10-30M a year", "https://www.fire.ca.gov"),
+    "CFC": ("City Forest Credits", "sell verified urban-tree carbon credits to fund upkeep", "https://www.cityforestcredits.org"),
+    "P4": ("Proposition 4 climate bond (2024)", "$10B state bond: water, heat, parks, wildfire", "https://resources.ca.gov"),
+    "R20": ("CPUC Rule 20 credits", "phasing out: only banked credits remain (no new credits after 2022)", "https://www.cpuc.ca.gov"),
+    "IRA": ("Federal elective pay (IRA 6417)", "cash refund of 30%+ on public solar, batteries and chargers", "https://www.irs.gov"),
+    "NEVI": ("NEVI / CEC charger programs", "federal formula funds for fast chargers near freeways", "https://www.energy.ca.gov"),
+    "EPA": ("EPA Brownfields grants", "assessment and cleanup of contaminated land", "https://www.epa.gov/brownfields"),
+    "ULA": ("Measure ULA (City of LA)", "~$215M a year for affordable housing and acquisition", "https://housing.lacity.org"),
+    "STAP": ("Bus-shelter advertising (STAP)", "ad concession pays for shelters and upkeep", "https://streetsla.lacity.org"),
+    "EIFD": ("EIFD tax-increment district", "captures future property-tax growth; see the calculator", "https://leginfo.legislature.ca.gov"),
+    "BID": ("Business improvement district", "property-owner assessment for cleaning and safety", ""),
+    "CDBG": ("HUD CDBG", "federal block grant for lower-income areas", "https://www.hud.gov"),
+    "QUIMBY": ("Park in-lieu (Quimby) fees", "developer fees for nearby parks", ""),
+}
+FUND_FOR = {
+    "street_trees": ["UCF", "W", "CFC"], "schoolyard_green": ["W", "P4", "TCC"], "vacant_lot_green": ["W", "TCC", "CDBG"],
+    "community_garden": ["A", "TCC", "QUIMBY"], "green_alley": ["W", "TCC"], "cool_pavement": ["M", "TCC"], "pocket_park": ["A", "QUIMBY", "P4", "EPA"],
+    "park_upgrade": ["A", "QUIMBY"], "pickleball": ["A", "QUIMBY"], "tennis": ["A"], "basketball": ["A", "CDBG"], "dog_park": ["A", "QUIMBY"],
+    "pool": ["A", "P4"], "splash_pad": ["A", "P4"], "skate_park": ["A"], "sports_field": ["A", "W"], "rec_center": ["A", "CDBG"], "restroom": ["A"],
+    "bus_lane": ["M", "ATP", "TCC"], "brt": ["M", "EIFD"], "rail_station": ["M", "EIFD"], "bus_shelters": ["STAP", "M"],
+    "traffic_calming": ["SS4A", "M", "ATP"], "crosswalks": ["SS4A", "ATP", "M"], "road_diet": ["SS4A", "ATP", "M"], "sidewalks": ["M", "ATP", "CDBG"],
+    "street_lighting": ["M", "SS4A"], "cameras": ["CDBG"], "foot_patrol": ["CDBG"], "violence_interruption": ["CDBG"], "bid": ["BID"],
+    "litter": ["BID", "CDBG"], "graffiti": ["BID", "CDBG"], "encampment": ["ULA", "CDBG"], "blight_rehab": ["CDBG", "ULA"],
+    "affordable_housing": ["ULA", "AHSC", "EIFD"], "undergrounding": ["R20", "EIFD"], "ev_hub": ["NEVI", "IRA"], "microgrid": ["IRA", "P4"],
+    "noise_wall": ["M"], "freeway_cap": ["EIFD", "A", "P4"], "school_filters": ["P4"], "school_bond": ["EIFD"], "library": ["CDBG"], "clinic": ["CDBG"],
+    "grocery": ["EIFD", "CDBG"], "main_street": ["BID", "CDBG", "EIFD"], "outdoor_dining": ["BID"], "farmers_market": ["CDBG"], "upzone_transit": ["EIFD"],
+    "protected_bike": ["ATP", "SS4A", "M"], "corridor_trail": ["A", "ATP", "P4", "W"], "transit_priority": ["M", "ATP"], "speed_cameras": ["SS4A", "M"],
+    "roundabout": ["SS4A", "M"], "ped_signals": ["SS4A", "M"], "school_street": ["ATP", "SS4A"], "murals": ["BID", "CDBG"],
+    "tiny_forest": ["UCF", "A", "P4", "CFC"], "fiber_5g": ["EIFD"],
+}
 
 
 def load():
@@ -511,13 +572,13 @@ def size_projects(r, ref, tree_rate):
     rail_m = min(g(r, "rail_stop_nearest_m"), g(r, "rail_station_nearest_m"))
     has_lane = g(r, "bus_lane_nearest_m") < 400
     if tph >= 12 and rail_m > 800 and not has_lane:
-        add("bus_lane", 1, "0.5 mile of peak bus lanes (both directions)", reach(400, dens, H), 0.005, 1_000_000, 20_000,
+        add("bus_lane", 1, "0.5 mile of red bus lanes (both directions)", reach(400, dens, H), 0.005, 220_000, 18_000,
             why=f"{tph:.0f} buses an hour at the busiest nearby stop (7-9am); no rail within 800 m")
     if tph >= 15 and rail_m > 1500:
         add("brt", 1, "0.5 mile of BRT corridor (local share)", reach(800, dens, H), 0.05, 11_300_000, 100_000,
             why=f"{tph:.0f} buses an hour; nearest rail {rail_m/1609:,.1f} mi away")
     if rail_m > 2000 and dens > 0.004 and tph >= 10:
-        add("rail_station", 1, "this area's share of a new station", reach(800, dens, H), 0.042, 40_000_000, 300_000,
+        add("rail_station", 1, "this area's share of a new light rail line (~0.3 mi) and station", reach(800, dens, H), 0.042, 76_000_000, 300_000,
             why=f"dense area {rail_m/1609:,.1f} mi from rail with busy bus service; a station costs ~$300M+ shared across ~8 block groups")
     if tph >= 8 and heat > 0.5:
         add("bus_shelters", 4, "4 shelters with shade", reach(400, dens, H), 0, 4 * 180_842, 4 * 2_500, why=f"{tph:.0f} buses an hour; hot")
@@ -655,6 +716,34 @@ def size_projects(r, ref, tree_rate):
     if (rail_m < 800 or tph >= 15) and r.sf_share > 0.5:
         add("upzone_transit", 1, "rezone single-family lots near transit", H * r.sf_share, 0.03, 300_000, 0,
             why="single-family lots near rail or frequent bus; land value rises 3-5% (owners gain; some neighbors object)")
+    # --- round-4 additions: costed, ranked by need (no measured price effect)
+    if (ksi >= 1 or pb >= 2) and tph > 0:
+        add("protected_bike", 1, "0.5 mile of curb-protected bike lanes", reach(400, dens, H), 0, 925_000, 17_000,
+            why=f"{int(ksi)} fatal/severe and {int(pb)} pedestrian/bike crashes recorded on a bus street")
+    hv = g(r, "hv_line_nearest_m")
+    if hv < 250 and dens > 0.001:
+        add("corridor_trail", 1, "0.5 mile of trail under the power lines", reach(400, dens, H), 0, 1_200_000, 19_000,
+            why=f"high-voltage line corridor {hv:,.0f} m away (rail and creek corridors need right-of-way data not loaded yet)")
+    if tph >= 10:
+        add("transit_priority", 1, "signal priority at 4 lights + 2 bus bulbs", reach(400, dens, H), 0, 398_000, 12_000,
+            why=f"{tph:.0f} buses an hour at the busiest nearby stop")
+    if r.city in ("Los Angeles", "Long Beach", "Glendale") and ksi >= 2:
+        add("speed_cameras", 2, "2 camera sites", reach(400, dens, H), 0, 130_000, 56_000,
+            why=f"{int(ksi)} fatal/severe crashes; {r.city} is an AB 645 pilot city")
+    if ksi >= 1 and res_km > 1:
+        add("roundabout", 1, "1 intersection", reach(300, dens, H), 0, 550_000, 6_500, why=f"{int(ksi)} fatal/severe crashes recorded here")
+    if pb >= 1:
+        add("ped_signals", 1, "4 signals retimed + 10 corners daylit", reach(300, dens, H), 0, 52_000, 4_800,
+            why=f"{int(pb)} pedestrian or bike crashes recorded; very low cost")
+    if g(r, "school_nearest_m") < 300 and g(r, "kids_share", 0) > 0.2:
+        add("school_street", 1, "1 block at the school entrance", reach(400, dens, H), 0, 85_000, 4_800, why="school entrance nearby; many children")
+    if g(r, "graffiti", 0) >= 20 or g(r, "dining_within_400m", 0) >= 5:
+        add("murals", 3, "3 murals (~1,000 sq ft each)", reach(300, dens, H), 0, 105_000, 5_400,
+            why="graffiti reports or a walkable retail strip; murals deter tagging")
+    if heat > 1 and g(r, "park_acres_half_mile", 99) < 3:
+        add("tiny_forest", 2, "2 sites of 0.1 acre", reach(300, dens, H), 0, 130_000, 17_000, why=f"{heat:+.1f}°F hotter than average and few parks nearby")
+    if dens > 0.004:
+        add("fiber_5g", 1, "fiber to every home here", H, 0, 3_200 * H, 85 * H, why="dense area (broadband coverage data not loaded yet; check the FCC map)")
     return P
 
 
@@ -713,7 +802,8 @@ def score():
     (OUT / "details.json").write_text(json.dumps(details, separators=(",", ":")))
     meta = {"ref": {k: (None if v != v else float(v)) for k, v in ref.items()}, "tree_calibration": tree_cal, "tree_pct": TREE_50M_PCT,
             "elasticities": {"violent": EL_VIOLENT, "property": EL_PROPERTY}, "pv10": PV10, "status": status,
-            "catalog": {k: {**v, "sources": [S[s] for s in v["sources"]]} for k, v in CATALOG.items()},
+            "catalog": {k: {**v, "sources": [S[s] for s in v["sources"]], "funding": FUND_FOR.get(k, [])} for k, v in CATALOG.items()},
+            "funding": FUNDING,
             "pipeline": st}
     (OUT / "meta.json").write_text(json.dumps(meta, indent=1, default=str))
     pd.DataFrame([{**{k: v for k, v in c.items() if k != "sources"}, "sources": " | ".join(S[s] for s in c["sources"])} for c in CATALOG.values()]).to_csv(

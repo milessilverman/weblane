@@ -56,7 +56,12 @@
    ],
    "years": 6,
    "grade": "A",
-   "caveat": ""
+   "caveat": "",
+   "funding": [
+    "UCF",
+    "W",
+    "CFC"
+   ]
   },
   "schoolyard_green": {
    "id": "schoolyard_green",
@@ -74,7 +79,12 @@
    ],
    "years": 3,
    "grade": "D",
-   "caveat": "+1% is borrowed from passive parks; no schoolyard-specific price estimate exists."
+   "caveat": "+1% is borrowed from passive parks; no schoolyard-specific price estimate exists.",
+   "funding": [
+    "W",
+    "P4",
+    "TCC"
+   ]
   },
   "vacant_lot_green": {
    "id": "vacant_lot_green",
@@ -93,7 +103,12 @@
    ],
    "years": 1,
    "grade": "B",
-   "caveat": "Philadelphia costs; LA site control or land costs are not included."
+   "caveat": "Philadelphia costs; LA site control or land costs are not included.",
+   "funding": [
+    "W",
+    "TCC",
+    "CDBG"
+   ]
   },
   "community_garden": {
    "id": "community_garden",
@@ -111,7 +126,12 @@
    ],
    "years": 5,
    "grade": "B",
-   "caveat": "NYC effect; build cost assumed, land cost estimated."
+   "caveat": "NYC effect; build cost assumed, land cost estimated.",
+   "funding": [
+    "A",
+    "TCC",
+    "QUIMBY"
+   ]
   },
   "green_alley": {
    "id": "green_alley",
@@ -127,7 +147,11 @@
    ],
    "years": 2,
    "grade": "none",
-   "caveat": ""
+   "caveat": "",
+   "funding": [
+    "W",
+    "TCC"
+   ]
   },
   "cool_pavement": {
    "id": "cool_pavement",
@@ -143,7 +167,11 @@
    ],
    "years": 0,
    "grade": "none",
-   "caveat": ""
+   "caveat": "",
+   "funding": [
+    "M",
+    "TCC"
+   ]
   },
   "pocket_park": {
    "id": "pocket_park",
@@ -162,7 +190,13 @@
    ],
    "years": 2,
    "grade": "C",
-   "caveat": "A passive-park premium, not measured for new quarter-acre parks; land cost is estimated."
+   "caveat": "A passive-park premium, not measured for new quarter-acre parks; land cost is estimated.",
+   "funding": [
+    "A",
+    "QUIMBY",
+    "P4",
+    "EPA"
+   ]
   },
   "park_upgrade": {
    "id": "park_upgrade",
@@ -180,7 +214,11 @@
    ],
    "years": 1,
    "grade": "C",
-   "caveat": "No matched renovation coefficient; the cost covers equipment and installation."
+   "caveat": "No matched renovation coefficient; the cost covers equipment and installation.",
+   "funding": [
+    "A",
+    "QUIMBY"
+   ]
   },
   "pickleball": {
    "id": "pickleball",
@@ -197,7 +235,11 @@
    ],
    "years": 0,
    "grade": "none",
-   "caveat": ""
+   "caveat": "",
+   "funding": [
+    "A",
+    "QUIMBY"
+   ]
   },
   "tennis": {
    "id": "tennis",
@@ -214,7 +256,10 @@
    ],
    "years": 0,
    "grade": "none",
-   "caveat": ""
+   "caveat": "",
+   "funding": [
+    "A"
+   ]
   },
   "basketball": {
    "id": "basketball",
@@ -232,7 +277,11 @@
    ],
    "years": 0,
    "grade": "none",
-   "caveat": ""
+   "caveat": "",
+   "funding": [
+    "A",
+    "CDBG"
+   ]
   },
   "dog_park": {
    "id": "dog_park",
@@ -248,7 +297,11 @@
    ],
    "years": 1,
    "grade": "D",
-   "caveat": "The dog-park study's coefficient was not recovered; +0.25% is an assumption."
+   "caveat": "The dog-park study's coefficient was not recovered; +0.25% is an assumption.",
+   "funding": [
+    "A",
+    "QUIMBY"
+   ]
   },
   "pool": {
    "id": "pool",
@@ -265,7 +318,11 @@
    ],
    "years": 0,
    "grade": "none",
-   "caveat": ""
+   "caveat": "",
+   "funding": [
+    "A",
+    "P4"
+   ]
   },
   "splash_pad": {
    "id": "splash_pad",
@@ -282,7 +339,11 @@
    ],
    "years": 0,
    "grade": "none",
-   "caveat": ""
+   "caveat": "",
+   "funding": [
+    "A",
+    "P4"
+   ]
   },
   "skate_park": {
    "id": "skate_park",
@@ -299,7 +360,10 @@
    ],
    "years": 0,
    "grade": "none",
-   "caveat": ""
+   "caveat": "",
+   "funding": [
+    "A"
+   ]
   },
   "sports_field": {
    "id": "sports_field",
@@ -316,7 +380,11 @@
    ],
    "years": 0,
    "grade": "none",
-   "caveat": ""
+   "caveat": "",
+   "funding": [
+    "A",
+    "W"
+   ]
   },
   "rec_center": {
    "id": "rec_center",
@@ -333,7 +401,11 @@
    ],
    "years": 0,
    "grade": "none",
-   "caveat": ""
+   "caveat": "",
+   "funding": [
+    "A",
+    "CDBG"
+   ]
   },
   "restroom": {
    "id": "restroom",
@@ -349,11 +421,14 @@
    ],
    "years": 0,
    "grade": "none",
-   "caveat": ""
+   "caveat": "",
+   "funding": [
+    "A"
+   ]
   },
   "bus_lane": {
    "id": "bus_lane",
-   "name": "Peak-hour bus lanes on the busy corridor",
+   "name": "Paint red bus-only lanes on the busy corridor",
    "category": "Transit",
    "kind": "value",
    "evidence": "modeled (from BRT studies)",
@@ -367,7 +442,12 @@
    ],
    "years": 1,
    "grade": "D",
-   "caveat": "+0.5% is scaled down from full BRT; no study isolates bus lanes."
+   "caveat": "+0.5% is scaled down from full BRT; no study isolates bus lanes.",
+   "funding": [
+    "M",
+    "ATP",
+    "TCC"
+   ]
   },
   "brt": {
    "id": "brt",
@@ -383,11 +463,15 @@
    ],
    "years": 2,
    "grade": "B",
-   "caveat": ""
+   "caveat": "",
+   "funding": [
+    "M",
+    "EIFD"
+   ]
   },
   "rail_station": {
    "id": "rail_station",
-   "name": "New rail station (regional project, local share)",
+   "name": "New light rail line and station (regional project, local share)",
    "category": "Transit",
    "kind": "regional",
    "evidence": "strong",
@@ -399,7 +483,11 @@
    ],
    "years": 5,
    "grade": "C",
-   "caveat": "Shows this area's share of a far larger regional project."
+   "caveat": "Shows this area's share of a far larger regional project.",
+   "funding": [
+    "M",
+    "EIFD"
+   ]
   },
   "bus_shelters": {
    "id": "bus_shelters",
@@ -416,7 +504,11 @@
    ],
    "years": 0,
    "grade": "none",
-   "caveat": ""
+   "caveat": "",
+   "funding": [
+    "STAP",
+    "M"
+   ]
   },
   "traffic_calming": {
    "id": "traffic_calming",
@@ -433,7 +525,12 @@
    ],
    "years": 0,
    "grade": "C",
-   "caveat": "Portland measured flow-reducing calming, not speed humps alone; hump cost is construction only."
+   "caveat": "Portland measured flow-reducing calming, not speed humps alone; hump cost is construction only.",
+   "funding": [
+    "SS4A",
+    "M",
+    "ATP"
+   ]
   },
   "crosswalks": {
    "id": "crosswalks",
@@ -450,7 +547,12 @@
    ],
    "years": 0,
    "grade": "none",
-   "caveat": ""
+   "caveat": "",
+   "funding": [
+    "SS4A",
+    "ATP",
+    "M"
+   ]
   },
   "road_diet": {
    "id": "road_diet",
@@ -467,7 +569,12 @@
    ],
    "years": 0,
    "grade": "none",
-   "caveat": ""
+   "caveat": "",
+   "funding": [
+    "SS4A",
+    "ATP",
+    "M"
+   ]
   },
   "sidewalks": {
    "id": "sidewalks",
@@ -483,7 +590,12 @@
    ],
    "years": 0,
    "grade": "none",
-   "caveat": ""
+   "caveat": "",
+   "funding": [
+    "M",
+    "ATP",
+    "CDBG"
+   ]
   },
   "street_lighting": {
    "id": "street_lighting",
@@ -501,7 +613,11 @@
    ],
    "years": 0,
    "grade": "C",
-   "caveat": "The New York trial measured nighttime outdoor crime; only that share (~30%) is used."
+   "caveat": "The New York trial measured nighttime outdoor crime; only that share (~30%) is used.",
+   "funding": [
+    "M",
+    "SS4A"
+   ]
   },
   "cameras": {
    "id": "cameras",
@@ -517,7 +633,10 @@
    ],
    "years": 0,
    "grade": "none",
-   "caveat": ""
+   "caveat": "",
+   "funding": [
+    "CDBG"
+   ]
   },
   "foot_patrol": {
    "id": "foot_patrol",
@@ -534,7 +653,10 @@
    ],
    "years": 0,
    "grade": "C",
-   "caveat": "Chains a Philadelphia crime effect with a New York price link; cost is salary + fringe only."
+   "caveat": "Chains a Philadelphia crime effect with a New York price link; cost is salary + fringe only.",
+   "funding": [
+    "CDBG"
+   ]
   },
   "violence_interruption": {
    "id": "violence_interruption",
@@ -551,7 +673,10 @@
    ],
    "years": 1,
    "grade": "C",
-   "caveat": "GRYD is a comprehensive strategy; its effect is assigned to a local share of program cost."
+   "caveat": "GRYD is a comprehensive strategy; its effect is assigned to a local share of program cost.",
+   "funding": [
+    "CDBG"
+   ]
   },
   "bid": {
    "id": "bid",
@@ -569,7 +694,10 @@
    ],
    "years": 1,
    "grade": "C",
-   "caveat": "The LA estimate is for robbery; only robbery's share of violent crime is used."
+   "caveat": "The LA estimate is for robbery; only robbery's share of violent crime is used.",
+   "funding": [
+    "BID"
+   ]
   },
   "litter": {
    "id": "litter",
@@ -585,7 +713,11 @@
    ],
    "years": 0,
    "grade": "none",
-   "caveat": ""
+   "caveat": "",
+   "funding": [
+    "BID",
+    "CDBG"
+   ]
   },
   "graffiti": {
    "id": "graffiti",
@@ -601,7 +733,11 @@
    ],
    "years": 0,
    "grade": "none",
-   "caveat": ""
+   "caveat": "",
+   "funding": [
+    "BID",
+    "CDBG"
+   ]
   },
   "encampment": {
    "id": "encampment",
@@ -618,7 +754,11 @@
    ],
    "years": 1,
    "grade": "C",
-   "caveat": "Assumes removing an encampment reverses the measured price discount."
+   "caveat": "Assumes removing an encampment reverses the measured price discount.",
+   "funding": [
+    "ULA",
+    "CDBG"
+   ]
   },
   "blight_rehab": {
    "id": "blight_rehab",
@@ -634,7 +774,11 @@
    ],
    "years": 2,
    "grade": "B",
-   "caveat": "Blighted homes inferred from Census vacancy, not identified properties."
+   "caveat": "Blighted homes inferred from Census vacancy, not identified properties.",
+   "funding": [
+    "CDBG",
+    "ULA"
+   ]
   },
   "affordable_housing": {
    "id": "affordable_housing",
@@ -650,7 +794,12 @@
    ],
    "years": 3,
    "grade": "B",
-   "caveat": "Effects vary by neighborhood and can be negative in higher-income areas."
+   "caveat": "Effects vary by neighborhood and can be negative in higher-income areas.",
+   "funding": [
+    "ULA",
+    "AHSC",
+    "EIFD"
+   ]
   },
   "adu": {
    "id": "adu",
@@ -664,7 +813,8 @@
    "qol": [],
    "years": 1,
    "grade": "B",
-   "caveat": ""
+   "caveat": "",
+   "funding": []
   },
   "solar": {
    "id": "solar",
@@ -678,7 +828,8 @@
    "qol": [],
    "years": 0,
    "grade": "B",
-   "caveat": ""
+   "caveat": "",
+   "funding": []
   },
   "undergrounding": {
    "id": "undergrounding",
@@ -695,7 +846,11 @@
    ],
    "years": 2,
    "grade": "B",
-   "caveat": "Canberra price association; private service connections and telecom work not included."
+   "caveat": "Canberra price association; private service connections and telecom work not included.",
+   "funding": [
+    "R20",
+    "EIFD"
+   ]
   },
   "ev_hub": {
    "id": "ev_hub",
@@ -711,7 +866,11 @@
    ],
    "years": 1,
    "grade": "C",
-   "caveat": "The charger study is an association; 1% is a deep discount of its +3.3%."
+   "caveat": "The charger study is an association; 1% is a deep discount of its +3.3%.",
+   "funding": [
+    "NEVI",
+    "IRA"
+   ]
   },
   "microgrid": {
    "id": "microgrid",
@@ -728,7 +887,11 @@
    ],
    "years": 0,
    "grade": "none",
-   "caveat": ""
+   "caveat": "",
+   "funding": [
+    "IRA",
+    "P4"
+   ]
   },
   "noise_wall": {
    "id": "noise_wall",
@@ -744,7 +907,10 @@
    ],
    "years": 0,
    "grade": "B",
-   "caveat": "OpenStreetMap maps few walls: check Caltrans before assuming a stretch is unprotected."
+   "caveat": "OpenStreetMap maps few walls: check Caltrans before assuming a stretch is unprotected.",
+   "funding": [
+    "M"
+   ]
   },
   "freeway_cap": {
    "id": "freeway_cap",
@@ -762,7 +928,12 @@
    ],
    "years": 5,
    "grade": "C",
-   "caveat": "Shows this area's share; full cap cost and causal effect are uncertain."
+   "caveat": "Shows this area's share; full cap cost and causal effect are uncertain.",
+   "funding": [
+    "EIFD",
+    "A",
+    "P4"
+   ]
   },
   "school_filters": {
    "id": "school_filters",
@@ -779,7 +950,10 @@
    ],
    "years": 0,
    "grade": "none",
-   "caveat": ""
+   "caveat": "",
+   "funding": [
+    "P4"
+   ]
   },
   "school_bond": {
    "id": "school_bond",
@@ -795,7 +969,10 @@
    ],
    "years": 3,
    "grade": "B",
-   "caveat": "Uses this area's share of a modernization; bond effects are district-wide."
+   "caveat": "Uses this area's share of a modernization; bond effects are district-wide.",
+   "funding": [
+    "EIFD"
+   ]
   },
   "library": {
    "id": "library",
@@ -811,7 +988,10 @@
    ],
    "years": 0,
    "grade": "none",
-   "caveat": ""
+   "caveat": "",
+   "funding": [
+    "CDBG"
+   ]
   },
   "clinic": {
    "id": "clinic",
@@ -827,7 +1007,10 @@
    ],
    "years": 0,
    "grade": "none",
-   "caveat": ""
+   "caveat": "",
+   "funding": [
+    "CDBG"
+   ]
   },
   "grocery": {
    "id": "grocery",
@@ -843,7 +1026,11 @@
    ],
    "years": 1,
    "grade": "B",
-   "caveat": "$2M is an incentive package, not the full cost of a store (private investment not counted)."
+   "caveat": "$2M is an incentive package, not the full cost of a store (private investment not counted).",
+   "funding": [
+    "EIFD",
+    "CDBG"
+   ]
   },
   "main_street": {
    "id": "main_street",
@@ -860,7 +1047,12 @@
    ],
    "years": 2,
    "grade": "D",
-   "caveat": "A retail-density association, not a measured effect of facade grants."
+   "caveat": "A retail-density association, not a measured effect of facade grants.",
+   "funding": [
+    "BID",
+    "CDBG",
+    "EIFD"
+   ]
   },
   "outdoor_dining": {
    "id": "outdoor_dining",
@@ -876,7 +1068,10 @@
    ],
    "years": 0,
    "grade": "none",
-   "caveat": ""
+   "caveat": "",
+   "funding": [
+    "BID"
+   ]
   },
   "farmers_market": {
    "id": "farmers_market",
@@ -892,7 +1087,10 @@
    ],
    "years": 1,
    "grade": "D",
-   "caveat": "Studies show an association with an inverted-U shape, not this exact effect."
+   "caveat": "Studies show an association with an inverted-U shape, not this exact effect.",
+   "funding": [
+    "CDBG"
+   ]
   },
   "upzone_transit": {
    "id": "upzone_transit",
@@ -908,8 +1106,321 @@
    ],
    "years": 3,
    "grade": "C",
-   "caveat": "Policy change: public cost is planning only, so no per-dollar return is shown."
+   "caveat": "Policy change: public cost is planning only, so no per-dollar return is shown.",
+   "funding": [
+    "EIFD"
+   ]
+  },
+  "protected_bike": {
+   "id": "protected_bike",
+   "name": "Protected bike lanes (concrete curbs)",
+   "category": "Transit",
+   "kind": "qol",
+   "evidence": "safety studied / price not measured",
+   "sources": [
+    "Cost from a Gemini research pass, unverified (re-audit kept the figure but quoted no source); $1.85M per mile with concrete curbs and bike signals; MyFigueroa $20.5M / 4 mi (2018). FHWA: protected lanes cut crashes; no price study"
+   ],
+   "qol": [
+    "traffic"
+   ],
+   "years": 0,
+   "grade": "none",
+   "caveat": "",
+   "funding": [
+    "ATP",
+    "SS4A",
+    "M"
+   ]
+  },
+  "corridor_trail": {
+   "id": "corridor_trail",
+   "name": "Trail on a power-line, rail or creek corridor",
+   "category": "Parks & recreation",
+   "kind": "qol",
+   "evidence": "association only (BeltLine, trails)",
+   "sources": [
+    "Cost from a Gemini research pass, unverified (re-audit kept the figure but quoted no source); $2.4M per mile (power-line ROW) to $4.5M (river); Immergluck 2009 (Atlanta BeltLine) found rising nearby prices, varying by area"
+   ],
+   "qol": [
+    "parks",
+    "rec"
+   ],
+   "years": 0,
+   "grade": "none",
+   "caveat": "",
+   "funding": [
+    "A",
+    "ATP",
+    "P4",
+    "W"
+   ]
+  },
+  "transit_priority": {
+   "id": "transit_priority",
+   "name": "Transit signal priority and bus bulbs",
+   "category": "Transit",
+   "kind": "qol",
+   "evidence": "speed studied / price not measured",
+   "sources": [
+    "Cost from a Gemini research pass, unverified (re-audit kept the figure but quoted no source); $42,000 per signal for priority, $115,000 per bus bulb; LADOT: bus delay at signals cut ~33%"
+   ],
+   "qol": [
+    "transit"
+   ],
+   "years": 0,
+   "grade": "none",
+   "caveat": "",
+   "funding": [
+    "M",
+    "ATP"
+   ]
+  },
+  "speed_cameras": {
+   "id": "speed_cameras",
+   "name": "Speed safety cameras (AB 645 pilot cities)",
+   "category": "Streets & safety",
+   "kind": "qol",
+   "evidence": "safety studied / price not measured",
+   "sources": [
+    "Cost from a Gemini research pass, unverified (re-audit kept the figure but quoted no source); $65,000 per site + $28,000/yr; FHWA / Cochrane review: large crash reductions; AB 645 pilots in LA, Long Beach, Glendale"
+   ],
+   "qol": [
+    "traffic"
+   ],
+   "years": 0,
+   "grade": "none",
+   "caveat": "",
+   "funding": [
+    "SS4A",
+    "M"
+   ]
+  },
+  "roundabout": {
+   "id": "roundabout",
+   "name": "Neighborhood roundabout",
+   "category": "Streets & safety",
+   "kind": "qol",
+   "evidence": "safety studied / price not measured",
+   "sources": [
+    "Cost from a Gemini research pass, unverified (re-audit kept the figure but quoted no source); $550,000 per intersection; Retting et al. 2001: injury crashes -78% at converted intersections"
+   ],
+   "qol": [
+    "traffic"
+   ],
+   "years": 0,
+   "grade": "none",
+   "caveat": "",
+   "funding": [
+    "SS4A",
+    "M"
+   ]
+  },
+  "ped_signals": {
+   "id": "ped_signals",
+   "name": "Leading pedestrian signals and corner daylighting",
+   "category": "Streets & safety",
+   "kind": "qol",
+   "evidence": "safety studied / price not measured",
+   "sources": [
+    "Cost from a Gemini research pass, unverified (re-audit kept the figure but quoted no source); $8,500 per signal retiming, $1,800 per daylit corner (AB 413); Fayish & Gross 2012: pedestrian crashes reduced"
+   ],
+   "qol": [
+    "traffic"
+   ],
+   "years": 0,
+   "grade": "none",
+   "caveat": "",
+   "funding": [
+    "SS4A",
+    "M"
+   ]
+  },
+  "school_street": {
+   "id": "school_street",
+   "name": "School street (car-free at drop-off)",
+   "category": "Streets & safety",
+   "kind": "qol",
+   "evidence": "safety studied / price not measured",
+   "sources": [
+    "Cost from a Gemini research pass, unverified (re-audit kept the figure but quoted no source); $85,000 per block + $4,800/yr; London school streets: traffic and NO2 down near schools"
+   ],
+   "qol": [
+    "kids",
+    "traffic"
+   ],
+   "years": 0,
+   "grade": "none",
+   "caveat": "",
+   "funding": [
+    "ATP",
+    "SS4A"
+   ]
+  },
+  "murals": {
+   "id": "murals",
+   "name": "Public murals and art",
+   "category": "Amenities & economy",
+   "kind": "qol",
+   "evidence": "association only",
+   "sources": [
+    "Cost from a Gemini research pass, unverified (re-audit kept the figure but quoted no source); $35,000 per 1,000 sq ft mural; LA Mural Ordinance registry; no causal price study"
+   ],
+   "qol": [
+    "litter",
+    "economy"
+   ],
+   "years": 0,
+   "grade": "none",
+   "caveat": "",
+   "funding": [
+    "BID",
+    "CDBG"
+   ]
+  },
+  "tiny_forest": {
+   "id": "tiny_forest",
+   "name": "Miyawaki tiny forest",
+   "category": "Greening",
+   "kind": "qol",
+   "evidence": "ecology studied / price not measured",
+   "sources": [
+    "Cost from a Gemini research pass, unverified (re-audit kept the figure but quoted no source); $65,000 per 0.1-acre site + $8,500/yr; no price study"
+   ],
+   "qol": [
+    "heat",
+    "parks"
+   ],
+   "years": 0,
+   "grade": "none",
+   "caveat": "",
+   "funding": [
+    "UCF",
+    "A",
+    "P4",
+    "CFC"
+   ]
+  },
+  "fiber_5g": {
+   "id": "fiber_5g",
+   "name": "Fiber to the home and 5G small cells",
+   "category": "Energy",
+   "kind": "qol",
+   "evidence": "price not measured",
+   "sources": [
+    "Cost from a Gemini research pass, unverified (re-audit kept the figure but quoted no source); $3,200 per home passed (fiber); no causal price study for small cells (earlier cited study was fabricated)"
+   ],
+   "qol": [
+    "economy"
+   ],
+   "years": 0,
+   "grade": "none",
+   "caveat": "",
+   "funding": [
+    "EIFD"
+   ]
   }
+ },
+ "funding": {
+  "W": [
+   "Measure W (Safe Clean Water)",
+   "Regional 50% via 110-point scoring, 60 to qualify; Municipal 40% goes straight to cities for green streets",
+   "https://safecleanwaterla.org"
+  ],
+  "A": [
+   "Measure A (county parks)",
+   "competitive grants, priority for high park-need areas",
+   "https://rposd.lacounty.gov"
+  ],
+  "M": [
+   "Measure M / R (Metro sales tax)",
+   "local return to every city plus capital programs",
+   "https://www.metro.net"
+  ],
+  "ATP": [
+   "Active Transportation Program",
+   "state, biennial, favors disadvantaged communities",
+   "https://catc.ca.gov"
+  ],
+  "SS4A": [
+   "Safe Streets and Roads for All",
+   "federal, 20% match; authorized through FY2026",
+   "https://www.transportation.gov/grants/ss4a"
+  ],
+  "TCC": [
+   "Transformative Climate Communities",
+   "state cap-and-trade, whole-neighborhood plans in top-25% CalEnviroScreen areas",
+   "https://sgc.ca.gov"
+  ],
+  "AHSC": [
+   "Affordable Housing & Sustainable Communities",
+   "state cap-and-trade: housing plus transit/bike/walk projects",
+   "https://sgc.ca.gov"
+  ],
+  "UCF": [
+   "CAL FIRE Urban & Community Forestry",
+   "state tree grants; $10-30M a year",
+   "https://www.fire.ca.gov"
+  ],
+  "CFC": [
+   "City Forest Credits",
+   "sell verified urban-tree carbon credits to fund upkeep",
+   "https://www.cityforestcredits.org"
+  ],
+  "P4": [
+   "Proposition 4 climate bond (2024)",
+   "$10B state bond: water, heat, parks, wildfire",
+   "https://resources.ca.gov"
+  ],
+  "R20": [
+   "CPUC Rule 20 credits",
+   "phasing out: only banked credits remain (no new credits after 2022)",
+   "https://www.cpuc.ca.gov"
+  ],
+  "IRA": [
+   "Federal elective pay (IRA 6417)",
+   "cash refund of 30%+ on public solar, batteries and chargers",
+   "https://www.irs.gov"
+  ],
+  "NEVI": [
+   "NEVI / CEC charger programs",
+   "federal formula funds for fast chargers near freeways",
+   "https://www.energy.ca.gov"
+  ],
+  "EPA": [
+   "EPA Brownfields grants",
+   "assessment and cleanup of contaminated land",
+   "https://www.epa.gov/brownfields"
+  ],
+  "ULA": [
+   "Measure ULA (City of LA)",
+   "~$215M a year for affordable housing and acquisition",
+   "https://housing.lacity.org"
+  ],
+  "STAP": [
+   "Bus-shelter advertising (STAP)",
+   "ad concession pays for shelters and upkeep",
+   "https://streetsla.lacity.org"
+  ],
+  "EIFD": [
+   "EIFD tax-increment district",
+   "captures future property-tax growth; see the calculator",
+   "https://leginfo.legislature.ca.gov"
+  ],
+  "BID": [
+   "Business improvement district",
+   "property-owner assessment for cleaning and safety",
+   ""
+  ],
+  "CDBG": [
+   "HUD CDBG",
+   "federal block grant for lower-income areas",
+   "https://www.hud.gov"
+  ],
+  "QUIMBY": [
+   "Park in-lieu (Quimby) fees",
+   "developer fees for nearby parks",
+   ""
+  ]
  },
  "pipeline": {
   "crime": {
