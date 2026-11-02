@@ -98,7 +98,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        stage: [geo, osm, transit, sales, crime, requests311, crashes, trees]
+        stage: [geo, osm, transit, sales, crime, requests311, crashes, trees, parcels]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

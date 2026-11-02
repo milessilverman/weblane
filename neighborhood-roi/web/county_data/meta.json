@@ -1,0 +1,943 @@
+{
+ "ref": {
+  "value": 790007.0,
+  "income": 93239.5,
+  "violent": 3.6469730123997084,
+  "other_vacant": 0.0
+ },
+ "tree_calibration": {
+  "n": 0
+ },
+ "tree_pct": 0.24,
+ "elasticities": {
+  "violent": 0.116,
+  "property": 0.0097
+ },
+ "pv10": 8.530202836775828,
+ "status": {
+  "bg_osm": false,
+  "bg_transit": true,
+  "bg_crime": true,
+  "bg_311": false,
+  "bg_crashes": true,
+  "bg_trees": false,
+  "bg_parcels": false
+ },
+ "catalog": {
+  "street_trees": {
+   "id": "street_trees",
+   "name": "Plant street trees on open sites",
+   "category": "Greening",
+   "kind": "value",
+   "evidence": "strong (local)",
+   "sources": [
+    "City Pretty local hedonic: 3,386 Westside sales 2022-24, block fixed effects; each street tree within 50 m +0.51% (95% CI 0.24-0.79)",
+    "LAMC 62.177 in-lieu fee: $1,945 per public-works tree incl. planting and 3-yr establishment",
+    "USFS / California street-tree costing: $52-79 per tree-year upkeep"
+   ],
+   "qol": [
+    "heat"
+   ],
+   "years": 6
+  },
+  "schoolyard_green": {
+   "id": "schoolyard_green",
+   "name": "Green a schoolyard (asphalt to trees and grass)",
+   "category": "Greening",
+   "kind": "value",
+   "evidence": "limited",
+   "sources": [
+    "LAUSD / Green Schoolyards America projects (Pacoima MS 2024: 107 trees, 14,000 sq ft asphalt removed)",
+    "Crompton & Nicholls 2020 review: +8-10% adjacent to passive parks; small-park effect within ~100 m (Laszkiewicz 2022)"
+   ],
+   "qol": [
+    "heat",
+    "kids"
+   ],
+   "years": 3
+  },
+  "vacant_lot_green": {
+   "id": "vacant_lot_green",
+   "name": "Clean and green vacant lots",
+   "category": "Greening",
+   "kind": "value",
+   "evidence": "strong",
+   "sources": [
+    "Lin, Jensen & Wachter 2023 (Philadelphia): +4.3% nearby after year 1",
+    "Philadelphia LandCare: $1,500 initial / $300 a year per lot (2008$)",
+    "Branas et al. 2018 RCT: gun violence -29% in poor neighborhoods"
+   ],
+   "qol": [
+    "blight",
+    "safety"
+   ],
+   "years": 1
+  },
+  "community_garden": {
+   "id": "community_garden",
+   "name": "Community garden",
+   "category": "Greening",
+   "kind": "value",
+   "evidence": "moderate",
+   "sources": [
+    "Voicu & Been 2008 (NYC): +1.5 pts at 1,000 ft, larger in poorer areas",
+    "Pasadena Parks Needs Assessment 2016: community garden $300k; Robinson Park rec center $6.3M"
+   ],
+   "qol": [
+    "food",
+    "parks"
+   ],
+   "years": 5
+  },
+  "green_alley": {
+   "id": "green_alley",
+   "name": "Green alley (permeable paving, trees)",
+   "category": "Greening",
+   "kind": "qol",
+   "evidence": "limited",
+   "sources": [
+    "Avalon Green Alley North phase II (2015): $1.83M"
+   ],
+   "qol": [
+    "heat"
+   ],
+   "years": 2
+  },
+  "cool_pavement": {
+   "id": "cool_pavement",
+   "name": "Cool pavement coating on hot streets",
+   "category": "Greening",
+   "kind": "qol",
+   "evidence": "limited",
+   "sources": [
+    "Pacoima / Covina cool-pavement studies: surface -5 C, air -0.2 to -1.9 C; Middel 2020: midday radiant heat +4 C for pedestrians"
+   ],
+   "qol": [
+    "heat"
+   ],
+   "years": 0
+  },
+  "pocket_park": {
+   "id": "pocket_park",
+   "name": "Pocket park on a new lot",
+   "category": "Parks & recreation",
+   "kind": "value",
+   "evidence": "strong",
+   "sources": [
+    "Crompton & Nicholls 2020 review: +8-10% adjacent to passive parks; small-park effect within ~100 m (Laszkiewicz 2022)",
+    "LA 50 Parks Initiative: 5,000-20,000 sq ft parks $250k-700k to develop, land extra",
+    "Albouy, Christensen & Sarmiento-Barbieri: park value falls where homicide risk is high"
+   ],
+   "qol": [
+    "parks",
+    "kids"
+   ],
+   "years": 2
+  },
+  "park_upgrade": {
+   "id": "park_upgrade",
+   "name": "Renovate the nearby park (new playground, paths)",
+   "category": "Parks & recreation",
+   "kind": "value",
+   "evidence": "moderate",
+   "sources": [
+    "Livy & Klaiber 2016: playground replacement among the most capitalized park upgrades; Brasington 2023: park-maintenance levy renewal +11.6%",
+    "Culver City, Culver West Alexander playground, Nov 2025: $759,353"
+   ],
+   "qol": [
+    "kids",
+    "parks"
+   ],
+   "years": 1
+  },
+  "pickleball": {
+   "id": "pickleball",
+   "name": "Convert a tennis court to 4 pickleball courts",
+   "category": "Parks & recreation",
+   "kind": "qol",
+   "evidence": "limited",
+   "sources": [
+    "Redondo Beach Alta Vista 2026: tennis resurfacing + 1 court to 4 pickleball $107,408; Cerritos 2 pickleball courts $134k",
+    "Minneapolis 2014 park-facility study: passive features add value; some active/skate facilities lower nearby values"
+   ],
+   "qol": [
+    "rec"
+   ],
+   "years": 0
+  },
+  "tennis": {
+   "id": "tennis",
+   "name": "Build 2 public tennis courts",
+   "category": "Parks & recreation",
+   "kind": "qol",
+   "evidence": "limited",
+   "sources": [
+    "Redondo Beach Alta Vista 2026: tennis resurfacing + 1 court to 4 pickleball $107,408; Cerritos 2 pickleball courts $134k",
+    "Minneapolis 2014 park-facility study: passive features add value; some active/skate facilities lower nearby values"
+   ],
+   "qol": [
+    "rec"
+   ],
+   "years": 0
+  },
+  "basketball": {
+   "id": "basketball",
+   "name": "Build a public basketball court",
+   "category": "Parks & recreation",
+   "kind": "qol",
+   "evidence": "limited",
+   "sources": [
+    "LA County PNA 2016: one full basketball court $436,250",
+    "Minneapolis 2014 park-facility study: passive features add value; some active/skate facilities lower nearby values"
+   ],
+   "qol": [
+    "rec",
+    "kids"
+   ],
+   "years": 0
+  },
+  "dog_park": {
+   "id": "dog_park",
+   "name": "Dog park",
+   "category": "Parks & recreation",
+   "kind": "value",
+   "evidence": "limited",
+   "sources": [
+    "2025 park-attribute study: dog parks positively associated with nearby values (coefficient not recovered)"
+   ],
+   "qol": [
+    "rec"
+   ],
+   "years": 1
+  },
+  "pool": {
+   "id": "pool",
+   "name": "Public swimming pool",
+   "category": "Parks & recreation",
+   "kind": "qol",
+   "evidence": "limited",
+   "sources": [
+    "LA CAO 2022 program estimate: $100M capital / $2.08M yearly O&M for new pools"
+   ],
+   "qol": [
+    "heat",
+    "kids"
+   ],
+   "years": 0
+  },
+  "splash_pad": {
+   "id": "splash_pad",
+   "name": "Splash pad",
+   "category": "Parks & recreation",
+   "kind": "qol",
+   "evidence": "limited",
+   "sources": [
+    "LA RAP Juntos Park splash pad: $642,021 (2017)"
+   ],
+   "qol": [
+    "heat",
+    "kids"
+   ],
+   "years": 0
+  },
+  "skate_park": {
+   "id": "skate_park",
+   "name": "Skate park",
+   "category": "Parks & recreation",
+   "kind": "qol",
+   "evidence": "limited",
+   "sources": [
+    "LA CAO 2022: skate-park program $30M capital / $800k yearly O&M",
+    "Minneapolis 2014 park-facility study: passive features add value; some active/skate facilities lower nearby values"
+   ],
+   "qol": [
+    "kids"
+   ],
+   "years": 0
+  },
+  "sports_field": {
+   "id": "sports_field",
+   "name": "Natural-grass sports field",
+   "category": "Parks & recreation",
+   "kind": "qol",
+   "evidence": "limited",
+   "sources": [
+    "Sunnyvale 2023: natural-grass field $516,150 vs synthetic $2.03M; Culver City PNA field replacement $2.8M"
+   ],
+   "qol": [
+    "kids",
+    "rec"
+   ],
+   "years": 0
+  },
+  "rec_center": {
+   "id": "rec_center",
+   "name": "Recreation center",
+   "category": "Parks & recreation",
+   "kind": "qol",
+   "evidence": "limited",
+   "sources": [
+    "Pasadena Parks Needs Assessment 2016: community garden $300k; Robinson Park rec center $6.3M"
+   ],
+   "qol": [
+    "kids",
+    "rec"
+   ],
+   "years": 0
+  },
+  "restroom": {
+   "id": "restroom",
+   "name": "Park restroom and drinking fountains",
+   "category": "Parks & recreation",
+   "kind": "qol",
+   "evidence": "limited",
+   "sources": [
+    "LA County Measure A: South LA replacement restroom building $990,000"
+   ],
+   "qol": [
+    "parks"
+   ],
+   "years": 0
+  },
+  "bus_lane": {
+   "id": "bus_lane",
+   "name": "Peak-hour bus lanes on the busy corridor",
+   "category": "Transit",
+   "kind": "value",
+   "evidence": "limited",
+   "sources": [
+    "Metro Wilshire bus lanes: $31.5M for 9.9 miles (2013); Culver City Robertson bus/bike lanes $1.22M (2025)",
+    "Metro Flower St bus lane: buses up to 30% faster",
+    "Beaudoin & Tyndall 2024 (Vancouver WA BRT): +5-7% home prices; FTA Capital Cost Database for BRT costs"
+   ],
+   "qol": [
+    "transit"
+   ],
+   "years": 1
+  },
+  "brt": {
+   "id": "brt",
+   "name": "Bus rapid transit (stations, lanes, signal priority)",
+   "category": "Transit",
+   "kind": "value",
+   "evidence": "moderate",
+   "sources": [
+    "Beaudoin & Tyndall 2024 (Vancouver WA BRT): +5-7% home prices; FTA Capital Cost Database for BRT costs"
+   ],
+   "qol": [
+    "transit"
+   ],
+   "years": 2
+  },
+  "rail_station": {
+   "id": "rail_station",
+   "name": "New rail station (regional project, local share)",
+   "category": "Transit",
+   "kind": "regional",
+   "evidence": "strong",
+   "sources": [
+    "Debrezion, Pels & Rietveld 2007 meta-analysis: +4.2% residential within station area; Keeler & Stephens 2023 (LA Gold/Expo)"
+   ],
+   "qol": [
+    "transit"
+   ],
+   "years": 5
+  },
+  "bus_shelters": {
+   "id": "bus_shelters",
+   "name": "Bus shelters with shade at busy stops",
+   "category": "Transit",
+   "kind": "qol",
+   "evidence": "limited",
+   "sources": [
+    "LA Sidewalk & Transit Amenities Program: provisional $180,842 per shelter (city memo, 2025)"
+   ],
+   "qol": [
+    "heat",
+    "transit"
+   ],
+   "years": 0
+  },
+  "traffic_calming": {
+   "id": "traffic_calming",
+   "name": "Speed humps and traffic calming",
+   "category": "Streets & safety",
+   "kind": "value",
+   "evidence": "moderate",
+   "sources": [
+    "LADOT 2025: $5,958 per speed hump, up to 25-year life",
+    "Polloni 2019 (Portland): traffic calming that cuts flow 16% raises treated-street values ~1%"
+   ],
+   "qol": [
+    "traffic"
+   ],
+   "years": 0
+  },
+  "crosswalks": {
+   "id": "crosswalks",
+   "name": "Safer crossings (bulb-outs, ramps, refuges)",
+   "category": "Streets & safety",
+   "kind": "qol",
+   "evidence": "strong",
+   "sources": [
+    "Santa Monica Blvd Safety Study 2026: ADA ramp $9,000; bulb-out $11,000-18,000",
+    "FHWA: refuge islands -46% pedestrian crashes; road diets -29% crashes"
+   ],
+   "qol": [
+    "traffic"
+   ],
+   "years": 0
+  },
+  "road_diet": {
+   "id": "road_diet",
+   "name": "Road diet with protected bike lanes",
+   "category": "Streets & safety",
+   "kind": "qol",
+   "evidence": "moderate",
+   "sources": [
+    "Metro Wilshire bus lanes: $31.5M for 9.9 miles (2013); Culver City Robertson bus/bike lanes $1.22M (2025)",
+    "FHWA: refuge islands -46% pedestrian crashes; road diets -29% crashes"
+   ],
+   "qol": [
+    "traffic"
+   ],
+   "years": 0
+  },
+  "sidewalks": {
+   "id": "sidewalks",
+   "name": "Repair broken sidewalks",
+   "category": "Streets & safety",
+   "kind": "qol",
+   "evidence": "limited",
+   "sources": [
+    "LA Controller 2021 sidewalk audit: $51 per sq ft incl. soft costs"
+   ],
+   "qol": [
+    "walk"
+   ],
+   "years": 0
+  },
+  "street_lighting": {
+   "id": "street_lighting",
+   "name": "Brighter pedestrian street lighting",
+   "category": "Streets & safety",
+   "kind": "value",
+   "evidence": "strong (crime) / modeled (value)",
+   "sources": [
+    "Chalfin et al. (NYC RCT): street lighting -36% nighttime outdoor index crime",
+    "LA Bureau of Street Lighting: ~$5,000 per 50-ft residential lot to build; ~$90 a year upkeep assessment",
+    "Schwartz, Susin & Voicu 2003 (NYC): 1% less violent crime -> +0.116% home prices"
+   ],
+   "qol": [
+    "safety"
+   ],
+   "years": 0
+  },
+  "cameras": {
+   "id": "cameras",
+   "name": "Security cameras at hot spots",
+   "category": "Streets & safety",
+   "kind": "value",
+   "evidence": "moderate (crime) / modeled (value)",
+   "sources": [
+    "Piza et al. 2019 meta-analysis: CCTV -13% crime; LA Civic Center 2024 quote ~$8,148 per camera; RAP camera upkeep",
+    "Schwartz, Susin & Voicu 2003 (NYC): 1% less violent crime -> +0.116% home prices"
+   ],
+   "qol": [
+    "safety"
+   ],
+   "years": 0
+  },
+  "foot_patrol": {
+   "id": "foot_patrol",
+   "name": "Foot patrols on hot-spot blocks",
+   "category": "Streets & safety",
+   "kind": "value",
+   "evidence": "strong (crime) / modeled (value)",
+   "sources": [
+    "Ratcliffe et al. 2011 (Philadelphia RCT): foot patrol -23% violent crime",
+    "Schwartz, Susin & Voicu 2003 (NYC): 1% less violent crime -> +0.116% home prices"
+   ],
+   "qol": [
+    "safety"
+   ],
+   "years": 0
+  },
+  "violence_interruption": {
+   "id": "violence_interruption",
+   "name": "Violence interruption (GRYD-style)",
+   "category": "Streets & safety",
+   "kind": "value",
+   "evidence": "limited",
+   "sources": [
+    "LA GRYD budget $41M a year (FY2023-24); Cure Violence review: 32.5% of findings show significant drops",
+    "Schwartz, Susin & Voicu 2003 (NYC): 1% less violent crime -> +0.116% home prices"
+   ],
+   "qol": [
+    "safety"
+   ],
+   "years": 1
+  },
+  "bid": {
+   "id": "bid",
+   "name": "Business improvement district (cleaning, ambassadors)",
+   "category": "Streets & safety",
+   "kind": "value",
+   "evidence": "moderate (crime) / modeled (value)",
+   "sources": [
+    "MacDonald et al. 2010 (30 LA BIDs): robbery -12%",
+    "Schwartz, Susin & Voicu 2003 (NYC): 1% less violent crime -> +0.116% home prices"
+   ],
+   "qol": [
+    "safety",
+    "litter"
+   ],
+   "years": 1
+  },
+  "litter": {
+   "id": "litter",
+   "name": "Weekly litter and illegal-dumping cleanup",
+   "category": "Clean streets",
+   "kind": "qol",
+   "evidence": "moderate (litter) / not measured (value)",
+   "sources": [
+    "MacDonald et al. 2026 street-cleaning RCT: litter -16%; LA CARE cleanup team ~$1.4M a year"
+   ],
+   "qol": [
+    "litter"
+   ],
+   "years": 0
+  },
+  "graffiti": {
+   "id": "graffiti",
+   "name": "Fast graffiti removal",
+   "category": "Clean streets",
+   "kind": "value",
+   "evidence": "modeled",
+   "sources": [
+    "Gibbons 2004 (London): 5 fewer criminal-damage incidents per km2 a year -> +1.56% prices; LA graffiti crews $11.7M / 95 crews"
+   ],
+   "qol": [
+    "litter"
+   ],
+   "years": 0
+  },
+  "encampment": {
+   "id": "encampment",
+   "name": "Housing-first outreach for encampments",
+   "category": "Clean streets",
+   "kind": "value",
+   "evidence": "limited",
+   "sources": [
+    "Bhandari 2024 (LA): encampments within 0.2 mi -> -1.41% sale prices; RAND Housing for Health: ~20% net public savings"
+   ],
+   "qol": [
+    "safety",
+    "litter"
+   ],
+   "years": 1
+  },
+  "blight_rehab": {
+   "id": "blight_rehab",
+   "name": "Rehab or replace blighted homes",
+   "category": "Housing",
+   "kind": "value",
+   "evidence": "strong",
+   "sources": [
+    "Ganduri & Maturana 2024: neighbors +2.3 pts after REO rehab; Rossi-Hansberg, Sarte & Owens 2010: $2-6 land value per $1"
+   ],
+   "qol": [
+    "blight"
+   ],
+   "years": 2
+  },
+  "affordable_housing": {
+   "id": "affordable_housing",
+   "name": "Affordable housing on underused land",
+   "category": "Housing",
+   "kind": "value",
+   "evidence": "moderate",
+   "sources": [
+    "Diamond & McQuade 2019: LIHTC +6.5% within 0.1 mi in low-income areas, -2.5% in high-income; LA HHH ~$597k per unit"
+   ],
+   "qol": [
+    "housing"
+   ],
+   "years": 3
+  },
+  "adu": {
+   "id": "adu",
+   "name": "Add a backyard home (ADU), owner-level",
+   "category": "Housing",
+   "kind": "owner",
+   "evidence": "strong",
+   "sources": [
+    "Brueckner et al. 2024 (LA): ADU raises host parcel +9.2% (95% CI 6.6-11.9); Tanrisever 2025: neighbors -3% per +0.5 pt ADU density within 300 m; LA County median ADU cost $100k (2020)"
+   ],
+   "qol": [],
+   "years": 1
+  },
+  "solar": {
+   "id": "solar",
+   "name": "Rooftop solar, owner-level",
+   "category": "Energy",
+   "kind": "owner",
+   "evidence": "moderate",
+   "sources": [
+    "Berkeley Lab 2015: ~$4/W premium for owned solar; DOE 2025 benchmark $2.95/W installed"
+   ],
+   "qol": [],
+   "years": 0
+  },
+  "undergrounding": {
+   "id": "undergrounding",
+   "name": "Underground the overhead power lines",
+   "category": "Energy",
+   "kind": "value",
+   "evidence": "moderate",
+   "sources": [
+    "LADWP 2019: $2.8M per circuit-mile undergrounding (contracts $2.2-4.5M); CPUC Rule 20: $1.8-6.1M/mile",
+    "McNair & Abelson 2010 (Canberra): underground power +2.9% house prices"
+   ],
+   "qol": [
+    "outage"
+   ],
+   "years": 2
+  },
+  "ev_hub": {
+   "id": "ev_hub",
+   "name": "EV fast-charging hub",
+   "category": "Energy",
+   "kind": "value",
+   "evidence": "moderate (possibly overstated)",
+   "sources": [
+    "Liang et al. 2023 (14M California sales): +3.3% within 1 km of EV chargers; CARB 2025: 8-port DC fast site $800,473"
+   ],
+   "qol": [
+    "ev"
+   ],
+   "years": 1
+  },
+  "microgrid": {
+   "id": "microgrid",
+   "name": "Solar + battery resilience hub",
+   "category": "Energy",
+   "kind": "qol",
+   "evidence": "limited",
+   "sources": [
+    "LA County CPUC filing 2021: community microgrids $3.25-3.6M each"
+   ],
+   "qol": [
+    "outage",
+    "heat"
+   ],
+   "years": 0
+  },
+  "noise_wall": {
+   "id": "noise_wall",
+   "name": "Freeway sound wall",
+   "category": "Environment",
+   "kind": "value",
+   "evidence": "strong",
+   "sources": [
+    "Moretti & Wheeler 2025: new noise barrier +6.8% within 100 m; Caltrans soundwall costs"
+   ],
+   "qol": [
+    "noise"
+   ],
+   "years": 0
+  },
+  "freeway_cap": {
+   "id": "freeway_cap",
+   "name": "Freeway cap park (regional project, local share)",
+   "category": "Environment",
+   "kind": "regional",
+   "evidence": "limited",
+   "sources": [
+    "Klyde Warren Park cap $110M for 5 acres (2012); Hollywood Central Park proposal $250M + $780k a year",
+    "Crompton & Nicholls 2020 review: +8-10% adjacent to passive parks; small-park effect within ~100 m (Laszkiewicz 2022)"
+   ],
+   "qol": [
+    "noise",
+    "parks"
+   ],
+   "years": 5
+  },
+  "school_filters": {
+   "id": "school_filters",
+   "name": "Air filters in classrooms near freeways",
+   "category": "Environment",
+   "kind": "qol",
+   "evidence": "moderate",
+   "sources": [
+    "Gilraine 2020 (LA, Porter Ranch): classroom air filters raised test scores"
+   ],
+   "qol": [
+    "kids",
+    "noise"
+   ],
+   "years": 0
+  },
+  "school_bond": {
+   "id": "school_bond",
+   "name": "School modernization (bond-funded)",
+   "category": "Schools & services",
+   "kind": "value",
+   "evidence": "strong",
+   "sources": [
+    "Cellini, Ferreira & Rothstein 2010 (California school bonds): +6% prices; >= $1.50 home value per $1 of school capital"
+   ],
+   "qol": [
+    "kids"
+   ],
+   "years": 3
+  },
+  "library": {
+   "id": "library",
+   "name": "Library upgrade and longer hours",
+   "category": "Schools & services",
+   "kind": "qol",
+   "evidence": "moderate (use) / none (value)",
+   "sources": [
+    "Gilpin, Karger & Nencka: library capital spending +21% visits; no detectable home-price change"
+   ],
+   "qol": [
+    "kids"
+   ],
+   "years": 0
+  },
+  "clinic": {
+   "id": "clinic",
+   "name": "Community health clinic",
+   "category": "Schools & services",
+   "kind": "qol",
+   "evidence": "moderate",
+   "sources": [
+    "Bailey & Goodman-Bacon 2015: community health centers -2% mortality 50+"
+   ],
+   "qol": [
+    "health"
+   ],
+   "years": 0
+  },
+  "grocery": {
+   "id": "grocery",
+   "name": "Attract a full grocery store",
+   "category": "Amenities & economy",
+   "kind": "value",
+   "evidence": "moderate",
+   "sources": [
+    "Worcester DiD: +7% within 400 m, +4% at 400-800 m after a grocery opens; Saengchote 2020: Whole Foods +6.7%"
+   ],
+   "qol": [
+    "food"
+   ],
+   "years": 1
+  },
+  "main_street": {
+   "id": "main_street",
+   "name": "Main-street revival (facade grants, small-business help)",
+   "category": "Amenities & economy",
+   "kind": "value",
+   "evidence": "limited",
+   "sources": [
+    "Ghorbani & Meltzer 2024 (NYC): more nearby retail raises 1-4 family values, lowers condo values; Teh 2007 (LA): liquor stores raise nearby crime",
+    "MacDonald et al. 2010 (30 LA BIDs): robbery -12%"
+   ],
+   "qol": [
+    "economy"
+   ],
+   "years": 2
+  },
+  "outdoor_dining": {
+   "id": "outdoor_dining",
+   "name": "Outdoor dining and parklets",
+   "category": "Amenities & economy",
+   "kind": "qol",
+   "evidence": "moderate (business) / not measured (value)",
+   "sources": [
+    "SF Controller: parklet businesses +29% revenue; LA Al Fresco corridors +$12M sales"
+   ],
+   "qol": [
+    "economy"
+   ],
+   "years": 0
+  },
+  "farmers_market": {
+   "id": "farmers_market",
+   "name": "Weekly farmers market",
+   "category": "Amenities & economy",
+   "kind": "value",
+   "evidence": "limited",
+   "sources": [
+    "Farmers-market studies (Maryland 2020; Edmonton 2024): positive, inverted-U with distance"
+   ],
+   "qol": [
+    "food"
+   ],
+   "years": 1
+  },
+  "upzone_transit": {
+   "id": "upzone_transit",
+   "name": "Allow more homes near transit (SB 79 / TOC zoning)",
+   "category": "Zoning",
+   "kind": "policy",
+   "evidence": "moderate",
+   "sources": [
+    "Kuhlmann 2021 (Minneapolis): +3-5% affected single-family prices; Kestelman 2025 (LA TOC); HCD SB 79 (eff. July 2026)"
+   ],
+   "qol": [
+    "housing"
+   ],
+   "years": 3
+  }
+ },
+ "pipeline": {
+  "crime": {
+   "lapd_k7nn-b2ep_error": "",
+   "lapd_2nrs-mtv8_latest": "2024-12-30",
+   "lapd_2nrs-mtv8_cols": [
+    "dr_no",
+    "date_rptd",
+    "date_occ",
+    "time_occ",
+    "area",
+    "area_name",
+    "rpt_dist_no",
+    "part_1_2",
+    "crm_cd",
+    "crm_cd_desc",
+    "mocodes",
+    "vict_age",
+    "vict_sex",
+    "vict_descent",
+    "premis_cd",
+    "premis_desc",
+    "status",
+    "status_desc",
+    "crm_cd_1",
+    "location",
+    "lat",
+    "lon"
+   ],
+   "lapd_gqf2-vm2j_error": "",
+   "lapd_63jg-8b9z_latest": "2019-12-31",
+   "lapd_63jg-8b9z_cols": [
+    "dr_no",
+    "date_rptd",
+    "date_occ",
+    "time_occ",
+    "area",
+    "area_name",
+    "rpt_dist_no",
+    "part_1_2",
+    "crm_cd",
+    "crm_cd_desc",
+    "mocodes",
+    "vict_age",
+    "vict_sex",
+    "vict_descent",
+    "premis_cd",
+    "premis_desc",
+    "status",
+    "status_desc",
+    "crm_cd_1",
+    "location",
+    "lat",
+    "lon"
+   ],
+   "lapd_dataset": "2nrs-mtv8 Crime Data from 2020 to Present",
+   "lapd_rows": 127567,
+   "lapd_window": "2023-12-31 to 2024-12-30",
+   "lasd_links": [],
+   "santa_monica_rows": 7116,
+   "santa_monica_latest": "2024-05-13",
+   "rows_by_agency": {
+    "LAPD": 127567,
+    "Santa Monica PD": 7116
+   },
+   "ok": true,
+   "seconds": 33.5
+  },
+  "crashes": {
+   "candidates": [
+    "ccrs / Crashes_2025",
+    "ccrs / Crashes_2024",
+    "ccrs / Crashes_2023",
+    "ccrs / Crashes_2022",
+    "ccrs / Crashes_2021",
+    "ccrs / Crashes_2020",
+    "ccrs / Crashes_2019",
+    "ccrs / Crashes_2018",
+    "ccrs / Crashes_2017",
+    "ccrs / Crashes_2016",
+    "ccrs / Crashes_2026"
+   ],
+   "used_Crashes_2025": 117155,
+   "used_Crashes_2024": 240892,
+   "used_Crashes_2023": 359334,
+   "used_Crashes_2026": 446345,
+   "rows": 446345,
+   "ok": true,
+   "seconds": 48.2
+  },
+  "sales": {
+   "rows": 75816,
+   "first": "2022-08-15",
+   "last": "2024-06-05",
+   "ok": true,
+   "seconds": 54.2
+  },
+  "transit": {
+   "LA Metro bus_stops": 11812,
+   "LA Metro bus_trips": 13409,
+   "LA Metro rail_stops": 114,
+   "LA Metro rail_trips": 5308,
+   "Big Blue Bus_stops": 864,
+   "Big Blue Bus_trips": 1493,
+   "LADOT DASH/Commuter_stops": 2452,
+   "LADOT DASH/Commuter_trips": 3131,
+   "Long Beach Transit_error": "failed: https://drive.google.com/uc?export=download&id=1bDtwwJMShaGxvXXtgu-eeZFoJ9DhEBM-",
+   "Culver CityBus_error": "failed: https://www.culvercity.gov/files/assets/public/v/1/documents/transportation/gtfs/google_transit.zip",
+   "Foothill Transit_error": "failed: https://foothilltransit.rideralerts.com/gtfs/google_transit.zip",
+   "combined_stops": 11582,
+   "frequent_stops": 674,
+   "ok": true,
+   "seconds": 10.0
+  },
+  "geo": {
+   "acs_vintage": "2020-2024 ACS 5-year, block groups",
+   "acs_rows": 6591,
+   "tes_rows": 5251,
+   "hoods_Culver City": 15,
+   "hoods_Culver City_field": "FontName",
+   "hoods_Santa Monica_error": "None",
+   "hoods_Pasadena": 87,
+   "hoods_Pasadena_field": "Association_Name",
+   "hoods_Long Beach": 126,
+   "hoods_Long Beach_field": "NEIGHBOR_NAME",
+   "hoods_Glendale": 37,
+   "hoods_Glendale_field": "NAME",
+   "hoods_Torrance": 24,
+   "hoods_Torrance_field": "Name",
+   "la_times_hoods": 114,
+   "csa_rows": 355,
+   "csa_field": "LABEL",
+   "block_groups": 6587,
+   "named_official": 641,
+   "named_latimes": 2672,
+   "by_source": {
+    "LA County Countywide Statistical Area": 3272,
+    "LA Times Mapping L.A.": 2672,
+    "Long Beach (city GIS)": 328,
+    "Glendale (city GIS)": 137,
+    "Pasadena (city GIS)": 90,
+    "Torrance (city GIS)": 76,
+    "Culver City (city GIS)": 10,
+    "City boundary (no neighborhood map)": 2
+   },
+   "ok": true,
+   "seconds": 34.4
+  }
+ }
+}

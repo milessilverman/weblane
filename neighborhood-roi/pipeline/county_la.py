@@ -230,7 +230,6 @@ def tes_bg():
 
 
 HOOD_LAYERS = [  # (city or source label, ArcGIS layer, preferred name fields)
-    ("Culver City", "https://gisproxy.culvercity.org/arcgis/rest/services/PropInfoData/MapServer/25", ("NAME", "NEIGHBORHOOD", "Neighborhood", "LABEL")),
     ("Santa Monica", "https://gis.santamonica.gov/server/rest/services/Neighborhood_Organizations/MapServer/0", ("NAME", "Name", "ORG_NAME", "NEIGHBORHOOD")),
     ("Pasadena", "https://services2.arcgis.com/zNjnZafDYCAJAbN0/ArcGIS/rest/services/NeighAssocCommunityResources/FeatureServer/23", ("NAME", "Name", "ASSOC_NAME", "NEIGHBORHOOD")),
     ("Long Beach", "https://services6.arcgis.com/yCArG7wGXGyWLqav/arcgis/rest/services/Neighborhoods/FeatureServer/0", ("NAME", "Name", "NEIGHBORHOOD", "NEIGH_NAME")),
@@ -238,6 +237,23 @@ HOOD_LAYERS = [  # (city or source label, ArcGIS layer, preferred name fields)
     ("Torrance", "https://services1.arcgis.com/38fAqAZVRCrVtPUU/ArcGIS/rest/services/HOA_Publisher/FeatureServer/0", ("Name", "NAME", "HOA_NAME")),
 ]
 CSA_URL = "https://dpw.gis.lacounty.gov/dpw/rest/services/GIS_Web_Services/MapServer/4"
+
+
+def label_points():
+    """Neighborhood labels: OSM place nodes plus Culver City's neighborhood annotation layer."""
+    frames = []
+    try:
+        g = arcgis_all("https://gisproxy.culvercity.org/arcgis/rest/services/PropInfoData/MapServer/25")
+        txt = next((c for c in ("TextString", "TEXTSTRING", "Text", "NAME") if c in g.columns), None)
+        note("geo", culver_label_fields=list(g.columns)[:20])
+        if txt:
+            g = gpd.GeoDataFrame({"label": g[txt].astype(str).str.replace(r"\s+", " ", regex=True).str.strip().str.title(), "label_source": "Culver City neighborhood map"},
+                                 geometry=g.to_crs(M).geometry.representative_point().to_crs(4326).values, crs=4326)
+            frames.append(g[g.label.str.len().between(3, 40)])
+            note("geo", culver_labels=len(frames[-1]), culver_label_sample=frames[-1].label.head(20).tolist())
+    except Exception as e:  # noqa: BLE001
+        note("geo", culver_label_error=str(e)[:200])
+    return frames
 
 
 def hood_layers():
@@ -304,7 +320,7 @@ def assign_names(bg, frames, lat, csa, places):
         if col in out:
             v = out[col]
             if col == "csa":
-                v = v.str.replace(r"^(City of|Unincorporated|Los Angeles)\s*-\s*", "", regex=True)
+                v = v.str.replace(r"^(Unincorporated|Los Angeles)\s*-\s*", "", regex=True).str.replace(r"^City of\s+", "", regex=True)
             fill = nm.isna() & v.notna()
             nm, src = nm.where(~fill, v), src.where(~fill, label)
     out["hood"] = nm.fillna(out.city)
@@ -325,6 +341,9 @@ def stage_geo():
     pl = pl[pl.intersects(box(*BBOX)) & (pl.LSAD == "25")][["NAME", "geometry"]]  # incorporated cities only
     frames, lat, csa = hood_layers()
     names = assign_names(bg, frames, lat, csa, pl)
+    lp = label_points()
+    if lp:
+        save_layer(pd.concat(lp, ignore_index=True), "labels_city")
     df = df.merge(names, on="GEOID", how="left")
     save(df, "bg_attributes")
     save_layer(bg[["GEOID", "geometry"]], "block_groups", tol=8, prec=5)
@@ -450,6 +469,9 @@ def stage_osm():
                         | col(stations, "light_rail").eq("yes")]
     out["rail_station_nearest_m"] = nearest_m(stations, "rs")
     water = layer("water", "w/waterway=river,canal")
+    places = pts(layer("places", "nwr/place=neighbourhood,suburb,quarter"))
+    if len(places):
+        save_layer(places.assign(label=col(places, "name"), kind=col(places, "place"))[["label", "kind", "geometry"]].dropna(subset=["label"]), "places")
     lamps = layer("lamps", "n/highway=street_lamp")
     out["street_lamps"] = count_in_bg(lamps, "lamps") if len(lamps) else pd.Series(dtype=float)
     res = layer("resroads", "w/highway=residential,living_street")
@@ -476,9 +498,6 @@ GTFS = [
     ("LA Metro rail", "https://gitlab.com/LACMTA/gtfs_rail/-/raw/master/gtfs_rail.zip"),
     ("Big Blue Bus", "https://gtfs.bigbluebus.com/current.zip"),
     ("LADOT DASH/Commuter", "https://ladotbus.com/gtfs"),
-    ("Long Beach Transit", "https://drive.google.com/uc?export=download&id=1bDtwwJMShaGxvXXtgu-eeZFoJ9DhEBM-"),
-    ("Culver CityBus", "https://www.culvercity.gov/files/assets/public/v/1/documents/transportation/gtfs/google_transit.zip"),
-    ("Foothill Transit", "https://foothilltransit.rideralerts.com/gtfs/google_transit.zip"),
 ]
 
 
@@ -513,15 +532,44 @@ def gtfs_stop_freq(name, url):
     s = s.loc[s.index.intersection(freq.index)]
     g = gpd.GeoDataFrame({"tph": freq.reindex(s.index).values, "agency": name},
                          geometry=gpd.points_from_xy(pd.to_numeric(s.stop_lon), pd.to_numeric(s.stop_lat)), crs=4326)
-    rail = trips_w.route_type.isin(["0", "1", "2"]).any() and "rail" in name.lower()
+    rail = trips_w.route_type.isin(["0", "1", "2"]).mean() > 0.5
     g["rail"] = bool(rail)
     note("transit", **{f"{name}_stops": len(g), f"{name}_trips": int(len(trips_w))})
     return g
 
 
+LA_CITIES_GTFS = r"Los Angeles|Long Beach|Culver|Santa Monica|Pasadena|Glendale|Burbank|Torrance|Gardena|Norwalk|Montebello|Foothill|Covina|Santa Clarita|Lancaster|Palmdale|Antelope|El Monte|Monterey Park|Alhambra|Commerce|Beach Cities|Redondo|Carson|Compton|Downey|Whittier|Bellflower|Lakewood|Cerritos|Huntington Park|West Hollywood|Beverly Hills|Calabasas|Malibu|Glendora|Arcadia|Monrovia|Duarte|Azusa|Baldwin Park|Pomona|Diamond Bar|Inglewood|Hawthorne|Lynwood|South Gate|Bell"
+
+
+def mobility_feeds():
+    """LA-area GTFS feeds listed in the Mobility Database catalog (hosted copies are stable URLs)."""
+    p = cached_download("https://files.mobilitydatabase.org/feeds_v2.csv", "mobility_feeds.csv", 7)
+    c = pd.read_csv(p, dtype=str)
+    c = c[(c.data_type == "gtfs") & (c.get("status", "active").fillna("active") != "deprecated")]
+    sub = c.get("location.subdivision_name", pd.Series("", index=c.index)).fillna("")
+    muni = c.get("location.municipality", pd.Series("", index=c.index)).fillna("")
+    prov = c.get("provider", pd.Series("", index=c.index)).fillna("")
+    c = c[(sub == "California") & (muni.str.contains(LA_CITIES_GTFS, case=False) | prov.str.contains(LA_CITIES_GTFS, case=False))]
+    url = c.get("urls.latest").fillna(c.get("urls.direct_download"))
+    out = [(p_[:60], u) for p_, u in zip(prov, url.reindex(c.index)) if isinstance(u, str) and u.startswith("http")]
+    note("transit", mobility_feeds=[n for n, _ in out][:60])
+    return out
+
+
 def stage_transit():
     frames = []
-    for name, url in GTFS:
+    feeds = list(GTFS)
+    try:
+        seen = set()
+        for n, u in mobility_feeds():
+            key = re.sub(r"\W+", " ", n.lower()).strip()
+            if re.search(r"metro|big blue|santa monica|ladot|los angeles department of transportation|amtrak|flex", key) or key in seen:
+                continue
+            seen.add(key)
+            feeds.append((n, u))
+    except Exception as e:  # noqa: BLE001
+        note("transit", mobility_error=str(e)[:200])
+    for name, url in feeds:
         try:
             frames.append(gtfs_stop_freq(name, url))
         except Exception as e:  # noqa: BLE001
@@ -597,9 +645,10 @@ def stage_crime():
         try:
             sample = get(f"https://data.lacity.org/resource/{rid}.json", params={"$limit": 1}).json()
             cols = list(sample[0].keys())
-            latc = next(k for k in cols if k.lower() in ("lat", "latitude"))
-            lonc = next(k for k in cols if k.lower() in ("lon", "longitude", "long"))
-            datec = next(k for k in cols if re.search(r"date_occ|dateocc|occ_date|date_occurred|occurred|offense_date|incident_date", k, re.I))
+            note("crime", **{f"lapd_{rid}_cols": cols[:40]})
+            latc = next(k for k in cols if re.search(r"^lat|latitude", k, re.I))
+            lonc = next(k for k in cols if re.search(r"^lon|longitude|^lng", k, re.I))
+            datec = next(k for k in cols if re.search(r"date_occ|dateocc|occ_date|date_occurred|occurred|offense_date|incident_date|date_?time|^date", k, re.I))
             mx = get(f"https://data.lacity.org/resource/{rid}.json", params={"$select": f"max({datec}) as m"}).json()[0]["m"]
             note("crime", **{f"lapd_{rid}_latest": mx[:10], f"lapd_{rid}_cols": cols[:40]})
             if best is None or mx > best[4]:
@@ -619,8 +668,9 @@ def stage_crime():
     # LASD: Part I crimes (downloadable CSVs listed on the transparency page)
     try:
         page = get("https://lasd.org/transparency/crimeandarrest/").text
-        links = sorted(set(re.findall(r'href="([^"]+\.(?:csv|xlsx?|zip))"', page, re.I)))
-        note("crime", lasd_links=links[:30])
+        links = sorted(set(re.findall(r'href=["\']([^"\']+\.(?:csv|xlsx?|zip)(?:\?[^"\']*)?)["\']', page, re.I)))
+        note("crime", lasd_page_len=len(page), lasd_links=links[:30],
+             lasd_hrefs=re.findall(r'href=["\']([^"\']+)["\']', page)[:60])
         part1 = [u for u in links if re.search(r"part.?i[^i]|part_?1|PART_I_", u, re.I)] or links
         for u in part1[:6]:
             u = u if u.startswith("http") else "https://lasd.org" + u
@@ -644,6 +694,39 @@ def stage_crime():
                 note("crime", **{"lasd_err_" + u.rsplit("/", 1)[-1][:40]: str(ex)[:160]})
     except Exception as ex:  # noqa: BLE001
         note("crime", lasd_error=str(ex)[:200])
+    if not any(f.agency.iat[0] == "LASD" for f in frames if len(f)):
+        try:
+            found = get("https://www.arcgis.com/sharing/rest/search", params={"q": "(Sheriff OR LASD) crime incidents \"Los Angeles\" type:\"Feature Service\"",
+                                                                             "num": 20, "f": "json", "sortField": "modified", "sortOrder": "desc"}).json().get("results", [])
+            note("crime", lasd_arcgis_candidates=[f"{x.get('title')} | {x.get('url')}" for x in found[:12]])
+            since = datetime.now() - timedelta(days=400)
+            for x in found[:8]:
+                if not x.get("url"):
+                    continue
+                u = x["url"].rstrip("/") + "/0"
+                try:
+                    g = arcgis_all(u, max_rows=400000)
+                    if g is None or len(g) < 1000:
+                        continue
+                    datec = next((c for c in g.columns if re.search(r"date", c, re.I)), None)
+                    if datec is not None:
+                        dt = pd.to_datetime(g[datec], unit="ms", errors="coerce") if np.issubdtype(g[datec].dtype, np.number) else pd.to_datetime(g[datec], errors="coerce")
+                        if dt.max() < since:
+                            note("crime", **{f"lasd_stale_{x.get('title', '')[:30]}": str(dt.max())[:10]})
+                            continue
+                        g = g[dt >= dt.max() - timedelta(days=365)]
+                    g = g[g.geometry.notna()]
+                    g["geometry"] = g.to_crs(M).geometry.representative_point().to_crs(4326)
+                    txt = rowtext(pd.DataFrame(g.drop(columns="geometry")))
+                    g["violent"], g["property"] = txt.str.contains(VIOLENT), txt.str.contains(PROPERTY)
+                    g["agency"] = "LASD"
+                    frames.append(g[["agency", "violent", "property", "geometry"]])
+                    note("crime", lasd_dataset=f"{x.get('title')} {u}", lasd_rows=len(g))
+                    break
+                except Exception as ex:  # noqa: BLE001
+                    note("crime", **{f"lasd_arc_err_{x.get('title', '')[:30]}": str(ex)[:120]})
+        except Exception as ex:  # noqa: BLE001
+            note("crime", lasd_arcgis_error=str(ex)[:200])
     # Santa Monica (CKAN)
     try:
         rid = "ff0f4877-3731-4476-b2ca-065f5819bf12"
@@ -824,8 +907,49 @@ def stage_trees():
     note("trees", records=len(t), by_source={k: int(v) for k, v in t.src.value_counts().items()})
 
 
+# ------------------------------------------------------------------ vacant parcels (LA County Assessor)
+def stage_parcels():
+    url = "https://public.gis.lacounty.gov/public/rest/services/LACounty_Cache/LACounty_Parcel/MapServer/0"
+    meta = get(url, params={"f": "json"}, timeout=90).json()
+    flds = [f["name"] for f in meta.get("fields", [])]
+    landc = next((f for f in flds if re.search(r"land.?value", f, re.I)), None)
+    areac = next((f for f in flds if re.search(r"shape.*area|starea", f, re.I)), None)
+    note("parcels", fields=flds[:80], land_field=landc, area_field=areac)
+    fields = ",".join([f for f in ("AIN", "UseCode", "UseType", "UseDescription", landc, areac) if f])
+    frames = []
+    w, s, e, n = BBOX
+    xs, ys = np.linspace(w, e, 4), np.linspace(s, n, 4)
+    for i in range(3):
+        for j in range(3):
+            try:
+                g = arcgis_all(url, where="UseCode LIKE '%V'", fields=fields, bbox=(xs[i], ys[j], xs[i + 1], ys[j + 1]), max_rows=600000)
+                if g is not None:
+                    frames.append(g)
+                    log(f"  tile {i},{j}: {len(g):,}")
+            except Exception as ex:  # noqa: BLE001
+                note("parcels", **{f"tile_{i}{j}_error": str(ex)[:160]})
+    g = gpd.GeoDataFrame(pd.concat(frames, ignore_index=True), geometry="geometry", crs=4326).drop_duplicates("AIN")
+    gm = g.to_crs(M)
+    g["sqft"] = gm.area * 10.7639
+    g["land_value"] = pd.to_numeric(g[landc], errors="coerce") if landc else np.nan
+    code = g.UseCode.astype(str)
+    g["kind"] = np.where(code.str.startswith("0"), "residential", np.where(code.str.match(r"^[12]"), "commercial", "other"))
+    small = g[(g.sqft.between(1500, 43560)) & g.kind.isin(["residential", "commercial"])]
+    pts = gpd.GeoDataFrame(small[["kind", "sqft", "land_value"]], geometry=small.to_crs(M).geometry.representative_point(), crs=M)
+    j = gpd.sjoin(pts, block_groups().to_crs(M)[["GEOID", "geometry"]], predicate="within")
+    grp = j.groupby("GEOID")
+    out = pd.DataFrame({"vacant_parcels": grp.size(), "vacant_res_parcels": grp.kind.apply(lambda k: int((k == "residential").sum())),
+                        "vacant_sqft": grp.sqft.sum(), "vacant_land_psf_median": (j.land_value / j.sqft).groupby(j.GEOID).median()})
+    out = out.reindex(block_groups().GEOID)
+    out[["vacant_parcels", "vacant_res_parcels", "vacant_sqft"]] = out[["vacant_parcels", "vacant_res_parcels", "vacant_sqft"]].fillna(0)
+    save(out.reset_index(), "bg_parcels")
+    save_layer(pts.to_crs(4326).assign(sqft=pts.sqft.round(0))[["kind", "sqft", "geometry"]], "vacant_lots")
+    note("parcels", vacant_all=len(g), vacant_small_urban=len(small), by_kind={k: int(v) for k, v in g.kind.value_counts().items()})
+
+
 STAGES = {"geo": stage_geo, "osm": stage_osm, "transit": stage_transit, "sales": stage_sales, "crime": stage_crime,
-          "requests311": stage_requests311, "crashes": stage_crashes, "trees": stage_trees}
+          "requests311": stage_requests311, "crashes": stage_crashes, "trees": stage_trees,
+          "parcels": stage_parcels}
 
 
 def main():

@@ -67,7 +67,7 @@ const fvpd = v => "$" + (v < 1 ? v.toFixed(2) : v < 10 ? v.toFixed(1) : Math.rou
 const CATS = ["Greening", "Parks & recreation", "Transit", "Streets & safety", "Clean streets", "Housing", "Energy", "Environment", "Schools & services", "Amenities & economy", "Zoning"];
 const CAT_COLOR = { "Greening": "--cat-3", "Parks & recreation": "--park-line", "Transit": "--cat-1", "Streets & safety": "--school", "Clean streets": "--warn-ink", "Housing": "--cat-2", "Energy": "--fw-casing", "Environment": "--water-line", "Schools & services": "--seq-5", "Amenities & economy": "--heat-4", "Zoning": "--ink-3" };
 const METRICS = {
-  top_vpd: { label: "Best value per $1", f: p => p.v, unit: fvpd, ramp: "seq" },
+  top_vpd: { label: "Best value per $1 (where ≥ $1)", f: p => p.v >= 1 ? p.v : null, unit: fvpd, ramp: "seq", none: "Nothing returns $1 per $1" },
   pkg_cost: { label: "Cost of every project returning ≥ $1 per $1", f: p => p.pc || null, unit: fmt$, ramp: "seq" },
   value: { label: "Typical home value", f: p => p.hv, unit: fmt$, ramp: "seq" },
   heat: { label: "Heat vs. county median", f: p => p.ht, unit: v => (v > 0 ? "+" : "") + v.toFixed(1) + "°F", ramp: "heat" },
@@ -104,7 +104,7 @@ function legend() {
     return;
   }
   const m = METRICS[k];
-  el.innerHTML = breaks.length ? `<h4>${m.label}</h4><div class="sw">${ramp(m.ramp).map(c => `<i style="background:${c}"></i>`).join("")}</div><div class="ends"><span>${m.unit(breaks[0])}</span><span>${m.unit(breaks[5])}</span></div><div class="note">7 equal-count groups. Gray = no data.</div>`
+  el.innerHTML = breaks.length ? `<h4>${m.label}</h4><div class="sw">${ramp(m.ramp).map(c => `<i style="background:${c}"></i>`).join("")}</div><div class="ends"><span>${m.unit(breaks[0])}</span><span>${m.unit(breaks[5])}</span></div><div class="note">7 equal-count groups. Gray = ${m.none || "no data"}.</div>`
     : `<h4>${m.label}</h4><div class="note">No data loaded for this.</div>`;
 }
 
@@ -165,7 +165,7 @@ function recCard(r, i, mode) {
   return `<div class="rec${i === 0 && mode === "value" ? " top" : ""}${mode === "qol" ? " qolrec" : ""}">
     <div class="cat">${esc(c.category)}</div>
     <div class="row1"><span class="nm">${esc(c.name)}</span>${head}</div>
-    <div class="meta">${esc(r.project)} · <b>total ~${fmt$(r.cost)}</b>${r.value > 0 ? ` · adds ~${fmt$(r.value)} to ~${fmtN(r.homes)} homes' value` : ""}<span class="chip${/^strong/.test(ev) ? " strong" : ""}${c.kind === "regional" ? " reg" : ""}">${esc(ev.split(" (")[0])} evidence</span>${c.kind === "regional" ? '<span class="chip reg">regional project</span>' : ""}</div>
+    <div class="meta">${esc(r.project)} · <b>total ~${fmt$(r.cost)}</b>${r.value > 0 ? (c.kind === "owner" ? ` · adds ~${fmt$(r.value)} to that home's value` : ` · adds ~${fmt$(r.value)} across ~${fmtN(r.homes)} homes`) : ""}<span class="chip${/^strong/.test(ev) ? " strong" : ""}${c.kind === "regional" ? " reg" : ""}">${esc(ev.split(" (")[0])} evidence</span>${c.kind === "regional" ? '<span class="chip reg">regional project</span>' : ""}</div>
     <details><summary>Why here, cost and sources</summary>
       <p class="small"><b>Why:</b> ${esc(r.why)}</p>
       <div class="costline">total = ${costs}${r.om ? " (10 yrs, present value)" : ""}</div>

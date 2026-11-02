@@ -169,7 +169,7 @@ def load():
     if d is None:
         raise SystemExit("county data not built yet")
     status = {}
-    for name in ("bg_osm", "bg_transit", "bg_crime", "bg_311", "bg_crashes", "bg_trees"):
+    for name in ("bg_osm", "bg_transit", "bg_crime", "bg_311", "bg_crashes", "bg_trees", "bg_parcels"):
         x = rd(name)
         status[name] = x is not None
         if x is not None:
@@ -181,6 +181,40 @@ def load():
     for p in SRC.glob("status_*.json"):
         st.update(json.loads(p.read_text())["sources"])
     return d, sales, status, st
+
+
+def refine_names(d):
+    """Inside cities with no neighborhood map, name block groups for the nearest OSM / city neighborhood label,
+    else the nearest named park ("Around X Park"), else the city."""
+    import geopandas as gpd
+    bgp = SRC / "map_block_groups.geojson"
+    generic = d.hood_source.str.contains("Statistical Area|City boundary", na=True) & (d.hood == d.city)
+    if not bgp.exists() or not generic.any():
+        return d
+    bg = gpd.read_file(bgp).set_index("GEOID").loc[d.GEOID[generic]]
+    pts = gpd.GeoDataFrame(geometry=bg.to_crs(3310).geometry.representative_point(), crs=3310).reset_index()
+    got = pd.Series(dtype=str)
+    labs = [gpd.read_file(SRC / f) for f in ("map_labels_city.geojson", "map_places.geojson") if (SRC / f).exists()]
+    if labs:
+        lab = pd.concat([x[["label", "geometry"]] for x in labs], ignore_index=True)
+        lab = gpd.GeoDataFrame(lab, geometry="geometry", crs=4326).to_crs(3310)
+        lab = lab[lab.label.notna()]
+        j = gpd.sjoin_nearest(pts, lab, max_distance=700, how="left").drop_duplicates("GEOID").set_index("GEOID")
+        got = j.label.dropna()
+        m = d.GEOID.isin(got.index)
+        d.loc[m, "hood"] = d.loc[m, "GEOID"].map(got)
+        d.loc[m, "hood_source"] = "nearest neighborhood label (OpenStreetMap / city map)"
+    left = generic & ~d.GEOID.isin(got.index)
+    if left.any() and (SRC / "map_parks.geojson").exists():
+        pk = gpd.read_file(SRC / "map_parks.geojson")
+        pk = pk[pk["name"].notna() & (pk.acres >= 1.5)].to_crs(3310)
+        p2 = pts[pts.GEOID.isin(d.GEOID[left])]
+        j = gpd.sjoin_nearest(p2, pk[["name", "geometry"]], max_distance=600, how="left").drop_duplicates("GEOID").set_index("GEOID")
+        got2 = j["name"].dropna()
+        m = d.GEOID.isin(got2.index)
+        d.loc[m, "hood"] = "Around " + d.loc[m, "GEOID"].map(got2)
+        d.loc[m, "hood_source"] = "nearest named park (no neighborhood map for this city)"
+    return d
 
 
 def home_values(d, sales):
@@ -215,8 +249,8 @@ def prep(d, crime_agencies):
     d["homes"] = d.housing_units.fillna(0)
     d["density"] = d.homes / d.aland_m2.replace(0, np.nan)  # homes per m2
     d["sf_share"] = ((d.units_sf_detached.fillna(0) + d.units_sf_attached.fillna(0)) / d.homes.replace(0, np.nan)).clip(0, 1)
-    d["pop"] = d.population.fillna(0)
-    d["kids_share"] = d.children_under18 / d.pop.replace(0, np.nan)
+    d["pop_n"] = d.population.fillna(0)
+    d["kids_share"] = d.children_under18 / d.pop_n.replace(0, np.nan)
     d["no_car_share"] = (d.owner_no_vehicle.fillna(0) + d.renter_no_vehicle.fillna(0)) / d.occupied_units.replace(0, np.nan)
     d["other_vacant_rate"] = d.vacant_other_units / d.homes.replace(0, np.nan)
     has = lambda a: any(a in k for k in crime_agencies)  # noqa: E731
@@ -228,7 +262,7 @@ def prep(d, crime_agencies):
             d[c] = np.nan
         d[c] = d[c].where(~d.crime_covered, d[c].fillna(0)).where(d.crime_covered)
     # per 1,000 residents, with a floor so near-empty commercial block groups don't explode
-    base = np.maximum(d["pop"], 400) / 1000
+    base = np.maximum(d["pop_n"], 400) / 1000
     d["violent_per_1k"] = d.violent_crimes / base
     d["property_per_1k"] = d.property_crimes / base
     for c in ("illegal_dumping", "graffiti", "streetlight", "encampment", "requests_total"):
@@ -272,9 +306,14 @@ def reach(r, density, homes):
 
 
 def land_psf(r):
-    """Rough land value per sq ft: 60% of home value spread over its share of land."""
+    """Land value per sq ft: 60% of home value spread over its share of land, or the Assessor's roll value for
+    vacant lots here if higher (roll values lag the market under Prop 13, so they only ever raise the estimate)."""
     units_per_acre = max(r.homes / max(r.aland_m2 / 4046.86, 0.1), 0.5) * 1.35  # gross -> net residential land
-    return float(np.clip(0.6 * r.home_value * units_per_acre / 43560, 15, 600))
+    est = 0.6 * r.home_value * units_per_acre / 43560
+    roll = r.get("vacant_land_psf_median", np.nan)
+    if roll == roll and roll is not None:
+        est = max(est, roll)
+    return float(np.clip(est, 15, 600))
 
 
 def g(r, k, default=np.nan):
@@ -312,29 +351,34 @@ def size_projects(r, ref, tree_rate):
             why=f"{how}; each tree lifts ~{hn:.0f} homes within 50 m by {TREE_50M_PCT}% (local sales estimate, low end)")
 
     # --- schoolyard greening
-    if g(r, "school_nearest_m", 1e9) < 400 and (g(r, "tc_gap", 0) > 15 or heat > 1):
+    if g(r, "school_nearest_m") < 400 and (g(r, "tc_gap", 0) > 15 or heat > 1):
         add("schoolyard_green", 1, "1 campus, ~1 acre of asphalt replaced", reach(400, dens, H), 0.01, 1_500_000, 15_000,
             why="public school within 400 m in a hot, low-canopy area; open after hours as a park", fit=0.8)
 
-    # --- blight: vacant lots, abandoned homes (only below county median values and incomes)
+    # --- blight: vacant lots (Assessor vacant parcels) and long-vacant homes, only below county median values and incomes
     ov = g(r, "vacant_other_units", 0)
-    blighted = g(r, "other_vacant_rate", 0) > max(2 * ref["other_vacant"], 0.02) and r.home_value < ref["value"] and poor
-    if blighted and ov >= 3:
-        lots = int(min(10, max(1, ov * 0.3)))
-        add("vacant_lot_green", lots, f"{lots} lots cleaned and greened", lots * reach(150, dens, H) / max(1, lots ** 0.5), 0.043,
-            2400 * lots, 480 * lots, why=f"{int(ov)} long-term vacant homes (Census 'other vacant'), values and incomes below county median")
+    vlots = g(r, "vacant_parcels", np.nan)
+    low = r.home_value < ref["value"] and poor
+    if low and vlots == vlots and vlots >= 2:
+        lots = int(min(15, vlots))
+        add("vacant_lot_green", lots, f"{lots} vacant lots cleaned and greened", lots * reach(150, dens, H) / max(1, lots ** 0.5), 0.043,
+            2400 * lots, 480 * lots, why=f"{int(vlots)} small vacant parcels on the Assessor roll; values and incomes below county median")
+    if low and g(r, "other_vacant_rate", 0) > max(2 * ref["other_vacant"], 0.05) and ov >= 8:
         houses = int(min(8, max(1, ov * 0.2)))
         add("blight_rehab", houses, f"{houses} homes rehabbed", houses * reach(150, dens, H) / max(1, houses ** 0.5), 0.023,
-            110_000 * houses, why="many long-vacant homes; rehab lifts neighbors' values (land-value gains of $2-6 per $1 in Richmond)")
+            110_000 * houses, why=f"{int(ov)} long-term vacant homes (Census 'other vacant'); rehab lifts neighbors' values (land-value gains of $2-6 per $1 in Richmond)",
+            fit=0.4)
 
     # --- community garden
-    if g(r, "community_garden_nearest_m", 1e9) > 800 and dens > 0.0015:
+    if g(r, "community_garden_nearest_m") > 800 and dens > 0.0015:
         pct = 0.015 if poor else 0.005
+        if not g(r, "vacant_parcels", 0) > 0:
+            pct *= 0.7  # no vacant lot here: land must be bought and cleared
         add("community_garden", 1, "6,000 sq ft garden", reach(300, dens, H), pct, 400_000, 10_000, land=6000 * land_psf(r),
             why=f"no community garden within 800 m; {'below' if poor else 'above'}-median income (effect is larger in poorer areas)")
 
     # --- pocket park (park-poor, dense)
-    pn = g(r, "park_nearest_m", 0)
+    pn = g(r, "park_nearest_m")
     if pn > 600 and dens > 0.0012:
         crime_pen = 0.7 if g(r, "violent_per_1k", 0) > 2 * (ref["violent"] or 99) else 1.0
         add("pocket_park", 1, "0.25-acre pocket park", reach(150, dens, H), 0.03 * crime_pen, 850_000, 25_000, land=10_890 * land_psf(r),
@@ -344,34 +388,34 @@ def size_projects(r, ref, tree_rate):
             why=f"park {pn:,.0f} m away; renovations capitalize within ~400 m", fit=0.8)
 
     # --- recreation facilities (quality-of-life items; value not measured)
-    if g(r, "pickleball_nearest_m", 1e9) > 2000 and g(r, "tennis_nearest_m", 1e9) < 1200:
+    if g(r, "pickleball_nearest_m") > 2000 and g(r, "tennis_nearest_m") < 1200:
         add("pickleball", 1, "1 tennis court → 4 pickleball courts", reach(800, dens, H), 0, 110_000, 2_000,
             why=f"no pickleball within 2 km; tennis courts {g(r, 'tennis_nearest_m', 0):,.0f} m away")
-    if g(r, "tennis_nearest_m", 1e9) > 2500 and pn < 800:
+    if g(r, "tennis_nearest_m") > 2500 and pn < 800:
         add("tennis", 2, "2 tennis courts in the nearest park", reach(800, dens, H), 0, 260_000, 4_000,
             why=f"nearest public tennis court {g(r, 'tennis_nearest_m', 0):,.0f} m away")
-    if g(r, "basketball_nearest_m", 1e9) > 1500 and pn < 800:
+    if g(r, "basketball_nearest_m") > 1500 and pn < 800:
         add("basketball", 1, "1 full court", reach(800, dens, H), 0, 580_000, 3_000,
             why=f"nearest public basketball court {g(r, 'basketball_nearest_m', 0):,.0f} m away")
-    if g(r, "dog_park_nearest_m", 1e9) > 2000 and dens > 0.0025:
+    if g(r, "dog_park_nearest_m") > 2000 and dens > 0.0025:
         add("dog_park", 1, "0.5-acre dog park in an existing park", reach(400, dens, H), 0.005, 350_000, 15_000,
             why=f"nearest dog park {g(r, 'dog_park_nearest_m', 0)/1609:,.1f} mi away; dense area")
-    if g(r, "pool_nearest_m", 1e9) > 3000 and dens > 0.002:
+    if g(r, "pool_nearest_m") > 3000 and dens > 0.002:
         add("pool", 1, "1 public pool", reach(2000, dens, H), 0, 20_000_000, 1_000_000,
             why=f"nearest public pool {g(r, 'pool_nearest_m', 0)/1609:,.1f} mi away")
-    if heat > 1 and g(r, "playground_nearest_m", 1e9) < 800:
+    if heat > 1 and g(r, "playground_nearest_m") < 800:
         add("splash_pad", 1, "1 splash pad at the nearest playground", reach(800, dens, H), 0, 850_000, 40_000,
             why=f"{heat:+.1f}°F hotter than average; playground nearby")
-    if g(r, "skatepark_nearest_m", 1e9) > 4000 and g(r, "kids_share", 0) > 0.2:
+    if g(r, "skatepark_nearest_m") > 4000 and g(r, "kids_share", 0) > 0.2:
         add("skate_park", 1, "1 neighborhood skate park", reach(1500, dens, H), 0, 1_500_000, 40_000,
             why=f"nearest skate park {g(r, 'skatepark_nearest_m', 0)/1609:,.1f} mi away; many kids")
-    if g(r, "sports_field_nearest_m", 1e9) > 2000 and pn < 1000:
+    if g(r, "sports_field_nearest_m") > 2000 and pn < 1000:
         add("sports_field", 1, "1 natural-grass field", reach(1500, dens, H), 0, 550_000, 25_000,
             why=f"nearest public field {g(r, 'sports_field_nearest_m', 0)/1609:,.1f} mi away")
-    if g(r, "community_centre_nearest_m", 1e9) > 2500 and poor:
+    if g(r, "community_centre_nearest_m") > 2500 and poor:
         add("rec_center", 1, "1 recreation center", reach(2000, dens, H), 0, 8_400_000, 400_000,
             why=f"no community or rec center within {g(r, 'community_centre_nearest_m', 0)/1609:,.1f} mi")
-    if pn < 500 and g(r, "toilets_nearest_m", 1e9) > 800:
+    if pn < 500 and g(r, "toilets_nearest_m") > 800:
         add("restroom", 1, "restroom building + fountains", reach(800, dens, H), 0, 990_000, 60_000, why="park nearby has no mapped public restroom")
 
     # --- greening for heat
@@ -381,7 +425,7 @@ def size_projects(r, ref, tree_rate):
 
     # --- transit
     tph = g(r, "bus_max_tph_400m", 0)
-    rail_m = min(g(r, "rail_stop_nearest_m", 1e9), g(r, "rail_station_nearest_m", 1e9))
+    rail_m = min(g(r, "rail_stop_nearest_m"), g(r, "rail_station_nearest_m"))
     if tph >= 12 and rail_m > 800:
         add("bus_lane", 1, "0.5 mile of peak bus lanes (both directions)", reach(400, dens, H), 0.01, 1_000_000, 20_000,
             why=f"{tph:.0f} buses an hour at the busiest nearby stop (7-9am); no rail within 800 m")
@@ -424,7 +468,7 @@ def size_projects(r, ref, tree_rate):
         if vrel > 2.5:
             add("foot_patrol", 1, "2 officers on foot, 10 years", H, EL_VIOLENT * 0.23, 0, 400_000,
                 why=f"violent crime {vrel:.1f}x county median; foot patrols cut violent crime 23% while they run")
-            add("violence_interruption", 1, "street outreach team (local share), 10 years", H, EL_VIOLENT * 0.10, 0, 70_000,
+            add("violence_interruption", 1, "street outreach team (local share), 10 years", H, EL_VIOLENT * 0.05, 0, 70_000,
                 why=f"violent crime {vrel:.1f}x county median")
         if g(r, "dining_within_400m", 0) >= 10:
             add("bid", 1, "BID cleaning + ambassadors (local share)", reach(400, dens, H), EL_VIOLENT * 0.12 * 0.3, 0, 250_000,
@@ -476,22 +520,22 @@ def size_projects(r, ref, tree_rate):
     if fw > 400 and dens > 0.005 and r.home_value > ref["value"]:
         add("freeway_cap", 1, "this area's share of a cap park", reach(400, dens, H), 0.05, 50_000_000, 200_000,
             why="dense, valuable area along a freeway; caps cost $110M-250M+")
-    if g(r, "freeway_nearest_m", 1e9) < 500 and g(r, "school_nearest_m", 1e9) < 500:
+    if g(r, "freeway_nearest_m") < 500 and g(r, "school_nearest_m") < 500:
         add("school_filters", 30, "30 classrooms", reach(500, dens, H), 0, 30_000, 6_000, why="school within 500 m of a freeway")
 
     # --- schools & services
-    if g(r, "school_nearest_m", 1e9) < 800 and yb <= 1970:
+    if g(r, "school_nearest_m") < 800 and yb <= 1970:
         homes = reach(800, dens, H)
         cost = homes * r.home_value * 0.06 / 1.5  # Cellini: >= $1.50 of value per $1 of school capital
         add("school_bond", 1, "modernize the nearby school (local share)", homes, 0.06, cost, 0,
             why="older area served by a nearby public school; California bond passage raised prices ~6%")
-    if g(r, "library_nearest_m", 1e9) > 2000 and dens > 0.002:
+    if g(r, "library_nearest_m") > 2000 and dens > 0.002:
         add("library", 1, "branch upgrade + Sunday hours, 10 years", reach(2000, dens, H), 0, 2_000_000, 250_000, why="no library within 2 km")
-    if g(r, "clinic_nearest_m", 1e9) > 2500 and poor:
+    if g(r, "clinic_nearest_m") > 2500 and poor:
         add("clinic", 1, "1 community clinic", reach(3000, dens, H), 0, 5_000_000, 0, why="no clinic mapped within 2.5 km; below-median income")
 
     # --- amenities & economy
-    if g(r, "grocery_nearest_m", 0) > 1600 and dens > 0.002:
+    if g(r, "grocery_nearest_m") > 1600 and dens > 0.002:
         add("grocery", 1, "1 supermarket (incentive package)", reach(800, dens, H), 0.04, 2_000_000, 0,
             why=f"nearest supermarket {g(r, 'grocery_nearest_m', 0)/1609:,.1f} mi away")
     din = g(r, "dining_within_400m", 0)
@@ -500,7 +544,7 @@ def size_projects(r, ref, tree_rate):
             why=f"{int(din)} restaurants/cafes within 400 m: a corridor that could grow (single-family homes gain; condos can lose)")
     if din >= 8:
         add("outdoor_dining", 5, "5 parklets", reach(400, dens, H), 0, 125_000, 5_000, why=f"{int(din)} restaurants/cafes within 400 m")
-    if g(r, "market_nearest_m", 1e9) > 2000 and dens > 0.003:
+    if g(r, "market_nearest_m") > 2000 and dens > 0.003:
         add("farmers_market", 1, "weekly market, 10 years", reach(800, dens, H), 0.005, 0, 40_000, why="no market mapped within 2 km")
 
     # --- zoning (policy: almost no public cost)
@@ -528,6 +572,9 @@ def tree_rate_fn(d):
 
 def score():
     d, sales, status, st = load()
+    if "tc_gap" in d and d.tc_gap.max() <= 1.5:
+        d["tc_gap"] = d.tc_gap * 100  # Tree Equity stores the canopy gap as a fraction
+    d = refine_names(d)
     d = home_values(d, sales)
     agencies = list((st.get("crime", {}) or {}).get("rows_by_agency", {}).keys())
     d, ref, need = prep(d, agencies)
