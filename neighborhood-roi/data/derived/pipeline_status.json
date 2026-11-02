@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-11-02T04:26:22.322112+00:00",
+  "generated_at": "2026-11-02T04:38:48.925844+00:00",
   "sources": {
     "census_tract_boundaries": {
       "ok": true,
-      "seconds": 3.2,
+      "seconds": 0.7,
       "rows": 8497,
       "columns": [
         "GEOID",
@@ -17,7 +17,7 @@
     "census_acs_5yr": {
       "vintage": "2020-2024 ACS 5-year (table-based summary file)",
       "ok": true,
-      "seconds": 15.4,
+      "seconds": 9.7,
       "rows": 8505,
       "columns": [
         "GEOID",
@@ -42,7 +42,7 @@
     },
     "bls_oews_cost_factor": {
       "ok": true,
-      "seconds": 0.9,
+      "seconds": 0.8,
       "rows": 10,
       "columns": [
         "county_fips",
@@ -55,7 +55,7 @@
     },
     "usaspending_projects": {
       "ok": true,
-      "seconds": 48.3,
+      "seconds": 37.7,
       "rows": 1721,
       "columns": [
         "internal_id",
@@ -79,7 +79,7 @@
       "url": "https://www.fhfa.gov/hpi/download/annual/hpi_at_tract.csv",
       "latest_year": 2025,
       "ok": true,
-      "seconds": 4.0,
+      "seconds": 3.7,
       "rows": 5350,
       "columns": [
         "GEOID",
@@ -98,7 +98,7 @@
       "dataset": "PLACES: Census Tract Data (GIS Friendly Format), 2025 release",
       "dataset_id": "yjkw-uj5s",
       "ok": true,
-      "seconds": 10.7,
+      "seconds": 13.6,
       "rows": 8375,
       "columns": [
         "GEOID",
@@ -114,7 +114,7 @@
     "ca_school_scores": {
       "caaspp_year": "2024-25",
       "ok": true,
-      "seconds": 7.2,
+      "seconds": 0.9,
       "rows": 11594,
       "columns": [
         "CDSCode",
@@ -165,7 +165,7 @@
         "tesctyscor"
       ],
       "ok": true,
-      "seconds": 6.6,
+      "seconds": 1.9,
       "rows": 7483,
       "columns": [
         "GEOID",
@@ -180,7 +180,7 @@
     },
     "epa_walkability": {
       "ok": true,
-      "seconds": 48.2,
+      "seconds": 2.8,
       "rows": 8366,
       "columns": [
         "GEOID",
@@ -189,7 +189,7 @@
     },
     "zillow_zhvi_zip": {
       "ok": true,
-      "seconds": 3.2,
+      "seconds": 0.3,
       "rows": 1057,
       "columns": [
         "RegionName",
@@ -215,7 +215,7 @@
     },
     "zillow_zhvi_neighborhood": {
       "ok": true,
-      "seconds": 3.0,
+      "seconds": 0.3,
       "rows": 2140,
       "columns": [
         "RegionID",

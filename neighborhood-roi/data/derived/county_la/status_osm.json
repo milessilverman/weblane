@@ -1,0 +1,37 @@
+{
+ "generated_at": "2026-11-02T04:27:27.913712+00:00",
+ "sources": {
+  "osm": {
+   "parks": 20954,
+   "amenities": 154876,
+   "n_tennis": 10599,
+   "n_pickleball": 1195,
+   "n_basketball": 7540,
+   "n_playground": 4959,
+   "n_dog_park": 251,
+   "n_pool": 34848,
+   "n_skatepark": 255,
+   "n_sports_field": 6779,
+   "n_fitness": 503,
+   "n_library": 608,
+   "n_toilets": 2723,
+   "n_drinking_water": 1018,
+   "n_market": 132,
+   "n_grocery": 1825,
+   "n_dining": 13113,
+   "n_fast_food": 8603,
+   "n_nightlife": 1007,
+   "n_liquor": 667,
+   "n_community_centre": 577,
+   "n_school": 6564,
+   "n_childcare": 109,
+   "n_clinic": 1373,
+   "n_culture": 1055,
+   "n_ev_charger": 633,
+   "n_community_garden": 255,
+   "ok": false,
+   "error": "ValueError: Length of values (154876) does not match length of index (60476)",
+   "seconds": 282.2
+  }
+ }
+}

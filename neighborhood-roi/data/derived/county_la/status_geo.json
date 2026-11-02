@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-02T04:23:47.424866+00:00",
+ "generated_at": "2026-11-02T04:27:16.944827+00:00",
  "sources": {
   "geo": {
    "acs_vintage": "2020-2024 ACS 5-year, block groups",
@@ -33,7 +33,7 @@
     "City boundary (no neighborhood map)": 2
    },
    "ok": true,
-   "seconds": 34.4
+   "seconds": 21.9
   }
  }
 }

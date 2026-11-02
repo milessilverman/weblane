@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-02T04:23:43.079113+00:00",
+ "generated_at": "2026-11-02T04:27:07.367356+00:00",
  "sources": {
   "transit": {
    "LA Metro bus_stops": 11812,
@@ -16,7 +16,7 @@
    "combined_stops": 11582,
    "frequent_stops": 674,
    "ok": true,
-   "seconds": 10.0
+   "seconds": 5.3
   }
  }
 }
