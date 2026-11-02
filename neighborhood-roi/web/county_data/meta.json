@@ -54,7 +54,9 @@
    "qol": [
     "heat"
    ],
-   "years": 6
+   "years": 6,
+   "grade": "A",
+   "caveat": ""
   },
   "schoolyard_green": {
    "id": "schoolyard_green",
@@ -70,7 +72,9 @@
     "heat",
     "kids"
    ],
-   "years": 3
+   "years": 3,
+   "grade": "D",
+   "caveat": "+1% is borrowed from passive parks; no schoolyard-specific price estimate exists."
   },
   "vacant_lot_green": {
    "id": "vacant_lot_green",
@@ -87,7 +91,9 @@
     "blight",
     "safety"
    ],
-   "years": 1
+   "years": 1,
+   "grade": "B",
+   "caveat": "Philadelphia costs; LA site control or land costs are not included."
   },
   "community_garden": {
    "id": "community_garden",
@@ -103,7 +109,9 @@
     "food",
     "parks"
    ],
-   "years": 5
+   "years": 5,
+   "grade": "B",
+   "caveat": "NYC effect; build cost assumed, land cost estimated."
   },
   "green_alley": {
    "id": "green_alley",
@@ -117,7 +125,9 @@
    "qol": [
     "heat"
    ],
-   "years": 2
+   "years": 2,
+   "grade": "none",
+   "caveat": ""
   },
   "cool_pavement": {
    "id": "cool_pavement",
@@ -131,7 +141,9 @@
    "qol": [
     "heat"
    ],
-   "years": 0
+   "years": 0,
+   "grade": "none",
+   "caveat": ""
   },
   "pocket_park": {
    "id": "pocket_park",
@@ -148,7 +160,9 @@
     "parks",
     "kids"
    ],
-   "years": 2
+   "years": 2,
+   "grade": "C",
+   "caveat": "A passive-park premium, not measured for new quarter-acre parks; land cost is estimated."
   },
   "park_upgrade": {
    "id": "park_upgrade",
@@ -164,7 +178,9 @@
     "kids",
     "parks"
    ],
-   "years": 1
+   "years": 1,
+   "grade": "C",
+   "caveat": "No matched renovation coefficient; the cost covers equipment and installation."
   },
   "pickleball": {
    "id": "pickleball",
@@ -179,7 +195,9 @@
    "qol": [
     "rec"
    ],
-   "years": 0
+   "years": 0,
+   "grade": "none",
+   "caveat": ""
   },
   "tennis": {
    "id": "tennis",
@@ -194,7 +212,9 @@
    "qol": [
     "rec"
    ],
-   "years": 0
+   "years": 0,
+   "grade": "none",
+   "caveat": ""
   },
   "basketball": {
    "id": "basketball",
@@ -210,7 +230,9 @@
     "rec",
     "kids"
    ],
-   "years": 0
+   "years": 0,
+   "grade": "none",
+   "caveat": ""
   },
   "dog_park": {
    "id": "dog_park",
@@ -224,7 +246,9 @@
    "qol": [
     "rec"
    ],
-   "years": 1
+   "years": 1,
+   "grade": "D",
+   "caveat": "The dog-park study's coefficient was not recovered; +0.25% is an assumption."
   },
   "pool": {
    "id": "pool",
@@ -239,7 +263,9 @@
     "heat",
     "kids"
    ],
-   "years": 0
+   "years": 0,
+   "grade": "none",
+   "caveat": ""
   },
   "splash_pad": {
    "id": "splash_pad",
@@ -254,7 +280,9 @@
     "heat",
     "kids"
    ],
-   "years": 0
+   "years": 0,
+   "grade": "none",
+   "caveat": ""
   },
   "skate_park": {
    "id": "skate_park",
@@ -269,7 +297,9 @@
    "qol": [
     "kids"
    ],
-   "years": 0
+   "years": 0,
+   "grade": "none",
+   "caveat": ""
   },
   "sports_field": {
    "id": "sports_field",
@@ -284,7 +314,9 @@
     "kids",
     "rec"
    ],
-   "years": 0
+   "years": 0,
+   "grade": "none",
+   "caveat": ""
   },
   "rec_center": {
    "id": "rec_center",
@@ -299,7 +331,9 @@
     "kids",
     "rec"
    ],
-   "years": 0
+   "years": 0,
+   "grade": "none",
+   "caveat": ""
   },
   "restroom": {
    "id": "restroom",
@@ -313,7 +347,9 @@
    "qol": [
     "parks"
    ],
-   "years": 0
+   "years": 0,
+   "grade": "none",
+   "caveat": ""
   },
   "bus_lane": {
    "id": "bus_lane",
@@ -329,7 +365,9 @@
    "qol": [
     "transit"
    ],
-   "years": 1
+   "years": 1,
+   "grade": "D",
+   "caveat": "+0.5% is scaled down from full BRT; no study isolates bus lanes."
   },
   "brt": {
    "id": "brt",
@@ -343,7 +381,9 @@
    "qol": [
     "transit"
    ],
-   "years": 2
+   "years": 2,
+   "grade": "B",
+   "caveat": ""
   },
   "rail_station": {
    "id": "rail_station",
@@ -357,7 +397,9 @@
    "qol": [
     "transit"
    ],
-   "years": 5
+   "years": 5,
+   "grade": "C",
+   "caveat": "Shows this area's share of a far larger regional project."
   },
   "bus_shelters": {
    "id": "bus_shelters",
@@ -372,7 +414,9 @@
     "heat",
     "transit"
    ],
-   "years": 0
+   "years": 0,
+   "grade": "none",
+   "caveat": ""
   },
   "traffic_calming": {
    "id": "traffic_calming",
@@ -387,7 +431,9 @@
    "qol": [
     "traffic"
    ],
-   "years": 0
+   "years": 0,
+   "grade": "C",
+   "caveat": "Portland measured flow-reducing calming, not speed humps alone; hump cost is construction only."
   },
   "crosswalks": {
    "id": "crosswalks",
@@ -402,7 +448,9 @@
    "qol": [
     "traffic"
    ],
-   "years": 0
+   "years": 0,
+   "grade": "none",
+   "caveat": ""
   },
   "road_diet": {
    "id": "road_diet",
@@ -417,7 +465,9 @@
    "qol": [
     "traffic"
    ],
-   "years": 0
+   "years": 0,
+   "grade": "none",
+   "caveat": ""
   },
   "sidewalks": {
    "id": "sidewalks",
@@ -431,7 +481,9 @@
    "qol": [
     "walk"
    ],
-   "years": 0
+   "years": 0,
+   "grade": "none",
+   "caveat": ""
   },
   "street_lighting": {
    "id": "street_lighting",
@@ -447,7 +499,9 @@
    "qol": [
     "safety"
    ],
-   "years": 0
+   "years": 0,
+   "grade": "C",
+   "caveat": "The New York trial measured nighttime outdoor crime; only that share (~30%) is used."
   },
   "cameras": {
    "id": "cameras",
@@ -461,7 +515,9 @@
    "qol": [
     "safety"
    ],
-   "years": 0
+   "years": 0,
+   "grade": "none",
+   "caveat": ""
   },
   "foot_patrol": {
    "id": "foot_patrol",
@@ -476,7 +532,9 @@
    "qol": [
     "safety"
    ],
-   "years": 0
+   "years": 0,
+   "grade": "C",
+   "caveat": "Chains a Philadelphia crime effect with a New York price link; cost is salary + fringe only."
   },
   "violence_interruption": {
    "id": "violence_interruption",
@@ -491,7 +549,9 @@
    "qol": [
     "safety"
    ],
-   "years": 1
+   "years": 1,
+   "grade": "C",
+   "caveat": "GRYD is a comprehensive strategy; its effect is assigned to a local share of program cost."
   },
   "bid": {
    "id": "bid",
@@ -507,7 +567,9 @@
     "safety",
     "litter"
    ],
-   "years": 1
+   "years": 1,
+   "grade": "C",
+   "caveat": "The LA estimate is for robbery; only robbery's share of violent crime is used."
   },
   "litter": {
    "id": "litter",
@@ -521,7 +583,9 @@
    "qol": [
     "litter"
    ],
-   "years": 0
+   "years": 0,
+   "grade": "none",
+   "caveat": ""
   },
   "graffiti": {
    "id": "graffiti",
@@ -535,7 +599,9 @@
    "qol": [
     "litter"
    ],
-   "years": 0
+   "years": 0,
+   "grade": "none",
+   "caveat": ""
   },
   "encampment": {
    "id": "encampment",
@@ -550,7 +616,9 @@
     "safety",
     "litter"
    ],
-   "years": 1
+   "years": 1,
+   "grade": "C",
+   "caveat": "Assumes removing an encampment reverses the measured price discount."
   },
   "blight_rehab": {
    "id": "blight_rehab",
@@ -564,7 +632,9 @@
    "qol": [
     "blight"
    ],
-   "years": 2
+   "years": 2,
+   "grade": "B",
+   "caveat": "Blighted homes inferred from Census vacancy, not identified properties."
   },
   "affordable_housing": {
    "id": "affordable_housing",
@@ -578,7 +648,9 @@
    "qol": [
     "housing"
    ],
-   "years": 3
+   "years": 3,
+   "grade": "B",
+   "caveat": "Effects vary by neighborhood and can be negative in higher-income areas."
   },
   "adu": {
    "id": "adu",
@@ -590,7 +662,9 @@
     "Brueckner et al. 2024 (LA): ADU raises host parcel +9.2% (95% CI 6.6-11.9); Tanrisever 2025: neighbors -3% per +0.5 pt ADU density within 300 m; LA County median ADU cost $100k (2020)"
    ],
    "qol": [],
-   "years": 1
+   "years": 1,
+   "grade": "B",
+   "caveat": ""
   },
   "solar": {
    "id": "solar",
@@ -602,7 +676,9 @@
     "Berkeley Lab 2015: ~$4/W premium for owned solar; DOE 2025 benchmark $2.95/W installed"
    ],
    "qol": [],
-   "years": 0
+   "years": 0,
+   "grade": "B",
+   "caveat": ""
   },
   "undergrounding": {
    "id": "undergrounding",
@@ -611,13 +687,15 @@
    "kind": "value",
    "evidence": "moderate",
    "sources": [
-    "LADWP 2019: $2.8M per circuit-mile undergrounding (contracts $2.2-4.5M); CPUC Rule 20: $1.8-6.1M/mile; LADWP overhead/underground line maps (NavigateLA); CAL FIRE hazard zones",
+    "LADWP 2019: $3.4M per circuit-mile in 2024 dollars undergrounding (contracts $2.2-4.5M); CPUC Rule 20: $1.8-6.1M/mile; LADWP overhead/underground line maps (NavigateLA); CAL FIRE hazard zones",
     "McNair & Abelson 2010 (Canberra): underground power +2.9% house prices"
    ],
    "qol": [
     "outage"
    ],
-   "years": 2
+   "years": 2,
+   "grade": "B",
+   "caveat": "Canberra price association; private service connections and telecom work not included."
   },
   "ev_hub": {
    "id": "ev_hub",
@@ -631,7 +709,9 @@
    "qol": [
     "ev"
    ],
-   "years": 1
+   "years": 1,
+   "grade": "C",
+   "caveat": "The charger study is an association; 1% is a deep discount of its +3.3%."
   },
   "microgrid": {
    "id": "microgrid",
@@ -646,7 +726,9 @@
     "outage",
     "heat"
    ],
-   "years": 0
+   "years": 0,
+   "grade": "none",
+   "caveat": ""
   },
   "noise_wall": {
    "id": "noise_wall",
@@ -660,7 +742,9 @@
    "qol": [
     "noise"
    ],
-   "years": 0
+   "years": 0,
+   "grade": "B",
+   "caveat": "OpenStreetMap maps few walls: check Caltrans before assuming a stretch is unprotected."
   },
   "freeway_cap": {
    "id": "freeway_cap",
@@ -676,7 +760,9 @@
     "noise",
     "parks"
    ],
-   "years": 5
+   "years": 5,
+   "grade": "C",
+   "caveat": "Shows this area's share; full cap cost and causal effect are uncertain."
   },
   "school_filters": {
    "id": "school_filters",
@@ -691,7 +777,9 @@
     "kids",
     "noise"
    ],
-   "years": 0
+   "years": 0,
+   "grade": "none",
+   "caveat": ""
   },
   "school_bond": {
    "id": "school_bond",
@@ -705,7 +793,9 @@
    "qol": [
     "kids"
    ],
-   "years": 3
+   "years": 3,
+   "grade": "B",
+   "caveat": "Uses this area's share of a modernization; bond effects are district-wide."
   },
   "library": {
    "id": "library",
@@ -719,7 +809,9 @@
    "qol": [
     "kids"
    ],
-   "years": 0
+   "years": 0,
+   "grade": "none",
+   "caveat": ""
   },
   "clinic": {
    "id": "clinic",
@@ -733,7 +825,9 @@
    "qol": [
     "health"
    ],
-   "years": 0
+   "years": 0,
+   "grade": "none",
+   "caveat": ""
   },
   "grocery": {
    "id": "grocery",
@@ -747,7 +841,9 @@
    "qol": [
     "food"
    ],
-   "years": 1
+   "years": 1,
+   "grade": "B",
+   "caveat": "$2M is an incentive package, not the full cost of a store (private investment not counted)."
   },
   "main_street": {
    "id": "main_street",
@@ -762,7 +858,9 @@
    "qol": [
     "economy"
    ],
-   "years": 2
+   "years": 2,
+   "grade": "D",
+   "caveat": "A retail-density association, not a measured effect of facade grants."
   },
   "outdoor_dining": {
    "id": "outdoor_dining",
@@ -776,7 +874,9 @@
    "qol": [
     "economy"
    ],
-   "years": 0
+   "years": 0,
+   "grade": "none",
+   "caveat": ""
   },
   "farmers_market": {
    "id": "farmers_market",
@@ -790,7 +890,9 @@
    "qol": [
     "food"
    ],
-   "years": 1
+   "years": 1,
+   "grade": "D",
+   "caveat": "Studies show an association with an inverted-U shape, not this exact effect."
   },
   "upzone_transit": {
    "id": "upzone_transit",
@@ -804,7 +906,9 @@
    "qol": [
     "housing"
    ],
-   "years": 3
+   "years": 3,
+   "grade": "C",
+   "caveat": "Policy change: public cost is planning only, so no per-dollar return is shown."
   }
  },
  "pipeline": {

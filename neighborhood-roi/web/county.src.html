@@ -27,6 +27,13 @@
 <body>
 <header class="top gutter">
   <div class="brand"><div class="eyebrow">/*EYEBROW*/</div><h1>Which improvements make LA neighborhoods better, and worth more, per dollar</h1></div>
+  <div class="ctl"><label for="evid">Evidence shown</label>
+    <select id="evid">
+      <option value="D">All estimates (grades A–D)</option>
+      <option value="C">Skip assumptions (A–C)</option>
+      <option value="B">Studied effects only (A–B)</option>
+      <option value="A">Measured in LA only (A)</option>
+    </select></div>
   <div class="ctl"><label for="metric">Color areas by</label>
     <select id="metric">
       <option value="top_vpd">Best value per $1</option>
@@ -63,6 +70,8 @@ const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const fmt$ = v => v == null || isNaN(v) ? "–" : v >= 1e9 ? "$" + (v/1e9).toFixed(1) + "B" : v >= 1e6 ? "$" + (v/1e6).toFixed(v >= 1e7 ? 0 : 1) + "M" : v >= 1e3 ? "$" + Math.round(v/1e3) + "k" : "$" + Math.round(v);
 const fmtN = v => v == null || isNaN(v) ? "–" : Math.round(v).toLocaleString();
+const GRADE_TXT = { A: "A · measured on LA sales", B: "B · studied elsewhere", C: "C · transferred from a related study", D: "D · assumption" };
+const allowed = id => { const g = D.catalog[id].grade; return g === "none" || g <= $("#evid").value; };
 const fvpd = v => "$" + (v < 1 ? v.toFixed(2) : v < 10 ? v.toFixed(1) : Math.round(v));
 const CATS = ["Greening", "Parks & recreation", "Transit", "Streets & safety", "Clean streets", "Housing", "Energy", "Environment", "Schools & services", "Amenities & economy", "Zoning"];
 const CAT_COLOR = { "Greening": "--cat-3", "Parks & recreation": "--park-line", "Transit": "--cat-1", "Streets & safety": "--school", "Clean streets": "--warn-ink", "Housing": "--cat-2", "Energy": "--fw-casing", "Environment": "--water-line", "Schools & services": "--seq-5", "Amenities & economy": "--heat-4", "Zoning": "--ink-3" };
@@ -149,6 +158,16 @@ function zoomed() {
   toggle(layers.art, z >= 12); toggle(layers.walls, z >= 14); toggle(layers.stops, z >= 13); toggle(layers.amen, z >= 13);
   toggle(layers.hoods, z >= 12); toggle(layers.hoodLabels, z >= 13); toggle(layers.cityLabels, z >= 10 && z < 13);
 }
+function retop() {
+  // best improvement and the cost of every project returning >= $1, under the current evidence filter
+  D.bgs.features.forEach(f => {
+    const p = f.properties, r = (D.details[p.id] || {}).r || [];
+    let best = null, pc = 0;
+    r.forEach(a => { const c = D.catalog[a[0]]; if (c.kind !== "value" || !allowed(a[0])) return;
+      if (!best || a[8] > best[8]) best = a; if (a[8] >= 1) pc += a[3]; });
+    p.t = best && best[8] >= 1 ? best[0] : null; p.v = best ? best[8] : null; p.pc = pc || null;
+  });
+}
 function restyle() { breaks = computeBreaks(); bgs.setStyle(styleBg); legend(); highlight(); }
 function highlight() {
   if (selLayer) { map.removeLayer(selLayer); selLayer = null; }
@@ -165,11 +184,12 @@ function recCard(r, i, mode) {
   return `<div class="rec${i === 0 && mode === "value" ? " top" : ""}${mode === "qol" ? " qolrec" : ""}">
     <div class="cat">${esc(c.category)}</div>
     <div class="row1"><span class="nm">${esc(c.name)}</span>${head}</div>
-    <div class="meta">${esc(r.project)} · <b>total ~${fmt$(r.cost)}</b>${r.value > 0 ? (c.kind === "owner" ? ` · adds ~${fmt$(r.value)} to that home's value` : ` · adds ~${fmt$(r.value)} across ~${fmtN(r.homes)} homes`) : ""}<span class="chip${/^strong/.test(ev) ? " strong" : ""}${c.kind === "regional" ? " reg" : ""}">${esc(ev.split(" (")[0])} evidence</span>${c.kind === "regional" ? '<span class="chip reg">regional project</span>' : ""}</div>
+    <div class="meta">${esc(r.project)} · <b>total ~${fmt$(r.cost)}</b>${r.value > 0 ? (c.kind === "owner" ? ` · adds ~${fmt$(r.value)} to that home's value` : ` · adds ~${fmt$(r.value)} across ~${fmtN(r.homes)} homes`) : ""}${c.grade !== "none" ? `<span class="chip${c.grade === "A" || c.grade === "B" ? " strong" : c.grade === "D" ? " reg" : ""}" title="${esc(GRADE_TXT[c.grade])}">evidence ${c.grade}</span>` : `<span class="chip">${esc(ev.split(" (")[0])}</span>`}${c.kind === "regional" ? '<span class="chip reg">regional project</span>' : ""}</div>
     <details><summary>Why here, cost and sources</summary>
       <p class="small"><b>Why:</b> ${esc(r.why)}</p>
       <div class="costline">total = ${costs}${r.om ? " (10 yrs, present value)" : ""}</div>
       ${r.pct > 0 ? `<p class="small"><b>Price effect used:</b> +${r.pct}% for homes reached${c.years ? `, full effect after ~${c.years} yr (discounted)` : ""}.</p>` : `<p class="small"><b>Home-value effect:</b> not measured in the research, so it is ranked by how much this area needs it, not by value per $1.</p>`}
+      ${c.grade !== "none" ? `<p class="small"><b>Evidence grade ${c.grade}:</b> ${esc(GRADE_TXT[c.grade].slice(4))}.${c.caveat ? " " + esc(c.caveat) : ""}</p>` : c.caveat ? `<p class="small">${esc(c.caveat)}</p>` : ""}
       <p class="src muted">${c.sources.map(esc).join("<br>")}</p>
     </details></div>`;
 }
@@ -181,7 +201,9 @@ function select(id, fly) {
   const p = f.properties, d = D.details[id] || {}, m = d.m || {};
   const recs = (d.r || []).map(a => Object.fromEntries(REC_KEYS.map((k, i) => [k, a[i]])));
   const kind = r => D.catalog[r.id].kind;
-  const val = recs.filter(r => kind(r) === "value" || kind(r) === "regional").sort((a, b) => b.vpd - a.vpd);
+  const valAll = recs.filter(r => kind(r) === "value" || kind(r) === "regional");
+  const val = valAll.filter(r => allowed(r.id)).sort((a, b) => b.vpd - a.vpd);
+  const hidden = valAll.length - val.length;
   const qol = recs.filter(r => kind(r) === "qol").sort((a, b) => b.qol - a.qol || a.cost - b.cost);
   const pol = recs.filter(r => kind(r) === "policy"), own = recs.filter(r => kind(r) === "owner").sort((a, b) => b.vpd - a.vpd);
   const pkg = val.filter(r => r.vpd >= 1 && kind(r) === "value");
@@ -201,6 +223,7 @@ function select(id, fly) {
   </div></div>`;
   const cats = ["All", ...CATS.filter(c => val.some(r => D.catalog[r.id].category === c))];
   h += `<div class="section"><h3>Ranked by home value added per $1</h3><div class="cat-tabs" role="group" aria-label="Filter by category">${cats.map((c, i) => `<button type="button" data-cat="${esc(c)}" aria-pressed="${i === 0}">${esc(c)}</button>`).join("")}</div><div class="recs" id="valrecs"></div>
+    ${hidden ? `<p class="small muted">${hidden} lower-graded estimate${hidden > 1 ? "s" : ""} hidden by the evidence filter above.</p>` : ""}
     <p class="small muted">Value counts every nearby home, not only yours. Effects use the low end of the studies; crime programs use measured crime-to-price links.</p></div>`;
   if (qol.length) h += `<div class="section"><h3>Quality-of-life projects (no measured price effect)</h3><p class="small muted">Sorted by how much this area needs each one compared with the rest of the county.</p><div class="recs">${qol.map((r, i) => recCard(r, i, "qol")).join("")}</div></div>`;
   if (pol.length) h += `<div class="section"><h3>Zoning and policy</h3><div class="recs">${pol.map((r, i) => recCard(r, i, "policy")).join("")}</div></div>`;
@@ -238,16 +261,18 @@ async function init() {
   map = L.map("map", { preferCanvas: true, zoomSnap: 0.5, minZoom: 9, maxZoom: 17 });
   map.attributionControl.setPrefix(false).addAttribution("© OpenStreetMap contributors · US Census · LA County Assessor · LAPD · LASD · MyLA311 · CHP · LA Metro · city tree surveys · Tree Equity Score");
   D.bgs.features.forEach(f => byId.set(f.properties.id, f));
+  retop();
   breaks = computeBreaks();
   bgs = L.geoJSON(D.bgs, { style: styleBg, onEachFeature: (f, l) => {
     const p = f.properties;
-    l.bindTooltip(`<b>${esc(p.n)}</b> · ${esc(p.c)}<br>${p.t && p.v >= 1 ? esc(D.catalog[p.t].name) + ": " + fvpd(p.v) + " per $1" : "Nothing returns $1 per $1"}`, { sticky: true });
+    l.bindTooltip(() => `<b>${esc(p.n)}</b> · ${esc(p.c)}<br>${p.t && p.v >= 1 ? esc(D.catalog[p.t].name) + ": " + fvpd(p.v) + " per $1" : "Nothing returns $1 per $1"}`, { sticky: true });
     l.on("click", () => select(p.id, false)); } }).addTo(map);
   drawContext(); legend(); report();
   const names = new Map(Object.entries(D.meta.search || {}));
   $("#names").innerHTML = [...names.keys()].sort().map(n => `<option value="${esc(n)}">`).join("");
   $("#q").onchange = e => { const id = names.get(e.target.value); if (id) select(id, true); };
   $("#metric").onchange = restyle;
+  $("#evid").onchange = () => { retop(); restyle(); if (selected) select(selected, false); };
   ["#l-roads", "#l-transit", "#l-parks", "#l-amen", "#l-hoods"].forEach(id => $(id).onchange = drawContext);
   $("#l-tiles").onchange = e => {
     if (e.target.checked) { const dark = matchMedia("(prefers-color-scheme: dark)").matches && document.documentElement.dataset.theme !== "light";

@@ -156,8 +156,8 @@ def main():
         focus.append([want, f"{len(g)}", f"{g.homes.sum():,.0f}", f"${g.home_value.median()/1e6:.2f}M" if g.home_value.notna().any() else "–",
                       lib[b.top]["name"] if isinstance(b.top, str) else "nothing pays back", f"${b.top_vpd:.1f}" if b.top_vpd == b.top_vpd else "–",
                       f"${g.pkg_cost.sum()/1e6:,.1f}M"])
-    lib_rows = [[v["name"], v["category"], {"value": "ranked by value per $1", "regional": "regional, local share", "qol": "quality of life", "policy": "policy", "owner": "homeowner"}[v["kind"]],
-                 v["evidence"], "<br>".join(v["sources"])] for v in lib.values()]
+    lib_rows = [[v["name"], v["category"], v.get("grade", "none").replace("none", "–"), {"value": "ranked by value per $1", "regional": "regional, local share", "qol": "quality of life", "policy": "policy", "owner": "homeowner"}[v["kind"]],
+                 v["evidence"], (v.get("caveat") or "") + ("<br>" if v.get("caveat") else "") + "<br>".join(v["sources"])] for v in lib.values()]
     st = meta.get("pipeline", {})
     labels_src = {"geo": "Block groups, Census ACS 2020-24, Tree Equity heat, neighborhood names", "osm": "OpenStreetMap amenities, parks, freeways, sound walls, power lines",
                   "transit": "Bus and rail frequency (GTFS, 19 agencies)", "sales": "LA County Assessor recorded sales", "crime": "LAPD, LASD, Long Beach PD and Santa Monica PD crime",
@@ -184,7 +184,13 @@ def main():
                {"title": "By city", "paragraphs": ["The 45 largest cities and areas by homes. Cost and value cover every project returning at least $1 per $1 in each block group."],
                 "table": {"head": ["City", "Block groups", "Homes", "Median home value", "Most common best bet", "Cost of paying projects", "Value they add"], "rows": city_rows, "num": [1, 2, 3, 5, 6]}},
                {"title": "The improvement library", "paragraphs": ["Every improvement the model checks, how it's ranked and the evidence behind it, from the City Pretty evidence sourcebooks."],
-                "table": {"head": ["Improvement", "Category", "Ranked as", "Evidence", "Sources"], "rows": lib_rows}},
+                "table": {"head": ["Improvement", "Category", "Grade", "Ranked as", "Evidence", "Caveats and sources"], "rows": lib_rows}},
+               {"title": "Evidence grades", "list": [
+                   "<b>A: measured on LA sales.</b> City Pretty's own estimate from recorded Westside sales (street trees).",
+                   "<b>B: studied elsewhere.</b> A study of the same kind of improvement, usually outside LA (sound walls, vacant-lot greening, BRT, school bonds, grocery stores, ADUs, undergrounding).",
+                   "<b>C: transferred.</b> Borrowed from a related study, or chained through a crime-to-price link (park renovations, speed humps, lighting, foot patrols, EV chargers).",
+                   "<b>D: assumption.</b> Scaled from a different improvement (bus lanes, dog parks, farmers markets, main-street grants, schoolyards).",
+                   "Use the <b>Evidence shown</b> menu at the top to hide lower grades; the map and every ranking update to match. An outside accuracy audit (City Pretty V2.1 review) supplied the caveat shown with each estimate."]},
                {"title": "Data in this build", "paragraphs": [f"Neighborhood names: {', '.join(f'{k} ({v:,})' for k, v in named.items())}."],
                 "table": {"head": ["Source", "Status", "Detail"], "rows": src_rows}},
                {"title": "Read the numbers carefully", "list": [
@@ -194,6 +200,8 @@ def main():
                    "<b>What the research says isn't worth claiming.</b> LA's own camera evaluations found no crime effect, so cameras carry no price effect. No study prices graffiti or litter removal, so those rank by need, not value per $1. Bus lanes use a modeled share of measured bus-rapid-transit effects.",
                    "<b>Home values</b> come from recorded single-family sales in each block group (2022-24) where there are at least 5, then from the surrounding tract, then from the Census. Census values stop at $2M.",
                    "<b>Regional projects</b> (rail stations, freeway caps) show this area's rough share of a much larger project. Treat them as a signal, not a budget.",
+                   "<b>Dollars.</b> Costs are in 2024 dollars (CPI-U) where the source year is known; costs marked as estimates in the caveats have no matched LA record yet.",
+                   "<b>Policy changes</b> such as rezoning cost the public little to adopt, so no per-dollar return is shown for them.",
                    "<b>Unknowns are left out, not guessed.</b> Where the research has no price effect (pools, crosswalks, litter crews), the item gets no value number. Where a cost isn't on record, the estimate is flagged in its sources."]}]}
 
     default = None

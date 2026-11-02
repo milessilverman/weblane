@@ -80,7 +80,7 @@ S = {  # sources, cited by key in the catalog
     "litter": "MacDonald et al. 2026 street-cleaning RCT: litter -16%; LA CARE cleanup team ~$1.4M a year",
     "gibbons": "No causal price effect of graffiti removal found (sourcebook round 3); Gibbons 2004 links criminal damage to prices; LA graffiti crews $11.7M / 95 crews",
     "bhandari": "Bhandari 2024 (LA): encampments within 0.2 mi -> -1.41% sale prices; RAND Housing for Health: $30,458 per participant-year incl. county services",
-    "ladwp": "LADWP 2019: $2.8M per circuit-mile undergrounding (contracts $2.2-4.5M); CPUC Rule 20: $1.8-6.1M/mile; LADWP overhead/underground line maps (NavigateLA); CAL FIRE hazard zones",
+    "ladwp": "LADWP 2019: $3.4M per circuit-mile in 2024 dollars undergrounding (contracts $2.2-4.5M); CPUC Rule 20: $1.8-6.1M/mile; LADWP overhead/underground line maps (NavigateLA); CAL FIRE hazard zones",
     "mcnair": "McNair & Abelson 2010 (Canberra): underground power +2.9% house prices",
     "ev": "Liang et al. 2023 (14M California sales): +3.3% within 1 km of EV chargers; CARB 2025: 8-port DC fast site $800,473; AFDC: maintenance up to $400-800 per charger-year (electricity, network extra); federal AFDC station data",
     "microgrid": "LA County CPUC filing 2021: community microgrids $3.25-3.6M each",
@@ -159,6 +159,49 @@ CAT = [
     ("upzone_transit", "Allow more homes near transit (SB 79 / TOC zoning)", "Zoning", "policy", "moderate", ["upzone"], ["housing"], 3),
 ]
 CATALOG = {c[0]: dict(zip(("id", "name", "category", "kind", "evidence", "sources", "qol", "years"), c)) for c in CAT}
+
+# Evidence grade for the price effect used:
+#   A = measured on LA sales by City Pretty
+#   B = a study of this same kind of improvement (outside LA, or LA without a price link)
+#   C = transferred from a related study or chained through crime-to-price links
+#   D = an assumption scaled from a different improvement
+GRADE = {"street_trees": "A",
+         **dict.fromkeys(["vacant_lot_green", "blight_rehab", "community_garden", "noise_wall", "brt", "school_bond", "grocery",
+                          "adu", "solar", "affordable_housing", "undergrounding"], "B"),
+         **dict.fromkeys(["pocket_park", "park_upgrade", "traffic_calming", "street_lighting", "foot_patrol", "violence_interruption",
+                          "bid", "encampment", "ev_hub", "rail_station", "freeway_cap", "upzone_transit"], "C"),
+         **dict.fromkeys(["bus_lane", "dog_park", "farmers_market", "main_street", "schoolyard_green"], "D")}
+# Caveats raised by an outside accuracy audit (City Pretty V2.1 review), shown with each estimate
+CAVEAT = {
+    "dog_park": "The dog-park study's coefficient was not recovered; +0.25% is an assumption.",
+    "schoolyard_green": "+1% is borrowed from passive parks; no schoolyard-specific price estimate exists.",
+    "bus_lane": "+0.5% is scaled down from full BRT; no study isolates bus lanes.",
+    "traffic_calming": "Portland measured flow-reducing calming, not speed humps alone; hump cost is construction only.",
+    "farmers_market": "Studies show an association with an inverted-U shape, not this exact effect.",
+    "street_lighting": "The New York trial measured nighttime outdoor crime; only that share (~30%) is used.",
+    "violence_interruption": "GRYD is a comprehensive strategy; its effect is assigned to a local share of program cost.",
+    "bid": "The LA estimate is for robbery; only robbery's share of violent crime is used.",
+    "encampment": "Assumes removing an encampment reverses the measured price discount.",
+    "grocery": "$2M is an incentive package, not the full cost of a store (private investment not counted).",
+    "main_street": "A retail-density association, not a measured effect of facade grants.",
+    "park_upgrade": "No matched renovation coefficient; the cost covers equipment and installation.",
+    "noise_wall": "OpenStreetMap maps few walls: check Caltrans before assuming a stretch is unprotected.",
+    "ev_hub": "The charger study is an association; 1% is a deep discount of its +3.3%.",
+    "rail_station": "Shows this area's share of a far larger regional project.",
+    "freeway_cap": "Shows this area's share; full cap cost and causal effect are uncertain.",
+    "school_bond": "Uses this area's share of a modernization; bond effects are district-wide.",
+    "upzone_transit": "Policy change: public cost is planning only, so no per-dollar return is shown.",
+    "vacant_lot_green": "Philadelphia costs; LA site control or land costs are not included.",
+    "pocket_park": "A passive-park premium, not measured for new quarter-acre parks; land cost is estimated.",
+    "community_garden": "NYC effect; build cost assumed, land cost estimated.",
+    "blight_rehab": "Blighted homes inferred from Census vacancy, not identified properties.",
+    "affordable_housing": "Effects vary by neighborhood and can be negative in higher-income areas.",
+    "foot_patrol": "Chains a Philadelphia crime effect with a New York price link; cost is salary + fringe only.",
+    "undergrounding": "Canberra price association; private service connections and telecom work not included.",
+}
+for k, c in CATALOG.items():
+    c["grade"] = GRADE.get(k, "none")
+    c["caveat"] = CAVEAT.get(k, "")
 
 
 def load():
@@ -494,7 +537,7 @@ def size_projects(r, ref, tree_rate):
         add("road_diet", 1, "~1 mile road diet (local share)", reach(400, dens, H), 0, 600_000, 10_000, why=f"{int(ksi)} fatal or severe crashes recorded here")
     if res_km > 0.5:
         sq = res_km * 3280
-        add("sidewalks", 1, f"~{sq:,.0f} sq ft of broken sidewalk (10% of walks)", H, 0, 51 * sq, 0, why="LA's sidewalks are ~40% damaged citywide; local survey not loaded")
+        add("sidewalks", 1, f"~{sq:,.0f} sq ft of broken sidewalk (10% of walks)", H, 0, 59 * sq, 0, why="LA's sidewalks are ~40% damaged citywide; local survey not loaded")
 
     # --- safety (only where crime data cover this block group)
     if r.crime_covered and r.violent_per_1k == r.violent_per_1k:
@@ -531,12 +574,12 @@ def size_projects(r, ref, tree_rate):
             add("graffiti", 1, "48-hour graffiti removal", H, 0, 0, max(20_000, 123_000 * graf / 1500),
                 why=f"{int(graf)} graffiti reports a year ({gd:,.0f} per km²); assumes 1 in 20 reports is a criminal-damage incident (Gibbons), capped at +0.3%")
         if enc >= 25:
-            add("encampment", 1, "outreach + housing for ~10 people, 10 years", reach(320, dens, H), 0.0141 * 0.5, 0, 300_000,
+            add("encampment", 1, "outreach + housing for ~10 people, 10 years", reach(320, dens, H), 0.0141 * 0.5, 0, 408_000,
                 why=f"{int(enc)} encampment reports a year; homes within 0.2 mi sell ~1.4% lower (counts a 50% success rate)")
 
     # --- housing
     if poor and r.home_value < ref["value"]:
-        add("affordable_housing", 50, "50 affordable homes", reach(160, dens, H), 0.065, 30_000_000, 0,
+        add("affordable_housing", 50, "50 affordable homes", reach(160, dens, H), 0.065, 34_600_000, 0,
             why="below-median income area: new affordable housing raised nearby prices 6.5% within 0.1 mi")
     P_owner_v = r.home_value
     if r.sf_share > 0.4:
@@ -553,12 +596,12 @@ def size_projects(r, ref, tree_rate):
         share = oh / tot
         if share > 0.5 and r.sf_share > 0.3:
             miles = max(oh, res_km * share) * 0.621
-            add("undergrounding", 1, f"{miles:.1f} miles of overhead lines undergrounded", H, 0.029, 2_800_000 * miles, 0,
-                why=f"LADWP maps show {share:.0%} of local lines overhead ({oh:.1f} km); $2.8M per circuit-mile" + fire_txt)
+            add("undergrounding", 1, f"{miles:.1f} miles of overhead lines undergrounded", H, 0.029, 3_440_000 * miles, 0,
+                why=f"LADWP maps show {share:.0%} of local lines overhead ({oh:.1f} km); $3.4M per circuit-mile in 2024 dollars" + fire_txt)
     elif tot < 0.3 * max(res_km, 0.1) and yb <= 1975 and r.sf_share > 0.3 and res_km > 0.5:
         miles = res_km * 0.621
-        add("undergrounding", 1, f"{miles:.1f} miles of lines undergrounded", H, 0.029, 2_800_000 * miles, 0,
-            why=f"homes built ~{int(yb)}, so overhead lines are likely (no utility line map outside LADWP's area); $2.8M per circuit-mile" + fire_txt, fit=0.7)
+        add("undergrounding", 1, f"{miles:.1f} miles of lines undergrounded", H, 0.029, 3_440_000 * miles, 0,
+            why=f"homes built ~{int(yb)}, so overhead lines are likely (no utility line map outside LADWP's area); $3.4M per circuit-mile in 2024 dollars" + fire_txt, fit=0.7)
     dc = g(r, "dcfc_within_800m")
     no_charger = dc == 0 if dc == dc else g(r, "ev_charger_within_800m", 1) == 0
     if no_charger and dens > 0.002:
@@ -566,7 +609,7 @@ def size_projects(r, ref, tree_rate):
             why=("no public DC fast charger within 800 m (federal AFDC data)" if dc == dc else "no public charger mapped within 800 m")
                 + "; uses 1% (the study's +3.3% is likely partly where chargers get built)")
     if heat > 1 and poor:
-        add("microgrid", 1, "1 resilience hub (solar + battery)", reach(1500, dens, H), 0, 3_400_000, 30_000, why=f"{heat:+.1f}°F hotter; cooling center during outages")
+        add("microgrid", 1, "1 resilience hub (solar + battery)", reach(1500, dens, H), 0, 3_940_000, 30_000, why=f"{heat:+.1f}°F hotter; cooling center during outages")
 
     # --- environment
     fw = g(r, "freeway_m_within_150m", 0)
@@ -637,7 +680,7 @@ def score():
     d, sales, status, st = load()
     if "tc_gap" in d and d.tc_gap.max() <= 1.5:
         d["tc_gap"] = d.tc_gap * 100  # Tree Equity stores the canopy gap as a fraction
-    d = refine_names(clean_codes(d))
+    d = refine_names(clean_codes(d.copy()))
     d = home_values(d, sales)
     agencies = list((st.get("crime", {}) or {}).get("rows_by_agency", {}).keys())
     d, ref, need = prep(d, agencies)
@@ -655,7 +698,7 @@ def score():
             value = p["homes"] * r.unit_value * p["pct"] * ramp * p["fit"] if pid not in ("adu", "solar") else r.home_value * p["pct"]
             qol = max([need.at[i, q] for q in c["qol"]], default=0)
             recs.append({"id": pid, "project": p["project"], "homes": round(p["homes"]), "cost": round(cost), "capex": round(p["capex"]),
-                         "land": round(p["land"]), "om": round(p["om"]), "value": round(value), "vpd": round(value / cost, 3) if cost else 0,
+                         "land": round(p["land"]), "om": round(p["om"]), "value": round(value), "vpd": (round(value / cost, 3) if cost else 0) if c["kind"] != "policy" else 0,
                          "pct": round(p["pct"] * 100, 3), "why": p["why"], "qol": round(float(qol), 2)})
         val = sorted([x for x in recs if CATALOG[x["id"]]["kind"] in ("value", "regional")], key=lambda x: -x["vpd"])
         top = next((x for x in val if CATALOG[x["id"]]["kind"] == "value"), None)
