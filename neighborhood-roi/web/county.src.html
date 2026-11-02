@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>City Pretty</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>/*LEAFLET_CSS*/</style>
+<style>/*BASE_CSS*/</style>
+<style>
+.cat-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
+.cat-tabs button { font: 500 12px var(--body); color: var(--ink-2); background: var(--ground); border: 1px solid var(--rule-strong); border-radius: 99px; padding: 4px 10px; cursor: pointer; }
+.cat-tabs button[aria-pressed="true"] { background: var(--ink); color: var(--sheet); border-color: var(--ink); }
+.pkg { border: 1px solid var(--rule); border-radius: 8px; padding: 10px 12px; background: var(--ground); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 12px; }
+.pkg .k { font-size: 11.5px; color: var(--ink-3); } .pkg .v { font: 600 16px/1.25 var(--body); font-variant-numeric: tabular-nums; }
+.rec .cat { font: 500 10.5px/1 var(--mono); color: var(--ink-3); text-transform: uppercase; letter-spacing: .05em; }
+.rec .vpd.none { color: var(--ink-3); font-weight: 500; font-size: 12px; }
+.rec.qolrec { background: var(--sheet); }
+.chip.reg { border-color: var(--warn-ink); color: var(--warn-ink); }
+.costline { font: 400 12px/1.6 var(--mono); color: var(--ink-2); }
+.more { margin-top: 8px; }
+.lbl-city { font: 700 11px/1 var(--display); color: var(--ink-3); text-transform: uppercase; letter-spacing: .08em; text-shadow: 0 0 3px var(--sheet), 0 0 3px var(--sheet); white-space: nowrap; pointer-events: none; }
+.amen { font-size: 11px; line-height: 1; }
+</style>
+</head>
+<body>
+<header class="top gutter">
+  <div class="brand"><div class="eyebrow">/*EYEBROW*/</div><h1>Which improvements make LA neighborhoods better, and worth more, per dollar</h1></div>
+  <div class="ctl"><label for="metric">Color areas by</label>
+    <select id="metric">
+      <option value="top_vpd">Best value per $1</option>
+      <option value="top">Best improvement type</option>
+      <option value="pkg_cost">Cost of every project that pays back</option>
+      <option value="value">Typical home value</option>
+      <option value="heat">Heat vs. county median</option>
+      <option value="crime">Violent crime per 1,000 residents</option>
+      <option value="park">Park acres within ½ mile</option>
+      <option value="bus">Buses per hour at busiest stop</option>
+      <option value="sites">Open street-tree sites</option>
+    </select></div>
+  <div class="ctl grow"><label for="q">Find a neighborhood or city</label><input id="q" type="search" list="names" placeholder="Carlson Park, Boyle Heights, Pasadena…" autocomplete="off"><datalist id="names"></datalist></div>
+  <fieldset class="layers"><legend>Show on map</legend>
+    <label><input type="checkbox" id="l-roads" checked> Freeways &amp; arterials</label>
+    <label><input type="checkbox" id="l-transit" checked> Rail &amp; frequent buses</label>
+    <label><input type="checkbox" id="l-parks" checked> Parks &amp; rivers</label>
+    <label><input type="checkbox" id="l-amen"> Courts, pools, dog parks</label>
+    <label><input type="checkbox" id="l-hoods" checked> Neighborhood lines</label>
+    <label><input type="checkbox" id="l-tiles"> Street map underlay (online)</label>
+  </fieldset>
+</header>
+<div class="main">
+  <div class="mapwrap"><div id="map" role="application" aria-label="Map of Los Angeles County neighborhoods"></div><div class="legend" id="legend"></div><div id="loading">Unpacking map data…</div></div>
+  <aside class="panel" id="panel" aria-live="polite"><p class="empty">Loading…</p></aside>
+</div>
+<main class="report gutter" id="report"></main>
+
+<script>/*LEAFLET_JS*/</script>
+<script type="application/octet-stream" id="bundle">/*BUNDLE*/</script>
+<script>
+const $ = s => document.querySelector(s);
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmt$ = v => v == null || isNaN(v) ? "–" : v >= 1e9 ? "$" + (v/1e9).toFixed(1) + "B" : v >= 1e6 ? "$" + (v/1e6).toFixed(v >= 1e7 ? 0 : 1) + "M" : v >= 1e3 ? "$" + Math.round(v/1e3) + "k" : "$" + Math.round(v);
+const fmtN = v => v == null || isNaN(v) ? "–" : Math.round(v).toLocaleString();
+const fvpd = v => "$" + (v < 1 ? v.toFixed(2) : v < 10 ? v.toFixed(1) : Math.round(v));
+const CATS = ["Greening", "Parks & recreation", "Transit", "Streets & safety", "Clean streets", "Housing", "Energy", "Environment", "Schools & services", "Amenities & economy", "Zoning"];
+const CAT_COLOR = { "Greening": "--cat-3", "Parks & recreation": "--park-line", "Transit": "--cat-1", "Streets & safety": "--school", "Clean streets": "--warn-ink", "Housing": "--cat-2", "Energy": "--fw-casing", "Environment": "--water-line", "Schools & services": "--seq-5", "Amenities & economy": "--heat-4", "Zoning": "--ink-3" };
+const METRICS = {
+  top_vpd: { label: "Best value per $1", f: p => p.v, unit: fvpd, ramp: "seq" },
+  pkg_cost: { label: "Cost of every project returning ≥ $1 per $1", f: p => p.pc || null, unit: fmt$, ramp: "seq" },
+  value: { label: "Typical home value", f: p => p.hv, unit: fmt$, ramp: "seq" },
+  heat: { label: "Heat vs. county median", f: p => p.ht, unit: v => (v > 0 ? "+" : "") + v.toFixed(1) + "°F", ramp: "heat" },
+  crime: { label: "Violent crimes per 1,000 residents, 12 mo", f: p => p.vc, unit: v => v.toFixed(1), ramp: "heat" },
+  park: { label: "Park acres within ½ mile", f: p => p.pa, unit: v => v.toFixed(1) + " ac", ramp: "seq" },
+  bus: { label: "Buses per hour, busiest stop within 400 m (7–9am)", f: p => p.bt, unit: v => Math.round(v) + "/hr", ramp: "seq" },
+  sites: { label: "Open street-tree sites", f: p => p.ts, unit: v => fmtN(v), ramp: "heat" },
+};
+let D, map, bgs, layers = {}, selected = null, selLayer = null, breaks = [], tiles = null, byId = new Map();
+
+async function unpack() {
+  const bin = Uint8Array.from(atob($("#bundle").textContent.trim()), c => c.charCodeAt(0));
+  return JSON.parse(await new Response(new Blob([bin]).stream().pipeThrough(new DecompressionStream("gzip"))).text());
+}
+const ramp = kind => [0,1,2,3,4,5,6].map(i => css(`--${kind}-${i}`));
+function computeBreaks() {
+  const m = METRICS[$("#metric").value]; if (!m) return [];
+  const v = D.bgs.features.map(f => m.f(f.properties)).filter(x => x != null && !isNaN(x)).sort((a, b) => a - b);
+  return v.length ? [1,2,3,4,5,6].map(i => v[Math.min(v.length - 1, Math.floor(i / 7 * v.length))]) : [];
+}
+function colorFor(p) {
+  const k = $("#metric").value;
+  if (k === "top") return p.t ? css(CAT_COLOR[D.catalog[p.t].category] || "--ink-3") : css("--none");
+  const v = METRICS[k].f(p); if (v == null || isNaN(v)) return css("--none");
+  let i = 0; while (i < breaks.length && v > breaks[i]) i++;
+  return ramp(METRICS[k].ramp)[i];
+}
+const styleBg = f => ({ fillColor: colorFor(f.properties), fillOpacity: tiles ? 0.45 : 0.75, color: css("--block-line"), weight: 0.4 });
+function legend() {
+  const k = $("#metric").value, el = $("#legend");
+  if (k === "top") {
+    const used = new Set(D.bgs.features.map(f => f.properties.t && D.catalog[f.properties.t].category).filter(Boolean));
+    el.innerHTML = `<h4>Best improvement type</h4><div class="cats">${CATS.filter(c => used.has(c)).map(c => `<div><i style="background:${css(CAT_COLOR[c])}"></i>${esc(c)}</div>`).join("")}<div><i style="background:${css("--none")}"></i>Nothing returns $1 per $1</div></div>`;
+    return;
+  }
+  const m = METRICS[k];
+  el.innerHTML = breaks.length ? `<h4>${m.label}</h4><div class="sw">${ramp(m.ramp).map(c => `<i style="background:${c}"></i>`).join("")}</div><div class="ends"><span>${m.unit(breaks[0])}</span><span>${m.unit(breaks[5])}</span></div><div class="note">7 equal-count groups. Gray = no data.</div>`
+    : `<h4>${m.label}</h4><div class="note">No data loaded for this.</div>`;
+}
+
+function drawContext() {
+  Object.values(layers).forEach(l => l && map.removeLayer(l)); layers = {};
+  const L_ = D.layers, on = id => $(id).checked;
+  const noPts = { pointToLayer: (f, ll) => L.circleMarker(ll, { radius: 0, opacity: 0, fillOpacity: 0, interactive: false }) };
+  if (on("#l-parks")) {
+    if (L_.parks) layers.parks = L.geoJSON(L_.parks, { ...noPts, style: { fillColor: css("--park"), fillOpacity: .85, color: css("--park-line"), weight: .5 },
+      onEachFeature: (f, l) => f.properties.n && l.bindTooltip(`${esc(f.properties.n)} · ${f.properties.a} ac`, { sticky: true }) }).addTo(map);
+    if (L_.water) layers.water = L.geoJSON(L_.water, { ...noPts, interactive: false, style: { color: css("--water-line"), weight: 1.8, opacity: .9 } }).addTo(map);
+  }
+  if (on("#l-roads")) {
+    if (L_.arterials) layers.art = L.geoJSON(L_.arterials, { ...noPts, interactive: false, style: { color: css("--road-casing"), weight: 1, opacity: .8 } });
+    if (L_.freeways) { layers.fwC = L.geoJSON(L_.freeways, { ...noPts, interactive: false, style: { color: css("--fw-casing"), weight: 3.6, opacity: .9 } }).addTo(map);
+      layers.fw = L.geoJSON(L_.freeways, { ...noPts, interactive: false, style: { color: css("--fw"), weight: 2.2, opacity: 1 } }).addTo(map); }
+    if (L_.walls) layers.walls = L.geoJSON(L_.walls, { ...noPts, interactive: false, style: { color: css("--ink"), weight: 2, opacity: .8 } });
+  }
+  if (on("#l-transit")) {
+    if (L_.rail) layers.rail = L.geoJSON(L_.rail, { ...noPts, interactive: false, style: { color: css("--rail"), weight: 1.8, dashArray: "6 4", opacity: .9 } }).addTo(map);
+    if (L_.stations) layers.stations = L.geoJSON(L_.stations, { pointToLayer: (f, ll) => L.circleMarker(ll, { radius: 4, color: css("--sheet"), weight: 1.5, fillColor: css("--rail"), fillOpacity: 1 }),
+      onEachFeature: (f, l) => f.properties.n && l.bindTooltip(esc(f.properties.n) + " station") }).addTo(map);
+    if (L_.stops) layers.stops = L.geoJSON(L_.stops, { pointToLayer: (f, ll) => L.circleMarker(ll, { radius: 2.2, weight: 0, fillColor: css("--cat-1"), fillOpacity: .8 }),
+      onEachFeature: (f, l) => l.bindTooltip(`${f.properties.t} buses an hour (7–9am)`) });
+  }
+  if (on("#l-amen") && L_.amenities) {
+    const sym = { "tennis": "T", "pickleball": "P", "basketball": "B", "playground": "▲", "dog park": "D", "pool": "≈", "skate park": "S", "library": "L", "community garden": "G" };
+    layers.amen = L.geoJSON(L_.amenities, { pointToLayer: (f, ll) => L.circleMarker(ll, { radius: 3.5, color: css("--sheet"), weight: 1, fillColor: css("--school"), fillOpacity: 1 }),
+      onEachFeature: (f, l) => l.bindTooltip(`<b>${esc(f.properties.k)}</b>${f.properties.n ? " · " + esc(f.properties.n) : ""}`) });
+  }
+  if (on("#l-hoods") && D.hoods) {
+    layers.hoods = L.geoJSON(D.hoods, { ...noPts, interactive: false, style: { fill: false, color: css("--hood-line"), weight: 1.1, opacity: .5 } });
+    layers.hoodLabels = L.layerGroup((D.hood_labels || []).map(([n, lat, lon]) => L.marker([lat, lon], { interactive: false, keyboard: false, icon: L.divIcon({ className: "", iconSize: null, html: `<div class="lbl-hood" style="transform:translate(-50%,-50%)">${esc(n)}</div>` }) })));
+    layers.cities = L.geoJSON(D.cities, { ...noPts, interactive: false, style: { fill: false, color: css("--hood-line"), weight: 1.8, opacity: .55 } }).addTo(map);
+    layers.cityLabels = L.layerGroup((D.city_labels || []).map(([n, lat, lon]) => L.marker([lat, lon], { interactive: false, keyboard: false, icon: L.divIcon({ className: "", iconSize: null, html: `<div class="lbl-city" style="transform:translate(-50%,-50%)">${esc(n)}</div>` }) })));
+  }
+  zoomed();
+}
+function zoomed() {
+  const z = map.getZoom();
+  const toggle = (l, show) => { if (!l) return; if (show && !map.hasLayer(l)) l.addTo(map); if (!show && map.hasLayer(l)) map.removeLayer(l); };
+  toggle(layers.art, z >= 12); toggle(layers.walls, z >= 14); toggle(layers.stops, z >= 13); toggle(layers.amen, z >= 13);
+  toggle(layers.hoods, z >= 12); toggle(layers.hoodLabels, z >= 13); toggle(layers.cityLabels, z >= 10 && z < 13);
+}
+function restyle() { breaks = computeBreaks(); bgs.setStyle(styleBg); legend(); highlight(); }
+function highlight() {
+  if (selLayer) { map.removeLayer(selLayer); selLayer = null; }
+  const f = byId.get(selected);
+  if (f) selLayer = L.geoJSON(f, { interactive: false, style: { fill: false, color: css("--sel"), weight: 3 } }).addTo(map);
+}
+const tile = (k, v, s) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div>${s ? `<div class="s">${s}</div>` : ""}</div>`;
+const REC_KEYS = ["id", "project", "homes", "cost", "capex", "land", "om", "value", "vpd", "pct", "why", "qol"];
+
+function recCard(r, i, mode) {
+  const c = D.catalog[r.id], ev = String(c.evidence);
+  const head = mode === "value" ? `<span class="vpd">${fvpd(r.vpd)} / $1</span>` : mode === "owner" ? `<span class="vpd">${fvpd(r.vpd)} / $1</span>` : `<span class="vpd none">${mode === "qol" ? "need: " + (r.qol >= .8 ? "high" : r.qol >= .5 ? "medium" : "low") : "policy"}</span>`;
+  const costs = `${fmt$(r.capex)} to build${r.land ? " + " + fmt$(r.land) + " land" : ""}${r.om ? " + " + fmt$(r.om) + "/yr upkeep or operations" : ""}`;
+  return `<div class="rec${i === 0 && mode === "value" ? " top" : ""}${mode === "qol" ? " qolrec" : ""}">
+    <div class="cat">${esc(c.category)}</div>
+    <div class="row1"><span class="nm">${esc(c.name)}</span>${head}</div>
+    <div class="meta">${esc(r.project)} · <b>total ~${fmt$(r.cost)}</b>${r.value > 0 ? ` · adds ~${fmt$(r.value)} to ~${fmtN(r.homes)} homes' value` : ""}<span class="chip${/^strong/.test(ev) ? " strong" : ""}${c.kind === "regional" ? " reg" : ""}">${esc(ev.split(" (")[0])} evidence</span>${c.kind === "regional" ? '<span class="chip reg">regional project</span>' : ""}</div>
+    <details><summary>Why here, cost and sources</summary>
+      <p class="small"><b>Why:</b> ${esc(r.why)}</p>
+      <div class="costline">total = ${costs}${r.om ? " (10 yrs, present value)" : ""}</div>
+      ${r.pct > 0 ? `<p class="small"><b>Price effect used:</b> +${r.pct}% for homes reached${c.years ? `, full effect after ~${c.years} yr (discounted)` : ""}.</p>` : `<p class="small"><b>Home-value effect:</b> not measured in the research, so it is ranked by how much this area needs it, not by value per $1.</p>`}
+      <p class="src muted">${c.sources.map(esc).join("<br>")}</p>
+    </details></div>`;
+}
+
+function select(id, fly) {
+  selected = id; highlight();
+  const f = byId.get(id); if (!f) return;
+  if (fly) map.fitBounds(L.geoJSON(f).getBounds(), { maxZoom: 15, padding: [60, 60] });
+  const p = f.properties, d = D.details[id] || {}, m = d.m || {};
+  const recs = (d.r || []).map(a => Object.fromEntries(REC_KEYS.map((k, i) => [k, a[i]])));
+  const kind = r => D.catalog[r.id].kind;
+  const val = recs.filter(r => kind(r) === "value" || kind(r) === "regional").sort((a, b) => b.vpd - a.vpd);
+  const qol = recs.filter(r => kind(r) === "qol").sort((a, b) => b.qol - a.qol || a.cost - b.cost);
+  const pol = recs.filter(r => kind(r) === "policy"), own = recs.filter(r => kind(r) === "owner").sort((a, b) => b.vpd - a.vpd);
+  const pkg = val.filter(r => r.vpd >= 1 && kind(r) === "value");
+  const top = val.find(r => kind(r) === "value");
+  let h = `<div class="eyebrow">BLOCK GROUP ${esc(id)} · ${esc(p.c)} · ${fmtN(m.acres)} acres</div><h2>${esc(p.n)}</h2>
+    <p class="subname">Name from ${esc(m.ns || "")}${m.csa && m.csa !== p.n ? " · County area: " + esc(m.csa) : ""}</p>`;
+  h += top && top.vpd >= 1 ? `<p class="verdict">Best bet: <b>${esc(D.catalog[top.id].name.toLowerCase())}</b> (${esc(top.project)}). It adds about <b>${fvpd(top.vpd)}</b> of home value for every $1 it costs.</p>`
+    : `<p class="verdict">Nothing here returns $1 of home value per $1 spent. The quality-of-life projects below are still worth a look.</p>`;
+  if (pkg.length) h += `<div class="pkg">${tile("Projects that pay back", pkg.length, "≥ $1 of value per $1")}${tile("Total cost", fmt$(pkg.reduce((s, r) => s + r.cost, 0)), "build + land + 10-yr upkeep")}${tile("Value added", fmt$(pkg.reduce((s, r) => s + r.value, 0)), "nearby homes, combined")}</div>`;
+  h += `<div class="section"><div class="tiles">
+    ${tile("Typical home value", fmt$(m.hv), esc(m.hvs || ""))}
+    ${tile("Homes", fmtN(m.homes), `${m.own != null ? Math.round(m.own) + "% owner-occupied" : ""}`)}
+    ${tile("Heat", m.ht != null ? (m.ht > 0 ? "+" : "") + (+m.ht).toFixed(1) + "°F" : "–", "vs. county median (Tree Equity)")}
+    ${tile("Violent crime", m.vc != null ? (+m.vc).toFixed(1) + " per 1k" : "no data", m.vc != null ? `12 mo · ${esc(m.ag || "")}` : "city has its own police; data not loaded")}
+    ${tile("Parks within ½ mile", m.pa != null ? (+m.pa).toFixed(1) + " ac" : "–", m.pn != null ? `nearest ${fmtN(m.pn)} m` : "")}
+    ${tile("Bus service", m.bt != null ? Math.round(m.bt) + "/hr" : "–", m.rm != null ? `rail ${(m.rm / 1609).toFixed(1)} mi` : "")}
+  </div></div>`;
+  const cats = ["All", ...CATS.filter(c => val.some(r => D.catalog[r.id].category === c))];
+  h += `<div class="section"><h3>Ranked by home value added per $1</h3><div class="cat-tabs" role="group" aria-label="Filter by category">${cats.map((c, i) => `<button type="button" data-cat="${esc(c)}" aria-pressed="${i === 0}">${esc(c)}</button>`).join("")}</div><div class="recs" id="valrecs"></div>
+    <p class="small muted">Value counts every nearby home, not only yours. Effects use the low end of the studies; crime programs use measured crime-to-price links.</p></div>`;
+  if (qol.length) h += `<div class="section"><h3>Quality-of-life projects (no measured price effect)</h3><p class="small muted">Sorted by how much this area needs each one compared with the rest of the county.</p><div class="recs">${qol.map((r, i) => recCard(r, i, "qol")).join("")}</div></div>`;
+  if (pol.length) h += `<div class="section"><h3>Zoning and policy</h3><div class="recs">${pol.map((r, i) => recCard(r, i, "policy")).join("")}</div></div>`;
+  if (own.length) h += `<div class="section"><h3>For an individual homeowner here</h3><div class="recs">${own.map((r, i) => recCard(r, i, "owner")).join("")}</div></div>`;
+  const kv = [], add = (k, v, f = x => x) => { if (v != null && v !== "" && !(typeof v === "number" && isNaN(v))) kv.push(`<span>${k}</span><span>${f(v)}</span>`); };
+  add("Population", m.pop, fmtN); add("Median household income", m.inc, fmt$); add("Median rent", m.rent, v => fmt$(v) + "/mo"); add("Median year built", m.yb, v => Math.round(v));
+  add("Single-family share", m.sf, v => Math.round(v) + "%"); add("Households without a car", m.nocar, v => Math.round(v) + "%");
+  add("Street trees (city survey)", m.st, fmtN); add("Open tree sites", m.ts, fmtN); add("Canopy gap to goal (Tree Equity)", m.tg, v => (+v).toFixed(0) + " pts");
+  add("Property crimes, 12 mo", m.pcr, fmtN); add("Fatal/severe crashes recorded", m.ksi, fmtN); add("Dumping/litter reports, 12 mo (311)", m.dump, fmtN); add("Graffiti reports, 12 mo (311)", m.graf, fmtN);
+  add("Freeway distance", m.fw, v => fmtN(v) + " m"); add("Nearest supermarket", m.gro, v => (v / 1609).toFixed(1) + " mi"); add("Restaurants & cafés within 400 m", m.din, fmtN);
+  add("Nearest public tennis court", m.ten, v => (v / 1609).toFixed(1) + " mi"); add("Nearest dog park", m.dog, v => (v / 1609).toFixed(1) + " mi"); add("Nearest public pool", m.pool, v => (v / 1609).toFixed(1) + " mi");
+  add("Nearest EV fast charger mapped", m.ev, v => (v / 1609).toFixed(1) + " mi");
+  if (kv.length) h += `<div class="section"><h3>Area profile</h3><div class="kv">${kv.join("")}</div></div>`;
+  $("#panel").innerHTML = h; $("#panel").scrollTop = 0;
+  const draw = cat => { const list = val.filter(r => cat === "All" || D.catalog[r.id].category === cat);
+    $("#valrecs").innerHTML = list.length ? list.slice(0, 12).map((r, i) => recCard(r, i, "value")).join("") + (list.length > 12 ? `<details class="more"><summary>${list.length - 12} more</summary><div class="recs">${list.slice(12).map((r, i) => recCard(r, i + 12, "value")).join("")}</div></details>` : "") : `<p class="empty">Nothing in this category applies here.</p>`; };
+  draw("All");
+  $("#panel").querySelectorAll(".cat-tabs button").forEach(b => b.onclick = () => { $("#panel").querySelectorAll(".cat-tabs button").forEach(x => x.setAttribute("aria-pressed", x === b)); draw(b.dataset.cat); });
+}
+
+function report() {
+  const R = D.report || {};
+  let h = `<section><h2>${esc(R.title || "")}</h2>${(R.paragraphs || []).map(p => `<p>${p}</p>`).join("")}</section>`;
+  (R.sections || []).forEach(s => {
+    h += `<section><h2>${esc(s.title)}</h2>${(s.paragraphs || []).map(p => `<p>${p}</p>`).join("")}`;
+    if (s.table) h += `<div class="tablewrap"><table><thead><tr>${s.table.head.map(x => `<th>${esc(x)}</th>`).join("")}</tr></thead><tbody>${s.table.rows.map(r => `<tr>${r.map((c, i) => `<td${s.table.num && s.table.num.includes(i) ? ' class="num"' : ""}>${c}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+    if (s.list) h += `<ul>${s.list.map(x => `<li>${x}</li>`).join("")}</ul>`;
+    h += `</section>`;
+  });
+  $("#report").innerHTML = h;
+}
+
+async function init() {
+  D = await unpack();
+  map = L.map("map", { preferCanvas: true, zoomSnap: 0.5, minZoom: 9, maxZoom: 17 });
+  map.attributionControl.setPrefix(false).addAttribution("© OpenStreetMap contributors · US Census · LA County Assessor · LAPD · LASD · MyLA311 · CHP · LA Metro · city tree surveys · Tree Equity Score");
+  D.bgs.features.forEach(f => byId.set(f.properties.id, f));
+  breaks = computeBreaks();
+  bgs = L.geoJSON(D.bgs, { style: styleBg, onEachFeature: (f, l) => {
+    const p = f.properties;
+    l.bindTooltip(`<b>${esc(p.n)}</b> · ${esc(p.c)}<br>${p.t && p.v >= 1 ? esc(D.catalog[p.t].name) + ": " + fvpd(p.v) + " per $1" : "Nothing returns $1 per $1"}`, { sticky: true });
+    l.on("click", () => select(p.id, false)); } }).addTo(map);
+  drawContext(); legend(); report();
+  const names = new Map();
+  D.bgs.features.slice().sort((a, b) => (b.properties.h || 0) - (a.properties.h || 0)).forEach(f => {
+    const p = f.properties; if (!names.has(p.n)) names.set(p.n, p.id); if (!names.has(p.c)) names.set(p.c, p.id); });
+  $("#names").innerHTML = [...names.keys()].sort().map(n => `<option value="${esc(n)}">`).join("");
+  $("#q").onchange = e => { const id = names.get(e.target.value); if (id) select(id, true); };
+  $("#metric").onchange = restyle;
+  ["#l-roads", "#l-transit", "#l-parks", "#l-amen", "#l-hoods"].forEach(id => $(id).onchange = drawContext);
+  $("#l-tiles").onchange = e => {
+    if (e.target.checked) { const dark = matchMedia("(prefers-color-scheme: dark)").matches && document.documentElement.dataset.theme !== "light";
+      tiles = L.tileLayer(`https://{s}.basemaps.cartocdn.com/${dark ? "dark_all" : "rastertiles/voyager"}/{z}/{x}/{y}{r}.png`, { attribution: "© CARTO", subdomains: "abcd", maxZoom: 19 }).addTo(map); tiles.bringToBack(); }
+    else if (tiles) { map.removeLayer(tiles); tiles = null; }
+    restyle();
+  };
+  map.on("zoomend", zoomed);
+  map.fitBounds(L.geoJSON(D.bgs).getBounds());
+  const start = D.meta.default_bg && byId.has(D.meta.default_bg) ? D.meta.default_bg : D.bgs.features[0].properties.id;
+  select(start, false);
+  map.setView(L.geoJSON(byId.get(start)).getBounds().getCenter(), 12);
+  $("#loading").hidden = true;
+  matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => { drawContext(); restyle(); });
+}
+init().catch(e => { $("#loading").textContent = "Could not open the map data: " + e.message + ". Open this file in a current Chrome, Edge, Safari or Firefox."; });
+</script>
+</body>
+</html>
