@@ -1575,6 +1575,13 @@ def _num(x):
     return pd.to_numeric(x, errors="coerce")
 
 
+def _write_gz(g, name):
+    import gzip
+    with gzip.open(OUT / name, "wt") as f:
+        f.write(re.sub(r"(-?\d+\.\d{5})\d+", r"\1", g.to_json(drop_id=True, default=str)))
+    log(f"  wrote {name} ({len(g)})")
+
+
 def stage_projects():
     rows = []
     # 1. LA City affordable-housing pipeline (LAHD)
@@ -1614,9 +1621,9 @@ def stage_projects():
         path = cached_download(APR_CSV, "hcd_apr_tablea2.csv", 25)
         head = pd.read_csv(path, nrows=0).columns.tolist()
         note("projects", apr_columns=head[:80])
-        want = [c for c in head if re.fullmatch(r"(JURIS_NAME|CNTY_NAME|YEAR|PROJECT_NAME|STREET_ADDRESS|APN|LATITUDE|LONGITUDE|UNIT_CAT|TENURE|"
-                                               r"ENT_APPROVE_DT1|BP_ISSUE_DT1|CO_ISSUE_DT1|NO_ENTITLEMENTS|NO_BUILDING_PERMITS|NO_OTHER_FORMS_OF_READINESS|"
-                                               r"NO_CO|NO_COS|APPROVE_SB35|DENSITY_BONUS_TOTAL)", c, re.I)]
+        want = [c for c in head if re.fullmatch(r"(JURIS_NAME|CNTY_NAME|YEAR|PROJECT_NAME|STREET_ADDRESS|STD_ADDRESS|APN|LATITUDE|LONGITUDE|UNIT_CAT|TENURE|"
+                                               r"ENT_APPROVE_DT1|BP_ISSUE_DT1|CO_ISSUE_DT1|NO_ENTITLEMENTS|NO_BUILDING_PERMITS|CO_.*INCOME.*)", c, re.I)]
+        co_cols = [c for c in want if c.upper().startswith("CO_") and "INCOME" in c.upper()]
         n = 0
         for ch in pd.read_csv(path, usecols=want, chunksize=200000, dtype=str, low_memory=False):
             cn = next((c for c in ch.columns if c.upper() == "CNTY_NAME"), None)
@@ -1628,12 +1635,13 @@ def stage_projects():
                 if not (la == la and lo == lo and 33.3 < la < 35 and -119.2 < lo < -117.4):
                     continue
                 ent, bp = _num(pd.Series([r.get("NO_ENTITLEMENTS")]))[0], _num(pd.Series([r.get("NO_BUILDING_PERMITS")]))[0]
-                co = _num(pd.Series([r.get("NO_CO", r.get("NO_COS"))]))[0]
+                co = float(pd.to_numeric(r[co_cols], errors="coerce").fillna(0).sum()) if co_cols else np.nan
                 stage = "completed" if co == co and co > 0 else "permitted" if bp == bp and bp > 0 else "approved" if ent == ent and ent > 0 else None
                 if not stage:
                     continue
                 units = co if stage == "completed" else bp if stage == "permitted" else ent
                 rows.append({"src": "HCD housing progress report", "kind": f"housing {stage}", "name": r.get("PROJECT_NAME"),
+                             "key": f"{r.get('JURIS_NAME')}|{r.get('STD_ADDRESS') or r.get('STREET_ADDRESS') or r.get('APN')}",
                              "addr": f"{r.get('STREET_ADDRESS') or ''}, {str(r.get('JURIS_NAME') or '').title()}", "stage": stage,
                              "detail": f"{r.get('UNIT_CAT') or ''} {r.get('TENURE') or ''}".strip(), "units": units, "year": r.get("YEAR"), "lat": la, "lon": lo})
                 n += 1
@@ -1644,8 +1652,14 @@ def stage_projects():
         raise RuntimeError("no project feed answered")
     pj = gpd.GeoDataFrame(pd.DataFrame(rows), geometry=gpd.points_from_xy([r["lon"] for r in rows], [r["lat"] for r in rows]), crs=4326)
     pj = pj.drop(columns=["lat", "lon"])
+    # a project appears in each year's report: keep it once, at its furthest stage (completed > permitted > approved)
+    rank = pj.kind.map({"housing completed": 0, "housing permitted": 1, "housing approved": 2}).fillna(3)
+    hcd = pj.src.eq("HCD housing progress report")
+    keep = pj[hcd].assign(_r=rank[hcd], _y=pd.to_numeric(pj.year[hcd], errors="coerce")).sort_values(["_r", "_y"], ascending=[True, False]) \
+        .drop_duplicates("key").drop(columns=["_r", "_y"])
+    pj = gpd.GeoDataFrame(pd.concat([keep, pj[~hcd]], ignore_index=True), crs=4326).drop(columns=["key"], errors="ignore")
     note("projects", total=len(pj), by_kind={k: int(v) for k, v in pj.kind.value_counts().items()})
-    pj.to_file(OUT / "map_projects.geojson", driver="GeoJSON", COORDINATE_PRECISION=5)
+    _write_gz(pj, "map_projects.geojson.gz")
     # 4. Housing Element site inventories: parcels each city has already identified for new homes
     frames = []
     for url, src in ((HE_SCAG, "SCAG Housing Element sites"), (HE_COUNTY, "LA County Housing Element sites")):
@@ -1668,7 +1682,7 @@ def stage_projects():
         he = gpd.GeoDataFrame(pd.concat(frames, ignore_index=True), crs=4326)
         he = he[he.geometry.notna() & he.geom_type.isin(["Polygon", "MultiPolygon"])]
         he["geometry"] = he.to_crs(M).geometry.simplify(2).to_crs(4326)
-        he.to_file(OUT / "map_he_sites.geojson", driver="GeoJSON", COORDINATE_PRECISION=5)
+        _write_gz(he, "map_he_sites.geojson.gz")
         note("projects", he_sites=len(he), he_capacity=float(he.capacity.sum()))
 
 
