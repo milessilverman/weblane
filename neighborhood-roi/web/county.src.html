@@ -71,6 +71,7 @@
     <label><input type="checkbox" id="l-fac" checked> Public facilities</label>
     <details class="fac-pick"><summary class="small">choose types</summary><div id="fac-kinds" class="small"></div></details>
     <label><input type="checkbox" id="l-under" checked> Underused land (parking, golf, vacant)</label>
+    <label><input type="checkbox" id="l-proj" checked> Housing &amp; projects under way</label>
     <label><input type="checkbox" id="l-zone"> Zoning (zoom in)</label>
     <label><input type="checkbox" id="l-amen"> Courts, pools, dog parks</label>
     <label><input type="checkbox" id="l-hoods" checked> Neighborhood lines</label>
@@ -173,6 +174,7 @@ function drawContext() {
   }
   if (on("#l-fac") && L_.facilities) { layers.fac = L.layerGroup(); layers.facArea = L.layerGroup().addTo(map); _fDrawn.clear(); }
   if (on("#l-under") && L_.underused) { layers.under = L.layerGroup().addTo(map); _uDrawn.clear(); }
+  if (on("#l-proj") && L_.projects) layers.proj = L.layerGroup();
   if (on("#l-transit") && L_.rail_con) {
     layers.railCon = L.layerGroup(L_.rail_con.filter(r => r.length === 2).map(([n, e]) => L.polyline(decodeLine(e), { interactive: !!n, color: "#e8590c", weight: 2.4, dashArray: "2 6", opacity: .95 }).bindTooltip(`${n ? esc(n) + " · " : ""}rail under construction`))).addTo(map);
     (L_.stations_con || []).filter(r => r.length === 3).forEach(([n, lat, lon]) => layers.railCon.addLayer(L.circleMarker([lat, lon], { radius: 5, color: "#e8590c", weight: 2, fillColor: css("--sheet"), fillOpacity: 1 }).bindTooltip(`<b>${esc(n)}</b> · station under construction`)));
@@ -191,7 +193,7 @@ function zoomed() {
   const toggle = (l, show) => { if (!l) return; if (show && !map.hasLayer(l)) l.addTo(map); if (!show && map.hasLayer(l)) map.removeLayer(l); };
   toggle(layers.art, z >= 12); toggle(layers.walls, z >= 14); toggle(layers.stops, z >= 13); toggle(layers.amen, z >= 13);
   toggle(layers.hoods, z >= 12); toggle(layers.hoodLabels, z >= 13 && z < 15); toggle(layers.cityLabels, z >= 10 && z < 13);
-  drawStreets(); drawLabels(); drawZoning(); drawFacilities(); drawUnder();
+  drawStreets(); drawLabels(); drawZoning(); drawFacilities(); drawUnder(); drawProjects();
   const zon = zoningOn(); if (bgs && zon !== zoomed._last) { zoomed._last = zon; bgs.setStyle(styleBg); }
 }
 
@@ -322,7 +324,7 @@ function drawFacilities() {
     if (!b.contains([lat, lon])) continue;
     const [col, ch] = FAC_STYLE[kind] || ["#444", "•"];
     layers.fac.addLayer(L.marker([lat, lon], { keyboard: false, icon: L.divIcon({ className: "", iconSize: [14, 14], html: `<div class="fac" style="background:${col}">${ch}</div>` }) })
-      .bindTooltip(`<b>${esc(kind[0].toUpperCase() + kind.slice(1))}</b>${n ? " · " + esc(n) : ""}`));
+      .bindTooltip(`<b>${esc(kind[0].toUpperCase() + kind.slice(1))}</b>${n ? " · " + esc(n) : ""}`).on("click", e => selectAt(e.latlng)));
   }
 }
 
@@ -348,6 +350,25 @@ function drawFacilityAreas() {
   }
 }
 
+// ---------------- work already under way: housing approved/permitted/completed (HCD reports), LA affordable pipeline, new-building permits
+const PJ_STYLE = { "housing completed": "#15803d", "housing permitted": "#2563eb", "housing approved": "#7c3aed", "affordable housing": "#db2777",
+  "new apartments": "#0891b2", "new ADU": "#ca8a04", "new house": "#a16207", "new building": "#64748b" };
+function drawProjects() {
+  if (!map._loaded || !layers.proj) return;
+  layers.proj.clearLayers();
+  const z = map.getZoom();
+  if (z < 13) { if (map.hasLayer(layers.proj)) map.removeLayer(layers.proj); return; }
+  if (!map.hasLayer(layers.proj)) layers.proj.addTo(map);
+  const b = map.getBounds().pad(.1), K = D.layers.pj_kinds; let n = 0;
+  for (const [k, nm, ad, st, u, yr, lat, lon] of D.layers.projects) {
+    if (!b.contains([lat, lon])) continue; if (++n > 1500) break;
+    const kind = K[k], big = u && u >= 10;
+    layers.proj.addLayer(L.circleMarker([lat, lon], { radius: big ? 5 + Math.min(Math.sqrt(u) / 2, 6) : 3.2, color: "#fff", weight: 1, fillColor: PJ_STYLE[kind] || "#666", fillOpacity: .9 })
+      .bindTooltip(`<b>${esc(kind[0].toUpperCase() + kind.slice(1))}</b>${nm ? " · " + esc(nm) : ""}${ad ? "<br>" + esc(ad) : ""}${u ? `<br>${fmtN(u)} home${u > 1 ? "s" : ""}` : ""}${st ? " · " + esc(st) : ""}${yr ? " · " + esc(yr) : ""}`)
+      .on("click", e => selectAt(e.latlng)));
+  }
+}
+
 // ---------------- underused land: parking lots, golf courses, vacant parcels, lightly built commercial lots
 const UCOL = { "parking lot": "#6b7280", "golf course": "#65a30d", "vacant": "#d97706", "lightly built commercial": "#9333ea" };
 const _uDrawn = new Map();
@@ -358,9 +379,10 @@ function siteHtml(s) {
     ${s.lav != null ? `<br>Assessed land value: <b>${fmt$(s.lav)}</b>${s.by ? ` (Prop 13 base from ${s.by})` : ""}` : ""}
     ${s.mkt != null ? `<br>Estimated market land value: <b>~${fmt$(s.mkt)}</b>` : ""}
     <br>Zoning: ${esc(s.z || s.zc || "unknown")}${s.rail != null && s.rail < 805 ? ` · ${(s.rail / 1609).toFixed(2)} mi from ${esc(s.st || "rail")}${s.sts === "coming" ? " (station under construction)" : ""}` : ""}
+    ${s.he != null ? `<br><b>Already planned:</b> this site is in the city's Housing Element inventory${s.he ? ` for ~${fmtN(s.he)} homes` : ""}.` : ""}
     <br><b>Could be:</b> ${esc(s.idea)}
     ${s.margin != null && s.homes ? `<br>Rough development margin: <b>${s.margin >= 0 ? "~" + fmt$(s.margin) : "negative (" + fmt$(s.margin) + ")"}</b> (${fmtN(s.homes)} homes)` : ""}
-    <br><span class="muted">Screening estimate: build cost and new-home prices are assumptions until round-7 research.</span></div>`;
+    <br><span class="muted">Screening estimate: apartment value from LA rents and cap rates, build cost from LA case studies (round-7 research); land prices and fees are estimates.</span></div>`;
 }
 function drawUnder() {
   const U = D.layers.underused; if (!map._loaded || !U || !layers.under) return;
@@ -453,6 +475,10 @@ function pointInFeature(f, lon, lat) {
   return polys.some(([outer, ...holes]) => inRing(outer) && !holes.some(inRing));
 }
 let youMarker = null;
+function selectAt(ll) {
+  const f = D.bgs.features.find(f => pointInFeature(f, ll.lng, ll.lat));
+  if (f && f.properties.id !== selected) select(f.properties.id, false);
+}
 function locateMe(btn) {
   if (!navigator.geolocation) { btn.textContent = "Location not available"; return; }
   btn.textContent = "Finding you…";
@@ -524,6 +550,15 @@ function gapSection(p, m) {
       const all = Object.values(D.under.profit).map(x => x.total).sort((a, b) => b - a), rank = all.indexOf(pf.total) + 1;
       h += `<p class="small"><b>Profit potential:</b> about <b>${fmt$(pf.total)}</b> of value created (${(pf.pct * 100).toFixed(1)}% of the neighborhood's home value, ~${fmt$(pf.per_home)} per home), #${rank} of ${all.length} neighborhoods. ${fmt$(pf.proj)} from projects that pay back, net of cost${pf.land ? `, and ${fmt$(pf.land)} from developing ${pf.sites} underused site${pf.sites > 1 ? "s" : ""} (~${fmtN(pf.site_homes)} homes)` : ""}.${pf.soon && pf.soon.length ? ` Already under way: rail stations under construction nearby (${pf.soon.map(esc).join(", ")}), which usually lift nearby values.` : ""}</p>`;
     }
+    const W = (pf && pf.way) || {}, wl = [];
+    const wu = k => W[k] ? W[k][1] || W[k][0] : 0;
+    if (wu("housing completed")) wl.push(`${fmtN(wu("housing completed"))} homes completed`);
+    if (wu("housing permitted")) wl.push(`${fmtN(wu("housing permitted"))} permitted`);
+    if (wu("housing approved")) wl.push(`${fmtN(wu("housing approved"))} approved`);
+    if (W["affordable housing"]) wl.push(`${W["affordable housing"][0]} city-financed affordable project${W["affordable housing"][0] > 1 ? "s" : ""}`);
+    const nb = ["new apartments", "new ADU", "new house", "new building"].reduce((t, k) => t + (W[k] ? W[k][0] : 0), 0);
+    if (nb) wl.push(`${fmtN(nb)} new-building permits since 2024 (LA City)`);
+    if (wl.length) h += `<p class="small"><b>Already under way:</b> ${wl.join(", ")} (state housing reports since 2021 and city data). Turn on <b>Housing &amp; projects under way</b> to see them.</p>`;
     if ((plan.ctx || []).length) h += plan.ctx.map(c => `<p class="small">${esc(c)}</p>`).join("");
     if ((plan.strong || []).length) h += `<p class="small"><b>Strengths to build on:</b> ${plan.strong.map(x => esc(x[1])).join("; ")}.</p>`;
     h += `<p class="small muted">Steps tackle the gaps shared by the most homes. The first is the cheapest, then the rest are ordered by return. Each is a project City Pretty already sized for the most affected part of the neighborhood. These plans will be rewritten monthly, with an assistant on this page later.</p></div>`;
@@ -706,7 +741,7 @@ async function init() {
   $("#q").onchange = e => { const id = names.get(e.target.value); if (id) select(id, true); };
   $("#metric").onchange = restyle;
   $("#evid").onchange = () => { retop(); restyle(); if (selected) select(selected, false); };
-  ["#l-roads", "#l-transit", "#l-parks", "#l-amen", "#l-hoods", "#l-fac", "#l-zone", "#l-under"].forEach(id => $(id).onchange = drawContext);
+  ["#l-roads", "#l-transit", "#l-parks", "#l-amen", "#l-hoods", "#l-fac", "#l-zone", "#l-under", "#l-proj"].forEach(id => $(id).onchange = drawContext);
   $("#fac-kinds").innerHTML = D.layers.fac_kinds.map((k, i) => `<label style="display:block"><input type="checkbox" data-fk="${i}" checked> <span class="fac" style="display:inline-block;vertical-align:middle;background:${(FAC_STYLE[k] || ["#444"])[0]}">${(FAC_STYLE[k] || ["", "•"])[1]}</span> ${esc(k)}</label>`).join("");
   $("#fac-kinds").querySelectorAll("input").forEach(x => x.onchange = () => { facOn = new Set([...$("#fac-kinds").querySelectorAll("input:checked")].map(y => +y.dataset.fk)); _fDrawn.forEach(l => layers.facArea && layers.facArea.removeLayer(l)); _fDrawn.clear(); drawFacilities(); });
   $("#l-tiles").onchange = e => {
@@ -716,7 +751,7 @@ async function init() {
     restyle();
   };
   map.on("zoomend", zoomed);
-  map.on("moveend", () => { drawStreets(); drawLabels(); drawZoning(); drawFacilities(); drawUnder(); });
+  map.on("moveend", () => { drawStreets(); drawLabels(); drawZoning(); drawFacilities(); drawUnder(); drawProjects(); });
   L.control.scale({ imperial: true, metric: false, maxWidth: 140, position: "bottomleft" }).addTo(map);
   const Loc = L.Control.extend({ options: { position: "topleft" }, onAdd() { const b = L.DomUtil.create("button", "locate"); b.type = "button"; b.textContent = "📍 Find me";
     b.title = "Center the map on where you are and open your block group"; L.DomEvent.disableClickPropagation(b); b.onclick = () => locateMe(b); return b; } });

@@ -5,7 +5,7 @@ Current deliverable: `reports/city-pretty-la-county.html` (V2.3: real EIFD input
 
 ## How it's built
 - Data: `.github/workflows/neighborhood-data.yml` runs `pipeline/county_la.py` stages in GitHub Actions
-  (geo, osm, transit, sales, crime, requests311, crashes, trees, parcels, assets, tra, assessed, basemap, research_check, zoning, underused) and commits
+  (geo, osm, transit, sales, crime, requests311, crashes, trees, parcels, assets, tra, assessed, basemap, research_check, zoning, underused, projects) and commits
   `data/derived/county_la/`. Dispatch with input `county_only=true` to skip the slow tract/Westside jobs, and
   `county_stages=tra,assessed` (comma list) to run only some county stages; the rest keep their last data.
   This sandbox can't reach County/ArcGIS hosts, so data pulls must run in Actions.
@@ -75,6 +75,15 @@ Current deliverable: `reports/city-pretty-la-county.html` (V2.3: real EIFD input
   of cost + positive site margins.
 - Page: per-type facility switches + footprints (z14+), underused layer (z13+, click for details; also selects the
   area), "Profit potential" map color and report ranking, rail under construction in the transit layer.
+
+## Round 7 (done in V2.8)
+- Research: `research/round7/` (honest: H31/H32 Socrata returned data; most other items listed or NR).
+- `projects` stage: HCD APR table A2 (all LA County cities, 2021+; completed homes = sum of CO_* columns; one row per
+  project at its furthest stage), LAHD affordable pipeline (mymu-zi3s), LADBS new-building permits since 2024
+  (pi9x-tg5x), Housing Element sites (SCAG consolidated + County) → `map_projects.geojson.gz`, `map_he_sites.geojson.gz`.
+- `model/underused.py`: apartment value from rents and cap rate, cost from LA hard-cost case studies (round 7 Part I);
+  sites flagged when in a Housing Element inventory; neighborhood "already under way" counts.
+- Still missing: market land sale prices, current fee schedules, official SB 79 layer, Metro project geometry.
 
 ## Next steps
 1. (done) EIFD tax-rate-area data.

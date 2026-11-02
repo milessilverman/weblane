@@ -25,16 +25,46 @@ M = 3310
 DENSITY = {"single-family": 8, "multifamily": 40, "commercial / mixed use": 60, "parking": 40, "other": 20,
            "industrial": 0, "open space / public": 0, "agricultural": 1}
 SB79 = [(402, 100), (805, 60)]          # assumed homes/acre within ¼ and ½ mile of rail (SB 79 tiers vary by station)
-BUILD_COST = {"low": 450_000, "mid": 550_000}  # per home, excluding land (assumption; 2024-25 LA mid-rise ~$500-700k)
-NEW_UNIT_SHARE = 0.6                   # a new apartment/condo is worth ~60% of the area's typical home (smaller units)
-UNIT_PRICE_RANGE = (350_000, 900_000)  # ... and no less or more than this per unit
+# ---- round-7 research inputs (research/round7/partI_profit_inputs.csv); escalation and soft-cost shares are assumptions
+HARD_COST_PSF_2023 = (268 + 295 + 334 + 312) / 4   # I16-I19: LA case-study direct construction cost, 2023 basis
+ESCALATE_2023_2026 = 1.04 ** 3                      # assumption: 4%/yr construction inflation
+SOFT_AND_FINANCE = 0.30                             # assumption: design, permits, financing, developer fee on top of hard cost
+FEES_PER_UNIT = 25_000                              # assumption: impact/school/utility fees (LA fee matrix not recovered, I34-I37)
+UNIT_SQFT = {"apartment": 850, "house": 1_500}
+RENT_2026Q3 = {"studio": 1707, "1br": 2102, "2br": 2680}   # I20-I22: LA average rents, all stock
+NEW_RENT_PREMIUM = 1.15                             # assumption: new buildings rent above the all-stock average
+OPEX_SHARE = 0.35                                   # assumption: operating costs + vacancy as a share of rent
+CAP_RATE = 0.059                                    # I23: LA multifamily cap rate, 2026-Q3
+NEW_UNIT_SHARE = 0.6                                # for-sale houses: new house worth ~60% of the area's typical home ...
+UNIT_PRICE_RANGE = (350_000, 1_200_000)  # ... within this range
 ACTIVE_USE = r"manufactur|mineral|motion picture|nurser|greenhouse|oil|petroleum|refin|quarr|landfill|utilit|cemeter|warehous|lumber|rail"
 GOLF_HOUSING_SHARE = 0.10              # golf courses: only the edge (10%) considered for housing, rest kept as open space
 ASSUMPTIONS = {
-    "density_homes_per_acre": DENSITY, "sb79_homes_per_acre_by_distance_m": SB79, "build_cost_per_home": BUILD_COST,
-    "new_unit_price_share_of_typical_home": NEW_UNIT_SHARE, "new_unit_price_range": UNIT_PRICE_RANGE, "golf_course_share_for_housing": GOLF_HOUSING_SHARE,
+    "density_homes_per_acre": DENSITY, "sb79_homes_per_acre_by_distance_m": SB79,
+    "hard_cost_psf_2023 (round 7, I16-I19 avg)": HARD_COST_PSF_2023, "escalation_2023_2026": round(ESCALATE_2023_2026, 3),
+    "soft_and_finance_share": SOFT_AND_FINANCE, "fees_per_unit": FEES_PER_UNIT, "unit_sqft": UNIT_SQFT,
+    "rents_2026q3 (round 7, I20-I22)": RENT_2026Q3, "new_rent_premium": NEW_RENT_PREMIUM, "opex_share": OPEX_SHARE,
+    "cap_rate (round 7, I23)": CAP_RATE, "house_value_share_of_typical_home": NEW_UNIT_SHARE, "house_value_range": UNIT_PRICE_RANGE, "golf_course_share_for_housing": GOLF_HOUSING_SHARE,
     "market_land": "block-group land value per sq ft: 60% of typical home value over its share of land (or the "
                    "Assessor's vacant-land roll value if higher), clipped to $15-$600/sq ft"}
+
+
+RENT_MED = None
+
+
+def unit_economics(b, houses):
+    """Value and cost of one new home. Apartments: local rent (county average x the area's rent level) -> net income
+    / cap rate. Houses: share of the area's typical home value. Cost: escalated LA hard cost + soft costs + fees."""
+    if houses:
+        price = float(np.clip(float(b.home_value) * NEW_UNIT_SHARE, *UNIT_PRICE_RANGE)) if b.home_value == b.home_value else np.nan
+        sqft = UNIT_SQFT["house"]
+    else:
+        local = float(np.clip((b.median_gross_rent / RENT_MED) if b.median_gross_rent == b.median_gross_rent else 1.0, 0.7, 2.0))
+        rent = (RENT_2026Q3["1br"] + RENT_2026Q3["2br"]) / 2 * NEW_RENT_PREMIUM * local
+        price = rent * 12 * (1 - OPEX_SHARE) / CAP_RATE
+        sqft = UNIT_SQFT["apartment"]
+    cost = HARD_COST_PSF_2023 * ESCALATE_2023_2026 * sqft * (1 + SOFT_AND_FINANCE) + FEES_PER_UNIT
+    return price, cost
 
 
 def land_psf(r):
@@ -84,7 +114,9 @@ def load_sites():
 
 
 def main():
+    global RENT_MED
     d = pd.read_csv(MOD / "bg_scored.csv", dtype={"GEOID": str})
+    RENT_MED = float(d.median_gross_rent.median())
     g = load_sites()
     out_sites, bg_sum = [], {}
     if g is not None and len(g):
@@ -121,6 +153,16 @@ def main():
             pts["rail_m"], pts["station"], pts["st_status"] = sj.rail_m, sj["name"], sj["status"]
         else:
             pts["rail_m"], pts["station"], pts["st_status"] = np.nan, None, None
+        # sites a city's Housing Element already lists for new homes (SCAG consolidated + County inventories)
+        pts["he_cap"] = np.nan
+        if (SRC / "map_he_sites.geojson.gz").exists():
+            he = gpd.read_file(f"/vsigzip/{SRC / 'map_he_sites.geojson.gz'}").to_crs(M)
+            hj = gpd.sjoin(gpd.GeoDataFrame(geometry=gm.geometry, crs=M), he[["capacity", "geometry"]], predicate="intersects", how="left")
+            pts["he_cap"] = hj.groupby(level=0).capacity.sum(min_count=1).reindex(pts.index)
+            pts.loc[hj.groupby(level=0).index_right.count().reindex(pts.index).fillna(0).eq(0), "he_cap"] = np.nan
+            pts["he_any"] = hj.groupby(level=0).index_right.count().reindex(pts.index).fillna(0) > 0
+        else:
+            pts["he_any"] = False
         lpsf = {gid: land_psf(r) for gid, r in dd.iterrows()}
         for i, r in pts.iterrows():
             gid = r.GEOID
@@ -153,8 +195,8 @@ def main():
                 dens = max(dens, sb79)
             usable = ac * (GOLF_HOUSING_SHARE if r.kind == "golf course" else 1.0)
             homes = int(round(usable * dens))
-            price = float(np.clip(float(b.home_value) * NEW_UNIT_SHARE, *UNIT_PRICE_RANGE)) if b.home_value == b.home_value else np.nan
-            cost = BUILD_COST["low" if cat == "single-family" and not sb79 else "mid"]
+            houses = cat == "single-family" and not sb79
+            price, cost = unit_economics(b, houses)
             land_used = mkt * (GOLF_HOUSING_SHARE if r.kind == "golf course" else 1.0) if mkt == mkt else 0
             margin = homes * (price - cost) - land_used if homes and price == price else np.nan
             if r.kind == "golf course":
@@ -179,7 +221,8 @@ def main():
                     "mkt": None if mkt != mkt else round(mkt), "z": r.zone if isinstance(r.zone, str) else None, "zc": cat,
                     "rail": None if rail >= 1e9 else round(rail), "st": r.station if isinstance(r.station, str) else None,
                     "sts": r.st_status if isinstance(r.st_status, str) else None, "homes": homes,
-                    "margin": None if margin != margin else round(margin), "idea": idea, "gid": gid, "i": int(i)}
+                    "margin": None if margin != margin else round(margin), "idea": idea, "gid": gid, "i": int(i),
+                    "he": (round(float(r.he_cap)) if r.he_cap == r.he_cap else 0) if bool(r.get("he_any", False)) else None}
             out_sites.append(site)
             s_ = bg_sum.setdefault(gid, {"n": 0, "ac": 0.0, "homes": 0, "margin": 0.0, "mkt": 0.0})
             s_["n"] += 1
@@ -209,6 +252,16 @@ def main():
     soon = {}
     for gid, nm in rail_soon:
         soon.setdefault(gid, nm)
+    # work already under way: housing approved / permitted / completed since 2021, affordable pipeline, new-building permits
+    way = {}
+    if (SRC / "map_projects.geojson.gz").exists():
+        pj = gpd.read_file(f"/vsigzip/{SRC / 'map_projects.geojson.gz'}").to_crs(M)
+        bgp2 = gpd.read_file(SRC / "map_block_groups.geojson")[["GEOID", "geometry"]].to_crs(M)
+        pj = gpd.sjoin(pj, bgp2, predicate="within", how="inner")
+        for gid, grp_ in pj.groupby("GEOID"):
+            w = way.setdefault(gid, {})
+            for k, sub in grp_.groupby("kind"):
+                w[k] = [int(len(sub)), int(pd.to_numeric(sub.units, errors="coerce").fillna(0).sum())]
     prof = {}
     d = d.copy()
     for hk, grp in d.groupby("hk"):
@@ -217,14 +270,20 @@ def main():
             continue
         a, l_ = float(grp.net_proj.sum()), float(grp.land_margin.sum())
         st_names = sorted({soon[g_] for g_ in grp.GEOID if g_ in soon})
+        uw = {}
+        for g_ in grp.GEOID:
+            for k, (n_, u_) in way.get(g_, {}).items():
+                c_ = uw.setdefault(k, [0, 0])
+                c_[0] += n_
+                c_[1] += u_
         prof[hk] = {"proj": round(a), "land": round(l_), "total": round(a + l_), "pct": round((a + l_) / hv, 4),
                     "per_home": round((a + l_) / max(float(grp.homes.sum()), 1)), "homes": int(grp.homes.sum()),
                     "sites": int(sum(bg_sum.get(g_, {}).get("n", 0) for g_ in grp.GEOID)),
-                    "site_homes": int(sum(bg_sum.get(g_, {}).get("homes", 0) for g_ in grp.GEOID)), "soon": st_names}
+                    "site_homes": int(sum(bg_sum.get(g_, {}).get("homes", 0) for g_ in grp.GEOID)), "soon": st_names, "way": uw}
     bgp_ = {gid: round(float((r.net_proj + r.land_margin) / r.homes_value), 4) for gid, r in d.set_index("GEOID").iterrows()
             if r.homes_value > 0}
     (MOD / "underused.json").write_text(json.dumps({"sites": out_sites, "bg": bg_sum, "profit": prof, "bg_pct": bgp_,
-                                                     "soon": soon, "assumptions": ASSUMPTIONS}, separators=(",", ":"), default=float))
+                                                     "soon": soon, "way": way, "assumptions": ASSUMPTIONS}, separators=(",", ":"), default=float))
     ks = pd.Series([s["k"] for s in out_sites]).value_counts().to_dict() if out_sites else {}
     print(f"{len(out_sites):,} underused sites {ks}; {sum(s['homes'] for s in out_sites):,} homes possible; "
           f"{len(prof):,} neighborhoods ranked; {len(soon):,} block groups within 1.2 km of a station under construction")

@@ -224,6 +224,26 @@ def lines_bundle(name, keep):
     return out
 
 
+PJ_KINDS = ["housing completed", "housing permitted", "housing approved", "affordable housing", "new apartments", "new ADU", "new house", "new building"]
+
+
+def projects_bundle():
+    p = SRC / "map_projects.geojson.gz"
+    if not p.exists():
+        return None
+    g = gpd.read_file(f"/vsigzip/{p}")
+    g = g[g.kind.isin(PJ_KINDS) & g.geometry.notna()]
+    u = pd.to_numeric(g.units, errors="coerce")
+    # single ADUs and houses are counted per neighborhood; the map shows projects of 5+ homes and city-tracked projects
+    g = g[(u >= 5) | g.kind.isin(["affordable housing", "new apartments", "new building"])]
+    txt = lambda v: v if isinstance(v, str) and v.strip() and v.strip().lower() != "nan" else None  # noqa: E731
+    out = []
+    for r in g.itertuples():
+        u = r.units if r.units == r.units else None
+        out.append([PJ_KINDS.index(r.kind), txt(r.name), txt(r.addr), txt(r.stage), int(u) if u else None, txt(str(r.year)), round(r.geometry.y, 5), round(r.geometry.x, 5)])
+    return out
+
+
 def labels(g, col):
     g = g[g[col].notna()].copy()
     g["a"] = g.to_crs(M).area
@@ -311,6 +331,8 @@ def main():
     L["facilities"] = facilities_bundle()
     L["fac_kinds"] = FAC_KINDS
     L["zoning"] = zoning_bundle()
+    L["projects"] = projects_bundle()
+    L["pj_kinds"] = PJ_KINDS
     L["fac_areas"] = facility_areas_bundle()
     under, L["underused"] = underused_bundle()
     L["rail_con"] = lines_bundle("rail_construction", ["name"])
@@ -383,6 +405,15 @@ def main():
         ok_src = [k for k, v in (zs.get("sources") or {}).items() if str(v).startswith("ok")]
         src_rows.append(["Zoning: official city/County layers, SCAG 2019 parcel zoning elsewhere", '<span class="pill ok">loaded</span>' if zs.get("ok") else '<span class="pill miss">partial</span>',
                          f"live layers: {', '.join(ok_src)}; " + (f"SCAG 2019 fills {zs.get('scag_bgs_filled'):,} block groups" if zs.get("scag_bgs_filled") else "SCAG fallback not loaded")])
+    ps = st.get("projects", {})
+    if ps:
+        bk = ps.get("by_kind", {})
+        src_rows.append(["Work under way: HCD housing progress reports (all cities), LAHD affordable pipeline, LADBS new-building permits",
+                         '<span class="pill ok">loaded</span>' if ps.get("ok") else '<span class="pill miss">partial</span>',
+                         "; ".join(f"{k} {v:,}" for k, v in bk.items())])
+        if ps.get("he_sites"):
+            src_rows.append(["Housing Element site inventories (SCAG consolidated + LA County)", '<span class="pill ok">loaded</span>',
+                             f"{ps['he_sites']:,} parcels cities listed for ~{ps.get('he_capacity', 0):,.0f} homes; used to flag underused sites"])
     rc = SRC / "research_check.json"
     if rc.exists():
         rr = json.loads(rc.read_text())["results"]
@@ -447,6 +478,7 @@ def main():
                    "<b>Dollars.</b> Costs are in 2024 dollars (CPI-U) where the source year is known; costs marked as estimates in the caveats have no matched LA record yet.",
                    "<b>EIFD calculator.</b> The base value is the net taxable value on the 2026 Assessor roll for every parcel in the area. City and County shares are the Auditor-Controller's FY 2026-27 tax-increment ratios for the area's actual tax-rate areas, weighted by value. They match the published West Carson plan (County 30.46%) and Pasadena's draft plan (city 21.1%, County 27.9%). Growth, interest and coverage are still your assumptions, and areas already in an EIFD are flagged.",
                    "<b>Round-6 research.</b> Two answers came back. The Part A audit's 14 data links all worked. The long report marked everything 'verified', but only 11 of its 34 links returned data, and some of its tax-credit claims were out of date. So its new improvements are graded <b>U (unverified lead)</b> and hidden unless you pick 'Also show unverified leads'. Its quality-of-life dollar values and homeowner upgrade figures are shown with that label.",
+                   "<b>Round-7 research and profit math.</b> Apartment value = local rent (LA Q3 2026 averages scaled by the area's rents, plus 15% for new buildings) less 35% for costs and vacancy, divided by the 5.9% cap rate. Build cost = LA case-study hard costs ($268-334/sq ft in 2023, escalated 4% a year) plus 30% soft costs and $25k fees. Market land prices, current fee schedules and submarket rents for new buildings were not recovered, so those parts remain estimates.",
                    "<b>Zoning.</b> City of LA and unincorporated County zoning come from the official live layers. Santa Clarita's comes from the city's own layer. Other cities use SCAG's 2019 parcel dataset, which may be out of date. Standards (height, density, setbacks) are listed only for zones the research covered, and need checking against each city's code.",
                    "<b>Policy changes</b> such as rezoning cost the public little to adopt, so no per-dollar return is shown for them.",
                    "<b>Unknowns are left out, not guessed.</b> Where the research has no price effect (pools, crosswalks, litter crews), the item gets no value number. Where a cost isn't on record, the estimate is flagged in its sources."]}]}
