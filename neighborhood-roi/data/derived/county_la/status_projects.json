@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-02T23:07:50.751007+00:00",
+ "generated_at": "2026-11-02T23:14:06.439705+00:00",
  "sources": {
   "projects": {
    "lahd_rows": 616,
@@ -146,11 +146,12 @@
     "STD_ADDRESS",
     "SCORE"
    ],
-   "apr_la_rows": 127484,
-   "total": 140080,
+   "apr_la_rows": 144216,
+   "total": 94399,
    "by_kind": {
-    "housing permitted": 107700,
-    "housing approved": 19784,
+    "housing completed": 43427,
+    "housing permitted": 26936,
+    "housing approved": 11440,
     "new ADU": 6015,
     "new house": 4914,
     "affordable housing": 616,
@@ -220,7 +221,7 @@
    "he_sites": 175336,
    "he_capacity": 265013.57952251995,
    "ok": true,
-   "seconds": 217.4
+   "seconds": 296.5
   }
  }
 }
