@@ -1,0 +1,36 @@
+{
+ "generated_at": "2026-11-02T19:09:20.845545+00:00",
+ "sources": {
+  "zoning": {
+   "sources": {
+    "Los Angeles": "ok: 58,859 polygons from Zoning",
+    "Unincorporated LA County": "ok: 14,537 polygons from ZONE",
+    "Long Beach": "failed: failed: https://gis.longbeach.gov/arcgis/rest/services/DevelopmentServices/Zoning/MapServer/0",
+    "Glendale": "failed: failed: https://gis.glendaleca.gov/arcgis/rest/services/Zoning/MapServer/0",
+    "Pasadena": "failed: failed: https://gis.cityofpasadena.net/arcgis/rest/services/Zoning_Map/FeatureServer/0",
+    "Santa Clarita": "no zone field in ['OBJECTID', 'AREA_FEET', 'PERIMETER_', 'ACRES', 'NEWCODE', 'JURIS', 'TYPE', 'HECTARES', 'Shape__Area', 'Shape__Length']",
+    "Lancaster": "failed: failed: https://gis.cityoflancasterca.gov/arcgis/rest/services/Zoning/MapServer/0",
+    "Palmdale": "failed: failed: https://gis.cityofpalmdale.org/arcgis/rest/services/Public/Zoning/MapServer/0",
+    "Torrance": "failed: failed: https://gis.torranceca.gov/arcgis/rest/services/Public_Services/Torrance_Zoning/MapServer/0",
+    "Pomona": "no zone field in []",
+    "Inglewood": "failed: failed: https://gis.cityofinglewood.org/arcgis/rest/services/Planning/Inglewood_Zoning/MapServer/0",
+    "Burbank": "failed: failed: https://gis.burbankca.gov/arcgis/rest/services/Planning/Zoning/MapServer/0",
+    "Carson": "failed: failed: https://gis.carsonca.gov/arcgis/rest/services/Zoning/MapServer/0"
+   },
+   "polygons": 73390,
+   "bgs_covered": 3331,
+   "categories": {
+    "single-family": 29813,
+    "multifamily": 18130,
+    "commercial / mixed use": 14019,
+    "open space / public": 4381,
+    "industrial": 4236,
+    "other": 1584,
+    "parking": 1225,
+    "agricultural": 8
+   },
+   "ok": true,
+   "seconds": 386.9
+  }
+ }
+}

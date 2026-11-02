@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-02T18:02:07.633778+00:00",
+ "generated_at": "2026-11-02T19:09:32.697398+00:00",
  "sources": {
   "assessed": {
    "all_fields": [
@@ -117,19 +117,16 @@
    ],
    "centroid_fields": true,
    "page": 1000,
-   "tile_errors": {
-    "(np.float64(-118.13125), np.float64(33.84125), np.float64(-117.9675), np.float64(33.9825))": "{'code': 500, 'message': 'Error performing query operation', 'details': []}"
-   },
-   "parcels": 2293103,
+   "parcels": 2431633,
    "roll_years": {
-    "2026.0": 2234670,
+    "2026.0": 2370774,
     "2025.0": 14
    },
-   "net_total": 2042132228845.0,
-   "tras": 9842,
-   "parcels_in_bg": 2292722,
+   "net_total": 2131983941525.0,
+   "tras": 10607,
+   "parcels_in_bg": 2431250,
    "ok": true,
-   "seconds": 965.2
+   "seconds": 776.7
   }
  }
 }
