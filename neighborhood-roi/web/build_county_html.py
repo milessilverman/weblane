@@ -160,8 +160,10 @@ def main():
                  v["evidence"], "<br>".join(v["sources"])] for v in lib.values()]
     st = meta.get("pipeline", {})
     labels_src = {"geo": "Block groups, Census ACS 2020-24, Tree Equity heat, neighborhood names", "osm": "OpenStreetMap amenities, parks, freeways, sound walls, power lines",
-                  "transit": "Bus and rail frequency (GTFS)", "sales": "LA County Assessor recorded sales", "crime": "LAPD, LASD and Santa Monica crime",
-                  "requests311": "MyLA311 service requests (City of LA)", "crashes": "CHP crash records (CCRS)", "trees": "City street-tree surveys"}
+                  "transit": "Bus and rail frequency (GTFS, 19 agencies)", "sales": "LA County Assessor recorded sales", "crime": "LAPD, LASD, Long Beach PD and Santa Monica PD crime",
+                  "requests311": "MyLA311 service requests (City of LA)", "crashes": "CHP crash records (CCRS)", "trees": "City street-tree surveys",
+                  "parcels": "LA County Assessor vacant parcels",
+                  "assets": "Bus lanes, LADWP power lines, streetlights, fire zones, LAUSD green space, EV fast chargers"}
     src_rows = []
     for k, lab in labels_src.items():
         s = st.get(k, {})
@@ -188,7 +190,8 @@ def main():
                {"title": "Read the numbers carefully", "list": [
                    "<b>Value added isn't profit.</b> It sums the gain across every nearby home. An owner captures only their own share.",
                    "<b>Low-end effects.</b> Each price effect is the low end of the best study found. Street trees use City Pretty's own estimate from 3,386 Westside sales. Crime programs are converted to prices with the New York repeat-sales link (1% less violent crime raises prices ~0.12%).",
-                   "<b>Crime coverage.</b> LAPD covers the City of LA, Santa Monica PD covers Santa Monica, and the Sheriff covers unincorporated areas and contract cities. Cities with their own police (Pasadena, Long Beach, Glendale, Culver City and others) show 'no data', and safety programs aren't ranked there.",
+                   "<b>Crime coverage.</b> LAPD covers the City of LA, the Sheriff covers unincorporated areas and contract cities, and Long Beach and Santa Monica police publish their own maps (Santa Monica's public feed stops in May 2024). Other cities with their own police (Pasadena, Glendale, Culver City, Burbank and others) publish no incident data, so they show 'no data' and safety programs aren't ranked there.",
+                   "<b>What the research says isn't worth claiming.</b> LA's own camera evaluations found no crime effect, so cameras carry no price effect. No study prices graffiti or litter removal, so those rank by need, not value per $1. Bus lanes use a modeled share of measured bus-rapid-transit effects.",
                    "<b>Home values</b> come from recorded single-family sales in each block group (2022-24) where there are at least 5, then from the surrounding tract, then from the Census. Census values stop at $2M.",
                    "<b>Regional projects</b> (rail stations, freeway caps) show this area's rough share of a much larger project. Treat them as a signal, not a budget.",
                    "<b>Unknowns are left out, not guessed.</b> Where the research has no price effect (pools, crosswalks, litter crews), the item gets no value number. Where a cost isn't on record, the estimate is flagged in its sources."]}]}
