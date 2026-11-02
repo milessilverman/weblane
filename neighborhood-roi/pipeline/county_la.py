@@ -1357,6 +1357,42 @@ def stage_basemap():
     fac = layer("facilities", "nwr/amenity=school,college,university,library,townhall,fire_station,police,post_office,hospital,clinic,community_centre,courthouse",
                 "nwr/office=government")
     facilities(fac)
+    facility_footprints(fac)
+    # surface parking lots of an acre or more (malls, stores, offices): underused-land candidates
+    try:
+        pl = layer("parking", "wr/amenity=parking")
+        pl = pl[pl.geom_type.isin(["Polygon", "MultiPolygon"])].copy()
+        ptype = pl.get("parking", pd.Series(index=pl.index, dtype=object)).fillna("surface")
+        acc = pl.get("access", pd.Series(index=pl.index, dtype=object)).fillna("")
+        pl = pl[ptype.isin(["surface"])].to_crs(M)
+        pl["geometry"] = pl.geometry.make_valid().simplify(2)
+        pl = pl[pl.geom_type.isin(["Polygon", "MultiPolygon"]) & pl.intersects(county)]
+        pl["sqft"] = (pl.area * 10.7639).round(0)
+        pl = pl[pl.sqft >= 43560]
+        pl.assign(name=pl.get("name"), access=acc.reindex(pl.index))[["name", "access", "sqft", "geometry"]].to_crs(4326) \
+            .to_file(OUT / "map_osm_parking.geojson", driver="GeoJSON", COORDINATE_PRECISION=5)
+        note("basemap", surface_lots_1ac=len(pl), surface_lot_acres=round(float(pl.sqft.sum()) / 43560))
+    except Exception as e:  # noqa: BLE001
+        note("basemap", parking_error=str(e)[:200])
+    # what is already being built: rail lines and stations under construction (OSM)
+    try:
+        rc = layer("railcon", "w/railway=construction", "w/construction=subway,light_rail,rail")
+        rc = rc[rc.geom_type.isin(["LineString", "MultiLineString"])]
+        kind = rc.get("construction", pd.Series(index=rc.index, dtype=object)).fillna(rc.get("construction:railway", pd.Series(index=rc.index, dtype=object)))
+        rc = rc[kind.isin(["subway", "light_rail", "rail"]) | rc.get("railway", pd.Series(index=rc.index)).eq("construction")]
+        rc = rc[rc.to_crs(M).intersects(county)]
+        save_layer(rc.assign(name=rc.get("name"), kind=kind)[["name", "kind", "geometry"]], "rail_construction", tol=10)
+        sc = layer("stationcon", "nwr/construction:railway=station", "nwr/construction=station", "nwr/construction:public_transport=station",
+                   "nwr/railway=construction")
+        sc = sc[sc.get("name", pd.Series(index=sc.index)).notna()].copy()
+        if len(sc):
+            sc["geometry"] = sc.to_crs(M).geometry.representative_point().to_crs(4326)
+            sc = sc[sc.to_crs(M).within(county)]
+            sc = sc[sc.get("railway", pd.Series(index=sc.index)).ne("construction") | sc.geom_type.eq("Point")]
+            save_layer(sc[["name", "geometry"]], "stations_construction")
+        note("basemap", rail_construction_lines=len(rc), stations_construction=len(sc))
+    except Exception as e:  # noqa: BLE001
+        note("basemap", rail_construction_error=str(e)[:200])
 
 
 # ------------------------------------------------------------------ public facilities (schools, libraries, civic buildings)
@@ -1446,6 +1482,86 @@ def facilities(osm_layer):
         sub = out[out.kind == k]
         df[f"fac_{k.replace(' ', '_')}_m"] = nearest_m(sub, k, max_m=30000).values if len(sub) else np.nan
     save(df, "bg_facilities")
+
+
+def facility_footprints(osm_layer):
+    """Ground footprint of each facility: the OSM area mapped for it (school grounds, library building, city hall...)."""
+    o = osm_layer[osm_layer.geom_type.isin(["Polygon", "MultiPolygon"])].copy()
+    tag = (o.get("amenity", pd.Series(index=o.index, dtype=object)).fillna("").astype(str) + " " +
+           o.get("office", pd.Series(index=o.index, dtype=object)).fillna("").astype(str) + " " +
+           o.get("name", pd.Series(index=o.index, dtype=object)).fillna("").astype(str))
+    o["kind"] = [_kind_of(t) for t in tag]
+    o = o[o.kind.notna()].to_crs(M)
+    o["geometry"] = o.geometry.make_valid().simplify(1.5)
+    o = o[o.geom_type.isin(["Polygon", "MultiPolygon"]) & ~o.is_empty]
+    o["acres"] = (o.area / 4046.86).round(2)
+    o = o[o.acres >= 0.02]
+    out = o.assign(name=o.get("name"))[["kind", "name", "acres", "geometry"]].to_crs(4326)
+    out.to_file(OUT / "map_facility_areas.geojson", driver="GeoJSON", COORDINATE_PRECISION=5)
+    note("facilities", footprints=len(out), footprints_by_kind={k: int(v) for k, v in out.kind.value_counts().items()})
+
+
+# ------------------------------------------------------------------ underused land (parking, golf, vacant, lightly built)
+PARCEL_URL = "https://public.gis.lacounty.gov/public/rest/services/LACounty_Cache/LACounty_Parcel/MapServer/0"
+UNDERUSED_QUERIES = [  # kind, where clauses tried in order (the server's SQL support varies)
+    ("parking lot", ["UPPER(UseDescription) LIKE '%PARKING%'", "UseDescription LIKE '%Parking%'"]),
+    ("golf course", ["UPPER(UseDescription) LIKE '%GOLF%'", "UseDescription LIKE '%Golf%'"]),
+    ("vacant", ["UseCode LIKE '%V' AND Shape.STArea() >= 21780", "UseCode LIKE '%V'"]),
+    ("lightly built commercial", ["UseType IN ('Commercial','Industrial') AND Roll_ImpValue < Roll_LandValue * 0.2 AND Shape.STArea() >= 43560",
+                                  "UseType IN ('Commercial','Industrial') AND Roll_ImpValue < Roll_LandValue * 0.2",
+                                  "UseType IN ('Commercial','Industrial') AND Roll_ImpValue < 400000"]),
+]
+
+
+def stage_underused():
+    meta = get(PARCEL_URL, params={"f": "json"}, timeout=90).json()
+    flds = [f["name"] for f in meta.get("fields", [])]
+    areac = next((f for f in flds if re.search(r"shape.*area|starea", f, re.I)), None)
+    want = [f for f in ("AIN", "UseCode", "UseType", "UseDescription", "SitusFullAddress", "SitusAddress", "SitusCity", "Roll_LandValue",
+                        "Roll_ImpValue", "Roll_LandBaseYear", "TaxRateCity") if f in flds]
+    w, s_, e, n = BBOX
+    xs, ys = np.linspace(w, e, 5), np.linspace(s_, n, 5)
+    tiles = [(xs[i], ys[j], xs[i + 1], ys[j + 1]) for i in range(4) for j in range(4)]
+    frames = []
+    for kind, wheres in UNDERUSED_QUERIES:
+        got = None
+        for wh in wheres:
+            try:
+                parts = []
+                for t in tiles:
+                    g = arcgis_all(PARCEL_URL, where=wh, fields=",".join(want), bbox=t, max_rows=300000)
+                    if g is not None:
+                        parts.append(g)
+                got = gpd.GeoDataFrame(pd.concat(parts, ignore_index=True), crs=4326) if parts else None
+                note("underused", **{f"{kind}_where": wh, f"{kind}_rows": 0 if got is None else len(got)})
+                break
+            except Exception as ex:  # noqa: BLE001
+                note("underused", **{f"{kind}_error_{len(wh)}": str(ex)[:160]})
+        if got is None or not len(got):
+            continue
+        got = got.drop_duplicates("AIN")
+        got["kind"] = kind
+        frames.append(got)
+    g = gpd.GeoDataFrame(pd.concat(frames, ignore_index=True), crs=4326) if frames else None
+    if g is None:
+        raise RuntimeError("no underused parcels returned")
+    g = g.drop_duplicates("AIN", keep="first").to_crs(M)
+    g["sqft"] = g.area * 10.7639
+    land = pd.to_numeric(g.get("Roll_LandValue"), errors="coerce")
+    imp = pd.to_numeric(g.get("Roll_ImpValue"), errors="coerce")
+    g["land_av"], g["imp_av"] = land, imp
+    minsq = {"parking lot": 10000, "golf course": 43560, "vacant": 21780, "lightly built commercial": 43560}
+    g = g[g.sqft >= g.kind.map(minsq)]
+    g = g[~((g.kind == "lightly built commercial") & (g.imp_av > 0.2 * g.land_av))]
+    addr = g.get("SitusFullAddress", g.get("SitusAddress"))
+    out = gpd.GeoDataFrame({"kind": g.kind, "ain": g.AIN.astype(str), "use": g.get("UseDescription"), "addr": addr,
+                            "sqft": g.sqft.round(0), "land_av": g.land_av, "imp_av": g.imp_av,
+                            "base_year": pd.to_numeric(g.get("Roll_LandBaseYear"), errors="coerce"), "src": "LA County Assessor"},
+                           geometry=g.geometry.simplify(1.5), crs=M).to_crs(4326)
+    note("underused", sites=len(out), by_kind={k: int(v) for k, v in out.kind.value_counts().items()},
+         acres_by_kind={k: round(float(v) / 43560) for k, v in out.groupby("kind").sqft.sum().items()})
+    out.to_file(OUT / "map_underused.geojson", driver="GeoJSON", COORDINATE_PRECISION=5)
+    log(f"  wrote map_underused.geojson ({len(out)})")
 
 
 # ------------------------------------------------------------------ research endpoint check (round 6)
@@ -1703,7 +1819,8 @@ STAGES = {"geo": stage_geo, "osm": stage_osm, "transit": stage_transit, "sales":
           "requests311": stage_requests311, "crashes": stage_crashes, "trees": stage_trees,
           "parcels": stage_parcels, "assets": stage_assets,
           "tra": stage_tra, "assessed": stage_assessed, "basemap": stage_basemap,
-          "research_check": stage_research_check, "zoning": stage_zoning}
+          "research_check": stage_research_check, "zoning": stage_zoning,
+          "underused": stage_underused}
 
 
 def main():
