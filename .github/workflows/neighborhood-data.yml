@@ -12,6 +12,10 @@ on:
         description: "Comma-separated county FIPS to limit the run (blank = all)"
         required: false
         default: ""
+      county_only:
+        description: "Only rebuild the county-wide (City Pretty v2) data"
+        required: false
+        default: "false"
   schedule:
     - cron: "17 9 3 * *" # monthly
 
@@ -24,6 +28,7 @@ concurrency:
 
 jobs:
   stage:
+    if: github.event.inputs.county_only != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     strategy:
@@ -61,6 +66,7 @@ jobs:
           retention-days: 7
 
   focus:
+    if: github.event.inputs.county_only != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     strategy:
@@ -142,6 +148,7 @@ jobs:
           path: neighborhood-roi/data/derived/
           merge-multiple: true
       - name: Merge
+        if: github.event.inputs.county_only != 'true'
         run: python -u neighborhood-roi/pipeline/build_dataset.py merge
       - name: Commit outputs
         run: |
@@ -152,6 +159,13 @@ jobs:
           # generated files replace whatever is on the branch (never merged line by line)
           git fetch origin "${GITHUB_REF_NAME}"
           git reset --hard "origin/${GITHUB_REF_NAME}"
+          if [ "${{ github.event.inputs.county_only }}" = "true" ]; then
+            # county-only run: keep every other derived file exactly as it is on the branch
+            for d in neighborhood-roi/data/derived/*; do
+              [ "$(basename "$d")" = "county_la" ] && continue
+              rm -rf "$RUNNER_TEMP/derived/$(basename "$d")"; cp -r "$d" "$RUNNER_TEMP/derived/"
+            done
+          fi
           # a focus region whose job failed keeps its last good data instead of being deleted
           for d in neighborhood-roi/data/derived/focus_*; do
             [ -d "$d" ] || continue

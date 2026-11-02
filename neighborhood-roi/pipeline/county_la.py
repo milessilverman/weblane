@@ -395,7 +395,11 @@ def stage_osm():
     # park acres within a half mile of each block group's center
     p = bg_points()
     buf = gpd.GeoDataFrame({"GEOID": p.GEOID}, geometry=p.buffer(805), crs=M)
-    ov = gpd.overlay(buf, pm.loc[parks_main.index, ["geometry"]].assign(geometry=lambda d: d.buffer(0)), how="intersection", keep_geom_type=True)
+    pclean = pm.loc[parks_main.index, ["geometry"]].copy()
+    pclean["geometry"] = pclean.geometry.make_valid().buffer(0)
+    pclean = pclean.explode(index_parts=False)
+    pclean = pclean[pclean.geom_type.isin(["Polygon", "MultiPolygon"]) & ~pclean.is_empty]
+    ov = gpd.overlay(buf, pclean, how="intersection", keep_geom_type=True)
     out["park_acres_half_mile"] = (ov.area / 4046.86).groupby(ov.GEOID).sum().reindex(p.GEOID).fillna(0)
 
     am = layer("amenities",
@@ -540,7 +544,7 @@ def gtfs_stop_freq(name, url):
     return g
 
 
-LA_CITIES_GTFS = r"Los Angeles|Long Beach|Culver|Santa Monica|Pasadena|Glendale|Burbank|Torrance|Gardena|Norwalk|Montebello|Foothill|Covina|Santa Clarita|Lancaster|Palmdale|Antelope|El Monte|Monterey Park|Alhambra|Commerce|Beach Cities|Redondo|Carson|Compton|Downey|Whittier|Bellflower|Lakewood|Cerritos|Huntington Park|West Hollywood|Beverly Hills|Calabasas|Malibu|Glendora|Arcadia|Monrovia|Duarte|Azusa|Baldwin Park|Pomona|Diamond Bar|Inglewood|Hawthorne|Lynwood|South Gate|Bell"
+LA_CITIES_GTFS = r"\b(?:Los Angeles|Long Beach|Culver|Santa Monica|Pasadena|Glendale|Burbank|Torrance|Gardena|Norwalk|Montebello|Foothill|Covina|Santa Clarita|Lancaster|Palmdale|Antelope|El Monte|Monterey Park|Alhambra|Commerce|Beach Cities|Redondo|Carson|Compton|Downey|Whittier|Bellflower|Lakewood|Cerritos|Huntington Park|West Hollywood|Beverly Hills|Calabasas|Malibu|Glendora|Arcadia|Monrovia|Duarte|Azusa|Baldwin Park|Pomona|Diamond Bar|Inglewood|Hawthorne|Lynwood|South Gate|Bell)\b"
 
 
 def mobility_feeds():
@@ -548,12 +552,13 @@ def mobility_feeds():
     p = cached_download("https://files.mobilitydatabase.org/feeds_v2.csv", "mobility_feeds.csv", 7)
     c = pd.read_csv(p, dtype=str)
     c = c[(c.data_type == "gtfs") & (c.get("status", "active").fillna("active") != "deprecated")]
-    sub = c.get("location.subdivision_name", pd.Series("", index=c.index)).fillna("")
-    muni = c.get("location.municipality", pd.Series("", index=c.index)).fillna("")
-    prov = c.get("provider", pd.Series("", index=c.index)).fillna("")
-    c = c[(sub == "California") & (muni.str.contains(LA_CITIES_GTFS, case=False) | prov.str.contains(LA_CITIES_GTFS, case=False))]
-    url = c.get("urls.latest").fillna(c.get("urls.direct_download"))
-    out = [(p_[:60], u) for p_, u in zip(prov, url.reindex(c.index)) if isinstance(u, str) and u.startswith("http")]
+    note("transit", mobility_columns=list(c.columns)[:40])
+    col = lambda n: c[n].fillna("") if n in c.columns else pd.Series("", index=c.index)  # noqa: E731
+    keep = (col("location.subdivision_name") == "California") & (col("location.municipality").str.contains(LA_CITIES_GTFS, case=False)
+                                                              | col("provider").str.contains(LA_CITIES_GTFS, case=False))
+    c = c[keep]
+    url = col("urls.latest").where(col("urls.latest") != "", col("urls.direct_download"))
+    out = [(p_[:60], u) for p_, u in zip(col("provider"), url) if u.startswith("http")]
     note("transit", mobility_feeds=[n for n, _ in out][:60])
     return out
 
@@ -653,7 +658,12 @@ def stage_crime():
             datec = next(k for k in cols if re.search(r"date_occ|dateocc|occ_date|date_occurred|occurred|offense_date|incident_date|date_?time|^date", k, re.I))
             mx = get(f"https://data.lacity.org/resource/{rid}.json", params={"$select": f"max({datec}) as m"}).json()[0]["m"]
             note("crime", **{f"lapd_{rid}_latest": mx[:10], f"lapd_{rid}_cols": cols[:40]})
-            if best is None or mx > best[4]:
+            if re.search(r"2010 to 2019|20\d\d to 20(0|1)\d", c.get("name", "")):
+                continue
+            since_c = (datetime.fromisoformat(mx[:19]) - timedelta(days=365)).strftime("%Y-%m-%dT00:00:00")
+            n = int(get(f"https://data.lacity.org/resource/{rid}.json", params={"$select": "count(*) as n", "$where": f"{datec} > '{since_c}'"}).json()[0]["n"])
+            note("crime", **{f"lapd_{rid}_rows12mo": n})
+            if n > 20000 and (best is None or mx > best[4]):
                 best = (rid, latc, lonc, datec, mx, c["name"])
         except Exception as ex:  # noqa: BLE001
             note("crime", **{f"lapd_{rid}_error": str(ex)[:160]})
@@ -702,12 +712,13 @@ def stage_crime():
                                                                              "num": 20, "f": "json", "sortField": "modified", "sortOrder": "desc"}).json().get("results", [])
             note("crime", lasd_arcgis_candidates=[f"{x.get('title')} | {x.get('url')}" for x in found[:12]])
             since = datetime.now() - timedelta(days=400)
+            best_g = None
             for x in found[:8]:
                 if not x.get("url"):
                     continue
                 u = x["url"].rstrip("/") + "/0"
                 try:
-                    g = arcgis_all(u, max_rows=400000)
+                    g = arcgis_all(u, max_rows=600000)
                     if g is None or len(g) < 1000:
                         continue
                     datec = next((c for c in g.columns if re.search(r"date", c, re.I)), None)
@@ -717,16 +728,21 @@ def stage_crime():
                             note("crime", **{f"lasd_stale_{x.get('title', '')[:30]}": str(dt.max())[:10]})
                             continue
                         g = g[dt >= dt.max() - timedelta(days=365)]
-                    g = g[g.geometry.notna()]
-                    g["geometry"] = g.to_crs(M).geometry.representative_point().to_crs(4326)
-                    txt = rowtext(pd.DataFrame(g.drop(columns="geometry")))
-                    g["violent"], g["property"] = txt.str.contains(VIOLENT), txt.str.contains(PROPERTY)
-                    g["agency"] = "LASD"
-                    frames.append(g[["agency", "violent", "property", "geometry"]])
-                    note("crime", lasd_dataset=f"{x.get('title')} {u}", lasd_rows=len(g))
-                    break
+                        note("crime", **{f"lasd_window_{x.get('title', '')[:30]}": f"{str(dt.min())[:10]} to {str(dt.max())[:10]}"})
+                    note("crime", **{f"lasd_rows_{x.get('title', '')[:30]}": len(g)})
+                    if best_g is None or len(g) > len(best_g[0]):
+                        best_g = (g, x.get("title"), u)
                 except Exception as ex:  # noqa: BLE001
                     note("crime", **{f"lasd_arc_err_{x.get('title', '')[:30]}": str(ex)[:120]})
+            if best_g is not None:
+                g, title, u = best_g
+                g = g[g.geometry.notna()]
+                g["geometry"] = g.to_crs(M).geometry.representative_point().to_crs(4326)
+                txt = rowtext(pd.DataFrame(g.drop(columns="geometry")))
+                g["violent"], g["property"] = txt.str.contains(VIOLENT), txt.str.contains(PROPERTY)
+                g["agency"] = "LASD"
+                frames.append(g[["agency", "violent", "property", "geometry"]])
+                note("crime", lasd_dataset=f"{title} {u}", lasd_rows=len(g))
         except Exception as ex:  # noqa: BLE001
             note("crime", lasd_arcgis_error=str(ex)[:200])
     # Santa Monica (CKAN)
@@ -774,6 +790,7 @@ def stage_crime():
 def stage_requests311():
     cands = [{"id": "b7dx-7gc3", "name": "MyLA311 Service Request Data 2024"}]
     cands = [c for c in socrata_find("data.lacity.org", "MyLA311 Service Request Data") if "311" in c["name"]] + cands
+    cands.sort(key=lambda c: max([int(y) for y in re.findall(r"20\d\d", c["name"])] or [0]), reverse=True)
     cats = {"illegal_dumping": r"ILLEGAL DUMP|BULKY|ABANDONED ITEM|DEAD ANIMAL|LITTER",
             "graffiti": r"GRAFFITI", "streetlight": r"STREETLIGHT|STREET LIGHT|SINGLE STREETLIGHT|MULTIPLE STREETLIGHT",
             "encampment": r"HOMELESS|ENCAMPMENT", "pothole": r"POTHOLE|PAVEMENT", "tree": r"TREE"}
@@ -782,10 +799,11 @@ def stage_requests311():
         try:
             sample = get(f"https://data.lacity.org/resource/{rid}.json", params={"$limit": 1}).json()
             cols = list(sample[0].keys())
-            latc = next(k for k in cols if k.lower() == "latitude")
-            lonc = next(k for k in cols if k.lower() == "longitude")
-            typc = next(k for k in cols if k.lower() in ("requesttype", "request_type", "type"))
-            datec = next(k for k in cols if k.lower() in ("createddate", "created_date", "createddatetime"))
+            note("requests311", **{f"{rid}_cols": cols[:40]})
+            latc = next(k for k in cols if re.search(r"^lat", k, re.I))
+            lonc = next(k for k in cols if re.search(r"^lon|^lng", k, re.I))
+            typc = next(k for k in cols if re.search(r"request_?type|^type$|srtype|service_?type", k, re.I))
+            datec = next(k for k in cols if re.search(r"created", k, re.I))
             mx = get(f"https://data.lacity.org/resource/{rid}.json", params={"$select": f"max({datec}) as m"}).json()[0]["m"]
             since = (datetime.fromisoformat(mx[:19]) - timedelta(days=365)).strftime("%Y-%m-%dT00:00:00")
             df = socrata_rows("data.lacity.org", rid, f"{datec} > '{since}'", select=f"{typc},{latc},{lonc}", max_rows=2_500_000)
