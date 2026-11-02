@@ -235,7 +235,9 @@ def tes_bg():
 
 
 HOOD_LAYERS = [  # (city or source label, ArcGIS layer, preferred name fields)
-    ("Santa Monica", "https://gis.santamonica.gov/server/rest/services/Neighborhood_Organizations/MapServer/0", ("NAME", "Name", "ORG_NAME", "NEIGHBORHOOD")),
+    ("Santa Monica", "https://gis.santamonica.gov/server/rest/services/Neighborhood_Organizations/MapServer/0", ("neighbor", "NEIGHBOR", "NAME", "Name")),
+    ("West Hollywood", "https://gis.weho.org/arcgis/rest/services/NeighborhoodWatchGroups/FeatureServer/0", ("Name", "NAME")),
+    ("Lancaster", "https://maps.cityoflancasterca.org/server/rest/services/Map_Details/MapServer/8", ("name", "NAME", "city_comm_name")),
     ("Pasadena", "https://services2.arcgis.com/zNjnZafDYCAJAbN0/ArcGIS/rest/services/NeighAssocCommunityResources/FeatureServer/23", ("NAME", "Name", "ASSOC_NAME", "NEIGHBORHOOD")),
     ("Long Beach", "https://services6.arcgis.com/yCArG7wGXGyWLqav/arcgis/rest/services/Neighborhoods/FeatureServer/0", ("NAME", "Name", "NEIGHBORHOOD", "NEIGH_NAME")),
     ("Glendale", "https://gismap.glendaleca.gov/arcgis/rest/services/Common/NeighborhoodZones/MapServer/1", ("NAME", "Name", "ZONE_NAME")),
@@ -509,6 +511,21 @@ GTFS = [
     ("LA Metro rail", "https://gitlab.com/LACMTA/gtfs_rail/-/raw/master/gtfs_rail.zip"),
     ("Big Blue Bus", "https://gtfs.bigbluebus.com/current.zip"),
     ("LADOT DASH/Commuter", "https://ladotbus.com/gtfs"),
+    ("Culver CityBus", "https://web.culvercity.org/gtfs/gtfsexport.zip"),
+    ("Foothill Transit", "https://foothilltransit.rideralerts.com/myStop/gtfs-zip.ashx"),
+    ("Torrance Transit", "https://transit.torranceca.gov/gtfs_feed"),
+    ("Norwalk Transit", "https://nts.rideralerts.com/InfoPoint/gtfs-zip.ashx"),
+    ("Montebello Bus Lines", "https://mbl.rideralerts.com/infopoint/gtfs-zip.ashx"),
+    ("Gardena GTrans", "https://ridegtrans.com/gtfs.zip"),
+    ("Santa Clarita Transit", "http://apps.santaclaritatransit.com/rtt/public/utility/gtfs.aspx"),
+    ("Antelope Valley Transit", "https://www.avta.com/userfiles/files/AVTA_GTFS.zip"),
+    ("Pasadena Transit", "https://rt.pasadenatransit.net/rtt/public/resource/gtfs.zip"),
+    ("Glendale Beeline", "https://www.glendaleca.gov/home/showdocument?id=29549"),
+    ("BurbankBus", "https://rideburbankbus.com/gtfs"),
+    ("Commerce Municipal Bus", "https://citycommbus.com/gtfs"),
+    ("El Monte Transit", "https://rapid.nationalrtap.org/GTFSFileManagement/UserUploadFiles/11664/Google_Transit.zip"),
+    ("Long Beach Transit", "https://rapid.nationalrtap.org/GTFSFileManagement/UserUploadFiles/14866/google_transit.zip"),
+    ("Monterey Park Spirit Bus", "https://passio3.com/montereyp/passioTransit/gtfs/google_transit.zip"),
 ]
 
 
@@ -549,38 +566,9 @@ def gtfs_stop_freq(name, url):
     return g
 
 
-LA_CITIES_GTFS = r"\b(?:Los Angeles|Long Beach|Culver|Santa Monica|Pasadena|Glendale|Burbank|Torrance|Gardena|Norwalk|Montebello|Foothill|Covina|Santa Clarita|Lancaster|Palmdale|Antelope|El Monte|Monterey Park|Alhambra|Commerce|Beach Cities|Redondo|Carson|Compton|Downey|Whittier|Bellflower|Lakewood|Cerritos|Huntington Park|West Hollywood|Beverly Hills|Calabasas|Malibu|Glendora|Arcadia|Monrovia|Duarte|Azusa|Baldwin Park|Pomona|Diamond Bar|Inglewood|Hawthorne|Lynwood|South Gate|Bell)\b"
-
-
-def mobility_feeds():
-    """LA-area GTFS feeds listed in the Mobility Database catalog (hosted copies are stable URLs)."""
-    p = cached_download("https://files.mobilitydatabase.org/feeds_v2.csv", "mobility_feeds.csv", 7)
-    c = pd.read_csv(p, dtype=str)
-    c = c[(c.data_type == "gtfs") & (c.get("status", "active").fillna("active") != "deprecated")]
-    note("transit", mobility_columns=list(c.columns)[:40])
-    col = lambda n: c[n].fillna("") if n in c.columns else pd.Series("", index=c.index)  # noqa: E731
-    keep = (col("location.subdivision_name") == "California") & (col("location.municipality").str.contains(LA_CITIES_GTFS, case=False)
-                                                              | col("provider").str.contains(LA_CITIES_GTFS, case=False))
-    c = c[keep]
-    url = col("urls.latest").where(col("urls.latest") != "", col("urls.direct_download"))
-    out = [(p_[:60], u) for p_, u in zip(col("provider"), url) if u.startswith("http")]
-    note("transit", mobility_feeds=[n for n, _ in out][:60])
-    return out
-
-
 def stage_transit():
     frames = []
-    feeds = list(GTFS)
-    try:
-        seen = set()
-        for n, u in mobility_feeds():
-            key = re.sub(r"\W+", " ", n.lower()).strip()
-            if re.search(r"metro|big blue|santa monica|ladot|los angeles department of transportation|amtrak|flex", key) or key in seen:
-                continue
-            seen.add(key)
-            feeds.append((n, u))
-    except Exception as e:  # noqa: BLE001
-        note("transit", mobility_error=str(e)[:200])
+    feeds = list(GTFS)  # explicit agency list; the Mobility Database catalog duplicated feeds
     for name, url in feeds:
         try:
             frames.append(gtfs_stop_freq(name, url))
@@ -658,8 +646,8 @@ def stage_crime():
             sample = get(f"https://data.lacity.org/resource/{rid}.json", params={"$limit": 1}).json()
             cols = list(sample[0].keys())
             note("crime", **{f"lapd_{rid}_cols": cols[:40]})
-            latc = next(k for k in cols if re.search(r"^lat|latitude", k, re.I))
-            lonc = next(k for k in cols if re.search(r"^lon|longitude|^lng", k, re.I))
+            latc = next(k for k in cols if re.search(r"^lat$|latitude|_lat$", k, re.I))
+            lonc = next(k for k in cols if re.search(r"^lon$|longitude|_lon$|^lng$", k, re.I))
             datec = next(k for k in cols if re.search(r"date_occ|dateocc|occ_date|date_occurred|occurred|offense_date|incident_date|date_?time|^date", k, re.I))
             mx = get(f"https://data.lacity.org/resource/{rid}.json", params={"$select": f"max({datec}) as m"}).json()[0]["m"]
             note("crime", **{f"lapd_{rid}_latest": mx[:10], f"lapd_{rid}_cols": cols[:40]})
@@ -676,6 +664,9 @@ def stage_crime():
         rid, latc, lonc, datec, mx, nm = best
         since = (datetime.fromisoformat(mx[:19]) - timedelta(days=365)).strftime("%Y-%m-%dT00:00:00")
         df = socrata_rows("data.lacity.org", rid, f"{datec} > '{since}'")
+        if "caseno" in df.columns:  # NIBRS rows are offenses: keep one row per case, flagged violent if any offense is
+            df = df.assign(_t=rowtext(df.drop(columns=[c for c in df.columns if c in (latc, lonc)])))
+            df = df.groupby("caseno").agg({latc: "first", lonc: "first", "_t": " ".join}).reset_index()
         g = points_from(df, latc, lonc)
         txt = rowtext(g.drop(columns="geometry"))
         g["violent"], g["property"] = txt.str.contains(VIOLENT), txt.str.contains(PROPERTY)
@@ -750,6 +741,17 @@ def stage_crime():
                 note("crime", lasd_dataset=f"{title} {u}", lasd_rows=len(g))
         except Exception as ex:  # noqa: BLE001
             note("crime", lasd_arcgis_error=str(ex)[:200])
+    try:
+        g = arcgis_all("https://services6.arcgis.com/yCArG7wGXGyWLqav/ArcGIS/rest/services/Police_Crime_Mapping/FeatureServer/0", max_rows=200000)
+        g = g[g.geometry.notna()]
+        txt = rowtext(pd.DataFrame(g.drop(columns="geometry")))
+        g["violent"], g["property"] = txt.str.contains(VIOLENT), txt.str.contains(PROPERTY)
+        g["agency"] = "Long Beach PD"
+        g["weight"] = 2.0  # six-month rolling map -> per-year rate
+        frames.append(g[["agency", "violent", "property", "weight", "geometry"]])
+        note("crime", long_beach_rows=len(g))
+    except Exception as ex:  # noqa: BLE001
+        note("crime", long_beach_error=str(ex)[:200])
     # Santa Monica (CKAN)
     try:
         rid = "ff0f4877-3731-4476-b2ca-065f5819bf12"
@@ -780,9 +782,11 @@ def stage_crime():
     if not frames:
         raise RuntimeError("no crime sources")
     allc = gpd.GeoDataFrame(pd.concat(frames, ignore_index=True), geometry="geometry", crs=4326)
+    allc["weight"] = allc.get("weight", pd.Series(1.0, index=allc.index)).fillna(1.0)
     j = gpd.sjoin(allc.to_crs(M), block_groups().to_crs(M)[["GEOID", "geometry"]], predicate="within")
+    j["v_w"], j["p_w"] = j.violent * j.weight, j.property * j.weight
     g = j.groupby("GEOID")
-    out = pd.DataFrame({"crimes": g.size(), "violent_crimes": g.violent.sum(), "property_crimes": g.property.sum(),
+    out = pd.DataFrame({"crimes": g.weight.sum(), "violent_crimes": g.v_w.sum(), "property_crimes": g.p_w.sum(),
                         "crime_agency": g.agency.agg(lambda s: s.mode().iat[0])})
     out = out.reindex(block_groups().GEOID)
     # which block groups are inside a covered agency's area (no records = zero only if covered)
@@ -972,9 +976,84 @@ def stage_parcels():
     note("parcels", vacant_all=len(g), vacant_small_urban=len(small), by_kind={k: int(v) for k, v in g.kind.value_counts().items()})
 
 
+def length_by_bg(lines, name):
+    if lines is None or not len(lines):
+        return pd.Series(dtype=float, name=name)
+    l = lines_only(lines.to_crs(M)[["geometry"]])
+    ov = gpd.overlay(l, block_groups().to_crs(M)[["GEOID", "geometry"]], how="intersection", keep_geom_type=True)
+    return (ov.length / 1000).groupby(ov.GEOID).sum().rename(name)
+
+
+def stage_assets():
+    out = pd.DataFrame({"GEOID": block_groups().GEOID}).set_index("GEOID")
+    jobs = {
+        "bus_lanes": "https://maps.lacity.org/arcgis/rest/services/Mapping/NavigateLA/MapServer/158",
+        "ladwp_overhead": "https://maps.lacity.org/arcgis/rest/services/Mapping/NavigateLA/MapServer/109",
+        "ladwp_underground": "https://maps.lacity.org/arcgis/rest/services/Mapping/NavigateLA/MapServer/110",
+    }
+    for key, url in jobs.items():
+        try:
+            g = arcgis_all(url, max_rows=1_500_000)
+            note("assets", **{f"{key}_rows": 0 if g is None else len(g)})
+            if g is None:
+                continue
+            if key == "bus_lanes":
+                save_layer(g.assign(name=g.get("Proj_Name"))[["name", "geometry"]], "bus_lanes", tol=10)
+                out["bus_lane_nearest_m"] = nearest_m(g, "bl").values
+            else:
+                out[f"{key}_km"] = length_by_bg(g, key)
+        except Exception as e:  # noqa: BLE001
+            note("assets", **{f"{key}_error": str(e)[:200]})
+    try:
+        g = arcgis_all("https://maps.lacity.org/lahub/rest/services/Bureau_of_Street_Lighting/MapServer/0", fields="OBJECTID,STATUS", max_rows=400000)
+        note("assets", streetlights=len(g))
+        out["streetlights"] = count_in_bg(g, "sl")
+    except Exception as e:  # noqa: BLE001
+        note("assets", streetlights_error=str(e)[:200])
+    try:
+        frames = []
+        for u in ("https://services1.arcgis.com/jUJYIo9tSA7EHvfZ/ArcGIS/rest/services/FHSZSRA_23_3/FeatureServer/0",
+                  "https://services1.arcgis.com/jUJYIo9tSA7EHvfZ/arcgis/rest/services/FHSALRA25_v1_All/FeatureServer/0"):
+            g = arcgis_all(u, bbox=BBOX, max_rows=200000)
+            if g is not None:
+                frames.append(g)
+        fz = gpd.GeoDataFrame(pd.concat(frames, ignore_index=True), geometry="geometry", crs=4326)
+        desc = fz.get("FHSZ_Description", fz.get("FHSZ")).astype(str)
+        vh = fz[desc.str.contains("Very High", case=False) | (desc == "3")]
+        vh = vh.to_crs(M)
+        vh["geometry"] = vh.geometry.make_valid()
+        vh = vh[vh.geom_type.isin(["Polygon", "MultiPolygon"])]
+        bgm = block_groups().to_crs(M)[["GEOID", "geometry"]]
+        ov = gpd.overlay(bgm, vh[["geometry"]], how="intersection", keep_geom_type=True)
+        out["fire_vh_share"] = (ov.area.groupby(ov.GEOID).sum() / bgm.set_index("GEOID").area).clip(0, 1)
+        note("assets", fire_polygons=len(fz), very_high=len(vh))
+    except Exception as e:  # noqa: BLE001
+        note("assets", fire_error=str(e)[:200])
+    try:
+        g = arcgis_all("https://services1.arcgis.com/ZIL9uO234SBBPGL7/ArcGIS/rest/services/c2022_LAUSD_Greening_Index_Republished/FeatureServer/89")
+        g["green"] = pd.to_numeric(g.get("Percent_Green_Space"), errors="coerce")
+        low = g[g.green < 15]
+        out["low_green_school_nearest_m"] = nearest_m(low, "lg").values
+        out["lausd_school_green_pct_nearest"] = gpd.sjoin_nearest(bg_points(), g.to_crs(M)[["green", "geometry"]], how="left").drop_duplicates("GEOID").set_index("GEOID").green
+        note("assets", lausd_schools=len(g), low_green=len(low))
+    except Exception as e:  # noqa: BLE001
+        note("assets", lausd_error=str(e)[:200])
+    try:
+        g = arcgis_all("https://services.arcgis.com/xOi1kZaI0eWDREZv/ArcGIS/rest/services/Alternative_Fueling_Stations/FeatureServer/0",
+                       where="fuel_type_code='ELEC' AND state='CA'", bbox=BBOX, max_rows=200000)
+        dc = g[pd.to_numeric(g.get("ev_dc_fast_num"), errors="coerce").fillna(0) > 0]
+        pub = dc[dc.get("access_code", pd.Series("public", index=dc.index)).astype(str).str.lower().eq("public")]
+        out["dcfc_nearest_m"] = nearest_m(pub, "dc").values
+        out["dcfc_within_800m"] = within_m(pub, "dc", 800).values
+        note("assets", ev_stations=len(g), dc_fast_public=len(pub))
+    except Exception as e:  # noqa: BLE001
+        note("assets", afdc_error=str(e)[:200])
+    save(out.reset_index(), "bg_assets")
+
+
 STAGES = {"geo": stage_geo, "osm": stage_osm, "transit": stage_transit, "sales": stage_sales, "crime": stage_crime,
           "requests311": stage_requests311, "crashes": stage_crashes, "trees": stage_trees,
-          "parcels": stage_parcels}
+          "parcels": stage_parcels, "assets": stage_assets}
 
 
 def main():

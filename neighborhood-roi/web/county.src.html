@@ -244,9 +244,7 @@ async function init() {
     l.bindTooltip(`<b>${esc(p.n)}</b> · ${esc(p.c)}<br>${p.t && p.v >= 1 ? esc(D.catalog[p.t].name) + ": " + fvpd(p.v) + " per $1" : "Nothing returns $1 per $1"}`, { sticky: true });
     l.on("click", () => select(p.id, false)); } }).addTo(map);
   drawContext(); legend(); report();
-  const names = new Map();
-  D.bgs.features.slice().sort((a, b) => (b.properties.h || 0) - (a.properties.h || 0)).forEach(f => {
-    const p = f.properties; if (!names.has(p.n)) names.set(p.n, p.id); if (!names.has(p.c)) names.set(p.c, p.id); });
+  const names = new Map(Object.entries(D.meta.search || {}));
   $("#names").innerHTML = [...names.keys()].sort().map(n => `<option value="${esc(n)}">`).join("");
   $("#q").onchange = e => { const id = names.get(e.target.value); if (id) select(id, true); };
   $("#metric").onchange = restyle;

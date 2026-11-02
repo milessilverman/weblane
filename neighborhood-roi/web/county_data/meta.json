@@ -1,5 +1,6 @@
 {
  "ref": {
+  "lights_per_km": 0.0,
   "value": 790007.0,
   "income": 93239.5,
   "violent": 1.912052879412711,
@@ -35,7 +36,8 @@
   "bg_311": true,
   "bg_crashes": true,
   "bg_trees": true,
-  "bg_parcels": true
+  "bg_parcels": true,
+  "bg_assets": false
  },
  "catalog": {
   "street_trees": {
@@ -61,7 +63,7 @@
    "kind": "value",
    "evidence": "limited",
    "sources": [
-    "LAUSD / Green Schoolyards America projects (Pacoima MS 2024: 107 trees, 14,000 sq ft asphalt removed)",
+    "LAUSD 2023: $78.2M for seven campus exterior/greening packages (~$11.2M each, includes paving, fencing, ADA); LAUSD Greening Index 2022 (% green space by campus)",
     "Crompton & Nicholls 2020 review: +8-10% adjacent to passive parks; small-park effect within ~100 m (Laszkiewicz 2022)"
    ],
    "qol": [
@@ -95,7 +97,7 @@
    "evidence": "moderate",
    "sources": [
     "Voicu & Been 2008 (NYC): +1.5 pts at 1,000 ft, larger in poorer areas",
-    "Pasadena Parks Needs Assessment 2016: community garden $300k; Robinson Park rec center $6.3M"
+    "Pasadena Parks Needs Assessment 2016: community garden $300k; LA RAP Hollywood rec center Phase II $16.5M + $2M contingency (2025)"
    ],
    "qol": [
     "food",
@@ -217,7 +219,7 @@
    "kind": "value",
    "evidence": "limited",
    "sources": [
-    "2025 park-attribute study: dog parks positively associated with nearby values (coefficient not recovered)"
+    "Castillo-Castillo et al. 2025 (Twin Cities): dog parks positively associated with nearby values (coefficient not recovered); Beverly Hills 2015 estimate $400-450k for a basic dog park"
    ],
    "qol": [
     "rec"
@@ -231,7 +233,7 @@
    "kind": "qol",
    "evidence": "limited",
    "sources": [
-    "LA CAO 2022 program estimate: $100M capital / $2.08M yearly O&M for new pools"
+    "LA County Hilda L. Solis Aquatic Center: $36.56M revised budget (Oct 2026); LA CAO 2022: $2.08M yearly O&M for the pool program (full per-pool O&M not recovered)"
    ],
    "qol": [
     "heat",
@@ -261,7 +263,7 @@
    "kind": "qol",
    "evidence": "limited",
    "sources": [
-    "LA CAO 2022: skate-park program $30M capital / $800k yearly O&M",
+    "LA County George Lane skate park (Quartz Hill): $2.1M for ~10,000 sq ft (2016); O&M not recovered",
     "Minneapolis 2014 park-facility study: passive features add value; some active/skate facilities lower nearby values"
    ],
    "qol": [
@@ -291,7 +293,7 @@
    "kind": "qol",
    "evidence": "limited",
    "sources": [
-    "Pasadena Parks Needs Assessment 2016: community garden $300k; Robinson Park rec center $6.3M"
+    "Pasadena Parks Needs Assessment 2016: community garden $300k; LA RAP Hollywood rec center Phase II $16.5M + $2M contingency (2025)"
    ],
    "qol": [
     "kids",
@@ -318,11 +320,11 @@
    "name": "Peak-hour bus lanes on the busy corridor",
    "category": "Transit",
    "kind": "value",
-   "evidence": "limited",
+   "evidence": "modeled (from BRT studies)",
    "sources": [
     "Metro Wilshire bus lanes: $31.5M for 9.9 miles (2013); Culver City Robertson bus/bike lanes $1.22M (2025)",
     "Metro Flower St bus lane: buses up to 30% faster",
-    "Beaudoin & Tyndall 2024 (Vancouver WA BRT): +5-7% home prices; FTA Capital Cost Database for BRT costs"
+    "Beaudoin & Tyndall 2024 (Vancouver WA BRT): +5-7% home prices; Metro NoHo-Pasadena BRT $429M / 19 mi = $22.6M per mile; Vermont BRT $33.4M per mile"
    ],
    "qol": [
     "transit"
@@ -336,7 +338,7 @@
    "kind": "value",
    "evidence": "moderate",
    "sources": [
-    "Beaudoin & Tyndall 2024 (Vancouver WA BRT): +5-7% home prices; FTA Capital Cost Database for BRT costs"
+    "Beaudoin & Tyndall 2024 (Vancouver WA BRT): +5-7% home prices; Metro NoHo-Pasadena BRT $429M / 19 mi = $22.6M per mile; Vermont BRT $33.4M per mile"
    ],
    "qol": [
     "transit"
@@ -451,11 +453,10 @@
    "id": "cameras",
    "name": "Security cameras at hot spots",
    "category": "Streets & safety",
-   "kind": "value",
-   "evidence": "moderate (crime) / modeled (value)",
+   "kind": "qol",
+   "evidence": "none in LA evaluations",
    "sources": [
-    "Piza et al. 2019 meta-analysis: CCTV -13% crime; LA Civic Center 2024 quote ~$8,148 per camera; RAP camera upkeep",
-    "Schwartz, Susin & Voicu 2003 (NYC): 1% less violent crime -> +0.116% home prices"
+    "Cameron et al. 2008 (Hollywood and Jordan Downs cameras): no significant crime effect in LA; Piza et al. 2019 meta-analysis -13% elsewhere; LA Civic Center 2024 quote ~$8,148 per camera"
    ],
    "qol": [
     "safety"
@@ -469,7 +470,7 @@
    "kind": "value",
    "evidence": "strong (crime) / modeled (value)",
    "sources": [
-    "Ratcliffe et al. 2011 (Philadelphia RCT): foot patrol -23% violent crime",
+    "Ratcliffe et al. 2011 (Philadelphia RCT): foot patrol -23% violent crime; LAPD officer salary + fringe ~$159k/yr (CAO 2025)",
     "Schwartz, Susin & Voicu 2003 (NYC): 1% less violent crime -> +0.116% home prices"
    ],
    "qol": [
@@ -482,9 +483,9 @@
    "name": "Violence interruption (GRYD-style)",
    "category": "Streets & safety",
    "kind": "value",
-   "evidence": "limited",
+   "evidence": "moderate (LA)",
    "sources": [
-    "LA GRYD budget $41M a year (FY2023-24); Cure Violence review: 32.5% of findings show significant drops",
+    "Brantingham, Tita & Herz 2021 (LA GRYD): violent crime ~-18% per reporting district (95% CI -3.5% to -33%; 625 districts); GRYD budget $41M/yr",
     "Schwartz, Susin & Voicu 2003 (NYC): 1% less violent crime -> +0.116% home prices"
    ],
    "qol": [
@@ -526,10 +527,10 @@
    "id": "graffiti",
    "name": "Fast graffiti removal",
    "category": "Clean streets",
-   "kind": "value",
-   "evidence": "modeled",
+   "kind": "qol",
+   "evidence": "not measured (value)",
    "sources": [
-    "Gibbons 2004 (London): 5 fewer criminal-damage incidents per km2 a year -> +1.56% prices; LA graffiti crews $11.7M / 95 crews"
+    "No causal price effect of graffiti removal found (sourcebook round 3); Gibbons 2004 links criminal damage to prices; LA graffiti crews $11.7M / 95 crews"
    ],
    "qol": [
     "litter"
@@ -543,7 +544,7 @@
    "kind": "value",
    "evidence": "limited",
    "sources": [
-    "Bhandari 2024 (LA): encampments within 0.2 mi -> -1.41% sale prices; RAND Housing for Health: ~20% net public savings"
+    "Bhandari 2024 (LA): encampments within 0.2 mi -> -1.41% sale prices; RAND Housing for Health: $30,458 per participant-year incl. county services"
    ],
    "qol": [
     "safety",
@@ -610,7 +611,7 @@
    "kind": "value",
    "evidence": "moderate",
    "sources": [
-    "LADWP 2019: $2.8M per circuit-mile undergrounding (contracts $2.2-4.5M); CPUC Rule 20: $1.8-6.1M/mile",
+    "LADWP 2019: $2.8M per circuit-mile undergrounding (contracts $2.2-4.5M); CPUC Rule 20: $1.8-6.1M/mile; LADWP overhead/underground line maps (NavigateLA); CAL FIRE hazard zones",
     "McNair & Abelson 2010 (Canberra): underground power +2.9% house prices"
    ],
    "qol": [
@@ -625,7 +626,7 @@
    "kind": "value",
    "evidence": "moderate (possibly overstated)",
    "sources": [
-    "Liang et al. 2023 (14M California sales): +3.3% within 1 km of EV chargers; CARB 2025: 8-port DC fast site $800,473"
+    "Liang et al. 2023 (14M California sales): +3.3% within 1 km of EV chargers; CARB 2025: 8-port DC fast site $800,473; AFDC: maintenance up to $400-800 per charger-year (electricity, network extra); federal AFDC station data"
    ],
    "qol": [
     "ev"
@@ -713,7 +714,7 @@
    "kind": "qol",
    "evidence": "moderate (use) / none (value)",
    "sources": [
-    "Gilpin, Karger & Nencka: library capital spending +21% visits; no detectable home-price change"
+    "Gilpin, Karger & Nencka: library capital spending +21% visits; no detectable home-price change; LA Benjamin Franklin branch renovation $5.5M"
    ],
    "qol": [
     "kids"
@@ -727,7 +728,7 @@
    "kind": "qol",
    "evidence": "moderate",
    "sources": [
-    "Bailey & Goodman-Bacon 2015: community health centers -2% mortality 50+"
+    "Bailey & Goodman-Bacon 2015: community health centers -2% mortality 50+; Via Care East LA clinic $38.8M (25,000 sq ft)"
    ],
    "qol": [
     "health"
@@ -1001,7 +1002,7 @@
     "Santa Monica PD": 7116
    },
    "ok": true,
-   "seconds": 494.3
+   "seconds": 428.4
   },
   "parcels": {
    "fields": [
@@ -1096,7 +1097,7 @@
     "commercial": 8935
    },
    "ok": true,
-   "seconds": 833.4
+   "seconds": 869.5
   },
   "trees": {
    "inventory_cities": [
@@ -1205,7 +1206,7 @@
     "mandarin-orange-trees": 3
    },
    "ok": true,
-   "seconds": 235.3
+   "seconds": 223.3
   },
   "crashes": {
    "candidates": [
@@ -1227,20 +1228,20 @@
    "used_Crashes_2026": 446345,
    "rows": 446345,
    "ok": true,
-   "seconds": 19.9
+   "seconds": 19.2
   },
   "requests311": {
    "2cy6-i7zn_cols": [
     "casenumber",
     "createddate",
     "systemmodstamp",
+    "action_taken__c",
     "department_name__c",
     "type",
     "status",
     "origin",
     "created_by_user_organization",
     "reported_anonymously__c",
-    "assigned_to__c",
     "closeddate",
     "resolution_code__c",
     "locator_gis_returned_address",
@@ -1346,14 +1347,14 @@
     "FEEDBACK": 180
    },
    "ok": true,
-   "seconds": 286.6
+   "seconds": 338.4
   },
   "sales": {
    "rows": 75816,
    "first": "2022-08-15",
    "last": "2024-06-05",
    "ok": true,
-   "seconds": 55.1
+   "seconds": 75.3
   },
   "osm": {
    "parks": 20954,
@@ -1393,7 +1394,7 @@
    "lamps": 40484,
    "resroads": 285979,
    "ok": true,
-   "seconds": 146.8
+   "seconds": 211.9
   },
   "transit": {
    "mobility_columns": [
@@ -1582,7 +1583,7 @@
    "combined_stops": 18221,
    "frequent_stops": 947,
    "ok": true,
-   "seconds": 10.1
+   "seconds": 6.5
   },
   "geo": {
    "acs_vintage": "2020-2024 ACS 5-year, block groups",
@@ -1653,7 +1654,7 @@
     "City boundary (no neighborhood map)": 2
    },
    "ok": true,
-   "seconds": 26.7
+   "seconds": 21.1
   }
  }
 }

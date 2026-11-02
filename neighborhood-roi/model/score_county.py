@@ -45,7 +45,7 @@ S = {  # sources, cited by key in the catalog
     "branas": "Branas et al. 2018 RCT: gun violence -29% in poor neighborhoods",
     "ganduri": "Ganduri & Maturana 2024: neighbors +2.3 pts after REO rehab; Rossi-Hansberg, Sarte & Owens 2010: $2-6 land value per $1",
     "voicu": "Voicu & Been 2008 (NYC): +1.5 pts at 1,000 ft, larger in poorer areas",
-    "pasadena_pna": "Pasadena Parks Needs Assessment 2016: community garden $300k; Robinson Park rec center $6.3M",
+    "pasadena_pna": "Pasadena Parks Needs Assessment 2016: community garden $300k; LA RAP Hollywood rec center Phase II $16.5M + $2M contingency (2025)",
     "crompton": "Crompton & Nicholls 2020 review: +8-10% adjacent to passive parks; small-park effect within ~100 m (Laszkiewicz 2022)",
     "fiftyparks": "LA 50 Parks Initiative: 5,000-20,000 sq ft parks $250k-700k to develop, land extra",
     "albouy": "Albouy, Christensen & Sarmiento-Barbieri: park value falls where homicide risk is high",
@@ -54,16 +54,16 @@ S = {  # sources, cited by key in the catalog
     "pickle": "Redondo Beach Alta Vista 2026: tennis resurfacing + 1 court to 4 pickleball $107,408; Cerritos 2 pickleball courts $134k",
     "pna_bball": "LA County PNA 2016: one full basketball court $436,250",
     "minneapolis": "Minneapolis 2014 park-facility study: passive features add value; some active/skate facilities lower nearby values",
-    "dogpark": "2025 park-attribute study: dog parks positively associated with nearby values (coefficient not recovered)",
-    "rap_pools": "LA CAO 2022 program estimate: $100M capital / $2.08M yearly O&M for new pools",
+    "dogpark": "Castillo-Castillo et al. 2025 (Twin Cities): dog parks positively associated with nearby values (coefficient not recovered); Beverly Hills 2015 estimate $400-450k for a basic dog park",
+    "rap_pools": "LA County Hilda L. Solis Aquatic Center: $36.56M revised budget (Oct 2026); LA CAO 2022: $2.08M yearly O&M for the pool program (full per-pool O&M not recovered)",
     "juntos": "LA RAP Juntos Park splash pad: $642,021 (2017)",
-    "skate": "LA CAO 2022: skate-park program $30M capital / $800k yearly O&M",
+    "skate": "LA County George Lane skate park (Quartz Hill): $2.1M for ~10,000 sq ft (2016); O&M not recovered",
     "turf": "Sunnyvale 2023: natural-grass field $516,150 vs synthetic $2.03M; Culver City PNA field replacement $2.8M",
     "restroom": "LA County Measure A: South LA replacement restroom building $990,000",
     "stap": "LA Sidewalk & Transit Amenities Program: provisional $180,842 per shelter (city memo, 2025)",
     "wilshire": "Metro Wilshire bus lanes: $31.5M for 9.9 miles (2013); Culver City Robertson bus/bike lanes $1.22M (2025)",
     "flower": "Metro Flower St bus lane: buses up to 30% faster",
-    "brt": "Beaudoin & Tyndall 2024 (Vancouver WA BRT): +5-7% home prices; FTA Capital Cost Database for BRT costs",
+    "brt": "Beaudoin & Tyndall 2024 (Vancouver WA BRT): +5-7% home prices; Metro NoHo-Pasadena BRT $429M / 19 mi = $22.6M per mile; Vermont BRT $33.4M per mile",
     "rail": "Debrezion, Pels & Rietveld 2007 meta-analysis: +4.2% residential within station area; Keeler & Stephens 2023 (LA Gold/Expo)",
     "humps": "LADOT 2025: $5,958 per speed hump, up to 25-year life",
     "polloni": "Polloni 2019 (Portland): traffic calming that cuts flow 16% raises treated-street values ~1%",
@@ -73,34 +73,34 @@ S = {  # sources, cited by key in the catalog
     "bsl": "LA Bureau of Street Lighting: ~$5,000 per 50-ft residential lot to build; ~$90 a year upkeep assessment",
     "chalfin": "Chalfin et al. (NYC RCT): street lighting -36% nighttime outdoor index crime",
     "schwartz": "Schwartz, Susin & Voicu 2003 (NYC): 1% less violent crime -> +0.116% home prices",
-    "cctv": "Piza et al. 2019 meta-analysis: CCTV -13% crime; LA Civic Center 2024 quote ~$8,148 per camera; RAP camera upkeep",
-    "ratcliffe": "Ratcliffe et al. 2011 (Philadelphia RCT): foot patrol -23% violent crime",
-    "gryd": "LA GRYD budget $41M a year (FY2023-24); Cure Violence review: 32.5% of findings show significant drops",
+    "cctv": "Cameron et al. 2008 (Hollywood and Jordan Downs cameras): no significant crime effect in LA; Piza et al. 2019 meta-analysis -13% elsewhere; LA Civic Center 2024 quote ~$8,148 per camera",
+    "ratcliffe": "Ratcliffe et al. 2011 (Philadelphia RCT): foot patrol -23% violent crime; LAPD officer salary + fringe ~$159k/yr (CAO 2025)",
+    "gryd": "Brantingham, Tita & Herz 2021 (LA GRYD): violent crime ~-18% per reporting district (95% CI -3.5% to -33%; 625 districts); GRYD budget $41M/yr",
     "bid": "MacDonald et al. 2010 (30 LA BIDs): robbery -12%",
     "litter": "MacDonald et al. 2026 street-cleaning RCT: litter -16%; LA CARE cleanup team ~$1.4M a year",
-    "gibbons": "Gibbons 2004 (London): 5 fewer criminal-damage incidents per km2 a year -> +1.56% prices; LA graffiti crews $11.7M / 95 crews",
-    "bhandari": "Bhandari 2024 (LA): encampments within 0.2 mi -> -1.41% sale prices; RAND Housing for Health: ~20% net public savings",
-    "ladwp": "LADWP 2019: $2.8M per circuit-mile undergrounding (contracts $2.2-4.5M); CPUC Rule 20: $1.8-6.1M/mile",
+    "gibbons": "No causal price effect of graffiti removal found (sourcebook round 3); Gibbons 2004 links criminal damage to prices; LA graffiti crews $11.7M / 95 crews",
+    "bhandari": "Bhandari 2024 (LA): encampments within 0.2 mi -> -1.41% sale prices; RAND Housing for Health: $30,458 per participant-year incl. county services",
+    "ladwp": "LADWP 2019: $2.8M per circuit-mile undergrounding (contracts $2.2-4.5M); CPUC Rule 20: $1.8-6.1M/mile; LADWP overhead/underground line maps (NavigateLA); CAL FIRE hazard zones",
     "mcnair": "McNair & Abelson 2010 (Canberra): underground power +2.9% house prices",
-    "ev": "Liang et al. 2023 (14M California sales): +3.3% within 1 km of EV chargers; CARB 2025: 8-port DC fast site $800,473",
+    "ev": "Liang et al. 2023 (14M California sales): +3.3% within 1 km of EV chargers; CARB 2025: 8-port DC fast site $800,473; AFDC: maintenance up to $400-800 per charger-year (electricity, network extra); federal AFDC station data",
     "microgrid": "LA County CPUC filing 2021: community microgrids $3.25-3.6M each",
     "solar": "Berkeley Lab 2015: ~$4/W premium for owned solar; DOE 2025 benchmark $2.95/W installed",
     "adu": "Brueckner et al. 2024 (LA): ADU raises host parcel +9.2% (95% CI 6.6-11.9); Tanrisever 2025: neighbors -3% per +0.5 pt ADU density within 300 m; LA County median ADU cost $100k (2020)",
     "moretti": "Moretti & Wheeler 2025: new noise barrier +6.8% within 100 m; Caltrans soundwall costs",
     "cap": "Klyde Warren Park cap $110M for 5 acres (2012); Hollywood Central Park proposal $250M + $780k a year",
-    "schoolgreen": "LAUSD / Green Schoolyards America projects (Pacoima MS 2024: 107 trees, 14,000 sq ft asphalt removed)",
+    "schoolgreen": "LAUSD 2023: $78.2M for seven campus exterior/greening packages (~$11.2M each, includes paving, fencing, ADA); LAUSD Greening Index 2022 (% green space by campus)",
     "cellini": "Cellini, Ferreira & Rothstein 2010 (California school bonds): +6% prices; >= $1.50 home value per $1 of school capital",
     "grocery": "Worcester DiD: +7% within 400 m, +4% at 400-800 m after a grocery opens; Saengchote 2020: Whole Foods +6.7%",
     "parklet": "SF Controller: parklet businesses +29% revenue; LA Al Fresco corridors +$12M sales",
     "retail": "Ghorbani & Meltzer 2024 (NYC): more nearby retail raises 1-4 family values, lowers condo values; Teh 2007 (LA): liquor stores raise nearby crime",
     "market": "Farmers-market studies (Maryland 2020; Edmonton 2024): positive, inverted-U with distance",
-    "library": "Gilpin, Karger & Nencka: library capital spending +21% visits; no detectable home-price change",
+    "library": "Gilpin, Karger & Nencka: library capital spending +21% visits; no detectable home-price change; LA Benjamin Franklin branch renovation $5.5M",
     "lihtc": "Diamond & McQuade 2019: LIHTC +6.5% within 0.1 mi in low-income areas, -2.5% in high-income; LA HHH ~$597k per unit",
     "upzone": "Kuhlmann 2021 (Minneapolis): +3-5% affected single-family prices; Kestelman 2025 (LA TOC); HCD SB 79 (eff. July 2026)",
     "coolpave": "Pacoima / Covina cool-pavement studies: surface -5 C, air -0.2 to -1.9 C; Middel 2020: midday radiant heat +4 C for pedestrians",
     "greenalley": "Avalon Green Alley North phase II (2015): $1.83M",
     "filters": "Gilraine 2020 (LA, Porter Ranch): classroom air filters raised test scores",
-    "clinic": "Bailey & Goodman-Bacon 2015: community health centers -2% mortality 50+",
+    "clinic": "Bailey & Goodman-Bacon 2015: community health centers -2% mortality 50+; Via Care East LA clinic $38.8M (25,000 sq ft)",
 }
 
 # id, name, category, kind, evidence, sources, qol dims (need scores that make it matter), years to full effect
@@ -123,7 +123,7 @@ CAT = [
     ("sports_field", "Natural-grass sports field", "Parks & recreation", "qol", "limited", ["turf"], ["kids", "rec"], 0),
     ("rec_center", "Recreation center", "Parks & recreation", "qol", "limited", ["pasadena_pna"], ["kids", "rec"], 0),
     ("restroom", "Park restroom and drinking fountains", "Parks & recreation", "qol", "limited", ["restroom"], ["parks"], 0),
-    ("bus_lane", "Peak-hour bus lanes on the busy corridor", "Transit", "value", "limited", ["wilshire", "flower", "brt"], ["transit"], 1),
+    ("bus_lane", "Peak-hour bus lanes on the busy corridor", "Transit", "value", "modeled (from BRT studies)", ["wilshire", "flower", "brt"], ["transit"], 1),
     ("brt", "Bus rapid transit (stations, lanes, signal priority)", "Transit", "value", "moderate", ["brt"], ["transit"], 2),
     ("rail_station", "New rail station (regional project, local share)", "Transit", "regional", "strong", ["rail"], ["transit"], 5),
     ("bus_shelters", "Bus shelters with shade at busy stops", "Transit", "qol", "limited", ["stap"], ["heat", "transit"], 0),
@@ -132,12 +132,12 @@ CAT = [
     ("road_diet", "Road diet with protected bike lanes", "Streets & safety", "qol", "moderate", ["wilshire", "fhwa"], ["traffic"], 0),
     ("sidewalks", "Repair broken sidewalks", "Streets & safety", "qol", "limited", ["sidewalk"], ["walk"], 0),
     ("street_lighting", "Brighter pedestrian street lighting", "Streets & safety", "value", "strong (crime) / modeled (value)", ["chalfin", "bsl", "schwartz"], ["safety"], 0),
-    ("cameras", "Security cameras at hot spots", "Streets & safety", "value", "moderate (crime) / modeled (value)", ["cctv", "schwartz"], ["safety"], 0),
+    ("cameras", "Security cameras at hot spots", "Streets & safety", "qol", "none in LA evaluations", ["cctv"], ["safety"], 0),
     ("foot_patrol", "Foot patrols on hot-spot blocks", "Streets & safety", "value", "strong (crime) / modeled (value)", ["ratcliffe", "schwartz"], ["safety"], 0),
-    ("violence_interruption", "Violence interruption (GRYD-style)", "Streets & safety", "value", "limited", ["gryd", "schwartz"], ["safety"], 1),
+    ("violence_interruption", "Violence interruption (GRYD-style)", "Streets & safety", "value", "moderate (LA)", ["gryd", "schwartz"], ["safety"], 1),
     ("bid", "Business improvement district (cleaning, ambassadors)", "Streets & safety", "value", "moderate (crime) / modeled (value)", ["bid", "schwartz"], ["safety", "litter"], 1),
     ("litter", "Weekly litter and illegal-dumping cleanup", "Clean streets", "qol", "moderate (litter) / not measured (value)", ["litter"], ["litter"], 0),
-    ("graffiti", "Fast graffiti removal", "Clean streets", "value", "modeled", ["gibbons"], ["litter"], 0),
+    ("graffiti", "Fast graffiti removal", "Clean streets", "qol", "not measured (value)", ["gibbons"], ["litter"], 0),
     ("encampment", "Housing-first outreach for encampments", "Clean streets", "value", "limited", ["bhandari"], ["safety", "litter"], 1),
     ("blight_rehab", "Rehab or replace blighted homes", "Housing", "value", "strong", ["ganduri"], ["blight"], 2),
     ("affordable_housing", "Affordable housing on underused land", "Housing", "value", "moderate", ["lihtc"], ["housing"], 3),
@@ -169,7 +169,7 @@ def load():
     if d is None:
         raise SystemExit("county data not built yet")
     status = {}
-    for name in ("bg_osm", "bg_transit", "bg_crime", "bg_311", "bg_crashes", "bg_trees", "bg_parcels"):
+    for name in ("bg_osm", "bg_transit", "bg_crime", "bg_311", "bg_crashes", "bg_trees", "bg_parcels", "bg_assets"):
         x = rd(name)
         status[name] = x is not None
         if x is not None:
@@ -181,6 +181,14 @@ def load():
     for p in SRC.glob("status_*.json"):
         st.update(json.loads(p.read_text())["sources"])
     return d, sales, status, st
+
+
+def clean_codes(d):
+    """Some city layers use codes (e.g. 'AOC7') instead of names: treat those as unnamed."""
+    bad = d.hood.astype(str).str.fullmatch(r"[A-Za-z]{1,4}\s?\d+[A-Za-z]?") | d.hood.isna()
+    d.loc[bad, "hood"] = d.loc[bad, "city"]
+    d.loc[bad, "hood_source"] = "City boundary (no neighborhood map)"
+    return d
 
 
 def refine_names(d):
@@ -235,6 +243,14 @@ def home_values(d, sales):
         src = src.where(~use_tr, "median of recorded home sales in the surrounding Census tract, 2022-24")
         # Census medians stop at $2M: if no sales, keep $2M as a floor and say so
         src = src.where(~(d.acs_topcoded & ~use_bg & ~use_tr), "Census median (capped at $2M+; true value higher)")
+    # last resort for block groups with neither sales nor a Census median: nearby block groups
+    for key, label in ((d.GEOID.str[:11], "tract"), (d.hood, "neighborhood"), (d.city, "city")):
+        fill = v.isna() & d.housing_units.gt(0)
+        if not fill.any():
+            break
+        med = v.groupby(key).transform("median")
+        src = src.where(~(fill & med.notna()), f"estimated from the surrounding {label}")
+        v = v.where(~fill, med)
     d["home_value"], d["value_source"] = v, src
     rent_val = d.median_gross_rent * 12 / 0.045  # rental unit value at a 4.5% gross yield
     own = d.owner_units.fillna(0)
@@ -255,8 +271,9 @@ def prep(d, crime_agencies):
     d["other_vacant_rate"] = d.vacant_other_units / d.homes.replace(0, np.nan)
     has = lambda a: any(a in k for k in crime_agencies)  # noqa: E731
     city = d.city.fillna("")
-    lapd, lasd, sm = has("LAPD"), has("LASD"), has("Santa Monica")
-    d["crime_covered"] = ((city == "Los Angeles") & lapd) | ((city == "Santa Monica") & sm) | ((~city.isin(OWN_POLICE)) & lasd)
+    lapd, lasd, sm, lb = has("LAPD"), has("LASD"), has("Santa Monica"), has("Long Beach")
+    d["crime_covered"] = (((city == "Los Angeles") & lapd) | ((city == "Santa Monica") & sm) | ((city == "Long Beach") & lb)
+                          | ((~city.isin(OWN_POLICE)) & lasd))
     for c in ("crimes", "violent_crimes", "property_crimes"):
         if c not in d:
             d[c] = np.nan
@@ -273,7 +290,12 @@ def prep(d, crime_agencies):
         if c not in d:
             d[c] = np.nan
     # county reference points
-    ref = {"value": d.home_value.median(), "income": d.median_household_income.median(),
+    if "streetlights" in d:
+        sk = np.maximum(d.get("res_street_km", 0).fillna(0), 14 * d.area_km2)
+        ref_l = (d.streetlights / sk.clip(lower=0.1))[d.streetlights > 0].median()
+    else:
+        ref_l = 0
+    ref = {"lights_per_km": ref_l, "value": d.home_value.median(), "income": d.median_household_income.median(),
            "violent": d.loc[d.crime_covered, "violent_per_1k"].median(), "other_vacant": d.other_vacant_rate.median()}
 
     def pct(s, invert=False):
@@ -353,9 +375,15 @@ def size_projects(r, ref, tree_rate):
             why=f"{how}; each tree lifts ~{hn:.0f} homes within 50 m by {TREE_50M_PCT}% (local sales estimate, low end)")
 
     # --- schoolyard greening
-    if g(r, "school_nearest_m") < 400 and (g(r, "tc_gap", 0) > 15 or heat > 1):
-        add("schoolyard_green", 1, "1 campus, ~1 acre of asphalt replaced", reach(400, dens, H), 0.01, 1_500_000, 15_000,
-            why="public school within 400 m in a hot, low-canopy area; open after hours as a park", fit=0.8)
+    lg = g(r, "low_green_school_nearest_m")
+    school_ok = lg < 400 if lg == lg else (g(r, "school_nearest_m") < 400 and (g(r, "tc_gap", 0) > 15 or heat > 1))
+    if school_ok:
+        gp = g(r, "lausd_school_green_pct_nearest")
+        gp_txt = f" (nearest campus {gp:.0f}% green)" if gp == gp else ""
+        add("schoolyard_green", 1, "1 campus exterior and greening package", reach(400, dens, H), 0.01, 11_200_000, 15_000,
+            why=(f"LAUSD campus within 400 m with under 15% green space{gp_txt} (Greening Index 2022)" if lg == lg else
+                 "public school within 400 m in a hot, low-canopy area") + "; open after hours as a park. Cost is LAUSD's bundled package, so it overstates greening alone",
+            fit=0.8)
 
     # --- blight: vacant lots (Assessor vacant parcels) and long-vacant homes, only below county median values and incomes
     ov = g(r, "vacant_other_units", 0)
@@ -366,11 +394,13 @@ def size_projects(r, ref, tree_rate):
         lots = int(min(15, vlots))
         avg_sqft = float(np.clip(g(r, "vacant_sqft", 5000 * vlots) / max(vlots, 1), 1500, 20000))
         blight = r.in_311 and dump_d > 300  # the Philadelphia effect is for trash-strewn, overgrown lots
+        if not blight:
+            lots = 0  # no sign these lots are blighted: greening them has no measured effect
         homes = min(H, lots * reach(100, dens, H) / max(1, lots ** 0.5))
-        add("vacant_lot_green", lots, f"{lots} vacant lots (~{avg_sqft:,.0f} sq ft each) cleaned, fenced and greened", homes, 0.043 if blight else 0.01,
+        add("vacant_lot_green", lots, f"{lots} vacant lots (~{avg_sqft:,.0f} sq ft each) cleaned, fenced and greened", homes, 0.043,
             1.6 * avg_sqft * lots, 0.32 * avg_sqft * lots,
             why=f"{int(vlots)} small vacant parcels on the Assessor roll; values and incomes below county median"
-                + ("; heavy dumping reported, so the full blight effect applies" if blight else "; no sign of heavy dumping, so a reduced 1% effect is used"),
+                + f"; {dump_d:,.0f} illegal-dumping reports per km² a year, so these lots are likely blighted",
             fit=0.7)
     if low and g(r, "other_vacant_rate", 0) > max(2 * ref["other_vacant"], 0.05) and ov >= 8:
         houses = int(min(8, max(1, ov * 0.2)))
@@ -407,22 +437,22 @@ def size_projects(r, ref, tree_rate):
         add("basketball", 1, "1 full court", reach(800, dens, H), 0, 580_000, 3_000,
             why=f"nearest public basketball court {g(r, 'basketball_nearest_m', 0):,.0f} m away")
     if g(r, "dog_park_nearest_m") > 2000 and dens > 0.0025:
-        add("dog_park", 1, "0.5-acre dog park in an existing park", reach(400, dens, H), 0.0025, 350_000, 15_000,
+        add("dog_park", 1, "0.5-acre dog park in an existing park", reach(400, dens, H), 0.0025, 580_000, 15_000,
             why=f"nearest dog park {g(r, 'dog_park_nearest_m', 0)/1609:,.1f} mi away; dense area")
     if g(r, "pool_nearest_m") > 3000 and dens > 0.002:
-        add("pool", 1, "1 public pool", reach(2000, dens, H), 0, 20_000_000, 1_000_000,
+        add("pool", 1, "1 public aquatic center", reach(2000, dens, H), 0, 36_560_000, 1_000_000,
             why=f"nearest public pool {g(r, 'pool_nearest_m', 0)/1609:,.1f} mi away")
     if heat > 1 and g(r, "playground_nearest_m") < 800:
         add("splash_pad", 1, "1 splash pad at the nearest playground", reach(800, dens, H), 0, 850_000, 40_000,
             why=f"{heat:+.1f}°F hotter than average; playground nearby")
     if g(r, "skatepark_nearest_m") > 4000 and g(r, "kids_share", 0) > 0.2:
-        add("skate_park", 1, "1 neighborhood skate park", reach(1500, dens, H), 0, 1_500_000, 40_000,
+        add("skate_park", 1, "1 neighborhood skate park (~10,000 sq ft)", reach(1500, dens, H), 0, 2_800_000, 40_000,
             why=f"nearest skate park {g(r, 'skatepark_nearest_m', 0)/1609:,.1f} mi away; many kids")
     if g(r, "sports_field_nearest_m") > 2000 and pn < 1000:
         add("sports_field", 1, "1 natural-grass field", reach(1500, dens, H), 0, 550_000, 25_000,
             why=f"nearest public field {g(r, 'sports_field_nearest_m', 0)/1609:,.1f} mi away")
     if g(r, "community_centre_nearest_m") > 2500 and poor:
-        add("rec_center", 1, "1 recreation center", reach(2000, dens, H), 0, 8_400_000, 400_000,
+        add("rec_center", 1, "1 recreation center", reach(2000, dens, H), 0, 18_500_000, 400_000,
             why=f"no community or rec center within {g(r, 'community_centre_nearest_m', 0)/1609:,.1f} mi")
     if pn < 500 and g(r, "toilets_nearest_m") > 800:
         add("restroom", 1, "restroom building + fountains", reach(800, dens, H), 0, 990_000, 60_000, why="park nearby has no mapped public restroom")
@@ -435,11 +465,12 @@ def size_projects(r, ref, tree_rate):
     # --- transit
     tph = g(r, "bus_max_tph_400m", 0)
     rail_m = min(g(r, "rail_stop_nearest_m"), g(r, "rail_station_nearest_m"))
-    if tph >= 12 and rail_m > 800:
+    has_lane = g(r, "bus_lane_nearest_m") < 400
+    if tph >= 12 and rail_m > 800 and not has_lane:
         add("bus_lane", 1, "0.5 mile of peak bus lanes (both directions)", reach(400, dens, H), 0.005, 1_000_000, 20_000,
             why=f"{tph:.0f} buses an hour at the busiest nearby stop (7-9am); no rail within 800 m")
     if tph >= 15 and rail_m > 1500:
-        add("brt", 1, "0.5 mile of BRT corridor (local share)", reach(800, dens, H), 0.05, 7_500_000, 100_000,
+        add("brt", 1, "0.5 mile of BRT corridor (local share)", reach(800, dens, H), 0.05, 11_300_000, 100_000,
             why=f"{tph:.0f} buses an hour; nearest rail {rail_m/1609:,.1f} mi away")
     if rail_m > 2000 and dens > 0.004 and tph >= 10:
         add("rail_station", 1, "this area's share of a new station", reach(800, dens, H), 0.042, 40_000_000, 300_000,
@@ -467,19 +498,23 @@ def size_projects(r, ref, tree_rate):
     # --- safety (only where crime data cover this block group)
     if r.crime_covered and r.violent_per_1k == r.violent_per_1k:
         vrel = r.violent_per_1k / max(ref["violent"], 0.1)
-        if vrel > 1.5 or g(r, "streetlight", 0) > 10:
-            street_km = max(res_km, 14 * r.area_km2)  # LA's street grid runs ~14 km of street per km2
+        street_km = max(res_km, 14 * r.area_km2)  # LA's street grid runs ~14 km of street per km2
+        lights = g(r, "streetlights")
+        dim = lights == lights and lights / max(street_km, 0.1) < ref.get("lights_per_km", 0) * 0.75
+        if vrel > 1.5 and (dim or lights != lights or g(r, "streetlight", 0) > 10):
             m = street_km * 1000 * 0.3
             v_drop = 0.36 * 0.3
             add("street_lighting", 1, f"~{m/1000:.1f} km of streets relit", H * 0.3, EL_VIOLENT * v_drop + EL_PROPERTY * v_drop,
-                656 * m, 12 * m, why=f"violent crime {vrel:.1f}x the county median; lighting cuts nighttime outdoor crime 36% (~30% of crime)")
+                656 * m, 12 * m, why=f"violent crime {vrel:.1f}x the county median"
+                + (f"; {lights / max(street_km, 0.1):.0f} streetlights per km of street vs ~{ref.get('lights_per_km', 0):.0f} typical in LA" if lights == lights else "")
+                + "; lighting cut nighttime outdoor crime 36% in a New York trial (no LA trial found)")
         if vrel > 2:
-            add("cameras", 10, "10 cameras at hot spots", H * 0.25, EL_VIOLENT * 0.13 + EL_PROPERTY * 0.13, 81_480, 87_000,
+            add("cameras", 10, "10 cameras at hot spots", H * 0.25, 0, 81_480, 87_000,
                 why=f"violent crime {vrel:.1f}x county median; CCTV cuts crime ~13% in view")
         if vrel > 2.5:
             add("foot_patrol", 1, "2 officers on foot, 10 years", H, EL_VIOLENT * 0.23, 0, 400_000,
                 why=f"violent crime {vrel:.1f}x county median; foot patrols cut violent crime 23% while they run")
-            add("violence_interruption", 1, "street outreach team (local share), 10 years", H, EL_VIOLENT * 0.05, 0, 70_000,
+            add("violence_interruption", 1, "street outreach team (local share), 10 years", H, EL_VIOLENT * 0.035, 0, 70_000,
                 why=f"violent crime {vrel:.1f}x county median")
         if g(r, "dining_within_400m", 0) >= 10:
             add("bid", 1, "BID cleaning + ambassadors (local share)", reach(400, dens, H), EL_VIOLENT * 0.12 * 0.3, 0, 250_000,
@@ -492,8 +527,7 @@ def size_projects(r, ref, tree_rate):
             add("litter", 1, "weekly cleanup crew (local share)", H, 0, 0, 60_000, why=f"{int(dump)} dumping/litter reports a year ({dd:,.0f} per km²)")
         gd = graf / max(r.area_km2, 0.05)
         if gd > 100:
-            pct = min(0.003, 0.00031 * 0.5 * gd / 20)
-            add("graffiti", 1, "48-hour graffiti removal", H, pct, 0, max(20_000, 123_000 * graf / 1500),
+            add("graffiti", 1, "48-hour graffiti removal", H, 0, 0, max(20_000, 123_000 * graf / 1500),
                 why=f"{int(graf)} graffiti reports a year ({gd:,.0f} per km²); assumes 1 in 20 reports is a criminal-damage incident (Gibbons), capped at +0.3%")
         if enc >= 25:
             add("encampment", 1, "outreach + housing for ~10 people, 10 years", reach(320, dens, H), 0.0141 * 0.5, 0, 300_000,
@@ -510,24 +544,38 @@ def size_projects(r, ref, tree_rate):
 
     # --- energy
     yb = g(r, "median_year_built", 2000)
-    if yb <= 1975 and r.sf_share > 0.3 and res_km > 0.5:
+    oh, ug = g(r, "ladwp_overhead_km"), g(r, "ladwp_underground_km")
+    fire = g(r, "fire_vh_share", 0)
+    fire_txt = f"; {fire:.0%} of the area is a Very High fire hazard zone (undergrounding also cuts ignition risk)" if fire > 0.1 else ""
+    if oh == oh and (oh + (ug if ug == ug else 0)) > 0.3:
+        share = oh / (oh + (ug if ug == ug else 0))
+        if share > 0.5 and r.sf_share > 0.3:
+            miles = min(oh, max(res_km, 0.5) * 1.2) * 0.621
+            add("undergrounding", 1, f"{miles:.1f} miles of overhead lines undergrounded", H, 0.029, 2_800_000 * miles, 0,
+                why=f"LADWP maps show {share:.0%} of local lines overhead ({oh:.1f} km); $2.8M per circuit-mile" + fire_txt)
+    elif yb <= 1975 and r.sf_share > 0.3 and res_km > 0.5:
         miles = res_km * 0.621
         add("undergrounding", 1, f"{miles:.1f} miles of lines undergrounded", H, 0.029, 2_800_000 * miles, 0,
-            why=f"homes built ~{int(yb)} (overhead lines likely); LADWP target $2.8M per circuit-mile")
-    if g(r, "ev_charger_within_800m", 1) == 0 and dens > 0.002:
-        add("ev_hub", 1, "8-port fast-charging hub", reach(500, dens, H), 0.01, 800_000, 40_000,
-            why="no public charger mapped within 800 m; uses 1% (the study's +3.3% is likely partly where chargers get built)")
+            why=f"homes built ~{int(yb)}, so overhead lines are likely (no utility line map outside LADWP's area); $2.8M per circuit-mile" + fire_txt, fit=0.7)
+    dc = g(r, "dcfc_within_800m")
+    no_charger = dc == 0 if dc == dc else g(r, "ev_charger_within_800m", 1) == 0
+    if no_charger and dens > 0.002:
+        add("ev_hub", 1, "8-port fast-charging hub", reach(500, dens, H), 0.01, 800_000, 20_000,
+            why=("no public DC fast charger within 800 m (federal AFDC data)" if dc == dc else "no public charger mapped within 800 m")
+                + "; uses 1% (the study's +3.3% is likely partly where chargers get built)")
     if heat > 1 and poor:
         add("microgrid", 1, "1 resilience hub (solar + battery)", reach(1500, dens, H), 0, 3_400_000, 30_000, why=f"{heat:+.1f}°F hotter; cooling center during outages")
 
     # --- environment
     fw = g(r, "freeway_m_within_150m", 0)
     walls = g(r, "noise_wall_m", 0)
-    open_fw = max(0.0, fw - walls)
+    # OSM draws each freeway direction separately: halve, and cap at roughly this block group's edge length
+    open_fw = min(max(0.0, fw - walls) / 2, 2 * math.sqrt(r.aland_m2))
     if open_fw > 150:
         homes100 = min(H, dens * open_fw * 100)
         add("noise_wall", 1, f"{open_fw:,.0f} m of sound wall", homes100, 0.068, 2485 * open_fw, 5_000,
-            why=f"{open_fw:,.0f} m of freeway within 150 m without a mapped wall; walls add ~6.8% within 100 m")
+            why=f"~{open_fw:,.0f} m of freeway within 150 m with no wall in OpenStreetMap; walls add ~6.8% within 100 m. "
+                "OSM maps only a few dozen LA walls, so check Caltrans before acting (counted at half weight)", fit=0.5)
     if fw > 400 and dens > 0.005 and r.home_value > ref["value"]:
         add("freeway_cap", 1, "this area's share of a cap park", reach(400, dens, H), 0.05, 50_000_000, 200_000,
             why="dense, valuable area along a freeway; caps cost $110M-250M+")
@@ -540,9 +588,9 @@ def size_projects(r, ref, tree_rate):
         add("school_bond", 1, f"modernize the nearby school (this area's {share:.0%} share of ~$40M)", H, 0.03, 40_000_000 * share, 0,
             why="older area served by a nearby public school; California bond passage raised prices ~6% (half used here, for one campus)")
     if g(r, "library_nearest_m") > 2000 and dens > 0.002:
-        add("library", 1, "branch upgrade + Sunday hours, 10 years", reach(2000, dens, H), 0, 2_000_000, 250_000, why="no library within 2 km")
+        add("library", 1, "branch renovation + Sunday hours, 10 years", reach(2000, dens, H), 0, 5_500_000, 250_000, why="no library within 2 km")
     if g(r, "clinic_nearest_m") > 2500 and poor:
-        add("clinic", 1, "1 community clinic", reach(3000, dens, H), 0, 5_000_000, 0, why="no clinic mapped within 2.5 km; below-median income")
+        add("clinic", 1, "1 community clinic (~25,000 sq ft)", reach(3000, dens, H), 0, 38_800_000, 0, why="no clinic mapped within 2.5 km; below-median income")
 
     # --- amenities & economy
     if g(r, "grocery_nearest_m") > 1600 and dens > 0.002:
@@ -587,7 +635,7 @@ def score():
     d, sales, status, st = load()
     if "tc_gap" in d and d.tc_gap.max() <= 1.5:
         d["tc_gap"] = d.tc_gap * 100  # Tree Equity stores the canopy gap as a fraction
-    d = refine_names(d)
+    d = refine_names(clean_codes(d))
     d = home_values(d, sales)
     agencies = list((st.get("crime", {}) or {}).get("rows_by_agency", {}).keys())
     d, ref, need = prep(d, agencies)
