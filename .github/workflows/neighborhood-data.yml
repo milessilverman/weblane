@@ -92,8 +92,41 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
 
+  county:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        stage: [geo, osm, transit, sales, crime, requests311, crashes, trees]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: neighborhood-roi/pipeline/requirements.txt
+      - uses: actions/cache@v4
+        with:
+          path: neighborhood-roi/.cache
+          key: nroi-county-${{ matrix.stage }}-${{ github.run_id }}
+          restore-keys: nroi-county-${{ matrix.stage }}-
+      - run: pip install -r neighborhood-roi/pipeline/requirements.txt
+      - if: matrix.stage == 'osm'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq osmium-tool
+      - run: rm -rf neighborhood-roi/data/derived && mkdir -p neighborhood-roi/data/derived
+      - name: Build county stage
+        continue-on-error: true
+        run: python -u neighborhood-roi/pipeline/county_la.py ${{ matrix.stage }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stage-county-${{ matrix.stage }}
+          path: neighborhood-roi/data/derived/
+          if-no-files-found: warn
+          retention-days: 7
+
   merge:
-    needs: [stage, focus]
+    needs: [stage, focus, county]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -124,6 +157,11 @@ jobs:
             [ -d "$d" ] || continue
             [ -f "$RUNNER_TEMP/derived/$(basename "$d")/status.json" ] || { rm -rf "$RUNNER_TEMP/derived/$(basename "$d")"; cp -r "$d" "$RUNNER_TEMP/derived/"; echo "kept previous $(basename "$d")"; }
           done
+          # county stages: a file a failed stage did not produce keeps its last good version
+          if [ -d neighborhood-roi/data/derived/county_la ]; then
+            mkdir -p "$RUNNER_TEMP/derived/county_la"
+            cp -rn neighborhood-roi/data/derived/county_la/. "$RUNNER_TEMP/derived/county_la/"
+          fi
           rm -rf neighborhood-roi/data/derived
           cp -r "$RUNNER_TEMP/derived" neighborhood-roi/data/derived
           git add -A neighborhood-roi/data/derived
