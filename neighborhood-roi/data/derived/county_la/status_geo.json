@@ -1,0 +1,39 @@
+{
+ "generated_at": "2026-11-02T04:23:47.424866+00:00",
+ "sources": {
+  "geo": {
+   "acs_vintage": "2020-2024 ACS 5-year, block groups",
+   "acs_rows": 6591,
+   "tes_rows": 5251,
+   "hoods_Culver City": 15,
+   "hoods_Culver City_field": "FontName",
+   "hoods_Santa Monica_error": "None",
+   "hoods_Pasadena": 87,
+   "hoods_Pasadena_field": "Association_Name",
+   "hoods_Long Beach": 126,
+   "hoods_Long Beach_field": "NEIGHBOR_NAME",
+   "hoods_Glendale": 37,
+   "hoods_Glendale_field": "NAME",
+   "hoods_Torrance": 24,
+   "hoods_Torrance_field": "Name",
+   "la_times_hoods": 114,
+   "csa_rows": 355,
+   "csa_field": "LABEL",
+   "block_groups": 6587,
+   "named_official": 641,
+   "named_latimes": 2672,
+   "by_source": {
+    "LA County Countywide Statistical Area": 3272,
+    "LA Times Mapping L.A.": 2672,
+    "Long Beach (city GIS)": 328,
+    "Glendale (city GIS)": 137,
+    "Pasadena (city GIS)": 90,
+    "Torrance (city GIS)": 76,
+    "Culver City (city GIS)": 10,
+    "City boundary (no neighborhood map)": 2
+   },
+   "ok": true,
+   "seconds": 34.4
+  }
+ }
+}

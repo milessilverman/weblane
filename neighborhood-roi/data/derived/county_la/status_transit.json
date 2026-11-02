@@ -1,0 +1,22 @@
+{
+ "generated_at": "2026-11-02T04:23:43.079113+00:00",
+ "sources": {
+  "transit": {
+   "LA Metro bus_stops": 11812,
+   "LA Metro bus_trips": 13409,
+   "LA Metro rail_stops": 114,
+   "LA Metro rail_trips": 5308,
+   "Big Blue Bus_stops": 864,
+   "Big Blue Bus_trips": 1493,
+   "LADOT DASH/Commuter_stops": 2452,
+   "LADOT DASH/Commuter_trips": 3131,
+   "Long Beach Transit_error": "failed: https://drive.google.com/uc?export=download&id=1bDtwwJMShaGxvXXtgu-eeZFoJ9DhEBM-",
+   "Culver CityBus_error": "failed: https://www.culvercity.gov/files/assets/public/v/1/documents/transportation/gtfs/google_transit.zip",
+   "Foothill Transit_error": "failed: https://foothilltransit.rideralerts.com/gtfs/google_transit.zip",
+   "combined_stops": 11582,
+   "frequent_stops": 674,
+   "ok": true,
+   "seconds": 10.0
+  }
+ }
+}

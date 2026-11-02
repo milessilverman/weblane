@@ -1,0 +1,27 @@
+{
+ "generated_at": "2026-11-02T04:23:46.441384+00:00",
+ "sources": {
+  "crashes": {
+   "candidates": [
+    "ccrs / Crashes_2025",
+    "ccrs / Crashes_2024",
+    "ccrs / Crashes_2023",
+    "ccrs / Crashes_2022",
+    "ccrs / Crashes_2021",
+    "ccrs / Crashes_2020",
+    "ccrs / Crashes_2019",
+    "ccrs / Crashes_2018",
+    "ccrs / Crashes_2017",
+    "ccrs / Crashes_2016",
+    "ccrs / Crashes_2026"
+   ],
+   "used_Crashes_2025": 117155,
+   "used_Crashes_2024": 240892,
+   "used_Crashes_2023": 359334,
+   "used_Crashes_2026": 446345,
+   "rows": 446345,
+   "ok": true,
+   "seconds": 48.2
+  }
+ }
+}

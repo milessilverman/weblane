@@ -1,0 +1,71 @@
+{
+ "generated_at": "2026-11-02T04:23:50.411860+00:00",
+ "sources": {
+  "crime": {
+   "lapd_k7nn-b2ep_error": "",
+   "lapd_2nrs-mtv8_latest": "2024-12-30",
+   "lapd_2nrs-mtv8_cols": [
+    "dr_no",
+    "date_rptd",
+    "date_occ",
+    "time_occ",
+    "area",
+    "area_name",
+    "rpt_dist_no",
+    "part_1_2",
+    "crm_cd",
+    "crm_cd_desc",
+    "mocodes",
+    "vict_age",
+    "vict_sex",
+    "vict_descent",
+    "premis_cd",
+    "premis_desc",
+    "status",
+    "status_desc",
+    "crm_cd_1",
+    "location",
+    "lat",
+    "lon"
+   ],
+   "lapd_gqf2-vm2j_error": "",
+   "lapd_63jg-8b9z_latest": "2019-12-31",
+   "lapd_63jg-8b9z_cols": [
+    "dr_no",
+    "date_rptd",
+    "date_occ",
+    "time_occ",
+    "area",
+    "area_name",
+    "rpt_dist_no",
+    "part_1_2",
+    "crm_cd",
+    "crm_cd_desc",
+    "mocodes",
+    "vict_age",
+    "vict_sex",
+    "vict_descent",
+    "premis_cd",
+    "premis_desc",
+    "status",
+    "status_desc",
+    "crm_cd_1",
+    "location",
+    "lat",
+    "lon"
+   ],
+   "lapd_dataset": "2nrs-mtv8 Crime Data from 2020 to Present",
+   "lapd_rows": 127567,
+   "lapd_window": "2023-12-31 to 2024-12-30",
+   "lasd_links": [],
+   "santa_monica_rows": 7116,
+   "santa_monica_latest": "2024-05-13",
+   "rows_by_agency": {
+    "LAPD": 127567,
+    "Santa Monica PD": 7116
+   },
+   "ok": true,
+   "seconds": 33.5
+  }
+ }
+}

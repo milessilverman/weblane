@@ -73,7 +73,7 @@ CDSCode,School,District,County,SOCType,lat,lon,ela_pct_met,math_pct_met
 01611500130039,Castro Valley Adult and Career Education,Castro Valley Unified,Alameda,Adult Education Centers,37.708006,-122.07118,,
 01611500130047,Roy A. Johnson High,Castro Valley Unified,Alameda,Special Education Schools (Public),37.713501,-122.09222,,
 01611500132225,Castro Valley High,Castro Valley Unified,Alameda,High Schools (Public),37.705184,-122.07847,68.08,49.37
-01611500133876,Castro Valley Virtual Academy,Castro Valley Unified,Alameda,K-12 Schools (Public),37.713501,-122.09222,72.73,36.36
+01611500133876,Castro Valley Virtual Academy,Castro Valley Unified,Alameda,High Schools (Public),37.713501,-122.09222,72.73,36.36
 01611500135533,Redwood Continuation High,Castro Valley Unified,Alameda,Continuation High Schools,37.7128,-122.09305,9.38,6.45
 01611506090351,Castro Valley Elementary,Castro Valley Unified,Alameda,Elementary Schools (Public),37.698047,-122.08102,61.95,52.86
 01611506090369,Chabot Elementary,Castro Valley Unified,Alameda,Elementary Schools (Public),37.707084,-122.09012,67.97,74.03
@@ -1499,7 +1499,6 @@ CDSCode,School,District,County,SOCType,lat,lon,ela_pct_met,math_pct_met
 12626956007686,Big Lagoon Elementary,Big Lagoon Union Elementary,Humboldt,Elemen Schools In 1 School Dist. (Public),41.16318,-124.13065,,
 12627030000000,No Data,Blue Lake Union Elementary,Humboldt,No Data,40.885068,-123.9919,33.33,28.43
 12627036007694,Blue Lake Union Elementary,Blue Lake Union Elementary,Humboldt,Elemen Schools In 1 School Dist. (Public),40.885333,-123.99087,33.33,28.43
-12627036007918,Green Point Elementary,Blue Lake Union Elementary,Humboldt,Elementary Schools (Public),41.001456,-123.85732,,
 12627290000000,No Data,Bridgeville Elementary,Humboldt,No Data,40.499626,-123.81802,16.67,12.5
 12627296007710,Bridgeville Elementary,Bridgeville Elementary,Humboldt,Elemen Schools In 1 School Dist. (Public),40.499626,-123.81802,16.67,12.5
 12627370000000,No Data,Cuddeback Union Elementary,Humboldt,No Data,40.536688,-124.04149,51.04,42.71
@@ -5089,7 +5088,7 @@ CDSCode,School,District,County,SOCType,lat,lon,ela_pct_met,math_pct_met
 27660922732808,Monterey High,Monterey Peninsula Unified,Monterey,High Schools (Public),36.596563,-121.90221,61.99,27.75
 27660922735348,Seaside High,Monterey Peninsula Unified,Monterey,High Schools (Public),36.621761,-121.83793,40.32,8.33
 27660926026181,Del Rey Woods Elementary,Monterey Peninsula Unified,Monterey,Elementary Schools (Public),36.597161,-121.8386,31.75,26.77
-27660926026207,George C. Marshall Elementary,Monterey Peninsula Unified,Monterey,Elementary Schools (Public),36.639183,-121.8105,40.91,34.09
+27660926026207,George C. Marshall Elementary,Monterey Peninsula Unified,Monterey,Elementary Schools (Public),36.636533,-121.80685,40.91,34.09
 27660926026249,Ione Olson Elementary,Monterey Peninsula Unified,Monterey,Elementary Schools (Public),36.691805,-121.79223,41.9,38.55
 27660926026256,J. C. Crumpton Elementary,Monterey Peninsula Unified,Monterey,Elementary Schools (Public),36.67541,-121.78443,46.18,37.67
 27660926026280,La Mesa,Monterey Peninsula Unified,Monterey,Elementary Schools (Public),36.581722,-121.87947,56.57,50.13
@@ -6138,6 +6137,7 @@ CDSCode,School,District,County,SOCType,lat,lon,ela_pct_met,math_pct_met
 32669693236007,Quincy Junior/Senior High,Plumas Unified,Plumas,High Schools (Public),39.963784,-120.89885,36.15,11.63
 32669696031413,Chester Elementary,Plumas Unified,Plumas,Elementary Schools (Public),40.306294,-121.23081,45.35,38.37
 32669696031421,Greenville Elementary,Plumas Unified,Plumas,Elementary Schools (Public),40.140569,-120.9457,41.38,27.59
+32669696031470,Quincy Elementary,Plumas Unified,Plumas,Elementary Schools (Public),39.933622,-120.94528,35.91,24.73
 32669696110308,C. Roy Carmichael Elementary,Plumas Unified,Plumas,Elementary Schools (Public),39.816271,-120.47544,27.32,23.5
 32742780000000,No Data,Plumas County ROP,Plumas,No Data,39.937172,-120.94414,,
 32742783290012,Plumas County ROP,Plumas County ROP,Plumas,ROC/ROP,39.937172,-120.94414,,
@@ -7706,7 +7706,6 @@ CDSCode,School,District,County,SOCType,lat,lon,ela_pct_met,math_pct_met
 36738586109193,Baker Junior High,Baker Valley Unified,San Bernardino,Junior High Schools (Public),35.273206,-116.07239,8.82,2.94
 36738900000000,No Data,Silver Valley Unified,San Bernardino,No Data,34.894935,-116.88821,48.99,30.99
 36738900111096,Tiefort View Intermediate,Silver Valley Unified,San Bernardino,Elementary Schools (Public),35.2544,-116.6944,48.86,40.36
-36738900118109,Silver Valley Community Day,Silver Valley Unified,San Bernardino,District Community Day Schools,34.861545,-116.8904,,
 36738903630274,Silver Valley High,Silver Valley Unified,San Bernardino,High Schools (Public),34.895254,-116.88769,62.64,31.87
 36738903630282,Calico Continuation High,Silver Valley Unified,San Bernardino,Continuation High Schools,34.8611,-116.88967,28.57,0.0
 36738903630639,Silver Valley Adult,Silver Valley Unified,San Bernardino,Adult Education Centers,34.860725,-116.89146,,
