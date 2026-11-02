@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-02T04:41:51.492498+00:00",
+ "generated_at": "2026-11-02T05:21:35.295792+00:00",
  "sources": {
   "osm": {
    "parks": 20954,
@@ -40,7 +40,7 @@
    "resroads": 285979,
    "ok": false,
    "error": "NotImplementedError: df1 contains mixed geometry types.",
-   "seconds": 207.6
+   "seconds": 232.7
   }
  }
 }

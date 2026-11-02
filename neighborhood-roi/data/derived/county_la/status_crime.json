@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-02T04:41:21.019613+00:00",
+ "generated_at": "2026-11-02T05:21:17.251741+00:00",
  "sources": {
   "crime": {
    "lapd_k7nn-b2ep_cols": [
@@ -18,8 +18,6 @@
     "crime_against",
     "premis_cd",
     "premis_desc",
-    "weapon_used_cd",
-    "weapon_desc",
     "status",
     "status_desc",
     "totalvictimcount",
@@ -61,6 +59,7 @@
     "lon"
    ],
    "lapd_2nrs-mtv8_latest": "2025-03-28",
+   "lapd_2nrs-mtv8_rows12mo": 80732,
    "lapd_gqf2-vm2j_cols": [
     "caseno",
     "uniquevictimno",
@@ -104,9 +103,9 @@
     "lon"
    ],
    "lapd_63jg-8b9z_latest": "2025-06-05",
-   "lapd_dataset": "63jg-8b9z Crime Data from 2010 to 2019",
-   "lapd_rows": 340,
-   "lapd_window": "2024-06-05 to 2025-06-05",
+   "lapd_dataset": "2nrs-mtv8 Crime Data from 2020 to Present",
+   "lapd_rows": 80732,
+   "lapd_window": "2024-03-28 to 2025-03-28",
    "lasd_page_len": 194566,
    "lasd_links": [],
    "lasd_hrefs": [
@@ -180,17 +179,23 @@
     "Sheriff Part 1 and 2 Crimes (Historical) | https://services.arcgis.com/RmCCgQtiZLDCtblq/arcgis/rest/services/PART_I_AND_II_CRIMES-HISTORICAL/FeatureServer",
     "Sheriff Officer Contacts _ Person Details  | https://services.arcgis.com/RmCCgQtiZLDCtblq/arcgis/rest/services/LASD_Officer_Contacts___Person_Details_/FeatureServer"
    ],
-   "lasd_dataset": "PART_I_AND_II_CRIMES https://services8.arcgis.com/TLogqQbe6TnrHFMm/arcgis/rest/services/PART_I_AND_II_CRIMES/FeatureServer/0",
-   "lasd_rows": 3041,
+   "lasd_window_PART_I_AND_II_CRIMES": "1995-07-11 to 2026-10-11",
+   "lasd_rows_PART_I_AND_II_CRIMES": 3124,
+   "lasd_window_Sheriff Part 1 and 2 Crimes (Y": "1990-01-01 to 2026-10-10",
+   "lasd_rows_Sheriff Part 1 and 2 Crimes (Y": 96082,
+   "lasd_stale_Sheriff Part 1 and 2 Crimes (H": "2012-05-04",
+   "lasd_arc_err_Sheriff Part 1 and 2 Crimes (H": "failed: https://services.arcgis.com/RmCCgQtiZLDCtblq/arcgis/rest/services/PART_I_AND_II_CRIMES-HISTORICAL/FeatureServer/",
+   "lasd_rows_Sheriff Officer Contacts _ Per": 600000,
+   "lasd_dataset": "Sheriff Officer Contacts _ Person Details  https://services.arcgis.com/RmCCgQtiZLDCtblq/arcgis/rest/services/LASD_Officer_Contacts___Person_Details_/FeatureServer/0",
+   "lasd_rows": 0,
    "santa_monica_rows": 7116,
    "santa_monica_latest": "2024-05-13",
    "rows_by_agency": {
-    "LAPD": 340,
-    "LASD": 3041,
+    "LAPD": 80732,
     "Santa Monica PD": 7116
    },
    "ok": true,
-   "seconds": 12.8
+   "seconds": 1206.8
   }
  }
 }
