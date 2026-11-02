@@ -1564,6 +1564,114 @@ def stage_underused():
     log(f"  wrote map_underused.geojson ({len(out)})")
 
 
+# ------------------------------------------------------------------ what is already being done (round 7)
+APR_CSV = ("https://publish.data.ca.gov/dataset/81b0841f-2802-403e-b48e-2ef4b751f77c/resource/"
+           "fe505d9b-8c36-42ba-ba30-08bc4f34e022/download/tablea2.csv")
+HE_SCAG = "https://maps.scag.ca.gov/scaggis/rest/services/LDX/HousingElementSite_poly_scag/MapServer/0"
+HE_COUNTY = "https://services.arcgis.com/RmCCgQtiZLDCtblq/arcgis/rest/services/LA_County_Housing_Element_Sites_Inventory/FeatureServer/1"
+
+
+def _num(x):
+    return pd.to_numeric(x, errors="coerce")
+
+
+def stage_projects():
+    rows = []
+    # 1. LA City affordable-housing pipeline (LAHD)
+    try:
+        df = socrata_rows("data.lacity.org", "mymu-zi3s", "1=1", limit=50000, max_rows=200000)
+        note("projects", lahd_rows=len(df), lahd_fields=list(df.columns)[:50])
+        lat = _num(df.get("latitude"))
+        lon = _num(df.get("longitude"))
+        units = next((c for c in df.columns if re.search(r"site_units|total_units|units", c)), None)
+        for i in df.index:
+            if lat[i] == lat[i] and lon[i] == lon[i]:
+                rows.append({"src": "LAHD affordable housing", "kind": "affordable housing", "name": df.get("name", pd.Series(dtype=str)).get(i),
+                             "addr": df.get("address", pd.Series(dtype=str)).get(i), "stage": df.get("development_stage", pd.Series(dtype=str)).get(i),
+                             "detail": df.get("construction_type", pd.Series(dtype=str)).get(i), "units": _num(pd.Series([df[units][i]]))[0] if units else np.nan,
+                             "year": str(df.get("in_service_date", pd.Series(dtype=str)).get(i) or df.get("date_funded", pd.Series(dtype=str)).get(i) or "")[:4],
+                             "lat": lat[i], "lon": lon[i]})
+    except Exception as e:  # noqa: BLE001
+        note("projects", lahd_error=str(e)[:200])
+    # 2. LA City new-building permits since 2024 (LADBS)
+    try:
+        df = socrata_rows("data.lacity.org", "pi9x-tg5x", "permit_type='Bldg-New' AND issue_date >= '2024-01-01T00:00:00'", limit=50000, max_rows=200000)
+        note("projects", ladbs_new_rows=len(df), ladbs_fields=list(df.columns)[:50])
+        txt = (df.get("permit_sub_type", "").astype(str) + " " + df.get("use_desc", "").astype(str) + " " + df.get("work_desc", "").astype(str)).str.upper()
+        kind = np.where(txt.str.contains("ADU|ACCESSORY DWELLING"), "new ADU",
+               np.where(txt.str.contains("APARTMENT|MULTI|CONDO|DWELLING UNITS|R-2|R2 "), "new apartments",
+               np.where(txt.str.contains("1 OR 2 FAMILY|SINGLE FAMILY|SFD|DWELLING"), "new house", "new building")))
+        for i, k in zip(df.index, kind):
+            la, lo = _num(pd.Series([df.get("lat", pd.Series(dtype=str)).get(i)]))[0], _num(pd.Series([df.get("lon", pd.Series(dtype=str)).get(i)]))[0]
+            if la == la and lo == lo:
+                rows.append({"src": "LADBS permit", "kind": k, "name": None, "addr": df.get("primary_address", pd.Series(dtype=str)).get(i),
+                             "stage": df.get("status_desc", pd.Series(dtype=str)).get(i), "detail": str(df.get("work_desc", pd.Series(dtype=str)).get(i) or "")[:140],
+                             "units": np.nan, "year": str(df.get("issue_date", pd.Series(dtype=str)).get(i) or "")[:4], "lat": la, "lon": lo})
+    except Exception as e:  # noqa: BLE001
+        note("projects", ladbs_error=str(e)[:200])
+    # 3. Statewide housing progress reports (HCD APR table A2): every LA County city's approved, permitted, completed projects
+    try:
+        path = cached_download(APR_CSV, "hcd_apr_tablea2.csv", 25)
+        head = pd.read_csv(path, nrows=0).columns.tolist()
+        note("projects", apr_columns=head[:80])
+        want = [c for c in head if re.fullmatch(r"(JURIS_NAME|CNTY_NAME|YEAR|PROJECT_NAME|STREET_ADDRESS|APN|LATITUDE|LONGITUDE|UNIT_CAT|TENURE|"
+                                               r"ENT_APPROVE_DT1|BP_ISSUE_DT1|CO_ISSUE_DT1|NO_ENTITLEMENTS|NO_BUILDING_PERMITS|NO_OTHER_FORMS_OF_READINESS|"
+                                               r"NO_CO|NO_COS|APPROVE_SB35|DENSITY_BONUS_TOTAL)", c, re.I)]
+        n = 0
+        for ch in pd.read_csv(path, usecols=want, chunksize=200000, dtype=str, low_memory=False):
+            cn = next((c for c in ch.columns if c.upper() == "CNTY_NAME"), None)
+            ch = ch[ch[cn].astype(str).str.upper().str.contains("LOS ANGELES")] if cn else ch.iloc[:0]
+            yr = _num(ch[next(c for c in ch.columns if c.upper() == "YEAR")])
+            ch = ch[yr >= 2021]
+            for _, r in ch.iterrows():
+                la, lo = _num(pd.Series([r.get("LATITUDE")]))[0], _num(pd.Series([r.get("LONGITUDE")]))[0]
+                if not (la == la and lo == lo and 33.3 < la < 35 and -119.2 < lo < -117.4):
+                    continue
+                ent, bp = _num(pd.Series([r.get("NO_ENTITLEMENTS")]))[0], _num(pd.Series([r.get("NO_BUILDING_PERMITS")]))[0]
+                co = _num(pd.Series([r.get("NO_CO", r.get("NO_COS"))]))[0]
+                stage = "completed" if co == co and co > 0 else "permitted" if bp == bp and bp > 0 else "approved" if ent == ent and ent > 0 else None
+                if not stage:
+                    continue
+                units = co if stage == "completed" else bp if stage == "permitted" else ent
+                rows.append({"src": "HCD housing progress report", "kind": f"housing {stage}", "name": r.get("PROJECT_NAME"),
+                             "addr": f"{r.get('STREET_ADDRESS') or ''}, {str(r.get('JURIS_NAME') or '').title()}", "stage": stage,
+                             "detail": f"{r.get('UNIT_CAT') or ''} {r.get('TENURE') or ''}".strip(), "units": units, "year": r.get("YEAR"), "lat": la, "lon": lo})
+                n += 1
+        note("projects", apr_la_rows=n)
+    except Exception as e:  # noqa: BLE001
+        note("projects", apr_error=str(e)[:200])
+    if not rows:
+        raise RuntimeError("no project feed answered")
+    pj = gpd.GeoDataFrame(pd.DataFrame(rows), geometry=gpd.points_from_xy([r["lon"] for r in rows], [r["lat"] for r in rows]), crs=4326)
+    pj = pj.drop(columns=["lat", "lon"])
+    note("projects", total=len(pj), by_kind={k: int(v) for k, v in pj.kind.value_counts().items()})
+    pj.to_file(OUT / "map_projects.geojson", driver="GeoJSON", COORDINATE_PRECISION=5)
+    # 4. Housing Element site inventories: parcels each city has already identified for new homes
+    frames = []
+    for url, src in ((HE_SCAG, "SCAG Housing Element sites"), (HE_COUNTY, "LA County Housing Element sites")):
+        try:
+            g = arcgis_all(url, bbox=BBOX, max_rows=400000)
+            if g is None or not len(g):
+                continue
+            cols = {c.lower(): c for c in g.columns}
+            cty = cols.get("county")
+            if cty:
+                g = g[g[cty].astype(str).str.contains("Los Angeles|LOS ANGELES|037", regex=True)]
+            cap = next((cols[c] for c in ("total_he_capacity", "realistic_capacity") if c in cols), None)
+            jur = next((cols[c] for c in ("jurisdiction", "situscity") if c in cols), None)
+            frames.append(gpd.GeoDataFrame({"src": src, "juris": g[jur] if jur else None, "capacity": _num(g[cap]) if cap else np.nan,
+                                            "geometry": g.geometry}, crs=4326))
+            note("projects", **{f"{src}_rows": len(g), f"{src}_fields": list(g.columns)[:40]})
+        except Exception as e:  # noqa: BLE001
+            note("projects", **{f"{src}_error": str(e)[:200]})
+    if frames:
+        he = gpd.GeoDataFrame(pd.concat(frames, ignore_index=True), crs=4326)
+        he = he[he.geometry.notna() & he.geom_type.isin(["Polygon", "MultiPolygon"])]
+        he["geometry"] = he.to_crs(M).geometry.simplify(2).to_crs(4326)
+        he.to_file(OUT / "map_he_sites.geojson", driver="GeoJSON", COORDINATE_PRECISION=5)
+        note("projects", he_sites=len(he), he_capacity=float(he.capacity.sum()))
+
+
 # ------------------------------------------------------------------ research endpoint check (round 6)
 RESEARCH = Path(__file__).resolve().parent.parent / "research" / "round6"
 
@@ -1820,7 +1928,7 @@ STAGES = {"geo": stage_geo, "osm": stage_osm, "transit": stage_transit, "sales":
           "parcels": stage_parcels, "assets": stage_assets,
           "tra": stage_tra, "assessed": stage_assessed, "basemap": stage_basemap,
           "research_check": stage_research_check, "zoning": stage_zoning,
-          "underused": stage_underused}
+          "underused": stage_underused, "projects": stage_projects}
 
 
 def main():
