@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-11-02T05:20:49.633409+00:00",
+  "generated_at": "2026-11-02T05:17:04.284670+00:00",
   "sources": {
     "census_tract_boundaries": {
       "ok": true,
-      "seconds": 0.7,
+      "seconds": 0.4,
       "rows": 8497,
       "columns": [
         "GEOID",
@@ -17,7 +17,7 @@
     "census_acs_5yr": {
       "vintage": "2020-2024 ACS 5-year (table-based summary file)",
       "ok": true,
-      "seconds": 10.3,
+      "seconds": 8.3,
       "rows": 8505,
       "columns": [
         "GEOID",
@@ -40,11 +40,46 @@
         "adults_25plus"
       ]
     },
+    "bls_oews_cost_factor": {
+      "ok": true,
+      "seconds": 0.9,
+      "rows": 10,
+      "columns": [
+        "county_fips",
+        "county",
+        "msa",
+        "labor_ratio",
+        "cost_factor",
+        "source"
+      ]
+    },
+    "usaspending_projects": {
+      "ok": true,
+      "seconds": 35.4,
+      "rows": 1721,
+      "columns": [
+        "internal_id",
+        "Award ID",
+        "Recipient Name",
+        "Award Amount",
+        "Description",
+        "Start Date",
+        "End Date",
+        "Awarding Agency",
+        "Awarding Sub Agency",
+        "Place of Performance Zip5",
+        "generated_internal_id",
+        "awarding_agency_id",
+        "agency_slug",
+        "county_label",
+        "county_fips"
+      ]
+    },
     "fhfa_tract_hpi": {
       "url": "https://www.fhfa.gov/hpi/download/annual/hpi_at_tract.csv",
       "latest_year": 2025,
       "ok": true,
-      "seconds": 4.5,
+      "seconds": 4.0,
       "rows": 5350,
       "columns": [
         "GEOID",
@@ -55,9 +90,119 @@
         "hpi_series"
       ]
     },
+    "fema_national_risk_index": {
+      "ok": false,
+      "error": "NRI tract table not found"
+    },
+    "openstreetmap": {
+      "method": "geofabrik+osmium",
+      "parks": 58885,
+      "points": {
+        "school": 23946,
+        "neighborhood": 9142,
+        "rail_station": 7876,
+        "grocery": 7285,
+        "library": 2473
+      },
+      "ok": true,
+      "seconds": 2043.4
+    },
+    "cdc_places": {
+      "dataset": "PLACES: Census Tract Data (GIS Friendly Format), 2025 release",
+      "dataset_id": "yjkw-uj5s",
+      "ok": true,
+      "seconds": 7.0,
+      "rows": 8375,
+      "columns": [
+        "GEOID",
+        "poor_mental_health_pct",
+        "no_leisure_activity_pct",
+        "asthma_pct",
+        "obesity_pct",
+        "depression_pct",
+        "poor_general_health_pct",
+        "lack_transport_pct"
+      ]
+    },
+    "ca_school_scores": {
+      "caaspp_year": "2024-25",
+      "ok": true,
+      "seconds": 1.0,
+      "rows": 11594,
+      "columns": [
+        "CDSCode",
+        "School",
+        "District",
+        "County",
+        "SOCType",
+        "lat",
+        "lon",
+        "ela_pct_met",
+        "math_pct_met"
+      ]
+    },
+    "tree_equity_score": {
+      "columns_raw": [
+        "geoid",
+        "total_pop",
+        "state",
+        "county",
+        "pctpov",
+        "pctpoc",
+        "unemplrate",
+        "medhhinc",
+        "dep_ratio",
+        "child_perc",
+        "seniorperc",
+        "treecanopy",
+        "area",
+        "source",
+        "avg_temp",
+        "ua_name",
+        "incorpname",
+        "congressio",
+        "biome",
+        "bgpopdense",
+        "popadjust",
+        "tc_gap",
+        "tc_goal",
+        "phys_hlth",
+        "ment_hlth",
+        "asthma",
+        "core_m",
+        "core_w",
+        "core_norm",
+        "healthnorm",
+        "priority",
+        "tes",
+        "tesctyscor"
+      ],
+      "ok": true,
+      "seconds": 1.9,
+      "rows": 7483,
+      "columns": [
+        "GEOID",
+        "tes",
+        "canopy_pct",
+        "canopy_goal_pct",
+        "canopy_gap_pct",
+        "avg_temp",
+        "tes_block_groups",
+        "temp_diff_f"
+      ]
+    },
+    "epa_walkability": {
+      "ok": true,
+      "seconds": 3.0,
+      "rows": 8366,
+      "columns": [
+        "GEOID",
+        "walk_index"
+      ]
+    },
     "zillow_zhvi_zip": {
       "ok": true,
-      "seconds": 0.3,
+      "seconds": 0.2,
       "rows": 1057,
       "columns": [
         "RegionName",
@@ -74,7 +219,7 @@
     },
     "census_zcta_boundaries": {
       "ok": true,
-      "seconds": 1.4,
+      "seconds": 0.9,
       "rows": 33791,
       "columns": [
         "ZCTA5CE20",
@@ -83,7 +228,7 @@
     },
     "zillow_zhvi_neighborhood": {
       "ok": true,
-      "seconds": 0.3,
+      "seconds": 0.2,
       "rows": 2140,
       "columns": [
         "RegionID",
