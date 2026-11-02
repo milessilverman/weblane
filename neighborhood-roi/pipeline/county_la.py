@@ -406,14 +406,18 @@ def stage_osm():
     am = pts(am)
     sport, leis, amen, shop = col(am, "sport").fillna(""), col(am, "leisure").fillna(""), col(am, "amenity").fillna(""), col(am, "shop").fillna("")
     acc = col(am, "access").fillna("")
-    public = ~acc.isin(["private", "customers", "no"])
+    # OSM maps thousands of backyard pools and private complex courts: count a facility as public only if it is
+    # tagged public or sits inside a mapped park / recreation ground
+    pk_m = parks_main.to_crs(M)[["geometry"]]
+    inpark = gpd.sjoin(am.to_crs(M)[["geometry"]], pk_m, predicate="within").index.unique()
+    public = (acc.isin(["yes", "public", "permissive"]) | am.index.isin(inpark)) & ~acc.isin(["private", "customers", "no"])
     kinds = {
         "tennis": (leis == "pitch") & sport.str.contains("tennis") & public,
         "pickleball": sport.str.contains("pickleball") & public,
         "basketball": (leis == "pitch") & sport.str.contains("basketball") & public,
         "playground": (leis == "playground") & public,
         "dog_park": leis == "dog_park",
-        "pool": ((leis == "swimming_pool") | ((leis == "sports_centre") & sport.str.contains("swimming"))) & public & ~acc.isin(["private"]),
+        "pool": ((leis == "swimming_pool") | ((leis == "sports_centre") & sport.str.contains("swimming"))) & public,
         "skatepark": (leis == "skatepark") | sport.str.contains("skateboard"),
         "sports_field": (leis == "pitch") & sport.str.contains("soccer|baseball|softball|football|multi") & public,
         "fitness": leis == "fitness_station",
@@ -441,12 +445,10 @@ def stage_osm():
         if k in ("dining", "nightlife", "grocery", "liquor", "fast_food", "culture", "ev_charger"):
             out[f"{k}_within_400m"] = within_m(f, k, 400)
             out[f"{k}_within_800m"] = within_m(f, k, 800)
-    save_layer(am[kinds["tennis"] | kinds["pickleball"] | kinds["basketball"] | kinds["playground"] | kinds["dog_park"] | kinds["pool"]
-                  | kinds["skatepark"] | kinds["library"] | kinds["community_garden"]].assign(
-        kind=np.select([kinds[k] for k in ("tennis", "pickleball", "basketball", "playground", "dog_park", "pool", "skatepark", "library", "community_garden")],
-                       ["tennis", "pickleball", "basketball", "playground", "dog park", "pool", "skate park", "library", "community garden"], ""),
-        name=col(am, "name"))[["kind", "name", "geometry"]], "amenities", prec=5)
-
+    shown = ["tennis", "pickleball", "basketball", "playground", "dog_park", "pool", "skatepark", "library", "community_garden"]
+    kind = pd.Series(np.select([kinds[k].values for k in shown], [k.replace("_", " ") for k in shown], ""), index=am.index)
+    sel = kind != ""
+    save_layer(gpd.GeoDataFrame({"kind": kind[sel], "name": col(am, "name")[sel]}, geometry=am.geometry[sel], crs=am.crs), "amenities", prec=5)
     roads = layer("roads", "w/highway=motorway,trunk,primary,secondary,motorway_link")
     hw = col(roads, "highway")
     fw = roads[hw.isin(["motorway", "trunk"])]
