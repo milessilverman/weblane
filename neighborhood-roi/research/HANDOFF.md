@@ -9,7 +9,7 @@ Current deliverable: `reports/city-pretty-la-county.html` (V2.3: real EIFD input
   `data/derived/county_la/`. Dispatch with input `county_only=true` to skip the slow tract/Westside jobs, and
   `county_stages=tra,assessed` (comma list) to run only some county stages; the rest keep their last data.
   This sandbox can't reach County/ArcGIS hosts, so data pulls must run in Actions.
-- Model: `python3 model/score_county.py` and `python3 model/eifd_tra.py` → `web/county_data/`.
+- Model: `python3 model/score_county.py`, `python3 model/eifd_tra.py`, then `python3 model/gaps.py` → `web/county_data/`.
 - Page: `python3 web/build_county_html.py` → `reports/city-pretty-la-county.html`.
 
 ## Research in this folder
@@ -52,6 +52,15 @@ Current deliverable: `reports/city-pretty-la-county.html` (V2.3: real EIFD input
   `model/round6/qol_benefits.csv` (yearly public benefit shown on QoL cards), `owner_upgrades.csv` (homeowner table,
   rebates corrected), `zone_rules.csv` (base-zone standards for a few zones; unverified).
 - Fixed: park/street canvases blocked clicks → now in pointer-events:none panes. Parcel tiles split and retry on 500s.
+
+## Neighborhood gaps and plans (done in V2.6)
+- `model/gaps.py`: each block group vs. its 50 nearest peers (income, density, home value, year built, kids,
+  no-car, single-family share) on 22 measures. Gap = worse than >=80% of peers by a set margin; strength = better
+  than 85%. Each gap maps to fixes already costed for that block group. Per named neighborhood: the top gaps by
+  share of homes, one concrete project each, sited in the most affected block group, naming the nearest actual
+  park, school, library and rail station. Cheapest step first ("quick win"), then by return. `web/county_data/gaps.json`.
+- Planned: rewrite these plans monthly with Claude in the pipeline (needs an ANTHROPIC_API_KEY secret) and add an
+  on-page assistant once the map is hosted.
 
 ## Next steps
 1. (done) EIFD tax-rate-area data.

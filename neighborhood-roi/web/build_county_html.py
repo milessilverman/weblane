@@ -153,7 +153,7 @@ def zoning_bundle():
         return None
     g = gpd.read_file(f"/vsigzip/{p}")
     g = g[g.geometry.notna() & ~g.geometry.is_empty]
-    g["geometry"] = g.to_crs(M).geometry.simplify(3).to_crs(4326)
+    g["geometry"] = g.to_crs(M).geometry.simplify(6).to_crs(4326)
     zones, zi, cells = [], {}, {}
     for z, cat, juris, geom in zip(g.zone.astype(str), g.cat, g.juris, g.geometry):
         if geom is None or geom.is_empty:
@@ -202,6 +202,7 @@ def main():
     acres = bg.set_index("GEOID").to_crs(M).area / 4046.86
     det = {}
     dd = d.set_index("GEOID")
+    gp = json.loads((MOD / "gaps.json").read_text()) if (MOD / "gaps.json").exists() else {"bg": {}, "plans": {}}
     ef = MOD / "eifd.json"
     eifd = json.loads(ef.read_text()) if ef.exists() else {"meta": {}, "bg": {}}
     for gid, x in details.items():
@@ -228,6 +229,8 @@ def main():
         m = {k: v for k, v in m.items() if v is not None and not (isinstance(v, float) and np.isnan(v))}
         if gid in eifd["bg"]:
             m["e"] = eifd["bg"][gid]
+        if gid in gp["bg"]:
+            m["gp"] = gp["bg"][gid]
         fc = {k: num(r[f"fac_{k.replace(' ', '_')}_m"], 0) for k in FAC_KINDS if f"fac_{k.replace(' ', '_')}_m" in r.index}
         fc = {k: v for k, v in fc.items() if v is not None}
         if fc:
@@ -334,6 +337,9 @@ def main():
                          f"{em.get('roll_value_matched_share', 0):.2%} of it matched to a tax-rate area with factors"])
         src_rows.append([f"EIFD calculator: Auditor-Controller {em.get('factor_year')} Modified ATI ratios (AF49)", '<span class="pill ok">loaded</span>',
                          f"{em.get('tras_with_factors', 0):,} tax-rate areas; {em.get('rows', 0):,} agency shares; report dated {em.get('prepared')}"])
+    from collections import Counter
+    gcnt = Counter(r[1] for v in gp["bg"].values() for r in v["g"])
+    gap_rows = [[k[0].upper() + k[1:], f"{v:,}", f"{v / max(len(gp['bg']), 1):.0%}"] for k, v in gcnt.most_common(22)]
     named = d.hood_source.value_counts()
     rep = {"title": "City Pretty: Los Angeles County",
            "paragraphs": [
@@ -342,6 +348,8 @@ def main():
                "Click any area for its ranked list, the total cost, the reasoning and the sources. Use the category buttons to see just transit, safety, parks and so on."],
            "sections": [
                {"title": "Your neighborhoods", "table": {"head": ["Area", "Block groups", "Homes", "Median home value", "Best bet in its best block group", "$ per $1", "Cost of all paying projects"], "rows": focus, "num": [1, 2, 3, 5, 6]}},
+               {"title": "What neighborhoods are missing most often", "paragraphs": ["Each block group is compared with the 50 most similar block groups in the county. A gap means it is worse than at least 80% of them by a meaningful margin. Click any area for its own gaps and a plan for its neighborhood."],
+                "table": {"head": ["Gap", "Block groups with it", "Share"], "rows": gap_rows, "num": [1, 2]}},
                {"title": "What comes out on top, county-wide", "paragraphs": ["How many block groups each improvement ranks first in (counting only where it returns at least $1 per $1)."],
                 "table": {"head": ["Improvement", "Category", "Block groups where #1", "Median $ per $1 there"], "rows": top_rows, "num": [2, 3]}},
                {"title": "By city", "paragraphs": ["The 45 largest cities and areas by homes. Cost and value cover every project returning at least $1 per $1 in each block group."],
@@ -384,7 +392,7 @@ def main():
             pts = cent.loc[idx]
             c = pts.union_all().centroid if hasattr(pts, "union_all") else pts.unary_union.centroid
             search[nm] = bg.GEOID.loc[pts.distance(c).idxmin()]
-    bundle = {"meta": {"built": date.today().isoformat(), "default_bg": default, "search": search}, "bgs": bgs, "details": det, "catalog": lib, "funding": meta.get("funding", {}), "eifd": eifd["meta"], "upgrades": meta.get("owner_upgrades", []),
+    bundle = {"meta": {"built": date.today().isoformat(), "default_bg": default, "search": search}, "bgs": bgs, "details": det, "catalog": lib, "funding": meta.get("funding", {}), "eifd": eifd["meta"], "upgrades": meta.get("owner_upgrades", []), "plans": gp["plans"],
               "zone_rules": pd.read_csv(ROOT / "model" / "round6" / "zone_rules.csv").to_dict("records"),
               "layers": L, "hoods": hoods_js, "hood_labels": labels(bgn, "hood"), "cities": city_js,
               "city_labels": labels(cities.rename(columns={"name": "nm"}), "nm"), "report": rep}
