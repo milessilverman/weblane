@@ -1,20 +1,20 @@
 {
- "generated_at": "2026-11-02T04:27:27.913712+00:00",
+ "generated_at": "2026-11-02T04:41:51.492498+00:00",
  "sources": {
   "osm": {
    "parks": 20954,
    "amenities": 154876,
-   "n_tennis": 10599,
-   "n_pickleball": 1195,
-   "n_basketball": 7540,
-   "n_playground": 4959,
+   "n_tennis": 2432,
+   "n_pickleball": 505,
+   "n_basketball": 2074,
+   "n_playground": 3158,
    "n_dog_park": 251,
-   "n_pool": 34848,
+   "n_pool": 771,
    "n_skatepark": 255,
-   "n_sports_field": 6779,
+   "n_sports_field": 3222,
    "n_fitness": 503,
    "n_library": 608,
-   "n_toilets": 2723,
+   "n_toilets": 1789,
    "n_drinking_water": 1018,
    "n_market": 132,
    "n_grocery": 1825,
@@ -29,9 +29,18 @@
    "n_culture": 1055,
    "n_ev_charger": 633,
    "n_community_garden": 255,
+   "roads": 177563,
+   "walls": 43,
+   "power": 44332,
+   "rail": 17204,
+   "stations": 372,
+   "water": 464,
+   "places": 709,
+   "lamps": 40484,
+   "resroads": 285979,
    "ok": false,
-   "error": "ValueError: Length of values (154876) does not match length of index (60476)",
-   "seconds": 282.2
+   "error": "NotImplementedError: df1 contains mixed geometry types.",
+   "seconds": 207.6
   }
  }
 }

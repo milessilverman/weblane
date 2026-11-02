@@ -1,20 +1,20 @@
 {
-  "generated_at": "2026-10-24T16:59:49.868760+00:00",
+  "generated_at": "2026-11-02T04:41:39.232117+00:00",
   "sources": {
     "osm_layers": {
       "ok": true,
-      "seconds": 32.4
+      "seconds": 261.8
     },
     "boundaries": {
       "places": 9,
       "block_groups": 744,
       "la_times_hoods": 32,
       "ok": true,
-      "seconds": 1.1
+      "seconds": 0.8
     },
     "blocks": {
       "ok": true,
-      "seconds": 2.3,
+      "seconds": 2.5,
       "rows": 855,
       "columns": [
         "geometry",
@@ -42,7 +42,7 @@
     "acs_block_groups": {
       "vintage": "2020-2024 ACS 5-year block groups",
       "ok": true,
-      "seconds": 5.4,
+      "seconds": 8.0,
       "rows": 744,
       "columns": [
         "GEOID",
@@ -63,7 +63,7 @@
     },
     "tree_equity_bg": {
       "ok": true,
-      "seconds": 0.3,
+      "seconds": 0.6,
       "rows": 701,
       "columns": [
         "GEOID",
@@ -77,20 +77,15 @@
     },
     "street_trees": {
       "la_wfs_diagnostics": [
-        "v1.1.0 HTTP 200 application/json;charset=UTF-8 '{\"type\":\"FeatureCollection\",\"features\":[{\"type\":\"Feature\",\"id\":\"streetsla_UFDSpeciesLabel.fid--1fcd8a88_1a16ec95562_-2412\",\"geometry\":{\"type\":\"Point\",\"coordinat'"
+        "v1.1.0 HTTPSConnectionPool(host='geola.daveytreekeeper.com', port=443): Max retries exceeded with url: /geoserver/Treekeeper/ows?service=WFS&version=1.1.0&request=GetFeature&typeName=Treekeeper%3Astre",
+        "v2.0.0 HTTPSConnectionPool(host='geola.daveytreekeeper.com', port=443): Max retries exceeded with url: /geoserver/Treekeeper/ows?service=WFS&version=2.0.0&request=GetFeature&typeNames=Treekeeper%3Astr",
+        "v1.0.0 HTTPSConnectionPool(host='geola.daveytreekeeper.com', port=443): Max retries exceeded with url: /geoserver/Treekeeper/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=Treekeeper%3Astre"
       ],
-      "la_city_live": 166311,
-      "la_city_columns": [
-        "geometry",
-        "site_id",
-        "tree_common",
-        "source_city"
-      ],
-      "records": 254145,
-      "vacant_sites": 36717,
-      "stumps": 2748,
+      "records": 194689,
+      "vacant_sites": 28427,
+      "stumps": 1034,
       "by_source": {
-        "los-angeles (StreetsLA Treekeeper, live)": 166311,
+        "los-angeles (stiles snapshot)": 106855,
         "santa-monica": 33145,
         "beverly-hills": 21825,
         "culver-city": 16986,
@@ -98,8 +93,8 @@
         "west-hollywood": 5101
       },
       "ok": true,
-      "seconds": 31.5,
-      "rows": 254145,
+      "seconds": 420.7,
+      "rows": 194689,
       "columns": [
         "source_city",
         "vacant_site",
@@ -130,7 +125,7 @@
       ],
       "sample_valid_share": 0.488,
       "ok": true,
-      "seconds": 40.5,
+      "seconds": 36.6,
       "rows": 855,
       "columns": [
         "block_id",
@@ -185,9 +180,9 @@
         "Units3",
         "Bedrooms3"
       ],
-      "tried_LACounty_Cache/LACounty_Parcel/MapServer/0": 215138,
+      "tried_LACounty_Cache/LACounty_Parcel/MapServer/0": 215137,
       "dataset": "https://public.gis.lacounty.gov/public/rest/services/LACounty_Cache/LACounty_Parcel/MapServer/0",
-      "rows": 215138,
+      "rows": 215137,
       "fields": [
         "OBJECTID",
         "AIN",
@@ -241,7 +236,7 @@
         "DesignType5"
       ],
       "ok": true,
-      "seconds": 726.7,
+      "seconds": 856.3,
       "columns": [
         "geometry",
         "OBJECTID",
@@ -308,8 +303,8 @@
       "units_col": "Units1",
       "land_col": "Roll_LandValue",
       "sqft_col": "Shape.STArea()",
-      "vacant": 3186,
-      "residential": 197992
+      "vacant": 3181,
+      "residential": 197988
     },
     "assessor_sales": {
       "rows": 7734,
@@ -327,7 +322,7 @@
         "USETYPE"
       ],
       "ok": true,
-      "seconds": 6.8,
+      "seconds": 8.3,
       "columns": [
         "geometry",
         "AIN",
@@ -384,7 +379,7 @@
       "rows": 19900,
       "window_start": "2023-12-31",
       "ok": true,
-      "seconds": 2.7,
+      "seconds": 2.5,
       "columns": [
         "violent",
         "geometry"
@@ -409,7 +404,7 @@
       "since": "2023-05-14",
       "latest": "2024-04-30",
       "ok": true,
-      "seconds": 2.8,
+      "seconds": 4.2,
       "columns": [
         "violent",
         "geometry"

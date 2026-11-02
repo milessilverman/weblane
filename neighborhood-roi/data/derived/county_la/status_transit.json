@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-02T04:39:26.695880+00:00",
+ "generated_at": "2026-11-02T04:41:24.381365+00:00",
  "sources": {
   "transit": {
    "mobility_feeds": [
@@ -171,7 +171,7 @@
    "combined_stops": 21199,
    "frequent_stops": 3004,
    "ok": true,
-   "seconds": 31.9
+   "seconds": 14.2
   }
  }
 }

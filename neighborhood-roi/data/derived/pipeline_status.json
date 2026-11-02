@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-11-02T04:40:50.473828+00:00",
+  "generated_at": "2026-11-02T05:17:04.284670+00:00",
   "sources": {
     "census_tract_boundaries": {
       "ok": true,
-      "seconds": 0.7,
+      "seconds": 0.4,
       "rows": 8497,
       "columns": [
         "GEOID",
@@ -17,7 +17,7 @@
     "census_acs_5yr": {
       "vintage": "2020-2024 ACS 5-year (table-based summary file)",
       "ok": true,
-      "seconds": 10.5,
+      "seconds": 8.3,
       "rows": 8505,
       "columns": [
         "GEOID",
@@ -42,7 +42,7 @@
     },
     "bls_oews_cost_factor": {
       "ok": true,
-      "seconds": 0.7,
+      "seconds": 0.9,
       "rows": 10,
       "columns": [
         "county_fips",
@@ -55,7 +55,7 @@
     },
     "usaspending_projects": {
       "ok": true,
-      "seconds": 32.9,
+      "seconds": 35.4,
       "rows": 1721,
       "columns": [
         "internal_id",
@@ -79,7 +79,7 @@
       "url": "https://www.fhfa.gov/hpi/download/annual/hpi_at_tract.csv",
       "latest_year": 2025,
       "ok": true,
-      "seconds": 4.5,
+      "seconds": 4.0,
       "rows": 5350,
       "columns": [
         "GEOID",
@@ -93,6 +93,36 @@
     "fema_national_risk_index": {
       "ok": false,
       "error": "NRI tract table not found"
+    },
+    "openstreetmap": {
+      "method": "geofabrik+osmium",
+      "parks": 58885,
+      "points": {
+        "school": 23946,
+        "neighborhood": 9142,
+        "rail_station": 7876,
+        "grocery": 7285,
+        "library": 2473
+      },
+      "ok": true,
+      "seconds": 2043.4
+    },
+    "cdc_places": {
+      "dataset": "PLACES: Census Tract Data (GIS Friendly Format), 2025 release",
+      "dataset_id": "yjkw-uj5s",
+      "ok": true,
+      "seconds": 7.0,
+      "rows": 8375,
+      "columns": [
+        "GEOID",
+        "poor_mental_health_pct",
+        "no_leisure_activity_pct",
+        "asthma_pct",
+        "obesity_pct",
+        "depression_pct",
+        "poor_general_health_pct",
+        "lack_transport_pct"
+      ]
     },
     "ca_school_scores": {
       "caaspp_year": "2024-25",
@@ -163,7 +193,7 @@
     },
     "epa_walkability": {
       "ok": true,
-      "seconds": 2.8,
+      "seconds": 3.0,
       "rows": 8366,
       "columns": [
         "GEOID",
@@ -172,7 +202,7 @@
     },
     "zillow_zhvi_zip": {
       "ok": true,
-      "seconds": 0.4,
+      "seconds": 0.2,
       "rows": 1057,
       "columns": [
         "RegionName",
@@ -189,7 +219,7 @@
     },
     "census_zcta_boundaries": {
       "ok": true,
-      "seconds": 1.5,
+      "seconds": 0.9,
       "rows": 33791,
       "columns": [
         "ZCTA5CE20",
@@ -198,7 +228,7 @@
     },
     "zillow_zhvi_neighborhood": {
       "ok": true,
-      "seconds": 0.3,
+      "seconds": 0.2,
       "rows": 2140,
       "columns": [
         "RegionID",

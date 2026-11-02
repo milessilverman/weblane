@@ -1,0 +1,28 @@
+{
+ "generated_at": "2026-11-02T04:41:22.980703+00:00",
+ "sources": {
+  "requests311": {
+   "73a2-6ar5_error": "",
+   "2cy6-i7zn_error": "",
+   "dataset": "rq3b-xjk8 MyLA311 Service Request Data 2020",
+   "rows": 1490434,
+   "window": "2020-01-01 to 2020-12-31",
+   "types": {
+    "BULKY ITEMS": 713451,
+    "GRAFFITI REMOVAL": 345398,
+    "METAL/HOUSEHOLD APPLIANCES": 138044,
+    "ILLEGAL DUMPING PICKUP": 128321,
+    "HOMELESS ENCAMPMENT": 50244,
+    "ELECTRONIC WASTE": 49246,
+    "DEAD ANIMAL REMOVAL": 24837,
+    "OTHER": 22688,
+    "SINGLE STREETLIGHT ISSUE": 9568,
+    "MULTIPLE STREETLIGHT ISSUE": 7186,
+    "REPORT WATER WASTE": 1113,
+    "FEEDBACK": 338
+   },
+   "ok": true,
+   "seconds": 504.1
+  }
+ }
+}
