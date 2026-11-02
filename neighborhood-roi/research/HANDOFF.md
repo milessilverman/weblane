@@ -5,7 +5,7 @@ Current deliverable: `reports/city-pretty-la-county.html` (V2.3: real EIFD input
 
 ## How it's built
 - Data: `.github/workflows/neighborhood-data.yml` runs `pipeline/county_la.py` stages in GitHub Actions
-  (geo, osm, transit, sales, crime, requests311, crashes, trees, parcels, assets, tra, assessed, basemap) and commits
+  (geo, osm, transit, sales, crime, requests311, crashes, trees, parcels, assets, tra, assessed, basemap, research_check, zoning) and commits
   `data/derived/county_la/`. Dispatch with input `county_only=true` to skip the slow tract/Westside jobs, and
   `county_stages=tra,assessed` (comma list) to run only some county stages; the rest keep their last data.
   This sandbox can't reach County/ArcGIS hosts, so data pulls must run in Actions.
@@ -40,6 +40,19 @@ Current deliverable: `reports/city-pretty-la-county.html` (V2.3: real EIFD input
   acreage, scale bar, "Find me" (geolocation, opens your block group).
 - Round 6 research prompt: `research/round6_research_prompt.md` (zoning, new improvements, QoL pricing, per-house).
 
+## Round 6 (done in V2.5)
+- Research received: `research/round6/partA_audit/` (careful; its 14 links all work) and a long pasted report
+  (Parts A-G; only 11 of its 34 links worked, and it said the expired federal 25C/25D credits were still active). `research_check` stage
+  re-tests every link → `data/derived/county_la/research_check.json`. Treat the long report as leads.
+- Facilities (in `basemap`): LA County LMS layers + OSM → `map_facilities.geojson`, `bg_facilities.csv` (nearest of each kind).
+- `zoning` stage: LA City (Zoning/FeatureServer/15), unincorporated (DRP Open_Data/3), Santa Clarita (NEWCODE);
+  SCAG 2019 parcel land use (services5.../2019_Regional_Land_Use_Information_for_Los_Angeles_County) fills the rest
+  as block-group summaries only. `zone_category()` maps codes to broad categories. Official SB 79 layer not found yet.
+- Model: 19 round-6 improvements graded **U** (hidden unless the viewer opts in, excluded from county summaries);
+  `model/round6/qol_benefits.csv` (yearly public benefit shown on QoL cards), `owner_upgrades.csv` (homeowner table,
+  rebates corrected), `zone_rules.csv` (base-zone standards for a few zones; unverified).
+- Fixed: park/street canvases blocked clicks → now in pointer-events:none panes. Parcel tiles split and retry on 500s.
+
 ## Next steps
 1. (done) EIFD tax-rate-area data.
 2. Add corridor right-of-way layers (abandoned rail, transmission, flood channels, Class I paths)
@@ -47,5 +60,7 @@ Current deliverable: `reports/city-pretty-la-county.html` (V2.3: real EIFD input
 3. Add FCC broadband data so fiber/5G is only suggested where service is poor.
 4. Replace "unverified" costs with the sourced figures from round 5's Part 4.
 5. Map orientation: remaining items are mini-map, breadcrumb, hover outline, shareable link.
-6. When round-6 research arrives: zoning layer and "what can be built" panel, new improvements, QoL prices,
-   per-house analysis.
+6. Per-house analysis: click a parcel → its zone, lot size, building, year built; ADU/SB 9/pool/solar eligibility
+   (needs parcel polygons on demand at zoom 17: query the Assessor layer live or pre-tile by cell).
+7. Verify round-6 effect sizes against their cited studies before promoting any U item to D or better.
+8. Official SB 79 stop/tier layer (SCAG) and CPAD access types; FCC broadband (the BDC download page returned 403).

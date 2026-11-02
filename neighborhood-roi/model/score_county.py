@@ -111,6 +111,12 @@ S = {  # sources, cited by key in the catalog
     "coolpave": "Pacoima / Covina cool-pavement studies: surface -5 C, air -0.2 to -1.9 C; Middel 2020: midday radiant heat +4 C for pedestrians",
     "greenalley": "Avalon Green Alley North phase II (2015): $1.83M",
     "filters": "Gilraine 2020 (LA, Porter Ranch): classroom air filters raised test scores",
+    "r6": "City Pretty round-6 research (Nov 2026, one AI research pass): cost and effect claims not yet checked against the cited studies",
+    "neilson": "Neilson & Zimmerman 2014 (New Haven school construction): home prices near rebuilt schools rose ~10%",
+    "r6_storm": "Round 6: LA County Safe Clean Water Program project costs (Elmer Ave green street, Magic Johnson Park stormwater)",
+    "r6_econ": "Round 6: Portland / Minneapolis corner-store and Mercado La Paloma food-hall examples; LA EWDD grants",
+    "r6_realm": "Round 6: LADOT People St plazas, slow streets, Metro Bike Share and STAP shelter contract costs",
+    "r6_clt": "Round 6: LA County Community Land Trust partnership pilot (LACDA)",
     "clinic": "Bailey & Goodman-Bacon 2015: community health centers -2% mortality 50+; Via Care East LA clinic $38.8M (25,000 sq ft)",
 }
 
@@ -178,6 +184,26 @@ CAT = [
     ("murals", "Public murals and art", "Amenities & economy", "qol", "association only", ["gem_art"], ["litter", "economy"], 0),
     ("tiny_forest", "Miyawaki tiny forest", "Greening", "qol", "ecology studied / price not measured", ["gem_forest"], ["heat", "parks"], 0),
     ("fiber_5g", "Fiber to the home and 5G small cells", "Energy", "qol", "price not measured", ["gem_fiber"], ["economy"], 0),
+    # round 6 (Nov 2026): every price effect is an unverified research claim, graded D, low end of its stated range
+    ("green_street", "Green street: bioswales and rain-garden curb extensions", "Greening", "value", "claimed, unverified", ["r6", "r6_storm"], ["heat"], 3),
+    ("stormwater_park", "Stormwater-capture park (underground basin, rebuilt fields)", "Greening", "value", "claimed, unverified", ["r6", "r6_storm"], ["parks"], 4),
+    ("corner_store", "Legalize corner stores and cafés (grants + zoning change)", "Amenities & economy", "value", "claimed, unverified", ["r6", "r6_econ"], ["food", "economy"], 2),
+    ("food_hall", "Community food hall / small-business incubator", "Amenities & economy", "value", "claimed, unverified", ["r6", "r6_econ"], ["food", "economy"], 3),
+    ("park_cafe", "Café kiosk in the park", "Amenities & economy", "value", "claimed, unverified", ["r6"], ["parks", "food"], 1),
+    ("new_school", "Build a new public elementary school", "Schools & services", "value", "claimed, unverified (cf. New Haven study)", ["r6", "neilson"], ["kids"], 4),
+    ("plaza", "Turn a quiet commercial block into a plaza", "Amenities & economy", "value", "claimed, unverified", ["r6", "r6_realm"], ["parks", "economy"], 2),
+    ("slow_streets", "Slow streets and bike boulevards", "Streets & safety", "value", "claimed, unverified", ["r6", "r6_realm"], ["traffic", "kids"], 2),
+    ("transit_shade", "Solar shade canopies at busy bus stops", "Transit", "value", "claimed, unverified", ["r6", "r6_realm"], ["heat", "transit"], 1),
+    ("bike_share", "Bike-share station (e-bikes)", "Transit", "value", "claimed, unverified", ["r6", "r6_realm"], ["transit"], 1),
+    ("ebike_library", "E-bike lending library", "Transit", "value", "claimed, unverified", ["r6"], ["transit"], 1),
+    ("microtransit", "Neighborhood electric microtransit shuttle", "Transit", "value", "claimed, unverified", ["r6", "r6_realm"], ["transit"], 2),
+    ("alley_gating", "Gate, pave and light problem alleys", "Clean streets", "value", "claimed, unverified", ["r6"], ["litter", "safety"], 2),
+    ("cooling_center", "Cooling-center retrofit of a library or rec center", "Schools & services", "value", "claimed, unverified", ["r6"], ["heat"], 2),
+    ("wayfinding", "Neighborhood wayfinding and landmark signs", "Amenities & economy", "value", "claimed, unverified", ["r6", "r6_realm"], ["economy"], 1),
+    ("box_art", "Art wraps on traffic-signal boxes", "Clean streets", "value", "claimed, unverified", ["r6"], ["litter"], 1),
+    ("vending_zone", "Sidewalk vending zone (power, water, shade)", "Amenities & economy", "value", "claimed, unverified", ["r6"], ["food", "economy"], 1),
+    ("night_market", "Weekend night market kit", "Amenities & economy", "value", "claimed, unverified", ["r6"], ["food", "economy"], 1),
+    ("clt", "Community land trust buys a small apartment building", "Housing", "value", "claimed, unverified", ["r6", "r6_clt"], ["housing"], 3),
 ]
 CATALOG = {c[0]: dict(zip(("id", "name", "category", "kind", "evidence", "sources", "qol", "years"), c)) for c in CAT}
 
@@ -192,6 +218,9 @@ GRADE = {"street_trees": "A",
          **dict.fromkeys(["pocket_park", "park_upgrade", "traffic_calming", "street_lighting", "foot_patrol", "violence_interruption",
                           "bid", "encampment", "ev_hub", "rail_station", "freeway_cap", "upzone_transit"], "C"),
          **dict.fromkeys(["bus_lane", "dog_park", "farmers_market", "main_street", "schoolyard_green"], "D")}
+R6_IDS = ["green_street", "stormwater_park", "corner_store", "food_hall", "park_cafe", "new_school", "plaza", "slow_streets", "transit_shade",
+          "bike_share", "ebike_library", "microtransit", "alley_gating", "cooling_center", "wayfinding", "box_art", "vending_zone", "night_market", "clt"]
+GRADE.update(dict.fromkeys(R6_IDS, "U"))  # U = unverified lead: hidden unless the viewer opts in
 # Caveats raised by an outside accuracy audit (City Pretty V2.1 review), shown with each estimate
 CAVEAT = {
     "dog_park": "The dog-park study's coefficient was not recovered; +0.25% is an assumption.",
@@ -219,10 +248,21 @@ CAVEAT = {
     "affordable_housing": "Effects vary by neighborhood and can be negative in higher-income areas.",
     "foot_patrol": "Chains a Philadelphia crime effect with a New York price link; cost is salary + fringe only.",
     "undergrounding": "Canberra price association; private service connections and telecom work not included.",
+    **dict.fromkeys(R6_IDS, "Round-6 research claim: the cited studies have not been checked, and several of that report's other "
+                            "citations did not support their claims. Uses the low end of the claimed range. Treat as a lead, not an estimate."),
+    "new_school": "Round-6 claim (+4.2% low end within 800 m) is unverified; a real study (New Haven) found ~10% near rebuilt schools. "
+                  "Cost is per seat (~$85k) x 500 seats; needs a seat shortage, which isn't mapped yet.",
+    "clt": "Round-6 claim, unverified. The goal is keeping tenants housed; a price rise nearby isn't the point.",
 }
 for k, c in CATALOG.items():
     c["grade"] = GRADE.get(k, "none")
     c["caveat"] = CAVEAT.get(k, "")
+# Round 6: dollar value of the yearly public benefit for quality-of-life projects (unverified research estimates)
+_QB = pd.read_csv(Path(__file__).resolve().parent / "round6" / "qol_benefits.csv")
+for b in _QB.itertuples():
+    if b.id in CATALOG:
+        CATALOG[b.id]["benefit"] = [float(b.annual_benefit_usd_2024), b.method, b.city_pretty_note if isinstance(b.city_pretty_note, str) else ""]
+OWNER_UPGRADES = pd.read_csv(Path(__file__).resolve().parent / "round6" / "owner_upgrades.csv").fillna("").to_dict("records")
 
 
 FUNDING = {
@@ -262,6 +302,10 @@ FUND_FOR = {
     "protected_bike": ["ATP", "SS4A", "M"], "corridor_trail": ["A", "ATP", "P4", "W"], "transit_priority": ["M", "ATP"], "speed_cameras": ["SS4A", "M"],
     "roundabout": ["SS4A", "M"], "ped_signals": ["SS4A", "M"], "school_street": ["ATP", "SS4A"], "murals": ["BID", "CDBG"],
     "tiny_forest": ["UCF", "A", "P4", "CFC"], "fiber_5g": ["EIFD"],
+    "green_street": ["W", "P4"], "stormwater_park": ["W", "A", "P4"], "corner_store": ["CDBG"], "food_hall": ["CDBG", "EIFD"], "park_cafe": ["A"],
+    "new_school": ["EIFD"], "plaza": ["M", "P4", "BID"], "slow_streets": ["ATP", "M", "SS4A"], "transit_shade": ["STAP", "M"], "bike_share": ["M"],
+    "ebike_library": ["P4"], "microtransit": ["M"], "alley_gating": ["CDBG"], "cooling_center": ["P4"], "wayfinding": ["BID", "A"],
+    "box_art": ["BID"], "vending_zone": ["CDBG"], "night_market": ["BID"], "clt": ["EIFD", "CDBG"],
 }
 
 
@@ -273,7 +317,7 @@ def load():
     if d is None:
         raise SystemExit("county data not built yet")
     status = {}
-    for name in ("bg_osm", "bg_transit", "bg_crime", "bg_311", "bg_crashes", "bg_trees", "bg_parcels", "bg_assets"):
+    for name in ("bg_osm", "bg_transit", "bg_crime", "bg_311", "bg_crashes", "bg_trees", "bg_parcels", "bg_assets", "bg_facilities", "bg_zoning"):
         x = rd(name)
         status[name] = x is not None
         if x is not None:
@@ -744,6 +788,63 @@ def size_projects(r, ref, tree_rate):
         add("tiny_forest", 2, "2 sites of 0.1 acre", reach(300, dens, H), 0, 130_000, 17_000, why=f"{heat:+.1f}°F hotter than average and few parks nearby")
     if dens > 0.004:
         add("fiber_5g", 1, "fiber to every home here", H, 0, 3_200 * H, 85 * H, why="dense area (broadband coverage data not loaded yet; check the FCC map)")
+
+    # --- round 6 additions (grade D: unverified research claims, low end of each stated range)
+    dump, graf, kids, nocar = g(r, "illegal_dumping", 0), g(r, "graffiti", 0), g(r, "kids_share", 0), g(r, "no_car_share", 0)
+    pk_ac = g(r, "park_acres_half_mile", 0)
+    if heat > 0 and res_km >= 2:
+        add("green_street", 4, "4 pairs of bioswale curb extensions", reach(100, dens, H), 0.012, 4 * 185_000, 4 * 4_500,
+            why=f"{heat:+.1f}°F hotter than average; streets that drain to the storm system")
+    if pk_ac >= 5 and dens > 0.002:
+        share = min(1.0, H / 2500)
+        add("stormwater_park", 1, f"this area's {share:.0%} share of a ~$16.5M park stormwater project", reach(400, dens, H), 0.028,
+            16_500_000 * share, 120_000 * share, why=f"{pk_ac:.0f} acres of park within ½ mile that could hold a buried basin")
+    if g(r, "grocery_nearest_m", 0) > 800 and din <= 1 and r.sf_share > 0.5:
+        add("corner_store", 2, "2 corner-store / café conversion grants + zoning change", reach(250, dens, H), 0.019, 2 * 45_000, 2 * 1_500,
+            why=f"{int(din)} cafés within 400 m and the nearest grocery {g(r, 'grocery_nearest_m', 0)/1609:.1f} mi away")
+    if poor and tph >= 8 and din >= 3:
+        add("food_hall", 1, "1 six-stall food hall in a vacant storefront", reach(350, dens, H), 0.016, 2_800_000, 85_000,
+            why=f"busy bus corridor ({tph:.0f}/hr) and below-median income")
+    if pk_ac >= 10 and dens > 0.003:
+        add("park_cafe", 1, "1 park kiosk café", reach(150, dens, H), 0.006, 185_000, 8_500, why=f"{pk_ac:.0f} park acres within ½ mile")
+    if g(r, "fac_school_m", g(r, "school_nearest_m", 0)) > 1200 and kids >= 0.22 and dens > 0.002:
+        add("new_school", 1, "1 elementary school, 500 seats", reach(800, dens, H), 0.042, 500 * 85_000, 500 * 650,
+            why=f"nearest public school {g(r, 'fac_school_m', g(r, 'school_nearest_m', 0))/1609:.1f} mi away; {kids:.0%} of residents are children")
+    if din >= 8 and dens > 0.004:
+        add("plaza", 1, "1 block closed to cars as a plaza", reach(300, dens, H), 0.029, 650_000, 22_000,
+            why=f"{int(din)} restaurants and cafés within 400 m")
+    if res_km >= 3 and (pb >= 1 or kids >= 0.2):
+        miles = min(res_km / 4, 2)
+        add("slow_streets", 1, f"{miles:.1f} miles of slow streets", reach(150, dens, H), 0.011, 120_000 * miles, 6_500 * miles,
+            why=f"{res_km:.0f} km of local streets; {int(pb)} pedestrian/bike crashes")
+    if tph >= 12 and heat > 0:
+        add("transit_shade", 4, "4 solar shade canopies", reach(100, dens, H), 0.005, 4 * 42_000, 4 * 2_400,
+            why=f"{tph:.0f} buses an hour and {heat:+.1f}°F hotter than average")
+    if dens > 0.006 and (rail_m < 800 or tph >= 12):
+        add("bike_share", 1, "1 fifteen-dock e-bike share station", reach(150, dens, H), 0.004, 65_000, 14_000, why="dense and close to rail or frequent buses")
+    if poor and nocar >= 0.15:
+        add("ebike_library", 1, "30 e-bikes at a community hub", reach(200, dens, H), 0.002, 220_000, 35_000,
+            why=f"{nocar:.0%} of households have no car")
+    if nocar >= 0.12 and tph < 4 and dens > 0.002:
+        add("microtransit", 1, "4 electric vans, on demand (1 year)", reach(500, dens, H), 0.009, 950_000, 320_000,
+            why=f"{nocar:.0%} without a car and only {tph:.0f} buses an hour nearby")
+    if dump >= 40:
+        add("alley_gating", 2, "2 alleys gated, repaved and lit", reach(100, dens, H), 0.021, 2 * 145_000, 2 * 5_500,
+            why=f"{int(dump)} illegal-dumping reports in 12 months")
+    if heat >= 2 and (g(r, "library_nearest_m", 9e9) < 1500 or g(r, "fac_community_center_m", 9e9) < 1500):
+        add("cooling_center", 1, "retrofit 1 library or rec center as a cooling center", reach(300, dens, H), 0.004, 450_000, 18_000,
+            why=f"{heat:+.1f}°F hotter than average with a public building nearby")
+    if din >= 5:
+        add("wayfinding", 1, "12 signs + 4 kiosks", reach(150, dens, H), 0.002, 35_000, 1_800, why=f"walkable strip with {int(din)} restaurants and cafés")
+    if graf >= 20:
+        add("box_art", 10, "10 signal-box wraps", reach(50, dens, H) * 3, 0.001, 22_000, 3_500, why=f"{int(graf)} graffiti reports in 12 months")
+    if poor and din >= 5 and dens > 0.006:
+        add("vending_zone", 1, "2 blocks, 10 vending stalls", reach(150, dens, H), 0.003, 185_000, 16_000, why="busy, lower-income commercial street")
+    if din >= 6 and dens > 0.003:
+        add("night_market", 1, "1 market kit (weekend nights)", reach(250, dens, H), 0.006, 120_000, 24_000, why=f"{int(din)} restaurants and cafés within 400 m")
+    if poor and r.sf_share < 0.4 and dens > 0.006:
+        add("clt", 1, "1 eight-unit building into a land trust", reach(300, dens, H), 0.014, 3_500_000, 45_000,
+            why="dense, lower-income area of mostly rentals")
     return P
 
 
@@ -790,8 +891,9 @@ def score():
                          "land": round(p["land"]), "om": round(p["om"]), "value": round(value), "vpd": (round(value / cost, 3) if cost else 0) if c["kind"] != "policy" else 0,
                          "pct": round(p["pct"] * 100, 3), "why": p["why"], "qol": round(float(qol), 2)})
         val = sorted([x for x in recs if CATALOG[x["id"]]["kind"] in ("value", "regional")], key=lambda x: -x["vpd"])
-        top = next((x for x in val if CATALOG[x["id"]]["kind"] == "value"), None)
-        pkg = [x for x in val if x["vpd"] >= 1 and CATALOG[x["id"]]["kind"] == "value"]
+        ok = lambda x: CATALOG[x["id"]]["kind"] == "value" and CATALOG[x["id"]]["grade"] != "U"  # noqa: E731
+        top = next((x for x in val if ok(x)), None)
+        pkg = [x for x in val if x["vpd"] >= 1 and ok(x)]
         details[r.GEOID] = {"recs": recs}
         rows.append({"GEOID": r.GEOID, "top": top["id"] if top and top["vpd"] >= 1 else None, "top_vpd": top["vpd"] if top else None,
                      "pkg_cost": sum(x["cost"] for x in pkg), "pkg_value": sum(x["value"] for x in pkg), "pkg_n": len(pkg)})
@@ -803,7 +905,7 @@ def score():
     meta = {"ref": {k: (None if v != v else float(v)) for k, v in ref.items()}, "tree_calibration": tree_cal, "tree_pct": TREE_50M_PCT,
             "elasticities": {"violent": EL_VIOLENT, "property": EL_PROPERTY}, "pv10": PV10, "status": status,
             "catalog": {k: {**v, "sources": [S[s] for s in v["sources"]], "funding": FUND_FOR.get(k, [])} for k, v in CATALOG.items()},
-            "funding": FUNDING,
+            "funding": FUNDING, "owner_upgrades": OWNER_UPGRADES,
             "pipeline": st}
     (OUT / "meta.json").write_text(json.dumps(meta, indent=1, default=str))
     pd.DataFrame([{**{k: v for k, v in c.items() if k != "sources"}, "sources": " | ".join(S[s] for s in c["sources"])} for c in CATALOG.values()]).to_csv(

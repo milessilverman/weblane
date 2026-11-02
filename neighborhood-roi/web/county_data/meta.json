@@ -37,7 +37,9 @@
   "bg_crashes": true,
   "bg_trees": true,
   "bg_parcels": true,
-  "bg_assets": true
+  "bg_assets": true,
+  "bg_facilities": true,
+  "bg_zoning": true
  },
  "catalog": {
   "street_trees": {
@@ -148,6 +150,11 @@
    "years": 2,
    "grade": "none",
    "caveat": "",
+   "benefit": [
+    157500.0,
+    "Avoided stormwater treatment and heat illness",
+    ""
+   ],
    "funding": [
     "W",
     "TCC"
@@ -168,6 +175,11 @@
    "years": 0,
    "grade": "none",
    "caveat": "",
+   "benefit": [
+    64750.0,
+    "Avoided heat ER visits and cooling energy",
+    ""
+   ],
    "funding": [
     "M",
     "TCC"
@@ -236,6 +248,11 @@
    "years": 0,
    "grade": "none",
    "caveat": "",
+   "benefit": [
+    113750.0,
+    "Physical activity health value (WHO HEAT), 65 regular players",
+    ""
+   ],
    "funding": [
     "A",
     "QUIMBY"
@@ -257,6 +274,11 @@
    "years": 0,
    "grade": "none",
    "caveat": "",
+   "benefit": [
+    78750.0,
+    "Physical activity health value, 45 regular players",
+    ""
+   ],
    "funding": [
     "A"
    ]
@@ -278,6 +300,11 @@
    "years": 0,
    "grade": "none",
    "caveat": "",
+   "benefit": [
+    192000.0,
+    "Youth activity and fewer evening youth incidents",
+    ""
+   ],
    "funding": [
     "A",
     "CDBG"
@@ -319,6 +346,11 @@
    "years": 0,
    "grade": "none",
    "caveat": "",
+   "benefit": [
+    274000.0,
+    "Drownings prevented (learn-to-swim) at the value of a statistical life",
+    "Rests on preventing 1 child drowning per 50 years at $13.7M; very sensitive to that assumption."
+   ],
    "funding": [
     "A",
     "P4"
@@ -340,6 +372,11 @@
    "years": 0,
    "grade": "none",
    "caveat": "",
+   "benefit": [
+    50000.0,
+    "Avoided child heat illness",
+    ""
+   ],
    "funding": [
     "A",
     "P4"
@@ -361,6 +398,11 @@
    "years": 0,
    "grade": "none",
    "caveat": "",
+   "benefit": [
+    148500.0,
+    "Youth exercise and less skating damage to private property",
+    ""
+   ],
    "funding": [
     "A"
    ]
@@ -381,6 +423,11 @@
    "years": 0,
    "grade": "none",
    "caveat": "",
+   "benefit": [
+    112500.0,
+    "Extra playable field hours and water saved (synthetic turf)",
+    "Assumes synthetic turf; City Pretty prices natural grass."
+   ],
    "funding": [
     "A",
     "W"
@@ -402,6 +449,11 @@
    "years": 0,
    "grade": "none",
    "caveat": "",
+   "benefit": [
+    216000.0,
+    "Program value per user (1,200 users)",
+    ""
+   ],
    "funding": [
     "A",
     "CDBG"
@@ -422,6 +474,11 @@
    "years": 0,
    "grade": "none",
    "caveat": "",
+   "benefit": [
+    111000.0,
+    "Avoided infectious-disease response and cleanup",
+    ""
+   ],
    "funding": [
     "A"
    ]
@@ -505,6 +562,11 @@
    "years": 0,
    "grade": "none",
    "caveat": "",
+   "benefit": [
+    44400.0,
+    "Avoided heat illness among riders",
+    ""
+   ],
    "funding": [
     "STAP",
     "M"
@@ -548,6 +610,11 @@
    "years": 0,
    "grade": "none",
    "caveat": "",
+   "benefit": [
+    134400.0,
+    "Pedestrian injury crashes avoided (FHWA crash costs)",
+    ""
+   ],
    "funding": [
     "SS4A",
     "ATP",
@@ -570,6 +637,11 @@
    "years": 0,
    "grade": "none",
    "caveat": "",
+   "benefit": [
+    288360.0,
+    "Crashes avoided (29% fewer)",
+    ""
+   ],
    "funding": [
     "SS4A",
     "ATP",
@@ -591,6 +663,11 @@
    "years": 0,
    "grade": "none",
    "caveat": "",
+   "benefit": [
+    96000.0,
+    "Trip-and-fall injuries avoided and more walking",
+    ""
+   ],
    "funding": [
     "M",
     "ATP",
@@ -634,6 +711,11 @@
    "years": 0,
    "grade": "none",
    "caveat": "",
+   "benefit": [
+    99000.0,
+    "Burglaries and car thefts avoided",
+    "LA's own camera evaluations found no crime effect; treat with extra caution."
+   ],
    "funding": [
     "CDBG"
    ]
@@ -714,6 +796,11 @@
    "years": 0,
    "grade": "none",
    "caveat": "",
+   "benefit": [
+    102000.0,
+    "Trash removed before it reaches storm drains",
+    ""
+   ],
    "funding": [
     "BID",
     "CDBG"
@@ -734,6 +821,11 @@
    "years": 0,
    "grade": "none",
    "caveat": "",
+   "benefit": [
+    127500.0,
+    "Graffiti abated",
+    "Values the removal work itself, not an outcome."
+   ],
    "funding": [
     "BID",
     "CDBG"
@@ -888,6 +980,11 @@
    "years": 0,
    "grade": "none",
    "caveat": "",
+   "benefit": [
+    147000.0,
+    "Outage hours avoided at critical sites (LBNL calculator)",
+    ""
+   ],
    "funding": [
     "IRA",
     "P4"
@@ -951,6 +1048,11 @@
    "years": 0,
    "grade": "none",
    "caveat": "",
+   "benefit": [
+    108750.0,
+    "Student absence days avoided",
+    ""
+   ],
    "funding": [
     "P4"
    ]
@@ -989,6 +1091,11 @@
    "years": 0,
    "grade": "none",
    "caveat": "",
+   "benefit": [
+    273000.0,
+    "Library service value per visit",
+    "Library 'return on investment' studies value services at retail prices, not measured outcomes."
+   ],
    "funding": [
     "CDBG"
    ]
@@ -1008,6 +1115,11 @@
    "years": 0,
    "grade": "none",
    "caveat": "",
+   "benefit": [
+    333000.0,
+    "Preventable emergency visits avoided",
+    ""
+   ],
    "funding": [
     "CDBG"
    ]
@@ -1069,6 +1181,11 @@
    "years": 0,
    "grade": "none",
    "caveat": "",
+   "benefit": [
+    168000.0,
+    "Added restaurant revenue",
+    "Private business revenue, not a public benefit; shown for reference only."
+   ],
    "funding": [
     "BID"
    ]
@@ -1126,6 +1243,11 @@
    "years": 0,
    "grade": "none",
    "caveat": "",
+   "benefit": [
+    172800.0,
+    "Bicyclist injury crashes avoided",
+    ""
+   ],
    "funding": [
     "ATP",
     "SS4A",
@@ -1148,6 +1270,11 @@
    "years": 0,
    "grade": "none",
    "caveat": "",
+   "benefit": [
+    385000.0,
+    "Physical activity health value of trail users",
+    ""
+   ],
    "funding": [
     "A",
     "ATP",
@@ -1170,6 +1297,11 @@
    "years": 0,
    "grade": "none",
    "caveat": "",
+   "benefit": [
+    273000.0,
+    "Bus rider time saved (USDOT value of time)",
+    ""
+   ],
    "funding": [
     "M",
     "ATP"
@@ -1190,6 +1322,11 @@
    "years": 0,
    "grade": "none",
    "caveat": "",
+   "benefit": [
+    704000.0,
+    "Fatal and serious speeding crashes avoided",
+    ""
+   ],
    "funding": [
     "SS4A",
     "M"
@@ -1210,6 +1347,11 @@
    "years": 0,
    "grade": "none",
    "caveat": "",
+   "benefit": [
+    426275.0,
+    "Fatal and injury crashes avoided",
+    ""
+   ],
    "funding": [
     "SS4A",
     "M"
@@ -1230,6 +1372,11 @@
    "years": 0,
    "grade": "none",
    "caveat": "",
+   "benefit": [
+    115200.0,
+    "Turning-car pedestrian crashes avoided",
+    ""
+   ],
    "funding": [
     "SS4A",
     "M"
@@ -1251,6 +1398,11 @@
    "years": 0,
    "grade": "none",
    "caveat": "",
+   "benefit": [
+    51150.0,
+    "Child pedestrian crashes avoided and more walking to school",
+    ""
+   ],
    "funding": [
     "ATP",
     "SS4A"
@@ -1272,6 +1424,11 @@
    "years": 0,
    "grade": "none",
    "caveat": "",
+   "benefit": [
+    30000.0,
+    "Blight reduction (per square foot of mural)",
+    ""
+   ],
    "funding": [
     "BID",
     "CDBG"
@@ -1293,6 +1450,11 @@
    "years": 0,
    "grade": "none",
    "caveat": "",
+   "benefit": [
+    38520.0,
+    "Cooling and carbon (EPA social cost of carbon)",
+    ""
+   ],
    "funding": [
     "UCF",
     "A",
@@ -1315,8 +1477,406 @@
    "years": 0,
    "grade": "none",
    "caveat": "",
+   "benefit": [
+    210000.0,
+    "Household broadband bill savings ($50/month)",
+    "Savings move money from providers to households; not all of it is a net public gain."
+   ],
    "funding": [
     "EIFD"
+   ]
+  },
+  "green_street": {
+   "id": "green_street",
+   "name": "Green street: bioswales and rain-garden curb extensions",
+   "category": "Greening",
+   "kind": "value",
+   "evidence": "claimed, unverified",
+   "sources": [
+    "City Pretty round-6 research (Nov 2026, one AI research pass): cost and effect claims not yet checked against the cited studies",
+    "Round 6: LA County Safe Clean Water Program project costs (Elmer Ave green street, Magic Johnson Park stormwater)"
+   ],
+   "qol": [
+    "heat"
+   ],
+   "years": 3,
+   "grade": "U",
+   "caveat": "Round-6 research claim: the cited studies have not been checked, and several of that report's other citations did not support their claims. Uses the low end of the claimed range. Treat as a lead, not an estimate.",
+   "funding": [
+    "W",
+    "P4"
+   ]
+  },
+  "stormwater_park": {
+   "id": "stormwater_park",
+   "name": "Stormwater-capture park (underground basin, rebuilt fields)",
+   "category": "Greening",
+   "kind": "value",
+   "evidence": "claimed, unverified",
+   "sources": [
+    "City Pretty round-6 research (Nov 2026, one AI research pass): cost and effect claims not yet checked against the cited studies",
+    "Round 6: LA County Safe Clean Water Program project costs (Elmer Ave green street, Magic Johnson Park stormwater)"
+   ],
+   "qol": [
+    "parks"
+   ],
+   "years": 4,
+   "grade": "U",
+   "caveat": "Round-6 research claim: the cited studies have not been checked, and several of that report's other citations did not support their claims. Uses the low end of the claimed range. Treat as a lead, not an estimate.",
+   "funding": [
+    "W",
+    "A",
+    "P4"
+   ]
+  },
+  "corner_store": {
+   "id": "corner_store",
+   "name": "Legalize corner stores and caf\u00e9s (grants + zoning change)",
+   "category": "Amenities & economy",
+   "kind": "value",
+   "evidence": "claimed, unverified",
+   "sources": [
+    "City Pretty round-6 research (Nov 2026, one AI research pass): cost and effect claims not yet checked against the cited studies",
+    "Round 6: Portland / Minneapolis corner-store and Mercado La Paloma food-hall examples; LA EWDD grants"
+   ],
+   "qol": [
+    "food",
+    "economy"
+   ],
+   "years": 2,
+   "grade": "U",
+   "caveat": "Round-6 research claim: the cited studies have not been checked, and several of that report's other citations did not support their claims. Uses the low end of the claimed range. Treat as a lead, not an estimate.",
+   "funding": [
+    "CDBG"
+   ]
+  },
+  "food_hall": {
+   "id": "food_hall",
+   "name": "Community food hall / small-business incubator",
+   "category": "Amenities & economy",
+   "kind": "value",
+   "evidence": "claimed, unverified",
+   "sources": [
+    "City Pretty round-6 research (Nov 2026, one AI research pass): cost and effect claims not yet checked against the cited studies",
+    "Round 6: Portland / Minneapolis corner-store and Mercado La Paloma food-hall examples; LA EWDD grants"
+   ],
+   "qol": [
+    "food",
+    "economy"
+   ],
+   "years": 3,
+   "grade": "U",
+   "caveat": "Round-6 research claim: the cited studies have not been checked, and several of that report's other citations did not support their claims. Uses the low end of the claimed range. Treat as a lead, not an estimate.",
+   "funding": [
+    "CDBG",
+    "EIFD"
+   ]
+  },
+  "park_cafe": {
+   "id": "park_cafe",
+   "name": "Caf\u00e9 kiosk in the park",
+   "category": "Amenities & economy",
+   "kind": "value",
+   "evidence": "claimed, unverified",
+   "sources": [
+    "City Pretty round-6 research (Nov 2026, one AI research pass): cost and effect claims not yet checked against the cited studies"
+   ],
+   "qol": [
+    "parks",
+    "food"
+   ],
+   "years": 1,
+   "grade": "U",
+   "caveat": "Round-6 research claim: the cited studies have not been checked, and several of that report's other citations did not support their claims. Uses the low end of the claimed range. Treat as a lead, not an estimate.",
+   "funding": [
+    "A"
+   ]
+  },
+  "new_school": {
+   "id": "new_school",
+   "name": "Build a new public elementary school",
+   "category": "Schools & services",
+   "kind": "value",
+   "evidence": "claimed, unverified (cf. New Haven study)",
+   "sources": [
+    "City Pretty round-6 research (Nov 2026, one AI research pass): cost and effect claims not yet checked against the cited studies",
+    "Neilson & Zimmerman 2014 (New Haven school construction): home prices near rebuilt schools rose ~10%"
+   ],
+   "qol": [
+    "kids"
+   ],
+   "years": 4,
+   "grade": "U",
+   "caveat": "Round-6 claim (+4.2% low end within 800 m) is unverified; a real study (New Haven) found ~10% near rebuilt schools. Cost is per seat (~$85k) x 500 seats; needs a seat shortage, which isn't mapped yet.",
+   "funding": [
+    "EIFD"
+   ]
+  },
+  "plaza": {
+   "id": "plaza",
+   "name": "Turn a quiet commercial block into a plaza",
+   "category": "Amenities & economy",
+   "kind": "value",
+   "evidence": "claimed, unverified",
+   "sources": [
+    "City Pretty round-6 research (Nov 2026, one AI research pass): cost and effect claims not yet checked against the cited studies",
+    "Round 6: LADOT People St plazas, slow streets, Metro Bike Share and STAP shelter contract costs"
+   ],
+   "qol": [
+    "parks",
+    "economy"
+   ],
+   "years": 2,
+   "grade": "U",
+   "caveat": "Round-6 research claim: the cited studies have not been checked, and several of that report's other citations did not support their claims. Uses the low end of the claimed range. Treat as a lead, not an estimate.",
+   "funding": [
+    "M",
+    "P4",
+    "BID"
+   ]
+  },
+  "slow_streets": {
+   "id": "slow_streets",
+   "name": "Slow streets and bike boulevards",
+   "category": "Streets & safety",
+   "kind": "value",
+   "evidence": "claimed, unverified",
+   "sources": [
+    "City Pretty round-6 research (Nov 2026, one AI research pass): cost and effect claims not yet checked against the cited studies",
+    "Round 6: LADOT People St plazas, slow streets, Metro Bike Share and STAP shelter contract costs"
+   ],
+   "qol": [
+    "traffic",
+    "kids"
+   ],
+   "years": 2,
+   "grade": "U",
+   "caveat": "Round-6 research claim: the cited studies have not been checked, and several of that report's other citations did not support their claims. Uses the low end of the claimed range. Treat as a lead, not an estimate.",
+   "funding": [
+    "ATP",
+    "M",
+    "SS4A"
+   ]
+  },
+  "transit_shade": {
+   "id": "transit_shade",
+   "name": "Solar shade canopies at busy bus stops",
+   "category": "Transit",
+   "kind": "value",
+   "evidence": "claimed, unverified",
+   "sources": [
+    "City Pretty round-6 research (Nov 2026, one AI research pass): cost and effect claims not yet checked against the cited studies",
+    "Round 6: LADOT People St plazas, slow streets, Metro Bike Share and STAP shelter contract costs"
+   ],
+   "qol": [
+    "heat",
+    "transit"
+   ],
+   "years": 1,
+   "grade": "U",
+   "caveat": "Round-6 research claim: the cited studies have not been checked, and several of that report's other citations did not support their claims. Uses the low end of the claimed range. Treat as a lead, not an estimate.",
+   "funding": [
+    "STAP",
+    "M"
+   ]
+  },
+  "bike_share": {
+   "id": "bike_share",
+   "name": "Bike-share station (e-bikes)",
+   "category": "Transit",
+   "kind": "value",
+   "evidence": "claimed, unverified",
+   "sources": [
+    "City Pretty round-6 research (Nov 2026, one AI research pass): cost and effect claims not yet checked against the cited studies",
+    "Round 6: LADOT People St plazas, slow streets, Metro Bike Share and STAP shelter contract costs"
+   ],
+   "qol": [
+    "transit"
+   ],
+   "years": 1,
+   "grade": "U",
+   "caveat": "Round-6 research claim: the cited studies have not been checked, and several of that report's other citations did not support their claims. Uses the low end of the claimed range. Treat as a lead, not an estimate.",
+   "funding": [
+    "M"
+   ]
+  },
+  "ebike_library": {
+   "id": "ebike_library",
+   "name": "E-bike lending library",
+   "category": "Transit",
+   "kind": "value",
+   "evidence": "claimed, unverified",
+   "sources": [
+    "City Pretty round-6 research (Nov 2026, one AI research pass): cost and effect claims not yet checked against the cited studies"
+   ],
+   "qol": [
+    "transit"
+   ],
+   "years": 1,
+   "grade": "U",
+   "caveat": "Round-6 research claim: the cited studies have not been checked, and several of that report's other citations did not support their claims. Uses the low end of the claimed range. Treat as a lead, not an estimate.",
+   "funding": [
+    "P4"
+   ]
+  },
+  "microtransit": {
+   "id": "microtransit",
+   "name": "Neighborhood electric microtransit shuttle",
+   "category": "Transit",
+   "kind": "value",
+   "evidence": "claimed, unverified",
+   "sources": [
+    "City Pretty round-6 research (Nov 2026, one AI research pass): cost and effect claims not yet checked against the cited studies",
+    "Round 6: LADOT People St plazas, slow streets, Metro Bike Share and STAP shelter contract costs"
+   ],
+   "qol": [
+    "transit"
+   ],
+   "years": 2,
+   "grade": "U",
+   "caveat": "Round-6 research claim: the cited studies have not been checked, and several of that report's other citations did not support their claims. Uses the low end of the claimed range. Treat as a lead, not an estimate.",
+   "funding": [
+    "M"
+   ]
+  },
+  "alley_gating": {
+   "id": "alley_gating",
+   "name": "Gate, pave and light problem alleys",
+   "category": "Clean streets",
+   "kind": "value",
+   "evidence": "claimed, unverified",
+   "sources": [
+    "City Pretty round-6 research (Nov 2026, one AI research pass): cost and effect claims not yet checked against the cited studies"
+   ],
+   "qol": [
+    "litter",
+    "safety"
+   ],
+   "years": 2,
+   "grade": "U",
+   "caveat": "Round-6 research claim: the cited studies have not been checked, and several of that report's other citations did not support their claims. Uses the low end of the claimed range. Treat as a lead, not an estimate.",
+   "funding": [
+    "CDBG"
+   ]
+  },
+  "cooling_center": {
+   "id": "cooling_center",
+   "name": "Cooling-center retrofit of a library or rec center",
+   "category": "Schools & services",
+   "kind": "value",
+   "evidence": "claimed, unverified",
+   "sources": [
+    "City Pretty round-6 research (Nov 2026, one AI research pass): cost and effect claims not yet checked against the cited studies"
+   ],
+   "qol": [
+    "heat"
+   ],
+   "years": 2,
+   "grade": "U",
+   "caveat": "Round-6 research claim: the cited studies have not been checked, and several of that report's other citations did not support their claims. Uses the low end of the claimed range. Treat as a lead, not an estimate.",
+   "funding": [
+    "P4"
+   ]
+  },
+  "wayfinding": {
+   "id": "wayfinding",
+   "name": "Neighborhood wayfinding and landmark signs",
+   "category": "Amenities & economy",
+   "kind": "value",
+   "evidence": "claimed, unverified",
+   "sources": [
+    "City Pretty round-6 research (Nov 2026, one AI research pass): cost and effect claims not yet checked against the cited studies",
+    "Round 6: LADOT People St plazas, slow streets, Metro Bike Share and STAP shelter contract costs"
+   ],
+   "qol": [
+    "economy"
+   ],
+   "years": 1,
+   "grade": "U",
+   "caveat": "Round-6 research claim: the cited studies have not been checked, and several of that report's other citations did not support their claims. Uses the low end of the claimed range. Treat as a lead, not an estimate.",
+   "funding": [
+    "BID",
+    "A"
+   ]
+  },
+  "box_art": {
+   "id": "box_art",
+   "name": "Art wraps on traffic-signal boxes",
+   "category": "Clean streets",
+   "kind": "value",
+   "evidence": "claimed, unverified",
+   "sources": [
+    "City Pretty round-6 research (Nov 2026, one AI research pass): cost and effect claims not yet checked against the cited studies"
+   ],
+   "qol": [
+    "litter"
+   ],
+   "years": 1,
+   "grade": "U",
+   "caveat": "Round-6 research claim: the cited studies have not been checked, and several of that report's other citations did not support their claims. Uses the low end of the claimed range. Treat as a lead, not an estimate.",
+   "funding": [
+    "BID"
+   ]
+  },
+  "vending_zone": {
+   "id": "vending_zone",
+   "name": "Sidewalk vending zone (power, water, shade)",
+   "category": "Amenities & economy",
+   "kind": "value",
+   "evidence": "claimed, unverified",
+   "sources": [
+    "City Pretty round-6 research (Nov 2026, one AI research pass): cost and effect claims not yet checked against the cited studies"
+   ],
+   "qol": [
+    "food",
+    "economy"
+   ],
+   "years": 1,
+   "grade": "U",
+   "caveat": "Round-6 research claim: the cited studies have not been checked, and several of that report's other citations did not support their claims. Uses the low end of the claimed range. Treat as a lead, not an estimate.",
+   "funding": [
+    "CDBG"
+   ]
+  },
+  "night_market": {
+   "id": "night_market",
+   "name": "Weekend night market kit",
+   "category": "Amenities & economy",
+   "kind": "value",
+   "evidence": "claimed, unverified",
+   "sources": [
+    "City Pretty round-6 research (Nov 2026, one AI research pass): cost and effect claims not yet checked against the cited studies"
+   ],
+   "qol": [
+    "food",
+    "economy"
+   ],
+   "years": 1,
+   "grade": "U",
+   "caveat": "Round-6 research claim: the cited studies have not been checked, and several of that report's other citations did not support their claims. Uses the low end of the claimed range. Treat as a lead, not an estimate.",
+   "funding": [
+    "BID"
+   ]
+  },
+  "clt": {
+   "id": "clt",
+   "name": "Community land trust buys a small apartment building",
+   "category": "Housing",
+   "kind": "value",
+   "evidence": "claimed, unverified",
+   "sources": [
+    "City Pretty round-6 research (Nov 2026, one AI research pass): cost and effect claims not yet checked against the cited studies",
+    "Round 6: LA County Community Land Trust partnership pilot (LACDA)"
+   ],
+   "qol": [
+    "housing"
+   ],
+   "years": 3,
+   "grade": "U",
+   "caveat": "Round-6 claim, unverified. The goal is keeping tenants housed; a price rise nearby isn't the point.",
+   "funding": [
+    "EIFD",
+    "CDBG"
    ]
   }
  },
@@ -1422,6 +1982,392 @@
    ""
   ]
  },
+ "owner_upgrades": [
+  {
+   "name": "Exterior repainting",
+   "category": "Curb appeal",
+   "cost_2025": 11500,
+   "resale_value_added": 12500,
+   "annual_savings": 0,
+   "rebates_nov_2026": "",
+   "property_tax": "No reassessment",
+   "permits": "",
+   "claimed_grade": "B",
+   "applies_if": ""
+  },
+  {
+   "name": "Interior repainting",
+   "category": "Interior",
+   "cost_2025": 7800,
+   "resale_value_added": 8500,
+   "annual_savings": 0,
+   "rebates_nov_2026": "",
+   "property_tax": "No reassessment",
+   "permits": "",
+   "claimed_grade": "B",
+   "applies_if": ""
+  },
+  {
+   "name": "Front-yard curb-appeal landscaping",
+   "category": "Curb appeal",
+   "cost_2025": 8500,
+   "resale_value_added": 12000,
+   "annual_savings": 250,
+   "rebates_nov_2026": "",
+   "property_tax": "No reassessment",
+   "permits": "",
+   "claimed_grade": "A",
+   "applies_if": ""
+  },
+  {
+   "name": "Drought-tolerant landscaping (turf removal)",
+   "category": "Water",
+   "cost_2025": 14000,
+   "resale_value_added": 16500,
+   "annual_savings": 1200,
+   "rebates_nov_2026": "Turf rebate (MWD base, plus LADWP adder): check the current $/sq ft",
+   "property_tax": "No reassessment",
+   "permits": "",
+   "claimed_grade": "A",
+   "applies_if": ""
+  },
+  {
+   "name": "Paver patio and outdoor kitchen",
+   "category": "Outdoor living",
+   "cost_2025": 26500,
+   "resale_value_added": 24000,
+   "annual_savings": 0,
+   "rebates_nov_2026": "",
+   "property_tax": "Small reassessment",
+   "permits": "Building and gas/electric permits",
+   "claimed_grade": "B",
+   "applies_if": ""
+  },
+  {
+   "name": "Permeable paver driveway",
+   "category": "Hardscape",
+   "cost_2025": 18500,
+   "resale_value_added": 17000,
+   "annual_savings": 150,
+   "rebates_nov_2026": "Check Measure W stormwater credit",
+   "property_tax": "No reassessment if replacing a driveway",
+   "permits": "Driveway permit",
+   "claimed_grade": "B",
+   "applies_if": ""
+  },
+  {
+   "name": "Privacy fence and rolling gate",
+   "category": "Security",
+   "cost_2025": 12500,
+   "resale_value_added": 13500,
+   "annual_savings": 0,
+   "rebates_nov_2026": "",
+   "property_tax": "No reassessment",
+   "permits": "Permit if over 6 ft (3.5 ft in front yard)",
+   "claimed_grade": "A",
+   "applies_if": ""
+  },
+  {
+   "name": "In-ground pool",
+   "category": "Outdoor living",
+   "cost_2025": 75000,
+   "resale_value_added": 52000,
+   "annual_savings": -1800,
+   "rebates_nov_2026": "",
+   "property_tax": "Reassessed on the pool",
+   "permits": "Building, electrical, plumbing; safety fence",
+   "claimed_grade": "A",
+   "applies_if": "inland"
+  },
+  {
+   "name": "Pool removal",
+   "category": "Outdoor living",
+   "cost_2025": 16500,
+   "resale_value_added": 15000,
+   "annual_savings": 2200,
+   "rebates_nov_2026": "",
+   "property_tax": "May lower assessed value on appeal",
+   "permits": "Demolition and grading",
+   "claimed_grade": "A",
+   "applies_if": ""
+  },
+  {
+   "name": "Convert a den or attic to a bedroom",
+   "category": "Space",
+   "cost_2025": 15000,
+   "resale_value_added": 45000,
+   "annual_savings": 0,
+   "rebates_nov_2026": "",
+   "property_tax": "Small reassessment",
+   "permits": "Building and electrical (egress window)",
+   "claimed_grade": "A",
+   "applies_if": ""
+  },
+  {
+   "name": "Add a full bathroom",
+   "category": "Space",
+   "cost_2025": 28000,
+   "resale_value_added": 38000,
+   "annual_savings": 0,
+   "rebates_nov_2026": "",
+   "property_tax": "Reassessed on the addition",
+   "permits": "Plumbing, electrical, building",
+   "claimed_grade": "A",
+   "applies_if": ""
+  },
+  {
+   "name": "Ground-floor room addition (400 sq ft)",
+   "category": "Space",
+   "cost_2025": 125000,
+   "resale_value_added": 165000,
+   "annual_savings": 0,
+   "rebates_nov_2026": "",
+   "property_tax": "New square footage reassessed",
+   "permits": "Full plan check",
+   "claimed_grade": "A",
+   "applies_if": ""
+  },
+  {
+   "name": "Second-story addition (600 sq ft)",
+   "category": "Space",
+   "cost_2025": 240000,
+   "resale_value_added": 275000,
+   "annual_savings": 0,
+   "rebates_nov_2026": "",
+   "property_tax": "New square footage reassessed",
+   "permits": "Structural plan check",
+   "claimed_grade": "A",
+   "applies_if": ""
+  },
+  {
+   "name": "Garage to living space (not an ADU)",
+   "category": "Space",
+   "cost_2025": 45000,
+   "resale_value_added": 58000,
+   "annual_savings": 0,
+   "rebates_nov_2026": "",
+   "property_tax": "Converted area reassessed",
+   "permits": "Building; parking replacement unless near transit",
+   "claimed_grade": "A",
+   "applies_if": ""
+  },
+  {
+   "name": "Roof replacement",
+   "category": "Maintenance",
+   "cost_2025": 18500,
+   "resale_value_added": 16000,
+   "annual_savings": 150,
+   "rebates_nov_2026": "",
+   "property_tax": "No reassessment (like-for-like)",
+   "permits": "Reroof permit; cool-roof rules",
+   "claimed_grade": "B",
+   "applies_if": ""
+  },
+  {
+   "name": "Refinish hardwood floors",
+   "category": "Interior",
+   "cost_2025": 4800,
+   "resale_value_added": 5200,
+   "annual_savings": 0,
+   "rebates_nov_2026": "",
+   "property_tax": "No reassessment",
+   "permits": "",
+   "claimed_grade": "B",
+   "applies_if": ""
+  },
+  {
+   "name": "New vinyl plank or engineered wood floors",
+   "category": "Interior",
+   "cost_2025": 9500,
+   "resale_value_added": 8500,
+   "annual_savings": 0,
+   "rebates_nov_2026": "",
+   "property_tax": "No reassessment",
+   "permits": "",
+   "claimed_grade": "B",
+   "applies_if": ""
+  },
+  {
+   "name": "Whole-house repiping",
+   "category": "Systems",
+   "cost_2025": 14500,
+   "resale_value_added": 12000,
+   "annual_savings": 200,
+   "rebates_nov_2026": "",
+   "property_tax": "No reassessment",
+   "permits": "Plumbing",
+   "claimed_grade": "B",
+   "applies_if": "pre1975"
+  },
+  {
+   "name": "Trenchless sewer lateral",
+   "category": "Systems",
+   "cost_2025": 9500,
+   "resale_value_added": 9500,
+   "annual_savings": 0,
+   "rebates_nov_2026": "",
+   "property_tax": "No reassessment",
+   "permits": "Sewer/plumbing",
+   "claimed_grade": "A",
+   "applies_if": ""
+  },
+  {
+   "name": "Seismic bolting and cripple-wall bracing",
+   "category": "Safety",
+   "cost_2025": 6500,
+   "resale_value_added": 9000,
+   "annual_savings": 350,
+   "rebates_nov_2026": "Earthquake Brace + Bolt grant up to $3,000",
+   "property_tax": "Excluded from reassessment (R&T Code 74.5)",
+   "permits": "Building (prescriptive plan)",
+   "claimed_grade": "A",
+   "applies_if": "pre1980"
+  },
+  {
+   "name": "Mold and termite remediation",
+   "category": "Maintenance",
+   "cost_2025": 8500,
+   "resale_value_added": 10500,
+   "annual_savings": 0,
+   "rebates_nov_2026": "",
+   "property_tax": "No reassessment",
+   "permits": "",
+   "claimed_grade": "A",
+   "applies_if": ""
+  },
+  {
+   "name": "Staging before a sale",
+   "category": "Selling",
+   "cost_2025": 4500,
+   "resale_value_added": 18000,
+   "annual_savings": 0,
+   "rebates_nov_2026": "",
+   "property_tax": "",
+   "permits": "",
+   "claimed_grade": "A",
+   "applies_if": ""
+  },
+  {
+   "name": "Home energy audit",
+   "category": "Energy",
+   "cost_2025": 750,
+   "resale_value_added": 2500,
+   "annual_savings": 450,
+   "rebates_nov_2026": "Federal 25C audit credit ended after 2025; check utility programs",
+   "property_tax": "No reassessment",
+   "permits": "",
+   "claimed_grade": "B",
+   "applies_if": ""
+  },
+  {
+   "name": "Standby generator",
+   "category": "Resilience",
+   "cost_2025": 12500,
+   "resale_value_added": 9500,
+   "annual_savings": 0,
+   "rebates_nov_2026": "",
+   "property_tax": "Small reassessment",
+   "permits": "Electrical, gas, building",
+   "claimed_grade": "B",
+   "applies_if": ""
+  },
+  {
+   "name": "Water filtration and softener",
+   "category": "Systems",
+   "cost_2025": 4500,
+   "resale_value_added": 4200,
+   "annual_savings": 300,
+   "rebates_nov_2026": "",
+   "property_tax": "No reassessment",
+   "permits": "Plumbing",
+   "claimed_grade": "B",
+   "applies_if": ""
+  },
+  {
+   "name": "Security system and cameras",
+   "category": "Safety",
+   "cost_2025": 2200,
+   "resale_value_added": 2500,
+   "annual_savings": 180,
+   "rebates_nov_2026": "Insurance discount 5-10%",
+   "property_tax": "No reassessment",
+   "permits": "",
+   "claimed_grade": "B",
+   "applies_if": ""
+  },
+  {
+   "name": "Legalize unpermitted work",
+   "category": "Permits",
+   "cost_2025": 8500,
+   "resale_value_added": 35000,
+   "annual_savings": 0,
+   "rebates_nov_2026": "",
+   "property_tax": "Legalized area reassessed",
+   "permits": "As-built plan check",
+   "claimed_grade": "A",
+   "applies_if": ""
+  },
+  {
+   "name": "Detached ADU (800 sq ft)",
+   "category": "Housing",
+   "cost_2025": 245000,
+   "resale_value_added": 295000,
+   "annual_savings": 28800,
+   "rebates_nov_2026": "CalHFA ADU grant: check whether funding is open",
+   "property_tax": "Only the ADU is reassessed",
+   "permits": "Ministerial permit (60-day limit)",
+   "claimed_grade": "A",
+   "applies_if": ""
+  },
+  {
+   "name": "Heat-pump HVAC",
+   "category": "Electrification",
+   "cost_2025": 18500,
+   "resale_value_added": 16500,
+   "annual_savings": 650,
+   "rebates_nov_2026": "TECH Clean California if funded; federal 25C credit ended after 2025",
+   "property_tax": "No reassessment",
+   "permits": "Mechanical, electrical",
+   "claimed_grade": "A",
+   "applies_if": ""
+  },
+  {
+   "name": "Heat-pump water heater",
+   "category": "Electrification",
+   "cost_2025": 3800,
+   "resale_value_added": 3500,
+   "annual_savings": 420,
+   "rebates_nov_2026": "TECH Clean California ~$1,000 if funded; federal 25C ended after 2025",
+   "property_tax": "No reassessment",
+   "permits": "Plumbing, electrical",
+   "claimed_grade": "A",
+   "applies_if": ""
+  },
+  {
+   "name": "Level 2 EV charger",
+   "category": "Electrification",
+   "cost_2025": 1850,
+   "resale_value_added": 2200,
+   "annual_savings": 600,
+   "rebates_nov_2026": "LADWP or SCE charger rebate: check current amount",
+   "property_tax": "No reassessment",
+   "permits": "Electrical",
+   "claimed_grade": "A",
+   "applies_if": ""
+  },
+  {
+   "name": "Solar (6 kW) + battery (10 kWh)",
+   "category": "Energy",
+   "cost_2025": 24500,
+   "resale_value_added": 26000,
+   "annual_savings": 1950,
+   "rebates_nov_2026": "Federal 25D credit ended for systems installed after 2025; check SGIP battery funds",
+   "property_tax": "Excluded from reassessment (R&T Code 73)",
+   "permits": "Building, electrical, utility interconnection",
+   "claimed_grade": "A",
+   "applies_if": ""
+  }
+ ],
  "pipeline": {
   "crime": {
    "lapd_k7nn-b2ep_cols": [
@@ -1440,8 +2386,6 @@
     "crime_against",
     "premis_cd",
     "premis_desc",
-    "weapon_used_cd",
-    "weapon_desc",
     "status",
     "status_desc",
     "totalvictimcount",
@@ -1531,11 +2475,69 @@
    "lapd_dataset": "k7nn-b2ep LAPD NIBRS Offenses",
    "lapd_rows": 198280,
    "lapd_window": "2025-10-26 to 2026-10-26",
-   "lasd_page_len": 12033,
+   "lasd_page_len": 194566,
    "lasd_links": [],
    "lasd_hrefs": [
-    "data:,",
-    "#path-1"
+    "https://lasd.org/transparency/crimeandarrest/",
+    "//www.googletagmanager.com",
+    "//fonts.googleapis.com",
+    "https://fonts.gstatic.com",
+    "https://lasd.org/feed/",
+    "https://lasd.org/comments/feed/",
+    "https://lasd.org/wp-json/oembed/1.0/embed?url=https%3A%2F%2Flasd.org%2Ftransparency%2Fcrimeandarrest%2F",
+    "https://lasd.org/wp-json/oembed/1.0/embed?url=https%3A%2F%2Flasd.org%2Ftransparency%2Fcrimeandarrest%2F&#038;format=xml",
+    "https://lasd.org/wp-content/plugins/instagram-feed-pro/assets/tokens/sb-tokens-local.css?ver=6.15.0",
+    "https://lasd.org/wp-content/plugins/instagram-feed-pro/css/sbi-styles.min.css?ver=6.15.0",
+    "https://lasd.org/wp-content/plugins/accessibility-checker/build/css/srOnlyFormat.css?ver=1.51.1",
+    "https://lasd.org/wp-content/plugins/contact-form-7-honeypot/legacy-honeypot/includes/css/honeypot-frontend.css?ver=3.9.0",
+    "https://lasd.org/wp-content/plugins/contact-form-7/includes/css/styles.css?ver=6.2.4.1",
+    "https://lasd.org/wp-content/plugins/custom-twitter-feeds-pro/css/ctf-styles.min.css?ver=2.6.1",
+    "//lasd.org/wp-content/plugins/revslider/public/css/sr7.css?ver=6.7.58",
+    "https://lasd.org/wp-content/themes/blade/css/font-awesome.min.css?ver=6.4.2",
+    "https://lasd.org/wp-content/themes/blade/css/font-awesome-v4-shims.min.css?ver=6.4.2",
+    "https://lasd.org/wp-content/themes/blade/css/basic.css?ver=3.6.8",
+    "https://lasd.org/wp-content/themes/blade/css/grid.css?ver=3.6.8",
+    "https://lasd.org/wp-content/themes/blade/css/theme-style.css?ver=3.6.8",
+    "https://lasd.org/wp-content/themes/blade/css/elements.css?ver=3.6.8",
+    "https://lasd.org/wp-content/themes/lasd/style.css?ver=3.6.8",
+    "https://lasd.org/wp-content/themes/blade/css/responsive.css?ver=3.6.8",
+    "https://lasd.org/wp-content/plugins/easy-tables-vc/assets/css/style.min.css?ver=2.0",
+    "https://lasd.org/wp-content/plugins/easy-tables-vc/assets/css/themes.min.css?ver=2.0",
+    "https://lasd.org/wp-content/plugins/js_composer/assets/css/js_composer.min.css?ver=9.0.1",
+    "https://lasd.org/wp-content/plugins/instagram-feed-pro/css/sbi-quickscroll.css?ver=6.15.0",
+    "https://fonts.googleapis.com/css?family=Montserrat:700|Cabin+Condensed:600,400,400italic,500&#038;display=swap&#038;ver=1779306630",
+    "https://lasd.org/wp-json/",
+    "https://lasd.org/wp-json/wp/v2/pages/4093",
+    "https://lasd.org/xmlrpc.php?rsd",
+    "https://fonts.googleapis.com",
+    "https://fonts.gstatic.com/",
+    "https://lasd.org/wp-content/uploads/2019/02/LASDstar_thumbnail.png",
+    "https://lasd.org/wp-content/uploads/2019/02/LASDstar_thumbnail.png",
+    "https://lasd.org/wp-content/uploads/2019/02/LASDstar_thumbnail.png",
+    "https://lasd.org/wp-content/plugins/js_composer/assets/css/js_composer_tta.min.css?ver=9.0.1",
+    "https://lasd.org/wp-content/plugins/templatera/assets/css/front_style.css?ver=2.1",
+    "https://lasd.org/",
+    "#grve-search-modal",
+    "#",
+    "#",
+    "https://lasd.org/staffbios/",
+    "https://lasd.org/custody/",
+    "https://lasd.org/courtservices/",
+    "https://lasd.org/newsmediaportal/",
+    "https://lasd.org/careers/",
+    "https://lasd.org/transparency/",
+    "http://lasd.org/stations/",
+    "https://lasd.org/altadena/",
+    "https://lasd.org/avalon/",
+    "https://lasd.org/carson/",
+    "https://lasd.org/century/",
+    "https://lasd.org/cerritos/",
+    "https://lasd.org/compton/",
+    "https://lasd.org/crescenta-valley/",
+    "https://lasd.org/east-los-angeles/",
+    "https://lasd.org/industry/",
+    "https://lasd.org/lakewood/",
+    "https://lasd.org/lancaster/"
    ],
    "lasd_arcgis_candidates": [
     "PART_I_AND_II_CRIMES | https://services8.arcgis.com/TLogqQbe6TnrHFMm/arcgis/rest/services/PART_I_AND_II_CRIMES/FeatureServer",
@@ -1564,7 +2566,12 @@
     "Santa Monica PD": 7116
    },
    "ok": true,
-   "seconds": 117.6
+   "seconds": 784.3
+  },
+  "research_check": {
+   "checked": 48,
+   "ok": true,
+   "seconds": 68.7
   },
   "assets": {
    "bus_lanes_rows": 31,
@@ -1576,9 +2583,9 @@
    "lausd_schools": 670,
    "low_green": 345,
    "ev_stations": 6470,
-   "dc_fast_public": 673,
+   "dc_fast_public": 674,
    "ok": true,
-   "seconds": 392.4
+   "seconds": 282.4
   },
   "parcels": {
    "fields": [
@@ -1673,7 +2680,7 @@
     "commercial": 8935
    },
    "ok": true,
-   "seconds": 738.6
+   "seconds": 994.4
   },
   "trees": {
    "inventory_cities": [
@@ -1782,7 +2789,7 @@
     "mandarin-orange-trees": 3
    },
    "ok": true,
-   "seconds": 218.1
+   "seconds": 238.9
   },
   "crashes": {
    "candidates": [
@@ -1804,7 +2811,24 @@
    "used_Crashes_2026": 446345,
    "rows": 446345,
    "ok": true,
-   "seconds": 25.4
+   "seconds": 21.6
+  },
+  "tra": {
+   "af91_url": "https://auditor.lacounty.gov/wp-content/uploads/2026/10/AF91.zip",
+   "af91_members": [
+    "AF91.txt"
+   ],
+   "af49_url": "https://auditor.lacounty.gov/wp-content/uploads/2026/09/AF49PRPT.YR26.zip",
+   "af49_members": [
+    "AF49PRPT.YR26.txt"
+   ],
+   "tra_lookup_url": "https://auditor.lacounty.gov/wp-content/uploads/2026/09/TRA-2026-2027.zip",
+   "tra_lookup_members": [
+    "TRA-2026-2027.csv"
+   ],
+   "boe_district_rows": 180004,
+   "ok": true,
+   "seconds": 29.6
   },
   "requests311": {
    "2cy6-i7zn_cols": [
@@ -1923,14 +2947,469 @@
     "FEEDBACK": 180
    },
    "ok": true,
-   "seconds": 317.7
+   "seconds": 307.3
+  },
+  "zoning": {
+   "sources": {
+    "Los Angeles": "ok: 58,859 polygons from Zoning",
+    "Unincorporated LA County": "ok: 14,537 polygons from ZONE",
+    "Long Beach": "failed: failed: https://gis.longbeach.gov/arcgis/rest/services/DevelopmentServices/Zoning/MapServer/0",
+    "Glendale": "failed: failed: https://gis.glendaleca.gov/arcgis/rest/services/Zoning/MapServer/0",
+    "Pasadena": "failed: failed: https://gis.cityofpasadena.net/arcgis/rest/services/Zoning_Map/FeatureServer/0",
+    "Santa Clarita": "no zone field in ['OBJECTID', 'AREA_FEET', 'PERIMETER_', 'ACRES', 'NEWCODE', 'JURIS', 'TYPE', 'HECTARES', 'Shape__Area', 'Shape__Length']",
+    "Lancaster": "failed: failed: https://gis.cityoflancasterca.gov/arcgis/rest/services/Zoning/MapServer/0",
+    "Palmdale": "failed: failed: https://gis.cityofpalmdale.org/arcgis/rest/services/Public/Zoning/MapServer/0",
+    "Torrance": "failed: failed: https://gis.torranceca.gov/arcgis/rest/services/Public_Services/Torrance_Zoning/MapServer/0",
+    "Pomona": "no zone field in []",
+    "Inglewood": "failed: failed: https://gis.cityofinglewood.org/arcgis/rest/services/Planning/Inglewood_Zoning/MapServer/0",
+    "Burbank": "failed: failed: https://gis.burbankca.gov/arcgis/rest/services/Planning/Zoning/MapServer/0",
+    "Carson": "failed: failed: https://gis.carsonca.gov/arcgis/rest/services/Zoning/MapServer/0"
+   },
+   "polygons": 73390,
+   "bgs_covered": 3331,
+   "categories": {
+    "single-family": 29813,
+    "multifamily": 18130,
+    "commercial / mixed use": 14019,
+    "open space / public": 4381,
+    "industrial": 4236,
+    "other": 1584,
+    "parking": 1225,
+    "agricultural": 8
+   },
+   "ok": true,
+   "seconds": 386.9
+  },
+  "assessed": {
+   "all_fields": [
+    "OBJECTID",
+    "AIN",
+    "APN",
+    "SitusHouseNo",
+    "SitusFraction",
+    "SitusDirection",
+    "SitusUnit",
+    "SitusStreet",
+    "SitusAddress",
+    "SitusCity",
+    "SitusZIP",
+    "SitusFullAddress",
+    "TaxRateArea",
+    "TaxRateCity",
+    "AgencyClassNo",
+    "AgencyName",
+    "AgencyType",
+    "UseCode",
+    "UseCode_2",
+    "UseType",
+    "UseDescription",
+    "DesignType1",
+    "YearBuilt1",
+    "EffectiveYear1",
+    "Units1",
+    "Bedrooms1",
+    "Bathrooms1",
+    "SQFTmain1",
+    "DesignType2",
+    "YearBuilt2",
+    "EffectiveYear2",
+    "Units2",
+    "Bedrooms2",
+    "Bathrooms2",
+    "SQFTmain2",
+    "DesignType3",
+    "YearBuilt3",
+    "EffectiveYear3",
+    "Units3",
+    "Bedrooms3",
+    "Bathrooms3",
+    "SQFTmain3",
+    "DesignType4",
+    "YearBuilt4",
+    "EffectiveYear4",
+    "Units4",
+    "Bedrooms4",
+    "Bathrooms4",
+    "SQFTmain4",
+    "DesignType5",
+    "YearBuilt5",
+    "EffectiveYear5",
+    "Units5",
+    "Bedrooms5",
+    "Bathrooms5",
+    "SQFTmain5",
+    "Roll_Year",
+    "Roll_LandValue",
+    "Roll_ImpValue",
+    "Roll_PersPropValue",
+    "Roll_FixtureValue",
+    "Roll_HomeOwnersExemp",
+    "Roll_RealEstateExemp",
+    "Roll_PersPropExemp",
+    "Roll_FixtureExemp",
+    "Roll_LandBaseYear",
+    "Roll_ImpBaseYear",
+    "SpatialChangeDate",
+    "ParcelCreateDate",
+    "ParcelTypeCode",
+    "Assr_Map",
+    "Assr_Index_Map",
+    "QualityClass1",
+    "QualityClass2",
+    "QualityClass3",
+    "QualityClass4",
+    "QualityClass5",
+    "LegalDescLine1",
+    "LegalDescLine2",
+    "LegalDescLine3",
+    "LegalDescLine4",
+    "LegalDescLine5",
+    "LegalDescLineLast",
+    "LegalDescription",
+    "CENTER_LAT",
+    "CENTER_LON",
+    "CENTER_X",
+    "CENTER_Y",
+    "LAT_LON",
+    "Shape",
+    "Shape.STArea()",
+    "Shape.STLength()"
+   ],
+   "used": [
+    "AIN",
+    "TaxRateArea",
+    "TaxRateCity",
+    "UseCode",
+    "Roll_Year",
+    "Roll_LandValue",
+    "Roll_ImpValue",
+    "Roll_PersPropValue",
+    "Roll_FixtureValue",
+    "Roll_HomeOwnersExemp",
+    "Roll_RealEstateExemp",
+    "Roll_PersPropExemp",
+    "Roll_FixtureExemp",
+    "Roll_LandBaseYear",
+    "Roll_ImpBaseYear",
+    "CENTER_LAT",
+    "CENTER_LON"
+   ],
+   "centroid_fields": true,
+   "page": 1000,
+   "parcels": 2431633,
+   "roll_years": {
+    "2026.0": 2370774,
+    "2025.0": 14
+   },
+   "net_total": 2131983941525.0,
+   "tras": 10607,
+   "parcels_in_bg": 2431250,
+   "ok": true,
+   "seconds": 776.7
   },
   "sales": {
    "rows": 75816,
    "first": "2022-08-15",
    "last": "2024-06-05",
    "ok": true,
-   "seconds": 68.5
+   "seconds": 75.0
+  },
+  "basemap": {
+   "streets": 512002,
+   "street_lines": 81933,
+   "by_class": {
+    "3": 71358,
+    "1": 5685,
+    "2": 4639,
+    "0": 251
+   },
+   "parks_all": 26996,
+   "official_parks_url": "https://services.arcgis.com/RmCCgQtiZLDCtblq/arcgis/rest/services/Countywide_Parks_and_Open_Space__(Public_-_Hosted2)/FeatureServer/0",
+   "official_parks": 3012,
+   "official_fields": [
+    "geometry",
+    "OBJECTID",
+    "UNIT_ID",
+    "PARK_NAME",
+    "PARK_LBL",
+    "ACCESS_TYP",
+    "RPT_ACRES",
+    "GIS_ACRES",
+    "AGNCY_NAME",
+    "AGNCY_LEV",
+    "AGNCY_TYP",
+    "AGNCY_WEB",
+    "MNG_AGENCY",
+    "COGP_TYP",
+    "NDS_AN_TYP",
+    "NEEDS_ANLZ",
+    "TKIT_SUM",
+    "AMEN_RPT",
+    "PRKINF_CND",
+    "AM_OPNSP",
+    "AM_TRLS",
+    "TRLS_MI",
+    "TENIS",
+    "BSKTB",
+    "BASEB",
+    "SOCCR",
+    "MPFLD",
+    "FITZN",
+    "SK8PK",
+    "PCNIC",
+    "PLGND",
+    "POOLS",
+    "SPPAD",
+    "DGPRK",
+    "GYM",
+    "COMCT",
+    "SNRCT",
+    "RSTRM",
+    "TOTAL_GOOD",
+    "TOTAL_FAIR"
+   ],
+   "official_added": 1040,
+   "parks": 5619,
+   "parks_by_kind": {
+    "park": 3241,
+    "playground": 1358,
+    "open space": 747,
+    "beach": 126,
+    "dog park": 92,
+    "community garden": 55
+   },
+   "parks_under_1ac": 2763,
+   "facilities": 13052,
+   "ok": true,
+   "seconds": 523.6
+  },
+  "facilities": {
+   "lms_layers": [
+    "1:Beaches and Marinas",
+    "2:Campgrounds",
+    "3:Cruise Line Terminals",
+    "4:Cultural and Performing Arts Centers",
+    "5:Golf Courses",
+    "6:Museums and Aquariums",
+    "7:Natural Areas and Wildlife Sanctuaries",
+    "8:Parks and Gardens",
+    "9:Picnic Areas",
+    "10:Pools",
+    "11:Ranches",
+    "12:Recreation Centers",
+    "13:Recreation Clubs",
+    "14:Recreation Programs",
+    "15:Ski Areas",
+    "16:Sports Venues",
+    "17:Tourist Assistance",
+    "18:Trails",
+    "19:Wineries",
+    "21:AM Antennas",
+    "22:Antenna Structure Registration",
+    "23:BRS and EBS Transmitters",
+    "24:Cellular Towers",
+    "25:Digital TV",
+    "26:FM Antennas",
+    "27:Internet Exchange Points",
+    "28:Internet Service Providers",
+    "29:IT Portal Locations",
+    "30:Land Mobile Broadcast",
+    "31:Land Mobile Commercial Towers",
+    "32:Land Mobile Private",
+    "33:Microwave Towers",
+    "34:NTSC TV",
+    "35:Paging Towers",
+    "36:Towers",
+    "38:Churches",
+    "39:Community Organizations",
+    "40:Farmers Markets",
+    "41:Red Cross Offices",
+    "42:Volunteer Opportunities",
+    "44:Adult Education",
+    "45:Colleges and Universities",
+    "46:Early Childhood Education and Head Start",
+    "47:Guidance and Tutoring Programs",
+    "48:Private and Charter Schools",
+    "49:Public Elementary Schools",
+    "50:Public High Schools",
+    "51:Public Middle School",
+    "52:School Districts",
+    "53:Special Curriculum Schools and Programs",
+    "192:Warming Centers",
+    "55:Cooling Centers",
+    "56:Emergency and Disaster Offices",
+    "58:Conservation Programs",
+    "59:EPA Facility Registration System",
+    "60:EPA Superfund Sites",
+    "61:Hazardous Waste Disposal",
+    "62:Historic Earthquakes",
+    "63:Recycling",
+    "64:Tsunami Tide Gauges",
+    "66:Chambers of Commerce",
+    "67:City Halls",
+    "68:Consulate Offices",
+    "69:County Offices",
+    "70:Government Offices",
+    "71:Passports",
+    "72:Representative Offices",
+    "73:Social Security Administration",
+    "75:Dental Care",
+    "76:DHS Health Clinics",
+    "77:Health Centers",
+    "78:Public Health Clinics",
+    "79:Health Education and Counseling",
+    "80:Health Screening and Testing",
+    "81:Hospitals and Medical Centers",
+    "82:Immunization",
+    "83:Medicare and Medicaid Offices",
+    "84:Mental Health Centers",
+    "85:Mental Health Counseling",
+    "86:Mental Health Programs",
+    "87:Public Health Programs",
+    "88:Safe Havens",
+    "89:Substance Abuse Programs",
+    "91:Animals and Pets",
+    "92:Building Inspections",
+    "93:Cemeteries",
+    "94:Community Services",
+    "95:Consumer Services",
+    "96:Economic Development",
+    "97:Elections",
+    "98:Environmental Programs",
+    "99:Health and Housing Inspections",
+    "100:Libraries",
+    "101:Licenses and Permits",
+    "102:Planning and Zoning Offices",
+    "103:Property and Tax",
+    "104:Public Internet Access",
+    "105:Public Records",
+    "106:Rubbish Disposal",
+    "107:Street Maintenance",
+    "108:Utilities",
+    "110:Electrical Sub-Stations",
+    "111:Named Locations",
+    "112:Power Plants",
+    "113:Water",
+    "115:DHL Locations",
+    "116:Federal Express Locations",
+    "117:Post Offices",
+    "118:Private Non Retail Shipping Locations",
+    "119:UPS Locations",
+    "120:USPS Mail Collection Boxes",
+    "122:Agriculture and Food",
+    "123:Banking and Finance",
+    "124:Business Centers",
+    "125:Corporate Headquarters",
+    "126:Manufacturing",
+    "127:Mines",
+    "128:Oilfields",
+    "129:Shopping Centers",
+    "130:TV and Movie Studios",
+    "132:Courthouses",
+    "133:Crime Prevention and Support",
+    "134:Crime Reporting and Investigation",
+    "135:District Attorney",
+    "136:Fingerprinting",
+    "137:Fire Stations",
+    "138:Jails and Prisons",
+    "139:Legal Services and Counseling",
+    "140:Lifeguard Towers",
+    "141:Parole and Offender Assistance",
+    "142:Probation Camps and Juvenile Halls",
+    "143:Probation Offices",
+    "144:Public Defender",
+    "145:Self-Help Legal Centers",
+    "146:Sheriff and Police Stations",
+    "148:Adoption",
+    "149:Child Care",
+    "150:Child Support Services",
+    "151:Children and Family Services",
+    "152:Clothing",
+    "153:Disability Support Services",
+    "154:Domestic Violence Services",
+    "155:Donation Services",
+    "156:Food Assistance",
+    "157:Forms Assistance",
+    "158:Homeless Shelters and Services",
+    "159:Housing Assistance and Information",
+    "160:Immigration",
+    "161:Job Training",
+    "162:NEG Program WorkSource Centers",
+    "163:Payment Assistance",
+    "164:Public Housing",
+    "165:Public Information Services",
+    "166:Senior Services",
+    "167:Support Groups",
+    "168:Thrift Shops",
+    "169:Transportation Assistance",
+    "170:Unemployment Insurance Offices",
+    "171:Veterans Services",
+    "172:Welfare Offices and Programs",
+    "174:Airports",
+    "175:Alternative Fuel",
+    "176:Amtrak Stations",
+    "177:Anchorages",
+    "178:Automatic Traffic Counters",
+    "179:Breakwaters",
+    "180:Bridges",
+    "181:Ferries",
+    "182:Freeway Exits",
+    "183:Heliports",
+    "184:Intermodal Terminal Facilities",
+    "185:Metro Stations",
+    "186:Metrolink Stations",
+    "187:Park and Ride Locations",
+    "188:Transit Systems",
+    "189:Tunnels",
+    "190:County Fueling Stations",
+    "191:County Electric Charging Stations"
+   ],
+   "lms_4": 27,
+   "lms_6": 58,
+   "lms_12": 327,
+   "lms_39": 26,
+   "lms_44": 2,
+   "lms_45": 1,
+   "lms_48": 6,
+   "lms_52": 1,
+   "lms_53": 3,
+   "lms_67": 88,
+   "lms_70": 15,
+   "lms_77": 21,
+   "lms_78": 6,
+   "lms_79": 128,
+   "lms_80": 195,
+   "lms_81": 117,
+   "lms_84": 17,
+   "lms_85": 75,
+   "lms_86": 44,
+   "lms_87": 96,
+   "lms_94": 30,
+   "lms_99": 1,
+   "lms_100": 265,
+   "lms_132": 90,
+   "lms_137": 396,
+   "lms_146": 115,
+   "lms_166": 443,
+   "total": 5837,
+   "by_kind": {
+    "school": 2497,
+    "community center": 827,
+    "clinic": 631,
+    "fire station": 451,
+    "library": 344,
+    "post office": 267,
+    "college": 199,
+    "hospital": 187,
+    "police": 156,
+    "city hall": 103,
+    "courthouse": 93,
+    "museum": 82
+   },
+   "by_source": {
+    "OpenStreetMap": 3725,
+    "LA County LMS": 2112
+   }
   },
   "osm": {
    "parks": 20954,
@@ -1970,7 +3449,7 @@
    "lamps": 40484,
    "resroads": 285979,
    "ok": true,
-   "seconds": 211.6
+   "seconds": 211.0
   },
   "transit": {
    "LA Metro bus_stops": 11812,
@@ -2011,7 +3490,7 @@
    "combined_stops": 16721,
    "frequent_stops": 799,
    "ok": true,
-   "seconds": 12.5
+   "seconds": 5.6
   },
   "geo": {
    "acs_vintage": "2020-2024 ACS 5-year, block groups",
@@ -2027,8 +3506,7 @@
    "hoods_Pasadena_field": "Association_Name",
    "hoods_Long Beach": 126,
    "hoods_Long Beach_field": "NEIGHBOR_NAME",
-   "hoods_Glendale": 37,
-   "hoods_Glendale_field": "NAME",
+   "hoods_Glendale_error": "failed: https://gismap.glendaleca.gov/arcgis/rest/services/Common/NeighborhoodZones/MapServer/1",
    "hoods_Torrance": 24,
    "hoods_Torrance_field": "Name",
    "la_times_hoods": 114,
@@ -2075,13 +3553,12 @@
     "Windsor Hills"
    ],
    "block_groups": 6587,
-   "named_official": 789,
+   "named_official": 652,
    "named_latimes": 2680,
    "by_source": {
-    "LA County Countywide Statistical Area": 3116,
+    "LA County Countywide Statistical Area": 3253,
     "LA Times Mapping L.A.": 2680,
     "Long Beach (city GIS)": 328,
-    "Glendale (city GIS)": 137,
     "Lancaster (city GIS)": 104,
     "Pasadena (city GIS)": 90,
     "Torrance (city GIS)": 76,
@@ -2090,7 +3567,7 @@
     "City boundary (no neighborhood map)": 2
    },
    "ok": true,
-   "seconds": 28.6
+   "seconds": 324.9
   }
  }
 }

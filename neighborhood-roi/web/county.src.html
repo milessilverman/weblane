@@ -32,6 +32,9 @@
 .shield.us { background: #fff; color: #111; box-shadow: 0 0 0 1px #111; border-color: #fff; }
 .shield.sr { background: #2a7a3b; box-shadow: 0 0 0 1px #2a7a3b; }
 .locate { background: var(--sheet); border: 1px solid var(--rule-strong); border-radius: 6px; padding: 5px 8px; font: 500 12px var(--body); color: var(--ink); cursor: pointer; }
+.fac { font: 700 9px/14px var(--mono); width: 14px; height: 14px; border-radius: 50%; color: #fff; text-align: center; border: 1.5px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.35); }
+.lbl-zone { font: 600 10px/1 var(--mono); color: var(--ink-2); white-space: nowrap; pointer-events: none; text-shadow: 0 0 2px var(--sheet), 0 0 3px var(--sheet); }
+.zkey { display: inline-flex; align-items: center; gap: 4px; margin-right: 10px; } .zkey i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
 .you { width: 14px; height: 14px; border-radius: 50%; background: #2b7de9; border: 3px solid #fff; box-shadow: 0 0 0 2px #2b7de9; }
 </style>
 </head>
@@ -40,7 +43,8 @@
   <div class="brand"><div class="eyebrow">/*EYEBROW*/</div><h1>Which improvements make LA neighborhoods better, and worth more, per dollar</h1></div>
   <div class="ctl"><label for="evid">Evidence shown</label>
     <select id="evid">
-      <option value="D">All estimates (grades A–D)</option>
+      <option value="D" selected>All estimates (grades A–D)</option>
+      <option value="U">Also show unverified leads (round 6)</option>
       <option value="C">Skip assumptions (A–C)</option>
       <option value="B">Studied effects only (A–B)</option>
       <option value="A">Measured in LA only (A)</option>
@@ -62,6 +66,8 @@
     <label><input type="checkbox" id="l-roads" checked> Streets &amp; names</label>
     <label><input type="checkbox" id="l-transit" checked> Rail &amp; frequent buses</label>
     <label><input type="checkbox" id="l-parks" checked> Parks, beaches &amp; rivers</label>
+    <label><input type="checkbox" id="l-fac" checked> Schools, libraries &amp; civic buildings</label>
+    <label><input type="checkbox" id="l-zone"> Zoning (zoom in)</label>
     <label><input type="checkbox" id="l-amen"> Courts, pools, dog parks</label>
     <label><input type="checkbox" id="l-hoods" checked> Neighborhood lines</label>
     <label><input type="checkbox" id="l-tiles"> Street map underlay (online)</label>
@@ -81,7 +87,7 @@ const css = (n, fb) => getComputedStyle(document.documentElement).getPropertyVal
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const fmt$ = v => v == null || isNaN(v) ? "–" : v >= 1e9 ? "$" + (v/1e9).toFixed(1) + "B" : v >= 1e6 ? "$" + (v/1e6).toFixed(v >= 1e7 ? 0 : 1) + "M" : v >= 1e3 ? "$" + Math.round(v/1e3) + "k" : "$" + Math.round(v);
 const fmtN = v => v == null || isNaN(v) ? "–" : Math.round(v).toLocaleString();
-const GRADE_TXT = { A: "A · measured on LA sales", B: "B · studied elsewhere", C: "C · transferred from a related study", D: "D · assumption" };
+const GRADE_TXT = { A: "A · measured on LA sales", B: "B · studied elsewhere", C: "C · transferred from a related study", D: "D · assumption", U: "U · unverified research lead (round 6)" };
 const allowed = id => { const g = D.catalog[id].grade; return g === "none" || g <= $("#evid").value; };
 const fvpd = v => "$" + (v < 1 ? v.toFixed(2) : v < 10 ? v.toFixed(1) : Math.round(v));
 const CATS = ["Greening", "Parks & recreation", "Transit", "Streets & safety", "Clean streets", "Housing", "Energy", "Environment", "Schools & services", "Amenities & economy", "Zoning"];
@@ -115,7 +121,8 @@ function colorFor(p) {
   let i = 0; while (i < breaks.length && v > breaks[i]) i++;
   return ramp(METRICS[k].ramp)[i];
 }
-const styleBg = f => ({ fillColor: colorFor(f.properties), fillOpacity: tiles ? 0.45 : 0.75, color: css("--block-line"), weight: 0.4 });
+const zoningOn = () => typeof map !== "undefined" && map && map._loaded && $("#l-zone").checked && map.getZoom() >= 14;
+const styleBg = f => ({ fillColor: colorFor(f.properties), fillOpacity: zoningOn() ? 0.12 : tiles ? 0.45 : 0.75, color: css("--block-line"), weight: 0.4 });
 function legend() {
   const k = $("#metric").value, el = $("#legend");
   if (k === "top") {
@@ -159,6 +166,8 @@ function drawContext() {
     layers.amen = L.geoJSON(L_.amenities, { pointToLayer: (f, ll) => L.circleMarker(ll, { radius: 3.5, color: css("--sheet"), weight: 1, fillColor: css("--school"), fillOpacity: 1 }),
       onEachFeature: (f, l) => l.bindTooltip(`<b>${esc(f.properties.k)}</b>${f.properties.n ? " · " + esc(f.properties.n) : ""}`) });
   }
+  if (on("#l-fac") && L_.facilities) layers.fac = L.layerGroup();
+  if (on("#l-zone") && L_.zoning) { layers.zone = L.layerGroup().addTo(map); layers.zoneLabels = L.layerGroup().addTo(map); }
   if (on("#l-hoods") && D.hoods) {
     layers.hoods = L.geoJSON(D.hoods, { ...noPts, interactive: false, style: { fill: false, color: css("--hood-line"), weight: 1.1, opacity: .5 } });
     layers.hoodLabels = L.layerGroup((D.hood_labels || []).map(([n, lat, lon]) => L.marker([lat, lon], { interactive: false, keyboard: false, icon: L.divIcon({ className: "", iconSize: null, html: `<div class="lbl-hood" style="transform:translate(-50%,-50%)">${esc(n)}</div>` }) })));
@@ -172,7 +181,8 @@ function zoomed() {
   const toggle = (l, show) => { if (!l) return; if (show && !map.hasLayer(l)) l.addTo(map); if (!show && map.hasLayer(l)) map.removeLayer(l); };
   toggle(layers.art, z >= 12); toggle(layers.walls, z >= 14); toggle(layers.stops, z >= 13); toggle(layers.amen, z >= 13);
   toggle(layers.hoods, z >= 12); toggle(layers.hoodLabels, z >= 13 && z < 15); toggle(layers.cityLabels, z >= 10 && z < 13);
-  drawStreets(); drawLabels();
+  drawStreets(); drawLabels(); drawZoning(); drawFacilities();
+  const zon = zoningOn(); if (bgs && zon !== zoomed._last) { zoomed._last = zon; bgs.setStyle(styleBg); }
 }
 
 // ---------------- streets, names, shields and park labels (drawn only for what's on screen)
@@ -284,6 +294,85 @@ function drawLabels() {
   }
 }
 
+// ---------------- public facilities (County LMS + OpenStreetMap)
+const FAC_STYLE = { "school": ["#2563eb", "S"], "college": ["#4338ca", "U"], "library": ["#7c3aed", "L"], "city hall": ["#111827", "C"],
+  "fire station": ["#dc2626", "F"], "police": ["#1e3a8a", "P"], "post office": ["#6b7280", "✉"], "hospital": ["#be123c", "H"], "clinic": ["#db2777", "+"],
+  "community center": ["#ea580c", "R"], "museum": ["#0f766e", "M"], "courthouse": ["#78350f", "J"] };
+function drawFacilities() {
+  if (!map._loaded || !layers.fac) return;
+  const z = map.getZoom(), b = map.getBounds().pad(.1), K = D.layers.fac_kinds;
+  layers.fac.clearLayers();
+  if (z < 12) { if (map.hasLayer(layers.fac)) map.removeLayer(layers.fac); return; }
+  if (!map.hasLayer(layers.fac)) layers.fac.addTo(map);
+  // schools are numerous: from zoom 13; civic buildings from zoom 12
+  for (const [k, n, lat, lon] of D.layers.facilities) {
+    const kind = K[k]; if (z < 13 && (kind === "school" || kind === "clinic")) continue;
+    if (!b.contains([lat, lon])) continue;
+    const [col, ch] = FAC_STYLE[kind] || ["#444", "•"];
+    layers.fac.addLayer(L.marker([lat, lon], { keyboard: false, icon: L.divIcon({ className: "", iconSize: [14, 14], html: `<div class="fac" style="background:${col}">${ch}</div>` }) })
+      .bindTooltip(`<b>${esc(kind[0].toUpperCase() + kind.slice(1))}</b>${n ? " · " + esc(n) : ""}`));
+  }
+}
+
+// ---------------- zoning polygons (zoom 14+), colored by what each zone allows
+const ZCOL = { "single-family": "#f6d36b", "multifamily": "#e8833a", "commercial / mixed use": "#d4383c", "industrial": "#8e6bbf",
+  "open space / public": "#4f9d5d", "agricultural": "#b9c97a", "parking": "#9aa0a6", "other": "#c7c7c7" };
+let _zCanvas = null; const _zDrawn = new Map(), _zDec = new Map();
+function zCell(key) {
+  if (!_zDec.has(key)) _zDec.set(key, (D.layers.zoning.cells[key] || []).map(([c, z, rings, lat, lon]) => ({ cat: D.layers.zoning.cats[c], zone: D.layers.zoning.zones[z], rings: rings.map(decodeLine), lat, lon })));
+  return _zDec.get(key);
+}
+function drawZoning() {
+  if (!map._loaded || !layers.zone) return;
+  const z = map.getZoom(), Zc = D.layers.zoning.cell, want = new Set();
+  if (z >= 14) { const b = map.getBounds().pad(.2);
+    for (let x = Math.floor((b.getWest() + 180) / Zc); x <= Math.floor((b.getEast() + 180) / Zc); x++)
+      for (let y = Math.floor((b.getSouth() + 90) / Zc); y <= Math.floor((b.getNorth() + 90) / Zc); y++) want.add(x + "," + y); }
+  for (const [k, l] of _zDrawn) if (!want.has(k)) { layers.zone.removeLayer(l); _zDrawn.delete(k); }
+  _zCanvas = _zCanvas || L.canvas({ padding: .3, pane: passPane("zonePane", 404) });
+  for (const k of want) {
+    if (_zDrawn.has(k)) continue;
+    const g = L.layerGroup(zCell(k).map(p => L.polygon(p.rings, { renderer: _zCanvas, interactive: false, color: ZCOL[p.cat] || "#999", weight: .7, fillColor: ZCOL[p.cat] || "#999", fillOpacity: .55 })));
+    layers.zone.addLayer(g); _zDrawn.set(k, g);
+  }
+  layers.zoneLabels.clearLayers();
+  if (z >= 16) { const b = map.getBounds(); let n = 0;
+    for (const k of want) for (const p of zCell(k)) { if (n > 250 || !b.contains([p.lat, p.lon])) continue; n++;
+      layers.zoneLabels.addLayer(L.marker([p.lat, p.lon], { interactive: false, keyboard: false, icon: L.divIcon({ className: "", iconSize: null, html: `<div class="lbl-zone" style="transform:translate(-50%,-50%)">${esc(p.zone)}</div>` }) })); } }
+}
+
+// ---------------- panel: zoning and state housing laws, public facilities nearby
+function zoneRules(code, juris) {
+  const t = String(code).toUpperCase().replace(/\[[^\]]*\]|\([^)]*\)/g, "").replace(/^[QTD]+(?=[A-Z])/, "");
+  return (D.zone_rules || []).find(r => r.jurisdiction === juris && new RegExp("^" + r.zone_prefix.replace(/[.]/g, "\\.") + "(?![0-9.])").test(t));
+}
+function zoningSection(m) {
+  const z = m.z, tr = m.tr || [], rail = Math.min(tr[0] ?? 1e9, tr[1] ?? 1e9), tph = Math.max(tr[2] || 0, tr[3] || 0);
+  let h = `<div class="section"><h3>Zoning: what can be built here</h3>`;
+  if (z) {
+    h += `<div class="small" style="margin:4px 0 6px">${Object.entries(z.sh).sort((a, b) => b[1] - a[1]).map(([c, v]) => `<span class="zkey"><i style="background:${ZCOL[c]}"></i>${esc(c)} ${Math.round(v * 100)}%</span>`).join("")}</div>
+      <p class="small">Most common zones (${esc(z.j)}): <b>${esc(String(z.top || "").split("; ").filter(x => !/ 0%$/.test(x)).join("; "))}</b>. Turn on <b>Zoning</b> above and zoom in to see each parcel's zone.</p>`;
+    const seen = new Set(), rules = String(z.top || "").split("; ").map(x => x.replace(/ \d+%$/, "")).map(c => zoneRules(c, z.j)).filter(r => r && !seen.has(r.zone_prefix) && seen.add(r.zone_prefix));
+    if (rules.length) h += `<div style="overflow-x:auto"><table class="small" style="width:100%;border-collapse:collapse"><thead><tr style="text-align:left"><th>Zone</th><th>Allows</th><th>Homes/acre</th><th>Height</th><th>FAR</th><th>Setbacks F/S/R</th></tr></thead><tbody>
+      ${rules.map(r => `<tr style="border-top:1px solid var(--rule)"><td><b>${esc(r.zone_prefix)}</b> ${esc(r.zone_name)}</td><td>${esc(r.allowed)}</td><td>${esc(r.units_per_acre)}</td><td>${esc(r.max_height_ft)} ft</td><td>${esc(r.max_far)}</td><td>${esc(r.front_ft)}/${esc(r.side_ft)}/${esc(r.rear_ft)} ft</td></tr>`).join("")}</tbody></table></div>
+      <p class="small muted">Base-zone standards from the round-6 research (${rules.map(r => esc(r.code_section)).join(", ")}); not yet checked against the code. Height districts, overlays and specific plans can change them.</p>`;
+  } else h += `<p class="small muted">No zoning map is loaded for this city yet (${esc(m.city || "")}). State laws below still apply.</p>`;
+  const L_ = [];
+  L_.push("<b>ADUs:</b> state law allows an ADU (up to 1,200 sq ft) and a junior ADU on single-family lots, and more on apartment lots (Gov. Code 66310 and following).");
+  if (z && (z.sh["single-family"] || 0) > 0) L_.push("<b>SB 9:</b> most single-family lots can hold two homes and be split into two lots, except in very-high fire zones and historic districts.");
+  if (rail <= 805) L_.push(`<b>SB 79 (in force July 2026):</b> rail is ${(rail / 1609).toFixed(2)} mi away, so parts of this area are likely in a transit upzoning zone (allowed height and density depend on the station's tier and the distance). Check SCAG's official SB 79 map.`);
+  if (rail <= 805 || tph >= 8) L_.push("<b>AB 2097:</b> within ½ mile of a major transit stop, cities can't require parking for new homes. Here " + (rail <= 805 ? "rail is within ½ mile" : `buses run ${tph}/hr nearby (likely a major stop)`) + ".");
+  if (m.city === "Los Angeles" && (rail <= 805 || tph >= 8)) L_.push("<b>LA City CHIP:</b> mixed-income and 100%-affordable projects near transit and on corridors get density and height bonuses.");
+  h += `<ul class="small" style="margin:6px 0 0 18px;padding:0">${L_.map(x => `<li>${x}</li>`).join("")}</ul><p class="small muted">Transit distances are approximate (rail stations and bus frequency); official eligibility depends on the parcel.</p></div>`;
+  return h;
+}
+function facilitySection(m) {
+  if (!m.fc) return "";
+  const order = ["school", "library", "community center", "fire station", "police", "city hall", "post office", "clinic", "hospital"];
+  const rows = order.filter(k => m.fc[k] != null).map(k => { const [col, ch] = FAC_STYLE[k]; return `<span><span class="fac" style="background:${col};display:inline-block;vertical-align:middle;margin-right:6px">${ch}</span>${esc(k[0].toUpperCase() + k.slice(1))}</span><span>${(m.fc[k] / 1609).toFixed(1)} mi</span>`; });
+  return rows.length ? `<div class="section"><h3>Public facilities nearby</h3><div class="kv">${rows.join("")}</div><p class="small muted">Distance from the middle of this block group to the nearest one. LA County Location Management System, filled in with OpenStreetMap.</p></div>` : "";
+}
+
 // ---------------- find me
 function pointInFeature(f, lon, lat) {
   const inRing = ring => { let c = false;
@@ -333,15 +422,28 @@ function recCard(r, i, mode) {
   return `<div class="rec${i === 0 && mode === "value" ? " top" : ""}${mode === "qol" ? " qolrec" : ""}">
     <div class="cat">${esc(c.category)}</div>
     <div class="row1"><span class="nm">${esc(c.name)}</span>${head}</div>
-    <div class="meta">${esc(r.project)} · <b>total ~${fmt$(r.cost)}</b>${r.value > 0 ? (c.kind === "owner" ? ` · adds ~${fmt$(r.value)} to that home's value` : ` · adds ~${fmt$(r.value)} across ~${fmtN(r.homes)} homes`) : ""}${c.grade !== "none" ? `<span class="chip${c.grade === "A" || c.grade === "B" ? " strong" : c.grade === "D" ? " reg" : ""}" title="${esc(GRADE_TXT[c.grade])}">evidence ${c.grade}</span>` : `<span class="chip">${esc(ev.split(" (")[0])}</span>`}${c.kind === "regional" ? '<span class="chip reg">regional project</span>' : ""}</div>
+    <div class="meta">${esc(r.project)} · <b>total ~${fmt$(r.cost)}</b>${r.value > 0 ? (c.kind === "owner" ? ` · adds ~${fmt$(r.value)} to that home's value` : ` · adds ~${fmt$(r.value)} across ~${fmtN(r.homes)} homes`) : ""}${c.grade !== "none" ? `<span class="chip${c.grade === "A" || c.grade === "B" ? " strong" : c.grade === "D" || c.grade === "U" ? " reg" : ""}" title="${esc(GRADE_TXT[c.grade])}">evidence ${c.grade}</span>` : `<span class="chip">${esc(ev.split(" (")[0])}</span>`}${c.kind === "regional" ? '<span class="chip reg">regional project</span>' : ""}</div>
     <details><summary>Why here, cost and sources</summary>
       <p class="small"><b>Why:</b> ${esc(r.why)}</p>
       <div class="costline">total = ${costs}${r.om ? " (10 yrs, present value)" : ""}</div>
+      ${c.benefit && mode === "qol" ? `<p class="small"><b>Public benefit (unverified estimate):</b> about ${fmt$(c.benefit[0])} a year from ${esc(c.benefit[1].toLowerCase())}, roughly <b>${fvpd(c.benefit[0] * 8.53 / Math.max(r.cost, 1))}</b> of benefit per $1 over 10 years. From the round-6 research, not yet checked against its sources.${c.benefit[2] ? " " + esc(c.benefit[2]) : ""}</p>` : ""}
       ${r.pct > 0 ? `<p class="small"><b>Price effect used:</b> +${r.pct}% for homes reached${c.years ? `, full effect after ~${c.years} yr (discounted)` : ""}.</p>` : `<p class="small"><b>Home-value effect:</b> not measured in the research, so it is ranked by how much this area needs it, not by value per $1.</p>`}
       ${c.grade !== "none" ? `<p class="small"><b>Evidence grade ${c.grade}:</b> ${esc(GRADE_TXT[c.grade].slice(4))}.${c.caveat ? " " + esc(c.caveat) : ""}</p>` : c.caveat ? `<p class="small">${esc(c.caveat)}</p>` : ""}
       ${(c.funding || []).length ? `<p class="small"><b>Who pays:</b> ${c.funding.map(k => { const f = D.funding[k]; return f ? `${f[2] ? `<a href="${esc(f[2])}" target="_blank" rel="noopener">${esc(f[0])}</a>` : esc(f[0])} (${esc(f[1])})` : ""; }).filter(Boolean).join("; ")}</p>` : ""}
       <p class="src muted">${c.sources.map(esc).join("<br>")}</p>
     </details></div>`;
+}
+
+// ---------------- homeowner upgrades (round 6; LA-metro averages, not this house)
+function upgradeTable(m) {
+  const U = (D.upgrades || []).filter(u => !(u.applies_if === "pre1975" && m.yb >= 1975) && !(u.applies_if === "pre1980" && m.yb >= 1980));
+  if (!U.length) return "";
+  const rows = U.map(u => ({ ...u, net: u.resale_value_added - u.cost_2025 })).sort((a, b) => b.net - a.net);
+  return `<details class="more"><summary>${rows.length} more home upgrades: cost vs. resale value</summary>
+    <div style="overflow-x:auto"><table class="small" style="width:100%;border-collapse:collapse;margin-top:6px">
+      <thead><tr style="text-align:left"><th>Upgrade</th><th style="text-align:right">Cost</th><th style="text-align:right">Adds to resale</th><th style="text-align:right">Saves / yr</th><th>Rebates (Nov 2026)</th><th>Property tax</th><th>Permits</th></tr></thead>
+      <tbody>${rows.map(u => `<tr style="border-top:1px solid var(--rule)"><td>${esc(u.name)}</td><td style="text-align:right">${fmt$(u.cost_2025)}</td><td style="text-align:right;${u.net >= 0 ? "font-weight:600" : ""}">${fmt$(u.resale_value_added)}</td><td style="text-align:right">${u.annual_savings ? fmt$(u.annual_savings) : "–"}</td><td>${esc(u.rebates_nov_2026)}</td><td>${esc(u.property_tax)}</td><td>${esc(u.permits)}</td></tr>`).join("")}</tbody></table></div>
+    <p class="small muted">LA-metro averages from the round-6 research (Cost vs. Value and other sources, 2025 dollars), not an estimate for this house. Rebate notes are corrected where the research was out of date: federal 25C and 25D credits ended for work after 2025. ${m.yb ? `Repiping and seismic bracing are listed only because homes here date from about ${Math.round(m.yb)}.` : ""} Per-house checks (lot size, setbacks, fire zone, existing ADU) are coming next.</p></details>`;
 }
 
 // ---------------- EIFD calculator (Gov. Code 53398.50 et seq.)
@@ -453,7 +555,9 @@ function select(id, fly) {
     <p class="small muted">Value counts every nearby home, not only yours. Effects use the low end of the studies; crime programs use measured crime-to-price links.</p></div>`;
   if (qol.length) h += `<div class="section"><h3>Quality-of-life projects (no measured price effect)</h3><p class="small muted">Sorted by how much this area needs each one compared with the rest of the county.</p><div class="recs">${qol.map((r, i) => recCard(r, i, "qol")).join("")}</div></div>`;
   if (pol.length) h += `<div class="section"><h3>Zoning and policy</h3><div class="recs">${pol.map((r, i) => recCard(r, i, "policy")).join("")}</div></div>`;
-  if (own.length) h += `<div class="section"><h3>For an individual homeowner here</h3><div class="recs">${own.map((r, i) => recCard(r, i, "owner")).join("")}</div></div>`;
+  if (own.length || (D.upgrades || []).length) h += `<div class="section"><h3>For an individual homeowner here</h3><div class="recs">${own.map((r, i) => recCard(r, i, "owner")).join("")}</div>${upgradeTable(m)}</div>`;
+  h += zoningSection({ ...m, city: p.c });
+  h += facilitySection(m);
   h += eifdSection(p, m);
   const kv = [], add = (k, v, f = x => x) => { if (v != null && v !== "" && !(typeof v === "number" && isNaN(v))) kv.push(`<span>${k}</span><span>${f(v)}</span>`); };
   add("Population", m.pop, fmtN); add("Median household income", m.inc, fmt$); add("Median rent", m.rent, v => fmt$(v) + "/mo"); add("Median year built", m.yb, v => Math.round(v));
@@ -501,7 +605,7 @@ async function init() {
   $("#q").onchange = e => { const id = names.get(e.target.value); if (id) select(id, true); };
   $("#metric").onchange = restyle;
   $("#evid").onchange = () => { retop(); restyle(); if (selected) select(selected, false); };
-  ["#l-roads", "#l-transit", "#l-parks", "#l-amen", "#l-hoods"].forEach(id => $(id).onchange = drawContext);
+  ["#l-roads", "#l-transit", "#l-parks", "#l-amen", "#l-hoods", "#l-fac", "#l-zone"].forEach(id => $(id).onchange = drawContext);
   $("#l-tiles").onchange = e => {
     if (e.target.checked) { const dark = matchMedia("(prefers-color-scheme: dark)").matches && document.documentElement.dataset.theme !== "light";
       tiles = L.tileLayer(`https://{s}.basemaps.cartocdn.com/${dark ? "dark_all" : "rastertiles/voyager"}/{z}/{x}/{y}{r}.png`, { attribution: "© CARTO", subdomains: "abcd", maxZoom: 19 }).addTo(map); tiles.bringToBack(); }
@@ -509,7 +613,7 @@ async function init() {
     restyle();
   };
   map.on("zoomend", zoomed);
-  map.on("moveend", () => { drawStreets(); drawLabels(); });
+  map.on("moveend", () => { drawStreets(); drawLabels(); drawZoning(); drawFacilities(); });
   L.control.scale({ imperial: true, metric: false, maxWidth: 140, position: "bottomleft" }).addTo(map);
   const Loc = L.Control.extend({ options: { position: "topleft" }, onAdd() { const b = L.DomUtil.create("button", "locate"); b.type = "button"; b.textContent = "📍 Find me";
     b.title = "Center the map on where you are and open your block group"; L.DomEvent.disableClickPropagation(b); b.onclick = () => locateMe(b); return b; } });

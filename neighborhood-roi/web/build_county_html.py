@@ -129,6 +129,47 @@ def parks_bundle():
     return js, lab
 
 
+FAC_KINDS = ["school", "college", "library", "city hall", "fire station", "police", "post office", "hospital", "clinic",
+             "community center", "museum", "courthouse"]
+
+
+def facilities_bundle():
+    p = SRC / "map_facilities.geojson"
+    if not p.exists():
+        return None
+    g = gpd.read_file(p)
+    g = g[g.kind.isin(FAC_KINDS) & g.geometry.notna()]
+    return [[FAC_KINDS.index(k), (n if isinstance(n, str) else ""), round(q.y, 5), round(q.x, 5)]
+            for k, n, q in zip(g.kind, g.get("name", pd.Series([None] * len(g), index=g.index)), g.geometry)]
+
+
+ZCATS = ["single-family", "multifamily", "commercial / mixed use", "industrial", "open space / public", "agricultural", "parking", "other"]
+
+
+def zoning_bundle():
+    """Zoning polygons as encoded rings in grid cells (drawn only on screen at high zoom) plus one label point each."""
+    p = SRC / "map_zoning.geojson.gz"
+    if not p.exists():
+        return None
+    g = gpd.read_file(f"/vsigzip/{p}")
+    g = g[g.geometry.notna() & ~g.geometry.is_empty]
+    g["geometry"] = g.to_crs(M).geometry.simplify(3).to_crs(4326)
+    zones, zi, cells = [], {}, {}
+    for z, cat, juris, geom in zip(g.zone.astype(str), g.cat, g.juris, g.geometry):
+        if geom is None or geom.is_empty:
+            continue
+        if z not in zi:
+            zi[z] = len(zones)
+            zones.append(z)
+        ci = ZCATS.index(cat) if cat in ZCATS else len(ZCATS) - 1
+        pt = geom.representative_point()
+        key = f"{int((pt.x + 180) // CELL)},{int((pt.y + 90) // CELL)}"
+        for poly in (geom.geoms if geom.geom_type == "MultiPolygon" else [geom]):
+            rings = [encode_line(list(poly.exterior.coords))] + [encode_line(list(r.coords)) for r in poly.interiors]
+            cells.setdefault(key, []).append([ci, zi[z], rings, round(pt.y, 5), round(pt.x, 5)])
+    return {"cell": CELL, "zones": zones, "cats": ZCATS, "cells": cells}
+
+
 def labels(g, col):
     g = g[g[col].notna()].copy()
     g["a"] = g.to_crs(M).area
@@ -187,6 +228,15 @@ def main():
         m = {k: v for k, v in m.items() if v is not None and not (isinstance(v, float) and np.isnan(v))}
         if gid in eifd["bg"]:
             m["e"] = eifd["bg"][gid]
+        fc = {k: num(r[f"fac_{k.replace(' ', '_')}_m"], 0) for k in FAC_KINDS if f"fac_{k.replace(' ', '_')}_m" in r.index}
+        fc = {k: v for k, v in fc.items() if v is not None}
+        if fc:
+            m["fc"] = fc
+        if r.get("zone_coverage", 0) == r.get("zone_coverage", 0) and (r.get("zone_coverage") or 0) > 0.05:
+            m["z"] = {"j": r.get("zone_juris"), "top": r.get("zone_top"), "cov": num(r.get("zone_coverage"), 2),
+                      "sh": {c: num(r.get("zshare_" + re.sub(r"\W+", "_", c).strip("_")), 3) for c in ZCATS
+                             if (r.get("zshare_" + re.sub(r"\W+", "_", c).strip("_")) or 0) > 0}}
+        m["tr"] = [num(r.get("rail_station_nearest_m"), 0), num(r.get("rail_stop_nearest_m"), 0), num(r.get("bus_max_tph_400m"), 0), num(r.get("bus_max_tph_800m"), 0)]
         det[gid] = {"r": [[num(rec[k], 3) if isinstance(rec[k], float) else rec[k] for k in keys] for rec in x["recs"]], "m": m}
 
     L = {"freeways": layer("freeways", 40, ["name"], {"name": "n"}, prec=4), "arterials": merged_lines("arterials", 25),
@@ -198,6 +248,9 @@ def main():
         L["parks"] = pk_all
     L["park_labels"] = park_labels
     L["streets"] = streets_bundle()
+    L["facilities"] = facilities_bundle()
+    L["fac_kinds"] = FAC_KINDS
+    L["zoning"] = zoning_bundle()
     fs = SRC / "map_frequent_stops.geojson"
     if fs.exists():
         s = gpd.read_file(fs)
@@ -257,6 +310,23 @@ def main():
         small = sum(1 for f in pk_all["features"] if (f["properties"]["a"] or 0) < 1)
         src_rows.append(["Parks: OpenStreetMap plus LA County Countywide Parks and Open Space (DPR)", '<span class="pill ok">loaded</span>',
                          f"{len(pk_all['features']):,} parks and open spaces ({small:,} under an acre); " + ", ".join(f"{k}: {v:,}" for k, v in kinds.items())])
+    if L.get("facilities"):
+        kinds = pd.Series([FAC_KINDS[x[0]] for x in L["facilities"]]).value_counts()
+        src_rows.append(["Public facilities: LA County Location Management System + OpenStreetMap", '<span class="pill ok">loaded</span>',
+                         f"{len(L['facilities']):,} sites: " + ", ".join(f"{k} {v:,}" for k, v in kinds.items())])
+    zs = st.get("zoning", {})
+    if zs:
+        ok_src = [k for k, v in (zs.get("sources") or {}).items() if str(v).startswith("ok")]
+        src_rows.append(["Zoning: official city/County layers, SCAG 2019 parcel zoning elsewhere", '<span class="pill ok">loaded</span>' if zs.get("ok") else '<span class="pill miss">partial</span>',
+                         f"live layers: {', '.join(ok_src)}; " + (f"SCAG 2019 fills {zs.get('scag_bgs_filled'):,} block groups" if zs.get("scag_bgs_filled") else "SCAG fallback not loaded")])
+    rc = SRC / "research_check.json"
+    if rc.exists():
+        rr = json.loads(rc.read_text())["results"]
+        for frm, lab in (("partA_audit", "Round-6 Part A audit"), ("pasted_report", "Round-6 long report")):
+            sub = [x for x in rr if x["from"] == frm]
+            if sub:
+                src_rows.append([f"{lab}: its data links, tested from GitHub Actions", '<span class="pill ok">checked</span>',
+                                 f"{sum(1 for x in sub if x.get('ok'))} of {len(sub)} links returned data"])
     em = eifd.get("meta", {})
     if em:
         src_rows.append(["EIFD calculator: Assessor roll values by parcel and tax-rate area", '<span class="pill ok">loaded</span>',
@@ -295,6 +365,8 @@ def main():
                    "<b>Regional projects</b> (rail stations, freeway caps) show this area's rough share of a much larger project. Treat them as a signal, not a budget.",
                    "<b>Dollars.</b> Costs are in 2024 dollars (CPI-U) where the source year is known; costs marked as estimates in the caveats have no matched LA record yet.",
                    "<b>EIFD calculator.</b> The base value is the net taxable value on the 2026 Assessor roll for every parcel in the area. City and County shares are the Auditor-Controller's FY 2026-27 tax-increment ratios for the area's actual tax-rate areas, weighted by value. They match the published West Carson plan (County 30.46%) and Pasadena's draft plan (city 21.1%, County 27.9%). Growth, interest and coverage are still your assumptions, and areas already in an EIFD are flagged.",
+                   "<b>Round-6 research.</b> Two answers came back. The Part A audit's 14 data links all worked. The long report marked everything 'verified', but only 11 of its 34 links returned data, and some of its tax-credit claims were out of date. So its new improvements are graded <b>U (unverified lead)</b> and hidden unless you pick 'Also show unverified leads'. Its quality-of-life dollar values and homeowner upgrade figures are shown with that label.",
+                   "<b>Zoning.</b> City of LA and unincorporated County zoning come from the official live layers. Santa Clarita's comes from the city's own layer. Other cities use SCAG's 2019 parcel dataset, which may be out of date. Standards (height, density, setbacks) are listed only for zones the research covered, and need checking against each city's code.",
                    "<b>Policy changes</b> such as rezoning cost the public little to adopt, so no per-dollar return is shown for them.",
                    "<b>Unknowns are left out, not guessed.</b> Where the research has no price effect (pools, crosswalks, litter crews), the item gets no value number. Where a cost isn't on record, the estimate is flagged in its sources."]}]}
 
@@ -312,7 +384,8 @@ def main():
             pts = cent.loc[idx]
             c = pts.union_all().centroid if hasattr(pts, "union_all") else pts.unary_union.centroid
             search[nm] = bg.GEOID.loc[pts.distance(c).idxmin()]
-    bundle = {"meta": {"built": date.today().isoformat(), "default_bg": default, "search": search}, "bgs": bgs, "details": det, "catalog": lib, "funding": meta.get("funding", {}), "eifd": eifd["meta"],
+    bundle = {"meta": {"built": date.today().isoformat(), "default_bg": default, "search": search}, "bgs": bgs, "details": det, "catalog": lib, "funding": meta.get("funding", {}), "eifd": eifd["meta"], "upgrades": meta.get("owner_upgrades", []),
+              "zone_rules": pd.read_csv(ROOT / "model" / "round6" / "zone_rules.csv").to_dict("records"),
               "layers": L, "hoods": hoods_js, "hood_labels": labels(bgn, "hood"), "cities": city_js,
               "city_labels": labels(cities.rename(columns={"name": "nm"}), "nm"), "report": rep}
     raw = json.dumps(bundle, separators=(",", ":"), default=str)
