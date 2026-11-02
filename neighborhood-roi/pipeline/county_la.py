@@ -1227,10 +1227,126 @@ def stage_assessed():
         .to_csv(OUT / "tra_av.csv", index=False)
 
 
+# ------------------------------------------------------------------ basemap: named streets, all parks, route numbers
+STREET_CLASS = {"motorway": 0, "trunk": 0, "primary": 1, "secondary": 1, "tertiary": 2, "unclassified": 3,
+                "residential": 3, "living_street": 3}
+
+
+def _agol_find(query, must):
+    """Find a public ArcGIS Online feature layer by title (used for layers whose URL isn't fixed)."""
+    try:
+        r = get("https://www.arcgis.com/sharing/rest/search", params={"q": query + ' type:"Feature Service"', "num": 25, "f": "json"},
+                timeout=60).json()
+        hits = [x for x in r.get("results", []) if all(m.lower() in (x.get("title") or "").lower() for m in must)]
+        hits.sort(key=lambda x: (x.get("owner", "").lower().find("lacounty") < 0, -(x.get("modified") or 0)))
+        log("  agol candidates: " + "; ".join(f"{x['title']} ({x.get('owner')}) {x.get('url')}" for x in hits[:6]))
+        return [x["url"] for x in hits if x.get("url")]
+    except Exception as e:  # noqa: BLE001
+        log(f"  agol search failed: {e}")
+        return []
+
+
+def stage_basemap():
+    from shapely.ops import linemerge, unary_union
+    import gzip
+    w, s, e, n = BBOX
+    pbf = cached_download("https://download.geofabrik.de/north-america/us/california/socal-latest.osm.pbf", "geofabrik_socal.osm.pbf", 25)
+    cut = CACHE / "lacounty.pbf"
+    bd._sh("osmium", "extract", "-b", f"{w},{s},{e},{n}", str(pbf), "-o", str(cut), "--overwrite", "-s", "complete_ways")
+
+    def layer(name, *exprs):
+        f, g = CACHE / f"bm_{name}.pbf", CACHE / f"bm_{name}.geojson"
+        bd._sh("osmium", "tags-filter", str(cut), *exprs, "-o", str(f), "--overwrite")
+        bd._sh("osmium", "export", str(f), "-o", str(g), "--overwrite", "-f", "geojson", "-a", "type,id")
+        d = gpd.read_file(g)
+        note("basemap", **{name: len(d)})
+        return d
+
+    county = block_groups().to_crs(M).union_all() if hasattr(gpd.GeoSeries, "union_all") else block_groups().to_crs(M).unary_union
+    county = county.buffer(300)
+
+    # streets: one merged, simplified line per (class, name) chain
+    roads = layer("streets", "w/highway=" + ",".join(STREET_CLASS))
+    roads = roads[roads.geom_type.isin(["LineString", "MultiLineString"])].copy()
+    roads["cls"] = roads["highway"].map(STREET_CLASS)
+    roads["name"] = roads.get("name")
+    if "ref" in roads:
+        fwy = roads["cls"].eq(0)
+        roads.loc[fwy, "name"] = roads.loc[fwy, "ref"].fillna(roads.loc[fwy, "name"])
+    roads = roads[roads.name.notna()].to_crs(M)
+    roads = roads[roads.intersects(county)]
+    rows = []
+    for (c, nm), g in roads.groupby(["cls", "name"]):
+        u = unary_union(list(g.geometry))
+        if u.geom_type == "MultiLineString":
+            u = linemerge(u)
+        for part in (u.geoms if hasattr(u, "geoms") else [u]):
+            if part.geom_type == "LineString" and part.length >= 40:
+                rows.append((int(c), nm, part.simplify(4 if c >= 2 else 8)))
+    st = gpd.GeoDataFrame(rows, columns=["cls", "name", "geometry"], crs=M).to_crs(4326)
+    note("basemap", street_lines=len(st), by_class={str(k): int(v) for k, v in st.cls.value_counts().items()})
+    with gzip.open(OUT / "map_streets.geojson.gz", "wt") as f:
+        f.write(re.sub(r"(-?\d+\.\d{5})\d+", r"\1", st.to_json(drop_id=True)))
+    log(f"  wrote map_streets.geojson.gz ({len(st)} lines)")
+
+    # parks: every OSM park, nature reserve, recreation ground, playground lot, community garden and beach,
+    # plus any official County park polygons that OSM lacks
+    pk = layer("parks_all", "wr/leisure=park,nature_reserve,recreation_ground,garden,playground,dog_park",
+               "wr/natural=beach", "wr/boundary=protected_area")
+    pk = pk[pk.geom_type.isin(["Polygon", "MultiPolygon"])].copy()
+    lei = pk.get("leisure", pd.Series(index=pk.index, dtype=object))
+    gtype = pk.get("garden:type", pd.Series(index=pk.index, dtype=object))
+    access = pk.get("access", pd.Series(index=pk.index, dtype=object))
+    pk = pk[~(lei.eq("garden") & ~gtype.eq("community")) & ~access.isin(["private", "no"])]
+    pk["kind"] = np.where(pk.get("natural", pd.Series(index=pk.index)).eq("beach"), "beach",
+                 np.where(lei.reindex(pk.index).isin(["nature_reserve"]) | pk.get("boundary", pd.Series(index=pk.index)).eq("protected_area"), "open space",
+                 np.where(lei.reindex(pk.index).eq("garden"), "community garden",
+                 np.where(lei.reindex(pk.index).eq("playground"), "playground",
+                 np.where(lei.reindex(pk.index).eq("dog_park"), "dog park", "park")))))
+    pk = pk.to_crs(M)
+    pk["geometry"] = pk.geometry.make_valid()
+    pk = pk[pk.geom_type.isin(["Polygon", "MultiPolygon"]) & pk.intersects(county)]
+    pk["acres"] = pk.area / 4046.86
+    pk = pk[pk.acres >= 0.02]
+    pk["src"] = "OpenStreetMap"
+    official = None
+    for url in _agol_find("Los Angeles County parks open space", ["park"])[:4]:
+        try:
+            lyr = url.rstrip("/") + ("/0" if not re.search(r"/\d+$", url) else "")
+            g = arcgis_all(lyr, bbox=BBOX, max_rows=60000)
+            if g is None or not g.geom_type.isin(["Polygon", "MultiPolygon"]).any() or len(g) < 300:
+                continue
+            official = g
+            note("basemap", official_parks_url=lyr, official_parks=len(g), official_fields=list(g.columns)[:40])
+            break
+        except Exception as ex:  # noqa: BLE001
+            note("basemap", official_parks_error=f"{url}: {ex}"[:200])
+    if official is not None:
+        o = official[official.geom_type.isin(["Polygon", "MultiPolygon"])].to_crs(M)
+        o["geometry"] = o.geometry.make_valid()
+        o = o[o.geom_type.isin(["Polygon", "MultiPolygon"])]
+        namec = next((c for c in o.columns if re.fullmatch(r"(park_?)?name|PARK_NAME|Name|NAME|label", c, re.I)), None)
+        covered = gpd.overlay(o[["geometry"]].assign(oid=range(len(o))), pk[["geometry"]], how="intersection", keep_geom_type=True)
+        cov = covered.area.groupby(covered.oid).sum().reindex(range(len(o))).fillna(0).values / o.area.values
+        add = o[cov < 0.5].copy()
+        add = gpd.GeoDataFrame({"name": add[namec] if namec else None, "kind": "park", "src": "LA County",
+                                "geometry": add.geometry}, crs=M)
+        add["acres"] = add.area / 4046.86
+        note("basemap", official_added=len(add))
+        pk = pd.concat([pk, add[add.acres >= 0.02]], ignore_index=True)
+    pk = gpd.GeoDataFrame(pk, geometry="geometry", crs=M)
+    pk["geometry"] = pk.geometry.simplify(3)
+    pk = pk.assign(name=pk.get("name"), acres=pk.acres.round(2))[["name", "kind", "acres", "src", "geometry"]].to_crs(4326)
+    note("basemap", parks=len(pk), parks_by_kind={k: int(v) for k, v in pk.kind.value_counts().items()},
+         parks_under_1ac=int((pk.acres < 1).sum()))
+    pk.to_file(OUT / "map_parks_all.geojson", driver="GeoJSON", COORDINATE_PRECISION=5)
+    log(f"  wrote map_parks_all.geojson ({len(pk)})")
+
+
 STAGES = {"geo": stage_geo, "osm": stage_osm, "transit": stage_transit, "sales": stage_sales, "crime": stage_crime,
           "requests311": stage_requests311, "crashes": stage_crashes, "trees": stage_trees,
           "parcels": stage_parcels, "assets": stage_assets,
-          "tra": stage_tra, "assessed": stage_assessed}
+          "tra": stage_tra, "assessed": stage_assessed, "basemap": stage_basemap}
 
 
 def main():
