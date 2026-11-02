@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-02T17:41:08.655128+00:00",
+ "generated_at": "2026-11-02T18:03:08.588359+00:00",
  "sources": {
   "basemap": {
    "streets": 512002,
@@ -11,7 +11,6 @@
     "0": 251
    },
    "parks_all": 26996,
-   "official_parks_error": "https://services.arcgis.com/RmCCgQtiZLDCtblq/arcgis/rest/services/Parks_and_Open_Space_(CHAP)_(View)/FeatureServer: failed: https://services.arcgis.com/RmCCgQtiZLDCtblq/arcgis/rest/services/Parks_and_",
    "official_parks_url": "https://services.arcgis.com/RmCCgQtiZLDCtblq/arcgis/rest/services/Countywide_Parks_and_Open_Space__(Public_-_Hosted2)/FeatureServer/0",
    "official_parks": 3012,
    "official_fields": [
@@ -68,7 +67,7 @@
    },
    "parks_under_1ac": 2763,
    "ok": true,
-   "seconds": 671.7
+   "seconds": 528.2
   }
  }
 }

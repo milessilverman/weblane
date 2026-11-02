@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-02T06:23:16.736658+00:00",
+ "generated_at": "2026-11-02T18:02:11.786090+00:00",
  "sources": {
   "geo": {
    "acs_vintage": "2020-2024 ACS 5-year, block groups",
@@ -15,8 +15,7 @@
    "hoods_Pasadena_field": "Association_Name",
    "hoods_Long Beach": 126,
    "hoods_Long Beach_field": "NEIGHBOR_NAME",
-   "hoods_Glendale": 37,
-   "hoods_Glendale_field": "NAME",
+   "hoods_Glendale_error": "failed: https://gismap.glendaleca.gov/arcgis/rest/services/Common/NeighborhoodZones/MapServer/1",
    "hoods_Torrance": 24,
    "hoods_Torrance_field": "Name",
    "la_times_hoods": 114,
@@ -63,13 +62,12 @@
     "Windsor Hills"
    ],
    "block_groups": 6587,
-   "named_official": 789,
+   "named_official": 652,
    "named_latimes": 2680,
    "by_source": {
-    "LA County Countywide Statistical Area": 3116,
+    "LA County Countywide Statistical Area": 3253,
     "LA Times Mapping L.A.": 2680,
     "Long Beach (city GIS)": 328,
-    "Glendale (city GIS)": 137,
     "Lancaster (city GIS)": 104,
     "Pasadena (city GIS)": 90,
     "Torrance (city GIS)": 76,
@@ -78,7 +76,7 @@
     "City boundary (no neighborhood map)": 2
    },
    "ok": true,
-   "seconds": 28.6
+   "seconds": 324.9
   }
  }
 }

@@ -1106,9 +1106,7 @@ CDSCode,School,District,County,SOCType,lat,lon,ela_pct_met,math_pct_met
 10621256110225,Nell Dawson Elementary,Coalinga-Huron Unified,Fresno,Elementary Schools (Public),36.148249,-120.36352,26.02,26.29
 10621256113849,Huron Middle,Coalinga-Huron Unified,Fresno,Intermediate/Middle Schools (Public),36.199493,-120.10125,13.76,9.34
 10621580000000,No Data,Fowler Unified,Fresno,No Data,36.634569,-119.674,44.74,30.92
-10621580108977,Fowler Academy Community Day (9-12),Fowler Unified,Fresno,District Community Day Schools,36.634489,-119.66768,,
 10621580120246,Fowler Academy Independent Study,Fowler Unified,Fresno,Alternative Schools of Choice,36.634485,-119.66766,,
-10621580126250,Fowler Academy Community Day,Fowler Unified,Fresno,District Community Day Schools,36.634489,-119.66768,,
 10621581031954,Fowler Academy Continuation,Fowler Unified,Fresno,Continuation High Schools,36.634489,-119.66768,,
 10621581032150,Fowler High,Fowler Unified,Fresno,High Schools (Public),36.633092,-119.67268,70.15,25.74
 10621586006027,Fremont Elementary,Fowler Unified,Fresno,Elementary Schools (Public),36.632322,-119.6789,42.61,34.89
@@ -3139,7 +3137,7 @@ CDSCode,School,District,County,SOCType,lat,lon,ela_pct_met,math_pct_met
 19647330128033,Alliance College-Ready Middle Academy 8,Los Angeles Unified,Los Angeles,Intermediate/Middle Schools (Public),34.035463,-118.18731,44.39,29.77
 19647330128041,Alliance Kory Hunter Middle,Los Angeles Unified,Los Angeles,Intermediate/Middle Schools (Public),33.987113,-118.24738,45.67,25.11
 19647330128058,Alliance College-Ready Middle Academy 12,Los Angeles Unified,Los Angeles,Intermediate/Middle Schools (Public),33.997698,-118.27327,38.93,23.51
-19647330128132,Extera Public School No. 2,Los Angeles Unified,Los Angeles,Elementary Schools (Public),34.018536,-118.18563,33.33,28.13
+19647330128132,Animo Extera Charter Elementary,Los Angeles Unified,Los Angeles,Elementary Schools (Public),34.018536,-118.18563,33.33,28.13
 19647330128512,KIPP Academy of Innovation,Los Angeles Unified,Los Angeles,Intermediate/Middle Schools (Public),34.018588,-118.18217,38.78,23.59
 19647330128710,Dr. Sammy Lee Medical and Health Science Magnet Elementary,Los Angeles Unified,Los Angeles,Elementary Schools (Public),34.074011,-118.28862,59.38,61.51
 19647330129270,Animo Mae Jemison Charter Middle,Los Angeles Unified,Los Angeles,Intermediate/Middle Schools (Public),33.917533,-118.2639,26.27,12.56
@@ -4532,7 +4530,6 @@ CDSCode,School,District,County,SOCType,lat,lon,ela_pct_met,math_pct_met
 19768690119636,Da Vinci Design,Wiseburn Unified,Los Angeles,High Schools (Public),33.918105,-118.38322,52.0,23.2
 19768690128728,Da Vinci Connect,Wiseburn Unified,Los Angeles,K-12 Schools (Public),33.919526,-118.37504,63.55,40.46
 19768690131128,Da Vinci Communications,Wiseburn Unified,Los Angeles,High Schools (Public),33.917773,-118.38398,54.26,25.58
-19768690138545,Success Learning Center,Wiseburn Unified,Los Angeles,Special Education Schools (Public),33.920452,-118.37844,,
 19768696023808,Del Aire Elementary,Wiseburn Unified,Los Angeles,Elementary Schools (Public),33.922918,-118.37207,58.09,56.57
 19768696023816,Aviation Elementary,Wiseburn Unified,Los Angeles,Elementary Schools (Public),33.906602,-118.37437,62.27,62.04
 19768696023824,Hollyglen Elementary,Wiseburn Unified,Los Angeles,Elementary Schools (Public),33.90952,-118.37273,,
@@ -4634,7 +4631,6 @@ CDSCode,School,District,County,SOCType,lat,lon,ela_pct_met,math_pct_met
 20764146023915,Coarsegold Elementary,Yosemite Unified,Madera,Elementary Schools (Public),37.257982,-119.7171,20.1,13.92
 20764146110019,Rivergold Elementary,Yosemite Unified,Madera,Elementary Schools (Public),37.168496,-119.83532,44.84,26.43
 20764146110076,Mountain Home Charter (Alternative),Yosemite Unified,Madera,Elementary Schools (Public),37.348619,-119.64223,53.57,38.57
-20764146113914,Meadowbrook Community Day,Yosemite Unified,Madera,District Community Day Schools,37.257982,-119.7171,,
 21102150000000,No Data,Marin County Office of Education,Marin,No Data,38.01371,-122.55017,4.55,0.0
 21102150113183,Marin County Juvenile Court,Marin County Office of Education,Marin,Juvenile Court Schools,38.026767,-122.56879,,
 21102150135350,Ross Valley Charter,Marin County Office of Education,Marin,Elementary Schools (Public),37.989788,-122.59033,66.67,56.57
@@ -6819,7 +6815,6 @@ CDSCode,School,District,County,SOCType,lat,lon,ela_pct_met,math_pct_met
 34673300142315,Alder Creek Elementary,Folsom-Cordova Unified,Sacramento,Elementary Schools (Public),38.63509,-121.10662,75.2,71.89
 34673303430501,Walnutwood High (Independent Study),Folsom-Cordova Unified,Sacramento,Alternative Schools of Choice,38.607402,-121.27975,37.88,14.06
 34673303430667,Prospect Community Day,Folsom-Cordova Unified,Sacramento,District Community Day Schools,38.601301,-121.27554,0.0,0.0
-34673303430709,Folsom Lake High,Folsom-Cordova Unified,Sacramento,Continuation High Schools,38.648972,-121.15521,6.67,0.0
 34673303431533,Cordova High,Folsom-Cordova Unified,Sacramento,High Schools (Public),38.599656,-121.30919,48.54,19.12
 34673303433034,Folsom-Cordova Adult,Folsom-Cordova Unified,Sacramento,Adult Education Centers,38.606842,-121.27915,,
 34673303433216,Folsom High,Folsom-Cordova Unified,Sacramento,High Schools (Public),38.64949,-121.15518,79.78,50.95
@@ -11232,7 +11227,6 @@ CDSCode,School,District,County,SOCType,lat,lon,ela_pct_met,math_pct_met
 56105615630223,Providence,Ventura County Office of Education,Ventura,Juvenile Court Schools,34.254686,-119.15602,0.0,0.0
 56105615630397,Gateway Community,Ventura County Office of Education,Ventura,County Community,34.208208,-119.07572,0.0,0.0
 56105616055974,Meadows Arts and Technology Elementary,Ventura County Office of Education,Ventura,Elementary Schools (Public),34.193333,-118.84127,85.71,86.73
-56105616069231,Ventura County Special Education,Ventura County Office of Education,Ventura,Special Education Schools (Public),34.214471,-118.99934,,
 56724470000000,No Data,Briggs Elementary,Ventura,No Data,34.328592,-119.14112,33.86,26.79
 56724476054969,Briggs Elementary,Briggs Elementary,Ventura,Intermediate/Middle Schools (Public),34.328151,-119.10541,31.08,22.42
 56724476054977,Olivelands Elementary,Briggs Elementary,Ventura,Elementary Schools (Public),34.328592,-119.14112,40.21,36.73
