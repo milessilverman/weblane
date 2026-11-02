@@ -186,6 +186,7 @@ def load():
 def clean_codes(d):
     """Some city layers use codes (e.g. 'AOC7') instead of names: treat those as unnamed."""
     bad = d.hood.astype(str).str.fullmatch(r"[A-Za-z]{1,4}\s?\d+[A-Za-z]?") | d.hood.isna()
+    bad |= d.hood_source.astype(str).str.startswith("Lancaster")  # one region-wide polygon, not neighborhoods
     d.loc[bad, "hood"] = d.loc[bad, "city"]
     d.loc[bad, "hood_source"] = "City boundary (no neighborhood map)"
     return d
@@ -547,13 +548,14 @@ def size_projects(r, ref, tree_rate):
     oh, ug = g(r, "ladwp_overhead_km"), g(r, "ladwp_underground_km")
     fire = g(r, "fire_vh_share", 0)
     fire_txt = f"; {fire:.0%} of the area is a Very High fire hazard zone (undergrounding also cuts ignition risk)" if fire > 0.1 else ""
-    if oh == oh and (oh + (ug if ug == ug else 0)) > 0.3:
-        share = oh / (oh + (ug if ug == ug else 0))
+    tot = (oh if oh == oh else 0) + (ug if ug == ug else 0)
+    if tot >= max(0.6 * res_km, 0.5):  # LADWP's map covers this area's streets
+        share = oh / tot
         if share > 0.5 and r.sf_share > 0.3:
-            miles = min(oh, max(res_km, 0.5) * 1.2) * 0.621
+            miles = max(oh, res_km * share) * 0.621
             add("undergrounding", 1, f"{miles:.1f} miles of overhead lines undergrounded", H, 0.029, 2_800_000 * miles, 0,
                 why=f"LADWP maps show {share:.0%} of local lines overhead ({oh:.1f} km); $2.8M per circuit-mile" + fire_txt)
-    elif yb <= 1975 and r.sf_share > 0.3 and res_km > 0.5:
+    elif tot < 0.3 * max(res_km, 0.1) and yb <= 1975 and r.sf_share > 0.3 and res_km > 0.5:
         miles = res_km * 0.621
         add("undergrounding", 1, f"{miles:.1f} miles of lines undergrounded", H, 0.029, 2_800_000 * miles, 0,
             why=f"homes built ~{int(yb)}, so overhead lines are likely (no utility line map outside LADWP's area); $2.8M per circuit-mile" + fire_txt, fit=0.7)
