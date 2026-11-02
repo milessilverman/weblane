@@ -449,10 +449,11 @@ def size_projects(r, ref, tree_rate):
 
     # --- streets
     ksi, pb = g(r, "crashes_ksi", 0), g(r, "crashes_ped_bike", 0)
-    if res_km > 1 and r.sf_share > 0.3:
-        humps = int(max(2, res_km * 2))
-        add("traffic_calming", humps, f"{humps} speed humps", H * r.sf_share * 0.4, 0.01, 5958 * humps, 0,
-            why=f"{res_km:.1f} km of residential streets; calming that cuts through-traffic ~16% adds ~1% on treated streets", fit=0.7)
+    if res_km > 1 and r.sf_share > 0.3 and (ksi >= 2 or pb >= 4):
+        humps = int(max(4, res_km * 2))
+        add("traffic_calming", humps, f"{humps} speed humps on cut-through streets", H * r.sf_share * 0.15, 0.01, 5958 * humps, 0,
+            why=f"{int(ksi)} fatal/severe and {int(pb)} pedestrian/bike crashes recorded; calming that cuts through-traffic ~16% adds ~1% "
+                "for homes on those streets (assumes ~15% of homes sit on cut-through streets)", fit=0.5)
     if pb >= 2:
         k = int(min(8, pb))
         add("crosswalks", k, f"{k} intersections upgraded", reach(300, dens, H), 0, 58_000 * k, 0,
@@ -467,9 +468,10 @@ def size_projects(r, ref, tree_rate):
     if r.crime_covered and r.violent_per_1k == r.violent_per_1k:
         vrel = r.violent_per_1k / max(ref["violent"], 0.1)
         if vrel > 1.5 or g(r, "streetlight", 0) > 10:
-            m = res_km * 1000 * 0.3
+            street_km = max(res_km, 14 * r.area_km2)  # LA's street grid runs ~14 km of street per km2
+            m = street_km * 1000 * 0.3
             v_drop = 0.36 * 0.3
-            add("street_lighting", 1, f"~{m/1000:.1f} km of streets relit", H * 0.5, EL_VIOLENT * v_drop + EL_PROPERTY * v_drop,
+            add("street_lighting", 1, f"~{m/1000:.1f} km of streets relit", H * 0.3, EL_VIOLENT * v_drop + EL_PROPERTY * v_drop,
                 656 * m, 12 * m, why=f"violent crime {vrel:.1f}x the county median; lighting cuts nighttime outdoor crime 36% (~30% of crime)")
         if vrel > 2:
             add("cameras", 10, "10 cameras at hot spots", H * 0.25, EL_VIOLENT * 0.13 + EL_PROPERTY * 0.13, 81_480, 87_000,
@@ -554,7 +556,8 @@ def size_projects(r, ref, tree_rate):
     if din >= 8:
         add("outdoor_dining", 5, "5 parklets", reach(400, dens, H), 0, 125_000, 5_000, why=f"{int(din)} restaurants/cafes within 400 m")
     if g(r, "market_nearest_m") > 2000 and dens > 0.003:
-        add("farmers_market", 1, "weekly market, 10 years", reach(800, dens, H), 0.005, 0, 40_000, why="no market mapped within 2 km")
+        add("farmers_market", 1, "weekly market, 10 years", reach(500, dens, H), 0.0025, 0, 40_000,
+            why="no market mapped within 2 km; uses +0.25% within 500 m (studies find an inverted-U: too close can hurt)")
 
     # --- zoning (policy: almost no public cost)
     if (rail_m < 800 or tph >= 15) and r.sf_share > 0.5:

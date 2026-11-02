@@ -2,11 +2,25 @@
  "ref": {
   "value": 790007.0,
   "income": 93239.5,
-  "violent": 0.8904719501335708,
+  "violent": 1.912052879412711,
   "other_vacant": 0.0
  },
  "tree_calibration": {
-  "n": 0
+  "n": 4973,
+  "gap": [
+   11.2,
+   17.0,
+   23.5,
+   27.5,
+   34.4
+  ],
+  "sites_per_km": [
+   18.1,
+   23.3,
+   23.4,
+   26.5,
+   18.1
+  ]
  },
  "tree_pct": 0.24,
  "elasticities": {
@@ -15,7 +29,7 @@
  },
  "pv10": 8.530202836775828,
  "status": {
-  "bg_osm": false,
+  "bg_osm": true,
   "bg_transit": true,
   "bg_crime": true,
   "bg_311": true,
@@ -977,17 +991,17 @@
    "lasd_rows_Sheriff Part 1 and 2 Crimes (Y": 96082,
    "lasd_stale_Sheriff Part 1 and 2 Crimes (H": "2012-05-04",
    "lasd_arc_err_Sheriff Part 1 and 2 Crimes (H": "failed: https://services.arcgis.com/RmCCgQtiZLDCtblq/arcgis/rest/services/PART_I_AND_II_CRIMES-HISTORICAL/FeatureServer/",
-   "lasd_rows_Sheriff Officer Contacts _ Per": 600000,
-   "lasd_dataset": "Sheriff Officer Contacts _ Person Details  https://services.arcgis.com/RmCCgQtiZLDCtblq/arcgis/rest/services/LASD_Officer_Contacts___Person_Details_/FeatureServer/0",
-   "lasd_rows": 0,
+   "lasd_dataset": "Sheriff Part 1 and 2 Crimes (Year to Date) https://services.arcgis.com/RmCCgQtiZLDCtblq/arcgis/rest/services/PART_I_AND_II_CRIMES-YTD/FeatureServer/0",
+   "lasd_rows": 90632,
    "santa_monica_rows": 7116,
    "santa_monica_latest": "2024-05-13",
    "rows_by_agency": {
     "LAPD": 80732,
+    "LASD": 90632,
     "Santa Monica PD": 7116
    },
    "ok": true,
-   "seconds": 1206.8
+   "seconds": 494.3
   },
   "parcels": {
    "fields": [
@@ -1082,7 +1096,7 @@
     "commercial": 8935
    },
    "ok": true,
-   "seconds": 809.5
+   "seconds": 833.4
   },
   "trees": {
    "inventory_cities": [
@@ -1191,7 +1205,7 @@
     "mandarin-orange-trees": 3
    },
    "ok": true,
-   "seconds": 218.5
+   "seconds": 235.3
   },
   "crashes": {
    "candidates": [
@@ -1213,20 +1227,20 @@
    "used_Crashes_2026": 446345,
    "rows": 446345,
    "ok": true,
-   "seconds": 26.8
+   "seconds": 19.9
   },
   "requests311": {
    "2cy6-i7zn_cols": [
     "casenumber",
     "createddate",
     "systemmodstamp",
-    "action_taken__c",
     "department_name__c",
     "type",
     "status",
     "origin",
     "created_by_user_organization",
     "reported_anonymously__c",
+    "assigned_to__c",
     "closeddate",
     "resolution_code__c",
     "locator_gis_returned_address",
@@ -1332,14 +1346,14 @@
     "FEEDBACK": 180
    },
    "ok": true,
-   "seconds": 259.7
+   "seconds": 286.6
   },
   "sales": {
    "rows": 75816,
    "first": "2022-08-15",
    "last": "2024-06-05",
    "ok": true,
-   "seconds": 52.8
+   "seconds": 55.1
   },
   "osm": {
    "parks": 20954,
@@ -1378,9 +1392,8 @@
    "places": 709,
    "lamps": 40484,
    "resroads": 285979,
-   "ok": false,
-   "error": "NotImplementedError: df1 contains mixed geometry types.",
-   "seconds": 232.7
+   "ok": true,
+   "seconds": 146.8
   },
   "transit": {
    "mobility_columns": [
@@ -1569,7 +1582,7 @@
    "combined_stops": 18221,
    "frequent_stops": 947,
    "ok": true,
-   "seconds": 8.9
+   "seconds": 10.1
   },
   "geo": {
    "acs_vintage": "2020-2024 ACS 5-year, block groups",
@@ -1640,7 +1653,7 @@
     "City boundary (no neighborhood map)": 2
    },
    "ok": true,
-   "seconds": 20.5
+   "seconds": 26.7
   }
  }
 }

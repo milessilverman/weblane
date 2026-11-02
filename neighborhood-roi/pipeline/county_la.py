@@ -796,7 +796,7 @@ def stage_requests311():
     cands = [{"id": "b7dx-7gc3", "name": "MyLA311 Service Request Data 2024"}]
     cands = [c for c in socrata_find("data.lacity.org", "MyLA311 Service Request Data") if "311" in c["name"]] + cands
     cands.sort(key=lambda c: max([int(y) for y in re.findall(r"20\d\d", c["name"])] or [0]), reverse=True)
-    cats = {"illegal_dumping": r"ILLEGAL DUMP|BULKY|ABANDONED ITEM|DEAD ANIMAL|LITTER",
+    cats = {"illegal_dumping": r"ILLEGAL DUMP|ABANDONED|LITTER", "bulky_items": r"BULKY|METAL/HOUSEHOLD|ELECTRONIC WASTE",
             "graffiti": r"GRAFFITI", "streetlight": r"STREETLIGHT|STREET LIGHT|SINGLE STREETLIGHT|MULTIPLE STREETLIGHT",
             "encampment": r"HOMELESS|ENCAMPMENT", "pothole": r"POTHOLE|PAVEMENT", "tree": r"TREE"}
     for c in cands[:6]:
