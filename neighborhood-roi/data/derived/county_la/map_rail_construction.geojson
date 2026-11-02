@@ -1,0 +1,26 @@
+{
+"type": "FeatureCollection",
+"name": "map_rail_construction",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"xy_coordinate_resolution": 1e-05,
+"features": [
+{ "type": "Feature", "properties": { "name": "Westwood/VA Hospital station", "kind": "subway" }, "geometry": { "type": "LineString", "coordinates": [ [ -118.45394, 34.05337 ], [ -118.45259, 34.05418 ], [ -118.45297, 34.05485 ], [ -118.45319, 34.05493 ], [ -118.45467, 34.05425 ], [ -118.45431, 34.05348 ], [ -118.45414, 34.05359 ], [ -118.45394, 34.05337 ] ] } },
+{ "type": "Feature", "properties": { "name": "Metro D Line Extension (Phase 2 of 3)", "kind": "subway" }, "geometry": { "type": "LineString", "coordinates": [ [ -118.37594, 34.06517 ], [ -118.38266, 34.06684 ], [ -118.38467, 34.06711 ], [ -118.4074, 34.06705 ], [ -118.40875, 34.06653 ], [ -118.40955, 34.06579 ], [ -118.40996, 34.06496 ], [ -118.41029, 34.06307 ], [ -118.41113, 34.06185 ], [ -118.41376, 34.06038 ], [ -118.41687, 34.05809 ] ] } },
+{ "type": "Feature", "properties": { "name": "Metro D Line Extension (Phase 3 of 3)", "kind": "subway" }, "geometry": { "type": "LineString", "coordinates": [ [ -118.41687, 34.05809 ], [ -118.41758, 34.05767 ], [ -118.41845, 34.05742 ], [ -118.41981, 34.05745 ], [ -118.42387, 34.0588 ], [ -118.43283, 34.0609 ], [ -118.4341, 34.06106 ], [ -118.43539, 34.061 ], [ -118.44855, 34.05763 ], [ -118.44972, 34.05696 ], [ -118.45174, 34.05544 ], [ -118.45765, 34.05209 ] ] } },
+{ "type": "Feature", "properties": { "name": "Metro D Line Extension (Phase 3 of 3)", "kind": "subway" }, "geometry": { "type": "LineString", "coordinates": [ [ -118.45758, 34.052 ], [ -118.45168, 34.05535 ], [ -118.44964, 34.05688 ], [ -118.44849, 34.05753 ], [ -118.43537, 34.0609 ], [ -118.4341, 34.06096 ], [ -118.43285, 34.06079 ], [ -118.42392, 34.0587 ], [ -118.41983, 34.05734 ], [ -118.41842, 34.05732 ], [ -118.41752, 34.05758 ], [ -118.41679, 34.05801 ] ] } },
+{ "type": "Feature", "properties": { "name": "Metro D Line Extension (Phase 2 of 3)", "kind": "subway" }, "geometry": { "type": "LineString", "coordinates": [ [ -118.41679, 34.05801 ], [ -118.41369, 34.0603 ], [ -118.41104, 34.06178 ], [ -118.41016, 34.06304 ], [ -118.40983, 34.06494 ], [ -118.40944, 34.06573 ], [ -118.40867, 34.06645 ], [ -118.40737, 34.06694 ], [ -118.38467, 34.06704 ], [ -118.38268, 34.06678 ], [ -118.37597, 34.0651 ] ] } },
+{ "type": "Feature", "properties": { "name": null, "kind": "subway" }, "geometry": { "type": "LineString", "coordinates": [ [ -118.31022, 34.06224 ], [ -118.30974, 34.06224 ], [ -118.30973, 34.06184 ], [ -118.31022, 34.06186 ], [ -118.31022, 34.06224 ] ] } },
+{ "type": "Feature", "properties": { "name": "SkyLink", "kind": "monorail" }, "geometry": { "type": "LineString", "coordinates": [ [ -118.39164, 33.94744 ], [ -118.39159, 33.94759 ] ] } },
+{ "type": "Feature", "properties": { "name": "SkyLink", "kind": "monorail" }, "geometry": { "type": "LineString", "coordinates": [ [ -118.39159, 33.94765 ], [ -118.39165, 33.94779 ] ] } },
+{ "type": "Feature", "properties": { "name": "Purple Line Extension (Phase 2 of 3)", "kind": "subway" }, "geometry": { "type": "LineString", "coordinates": [ [ -118.41519, 34.05934 ], [ -118.41441, 34.05977 ] ] } },
+{ "type": "Feature", "properties": { "name": "Purple Line Extension (Phase 2 of 3)", "kind": "subway" }, "geometry": { "type": "LineString", "coordinates": [ [ -118.4151, 34.05926 ], [ -118.4145, 34.05985 ] ] } },
+{ "type": "Feature", "properties": { "name": "Purple Line Extension (Phase 3 of 3)", "kind": "subway" }, "geometry": { "type": "LineString", "coordinates": [ [ -118.45546, 34.05342 ], [ -118.45469, 34.05371 ] ] } },
+{ "type": "Feature", "properties": { "name": "Purple Line Extension (Phase 3 of 3)", "kind": "subway" }, "geometry": { "type": "LineString", "coordinates": [ [ -118.45477, 34.05379 ], [ -118.45539, 34.05333 ] ] } },
+{ "type": "Feature", "properties": { "name": "Purple Line Extension (Phase 3 of 3)", "kind": "subway" }, "geometry": { "type": "LineString", "coordinates": [ [ -118.44998, 34.05677 ], [ -118.45085, 34.05596 ] ] } },
+{ "type": "Feature", "properties": { "name": "Purple Line Extension (Phase 3 of 3)", "kind": "subway" }, "geometry": { "type": "LineString", "coordinates": [ [ -118.45094, 34.05603 ], [ -118.44989, 34.05669 ] ] } },
+{ "type": "Feature", "properties": { "name": "SkyLink", "kind": "light_rail" }, "geometry": { "type": "LineString", "coordinates": [ [ -118.3998, 33.94448 ], [ -118.39976, 33.94448 ] ] } },
+{ "type": "Feature", "properties": { "name": "SkyLink", "kind": "light_rail" }, "geometry": { "type": "LineString", "coordinates": [ [ -118.39978, 33.94433 ], [ -118.39974, 33.94434 ] ] } },
+{ "type": "Feature", "properties": { "name": "Purple Line Extension (Phase 2 of 3)", "kind": "subway" }, "geometry": { "type": "LineString", "coordinates": [ [ -118.39696, 34.06711 ], [ -118.39641, 34.06702 ] ] } },
+{ "type": "Feature", "properties": { "name": "Purple Line Extension (Phase 2 of 3)", "kind": "subway" }, "geometry": { "type": "LineString", "coordinates": [ [ -118.39696, 34.06702 ], [ -118.39641, 34.06711 ] ] } }
+]
+}

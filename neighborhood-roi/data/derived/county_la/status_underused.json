@@ -1,0 +1,30 @@
+{
+ "generated_at": "2026-11-02T21:35:49.054542+00:00",
+ "sources": {
+  "underused": {
+   "parking lot_where": "UPPER(UseDescription) LIKE '%PARKING%'",
+   "parking lot_rows": 14523,
+   "golf course_where": "UPPER(UseDescription) LIKE '%GOLF%'",
+   "golf course_rows": 490,
+   "vacant_where": "UseCode LIKE '%V' AND Shape.STArea() >= 21780",
+   "vacant_rows": 99531,
+   "lightly built commercial_where": "UseType IN ('Commercial','Industrial') AND Roll_ImpValue < Roll_LandValue * 0.2 AND Shape.STArea() >= 43560",
+   "lightly built commercial_rows": 8534,
+   "sites": 105420,
+   "by_kind": {
+    "vacant": 98339,
+    "parking lot": 4628,
+    "lightly built commercial": 2083,
+    "golf course": 370
+   },
+   "acres_by_kind": {
+    "golf course": 10911,
+    "lightly built commercial": 13860,
+    "parking lot": 4711,
+    "vacant": 1444303
+   },
+   "ok": true,
+   "seconds": 402.5
+  }
+ }
+}

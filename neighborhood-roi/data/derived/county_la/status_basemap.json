@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-02T19:09:54.754747+00:00",
+ "generated_at": "2026-11-02T21:36:22.179762+00:00",
  "sources": {
   "basemap": {
    "streets": 512002,
@@ -67,8 +67,15 @@
    },
    "parks_under_1ac": 2763,
    "facilities": 13052,
+   "parking": 49765,
+   "surface_lots_1ac": 3109,
+   "surface_lot_acres": 9151,
+   "railcon": 56,
+   "stationcon": 137,
+   "rail_construction_lines": 18,
+   "stations_construction": 34,
    "ok": true,
-   "seconds": 523.6
+   "seconds": 408.4
   },
   "facilities": {
    "lms_layers": [
@@ -296,6 +303,20 @@
    "by_source": {
     "OpenStreetMap": 3725,
     "LA County LMS": 2112
+   },
+   "footprints": 4690,
+   "footprints_by_kind": {
+    "school": 2833,
+    "fire station": 384,
+    "clinic": 310,
+    "community center": 251,
+    "library": 227,
+    "hospital": 149,
+    "college": 148,
+    "post office": 142,
+    "police": 117,
+    "city hall": 90,
+    "courthouse": 39
    }
   }
  }
