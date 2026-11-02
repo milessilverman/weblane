@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-02T04:27:08.776905+00:00",
+ "generated_at": "2026-11-02T04:39:32.643369+00:00",
  "sources": {
   "crashes": {
    "candidates": [
@@ -21,7 +21,7 @@
    "used_Crashes_2026": 446345,
    "rows": 446345,
    "ok": true,
-   "seconds": 26.1
+   "seconds": 28.2
   }
  }
 }

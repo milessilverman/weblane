@@ -1,12 +1,10 @@
 {
- "generated_at": "2026-11-02T04:27:16.944827+00:00",
+ "generated_at": "2026-11-02T04:39:22.345799+00:00",
  "sources": {
   "geo": {
    "acs_vintage": "2020-2024 ACS 5-year, block groups",
    "acs_rows": 6591,
    "tes_rows": 5251,
-   "hoods_Culver City": 15,
-   "hoods_Culver City_field": "FontName",
    "hoods_Santa Monica_error": "None",
    "hoods_Pasadena": 87,
    "hoods_Pasadena_field": "Association_Name",
@@ -19,21 +17,60 @@
    "la_times_hoods": 114,
    "csa_rows": 355,
    "csa_field": "LABEL",
+   "culver_label_fields": [
+    "geometry",
+    "OBJECTID",
+    "FeatureID",
+    "ZOrder",
+    "AnnotationClassID",
+    "SymbolID",
+    "Status",
+    "TextString",
+    "FontName",
+    "FontSize",
+    "Bold",
+    "Italic",
+    "Underline",
+    "VerticalAlignment",
+    "HorizontalAlignment",
+    "XOffset",
+    "YOffset",
+    "Angle",
+    "FontLeading",
+    "WordSpacing"
+   ],
+   "culver_labels": 15,
+   "culver_label_sample": [
+    "Cheviot Hills",
+    "Baldwin Village",
+    "View Park",
+    "Inglewood",
+    "Ladera Heights",
+    "Westchester",
+    "Loyola Village",
+    "Playa Vista",
+    "Playa Del Rey",
+    "Marina Del Rey",
+    "Venice",
+    "Palms",
+    "Mar Vista",
+    "Baldwin Hills",
+    "Windsor Hills"
+   ],
    "block_groups": 6587,
-   "named_official": 641,
-   "named_latimes": 2672,
+   "named_official": 631,
+   "named_latimes": 2680,
    "by_source": {
-    "LA County Countywide Statistical Area": 3272,
-    "LA Times Mapping L.A.": 2672,
+    "LA County Countywide Statistical Area": 3274,
+    "LA Times Mapping L.A.": 2680,
     "Long Beach (city GIS)": 328,
     "Glendale (city GIS)": 137,
     "Pasadena (city GIS)": 90,
     "Torrance (city GIS)": 76,
-    "Culver City (city GIS)": 10,
     "City boundary (no neighborhood map)": 2
    },
    "ok": true,
-   "seconds": 21.9
+   "seconds": 19.6
   }
  }
 }
