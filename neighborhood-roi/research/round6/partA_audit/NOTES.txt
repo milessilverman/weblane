@@ -1,0 +1,219 @@
+City Pretty Round 6 — Part A source audit
+Access date: November 2, 2026
+
+Scope
+
+This pass examined A1-A5. The files contain 30 dataset/service candidates and
+60 source references. Fifteen rows have recovered metadata or directory data;
+15 are LISTED candidates whose target response or distribution is unresolved.
+Actual three-record examples were recovered for two sources: the LA City parks
+API and the Community Garden Council HTML directory. Other examples are NR.
+No full park inventory, street network, or countywide completeness comparison
+was downloaded. All requested LA feature counts and minimum park sizes remain
+NR. Parts B, C, D, E, F and G were not reached. No zoning, legal, cost, rebate,
+causal home-value, or benefit-valuation findings are claimed by this package.
+
+VERIFIED means the stated metadata or records were opened and seen. It does
+not mean the source has passed a GitHub Actions run, its licensing is cleared,
+its current features are complete, or every column is known. LISTED means a
+publisher/documentation/parent catalogue identifies it but target access or
+distribution was not recovered. NR means not recovered. Source statuses and
+dataset-row statuses serve different scopes; a verified policy page can
+document a LISTED tile service. Search snippets were not promoted to retrieved
+feature records. Date accessed describes this investigation; some retrievals
+are cached representations with visibly different dates.
+
+Part A notes
+
+A1 — Streets
+
+Use CAMS as the main official named-road candidate. The JSON exposes FullName
+and the name components, local-city fields, source and update fields. The Type
+field has no coded domain in the recovered schema. A functional road hierarchy
+is therefore still unresolved; do not convert Type to a hierarchy by guessing.
+The publisher identifies the data as cartography/geocoding, without routing
+capabilities. [S001-S002]
+
+NavigateLA supplies an official LA City alternative with STNAME, STSFX and
+SFXDIR. It covers the City, not the entire County. TIGERweb has separate primary,
+secondary and local road layers; Local Roads alone cannot fill the complete
+street network. Its MTFCC and RTTYP fields are useful candidates for road class
+and route type after querying the intended LA clip. [S003-S006]
+
+Geofabrik publishes a Southern California PBF. The current listing reports
+641 MB and a 2026-11-01T21:21:36Z cutoff. The binary response was not parsed.
+ODbL attribution and redistribution conditions apply. Use OSM route relations
+as well as road ways if deriving highway shields; no three LA route examples
+were recovered. [S007-S012]
+
+A2 — Basemaps and labels
+
+Option                          Decision for City Pretty
+OpenFreeMap                     Best documented keyless online candidate.
+Protomaps self-hosted            Good architectural fallback; archive URL NR.
+CARTO raster labels              Useful if a manually obtained key is acceptable.
+Stadia Free                     Non-commercial only; finite credit allowance.
+MapTiler Free                   Non-commercial/R&D only; authenticated, limited.
+Esri legacy Light Gray          Avoid a new long-term dependency; retirement set.
+USGS Topo                       Composite background, not a labels-only overlay.
+
+These are recommendations from the recovered documentation, not successful
+runtime tile tests. Raw tile templates that were not recovered are NR. Templates
+with YOUR_KEY are documentation, not usable credentials. They do not meet the
+strict no-credential source condition. [S013-S032]
+
+OpenFreeMap documents unlimited online map views/requests and commercial use,
+but its October 2026 terms restrict automated collection and bound individual
+offline downloads. It is a display-service candidate, not permission to harvest
+all its tiles in GitHub Actions. Required credits must remain visible. [S013-S016]
+
+CARTO's raster API requires a key since September 25, 2026. Its September 29
+terms allow 5 million free monthly tile requests for non-commercial use and
+1 million for commercial use across all keys. Its FAQ says vector styles still
+load without keys, while the key page instructs applying a key to both formats;
+plan around a key and retain this discrepancy. The documented labels-only
+styles can sit above colored polygons after a successful tile test. [S020-S023]
+
+Stadia's free plan provides 200,000 credits per month and excludes commercial
+use. MapTiler's free quota uses sessions or API requests under the applicable
+client accounting; do not combine both quotas or call either unlimited.
+MapTiler also restricts bulk tile export and proxying. [S024-S028]
+
+Esri's notice puts World Light Gray Reference retirement in December 2029.
+It is not already retired in November 2026. A retirement notice does not resolve
+licensing. USGS Topo's service identifies public-domain source data but is an
+opaque composite image; its separate licensing FAQ was not recovered. [S029-S032]
+
+Implementation proposal, not a tested edit to the existing app: put subdued
+basemap geometry below City Pretty's polygons, then park boundaries and road
+lines, then text labels above them. A vector style can retain chosen text
+symbols. Show major roads at county scale and add local road labels as users
+zoom in. Do not promise every street name is simultaneously legible at county
+scale. Fonts, sprites, tile CORS, mobile performance and attribution still need
+a live integration check. No changes were made to the City Pretty HTML file.
+
+A3 — Highway numbers and shields
+
+The Caltrans SHN source is not currently cleared for a no-login collector.
+An initial metadata representation was readable, but later requests redirected
+to login; the alternate geodata endpoint returned JSON error 499, Token Required.
+The catalogue itself could not be reopened. Do not turn a cached public listing
+into a claim that the feature service is anonymously downloadable. A public
+distribution or a successful runner test is still needed. [S056-S058]
+
+OSM highway/ref/network documentation is the fallback research path. A road's
+ref value alone may be insufficient to select the correct shield; retain route
+network relationships and multiple-route memberships. This is an implementation
+recommendation; the LA records and route-type value mapping are NR. [S010-S012]
+
+A4 — Parks and open space
+
+Recommended pair, explicitly an inference: use Countywide Parks and Open Space
+as the primary inventory candidate, and CPAD as the second source for protected
+open space and access categories. The county layer's fields support names,
+reported/calculated acreage, agency, access and amenities. That makes it a useful
+base, but no downloaded comparison established that it includes every public
+park or every city. Remove the app's own 2-acre filter; the smallest actual
+included polygon remains NR. [S033-S037]
+
+Keep CPAD Open Access, Restricted Access, No Public Access and Unknown Access
+distinct. CPAD describes protected, fee-owned land, so it cannot by itself
+certify joint-use schoolyards, all plazas or all indoor recreation facilities.
+Its units may have multiple noncontiguous holdings. The separate 2026a ZIP is
+listed but returned 403; do not assume the accessible REST service is the same
+vintage. Its recovered JSON says 2025b/December 2025, while an HTML representation
+credits June 2026a. Actual service vintage remains unresolved. [S035-S038]
+
+County DPR facilities are explicitly COUNTY PARKS ONLY. Their schema is polygon
+although the description says points; inspect actual geometries before ingest.
+STATUS distinguishes active, planned, undeveloped and archived facilities.
+Original PNA polygons are a historical comparison source, not automatically the
+current inventory. [S039-S042]
+
+The county trail layers add named segments, amenities and entry points. Their
+2013 copyright statements are not last-edit dates, and a trail segment is not
+a whole trail. Current closures and full county trail completeness are NR.
+[S043-S045]
+
+Gap checks remain necessary for joint-use schools, gardens, small plazas,
+beaches, trails, and newly opened sites. The LA City updated polygon endpoint
+was not recovered. Community Garden Council entries do not imply unrestricted
+walk-in access. The school-park list timed out. The PNA+ /8 school layer is an
+opportunity layer, not evidence that public access agreements exist. Its /9
+trail/bikeway layer still needs built-versus-planned fields. Safe Clean Water
+project status and public access were not recovered. [S047-S053;S059]
+
+OpenSpace_Public is a misleading name for an inventory search: its actual
+catalogue contains Project Points, Project Lines, Project Areas and Project Site
+Points. Exclude it from the base park inventory until its project records are
+independently classified. [S054]
+
+A5 — Amenities
+
+The countywide layer offers concise counts such as PLGND, POOLS, TENIS, BSKTB,
+DGPRK and RSTRM. County DPR adds detailed fields such as RESTROOM, SWIMMING_POOL,
+COMMUNITY_GARDEN, PLAZA and DRINKING_FOUNTAINS. Keep unreported/null values
+distinct from observed zero. Neither source's current reporting completeness
+was verified. [S033-S034;S039]
+
+The bare LA City Socrata JSON worked and supplied three records. Two records
+describe 105TH STREET POCKET PARK at identical coordinates, once as Outdoor
+Fitness and once as Parks; the third is 109TH STREET POOL. This demonstrates
+why a facility/amenity row count is not a park count. Group duplicate locations
+and keep amenity categories as a related set. The data.gov modified date is
+2022-07-25, not proof of November 2026 field freshness. [S049-S050]
+
+Machine access, identifiers and use rights
+
+No source was executed in GitHub Actions during this session. Direct Python
+HTTP checks from this environment failed with 403; that is evidence about this
+host only. Web-retrieved metadata, cached pages and a source's public catalogue
+are not a US runner success test. This is therefore a source audit with open
+access gaps, not a production-ready list of guaranteed machine-accessible feeds.
+
+verify_partA.py and verification_targets.json supply a read-only standard-library
+check for the actual runner. They request schema, three records and a count,
+save raw JSON when available, reject HTTP-200 ArcGIS error objects, and expose
+the count's geography. National TIGER counts are labelled national. County DPR
+counts retain their narrower ownership scope. Smallest positive stored acreage,
+when obtainable, is not treated as an inclusion policy. No feature service is
+edited, no API key is obtained, and the script never changes the research CSV.
+
+Run from the unpacked package in the intended runner:
+
+    python3 verify_partA.py --out checks_run1
+
+Use a new output directory for a new run. For a quick subset:
+
+    python3 verify_partA.py --only A1_CAMS,A4_COUNTYWIDE_PARKS,A5_LAPARKS_SOCRATA --out checks_run2
+
+HEAD_ONLY for a file is deliberately not PASS: it establishes headers only,
+not a complete valid download. A machine PASS does not establish licence rights,
+full county coverage, current access hours, or current conditions.
+
+All CSV cells are quoted UTF-8 text. Import identifier columns as text; Excel
+automatic type inference can remove zeros even from quoted CSV. Keep AIN/APN,
+TRA, GEOID and zone codes as strings in future parts. Three real directory/API
+examples remain exactly as recovered, including unexpected address/city text.
+
+The county eGIS terms page returned no readable text. Required reuse permission
+and exact attribution for those feeds are NR; suggested credits are labelled
+as suggestions. CPAD's state catalogue explicitly states Creative Commons
+Attribution and no public-use restrictions, but the CC version was not recovered.
+Publicly readable government data were not assumed to have a blanket licence.
+[S009;S035;S046;S055]
+
+Inferences about apparent nonexistence and restrictions
+
+No absence was proven. Inference: the recovered sources do not establish one
+complete, current, openly licensed countywide layer that combines every park,
+joint-use agreement, garden, plaza, beach, trail and access schedule. The main
+remaining work is record retrieval, deduplication, access validation and a
+coverage comparison, not a claim that such a source cannot exist.
+
+Do not plan around credential-free CARTO raster, unrestricted commercial use
+of Stadia/MapTiler free plans, hotlinking Protomaps daily build downloads,
+bulk harvesting OpenFreeMap tiles, the token-protected Caltrans endpoint, or
+unverified public access to schoolyards and gardens. No paid report or paid
+dataset was purchased. Monetary project costs and effect estimates were not
+researched in this Part A pass.

@@ -1180,17 +1180,28 @@ def stage_assessed():
     xs, ys = np.linspace(w, e, k + 1), np.linspace(s, n, k + 1)
     tiles = [(xs[i], ys[j], xs[i + 1], ys[j + 1]) for i in range(k) for j in range(k)]
     rows, errs = [], {}
+
+    def fetch(t, depth=0):
+        """A tile the server can't answer (HTTP 500 on very dense areas) is split into quarters and retried."""
+        try:
+            return _roll_tile(url, fields, t, not (lat and lon), page)
+        except Exception as e:  # noqa: BLE001
+            if depth >= 3:
+                errs[str(tuple(round(float(v), 5) for v in t))] = str(e)[:160]
+                return []
+            time.sleep(5)
+            x0, y0, x1, y1 = t
+            xm, ym = (x0 + x1) / 2, (y0 + y1) / 2
+            return sum((fetch(q, depth + 1) for q in [(x0, y0, xm, ym), (xm, y0, x1, ym), (x0, ym, xm, y1), (xm, ym, x1, y1)]), [])
+
     with ThreadPoolExecutor(8) as ex:
-        futs = {ex.submit(_roll_tile, url, fields, t, not (lat and lon), page): t for t in tiles}
+        futs = {ex.submit(fetch, t): t for t in tiles}
         for i, fu in enumerate(as_completed(futs)):
-            try:
-                r = fu.result()
-                rows += r
-                log(f"  tile {i + 1}/{len(tiles)}: {len(r):,} (total {len(rows):,})")
-            except Exception as ex2:  # noqa: BLE001
-                errs[str(futs[fu])] = str(ex2)[:160]
+            r = fu.result()
+            rows += r
+            log(f"  tile {i + 1}/{len(tiles)}: {len(r):,} (total {len(rows):,})")
     if errs:
-        note("assessed", tile_errors=errs)
+        raise RuntimeError(f"{len(errs)} parcel tiles failed even after splitting; keeping the previous data: {list(errs.items())[:3]}")
     df = pd.DataFrame(rows).drop_duplicates("AIN")
     if lat and lon:
         df["_lat"], df["_lon"] = pd.to_numeric(df[lat], errors="coerce"), pd.to_numeric(df[lon], errors="coerce")
@@ -1343,11 +1354,280 @@ def stage_basemap():
     pk.to_file(OUT / "map_parks_all.geojson", driver="GeoJSON", COORDINATE_PRECISION=5)
     log(f"  wrote map_parks_all.geojson ({len(pk)})")
 
+    fac = layer("facilities", "nwr/amenity=school,college,university,library,townhall,fire_station,police,post_office,hospital,clinic,community_centre,courthouse",
+                "nwr/office=government")
+    facilities(fac)
+
+
+# ------------------------------------------------------------------ public facilities (schools, libraries, civic buildings)
+FACILITY_KINDS = [  # (kind, regex on LMS layer name / categories / OSM tags)
+    ("school", r"\b(public|private|charter|elementary|middle|high|k-?12)\b.*school|^schools?$|school"),
+    ("college", r"college|universit"),
+    ("library", r"librar"),
+    ("city hall", r"city hall|town ?hall|civic center|city government|townhall"),
+    ("fire station", r"fire station|fire_station|fire dep"),
+    ("police", r"police|sheriff"),
+    ("post office", r"post office|post_office"),
+    ("hospital", r"hospital|medical center"),
+    ("clinic", r"clinic|health cent|health care|doctors"),
+    ("community center", r"community cent|community_centre|recreation cent|senior|teen cent|youth cent"),
+    ("museum", r"museum|arts center|theat"),
+    ("courthouse", r"courthouse|superior court|\bcourts?\b(?!.*(tennis|basketball|pickleball))(?=.*(justice|law|superior|municipal))"),
+]
+LMS = "https://public.gis.lacounty.gov/public/rest/services/LACounty_Dynamic/LMS_Data_Public/MapServer"
+
+
+def _kind_of(text):
+    t = str(text).lower()
+    return next((k for k, pat in FACILITY_KINDS if re.search(pat, t)), None)
+
+
+def facilities(osm_layer):
+    """County LMS points first; OSM fills kinds/places LMS lacks (no LMS point of that kind within 150 m)."""
+    frames = []
+    try:
+        meta = get(LMS, params={"f": "json"}, timeout=90).json()
+        layers = [(l["id"], l["name"]) for l in meta.get("layers", []) if not l.get("subLayerIds")]
+        note("facilities", lms_layers=[f"{i}:{n}" for i, n in layers])
+        for lid, lname in layers:
+            k0 = _kind_of(lname)
+            if not k0 and not re.search(r"government|public safety|health|education|municipal|civic|communit", lname, re.I):
+                continue
+            try:
+                g = arcgis_all(f"{LMS}/{lid}", max_rows=40000)
+            except Exception as e:  # noqa: BLE001
+                note("facilities", **{f"lms_{lid}_error": str(e)[:120]})
+                continue
+            if g is None or not len(g):
+                continue
+            g = g[g.geometry.notna()].copy()
+            g["geometry"] = g.geometry.representative_point()
+            txt = lname + " " + g.get("cat1", "").astype(str) + " " + g.get("cat2", "").astype(str) + " " + g.get("cat3", "").astype(str)
+            cats = (g.get("cat2", "").astype(str) + " " + g.get("cat3", "").astype(str)) if "cat2" in g else pd.Series("", index=g.index)
+            g["kind"] = [_kind_of(c) or k0 or _kind_of(t) for c, t in zip(cats, txt)]
+            namec = next((c for c in g.columns if c.lower() in ("name", "facname", "label")), None)
+            g = g.assign(name=g[namec] if namec else None, addr=g.get("addrln1"), src="LA County LMS")
+            frames.append(g[g.kind.notna()][["kind", "name", "addr", "src", "geometry"]])
+            note("facilities", **{f"lms_{lid}": int(g.kind.notna().sum())})
+    except Exception as e:  # noqa: BLE001
+        note("facilities", lms_error=str(e)[:200])
+    lms = gpd.GeoDataFrame(pd.concat(frames, ignore_index=True), crs=4326) if frames else None
+    o = osm_layer.copy()
+    o["geometry"] = o.to_crs(M).geometry.representative_point().to_crs(4326)
+    tag = (o.get("amenity", pd.Series(index=o.index, dtype=object)).fillna("").astype(str) + " " +
+           o.get("office", pd.Series(index=o.index, dtype=object)).fillna("").astype(str) + " " +
+           o.get("name", pd.Series(index=o.index, dtype=object)).fillna("").astype(str))
+    o["kind"] = [_kind_of(t) for t in tag]
+    o = o[o.kind.notna()].assign(name=o.get("name"), addr=o.get("addr:street"), src="OpenStreetMap")[["kind", "name", "addr", "src", "geometry"]]
+    if lms is not None and len(lms):
+        lm, om = lms.to_crs(M), o.to_crs(M)
+        keep = []
+        for k, grp in om.groupby("kind"):
+            ref = lm[lm.kind == k]
+            if not len(ref):
+                keep.append(grp)
+                continue
+            d = gpd.sjoin_nearest(grp, ref[["geometry"]], how="left", distance_col="d").groupby(level=0).d.min()
+            keep.append(grp[d.reindex(grp.index).fillna(1e9) > 150])
+        o = gpd.GeoDataFrame(pd.concat(keep), crs=M).to_crs(4326) if keep else o.iloc[:0]
+        out = gpd.GeoDataFrame(pd.concat([lms, o], ignore_index=True), crs=4326)
+    else:
+        out = gpd.GeoDataFrame(o, crs=4326)
+    county = block_groups().to_crs(4326).geometry.union_all() if hasattr(gpd.GeoSeries, "union_all") else block_groups().unary_union
+    out = out[out.within(county.buffer(0.003))]
+    out = out.drop_duplicates(subset=["kind", "name"], keep="first") if out.name.notna().any() else out
+    note("facilities", total=len(out), by_kind={k: int(v) for k, v in out.kind.value_counts().items()},
+         by_source={k: int(v) for k, v in out.src.value_counts().items()})
+    out.to_file(OUT / "map_facilities.geojson", driver="GeoJSON", COORDINATE_PRECISION=5)
+    log(f"  wrote map_facilities.geojson ({len(out)})")
+    # per block group: distance to the nearest of each kind
+    df = pd.DataFrame({"GEOID": bg_points().GEOID})
+    for k in ["school", "library", "city hall", "fire station", "police", "post office", "hospital", "clinic", "community center"]:
+        sub = out[out.kind == k]
+        df[f"fac_{k.replace(' ', '_')}_m"] = nearest_m(sub, k, max_m=30000).values if len(sub) else np.nan
+    save(df, "bg_facilities")
+
+
+# ------------------------------------------------------------------ research endpoint check (round 6)
+RESEARCH = Path(__file__).resolve().parent.parent / "research" / "round6"
+
+
+def _probe(url):
+    """Schema, count and 3 real records for an ArcGIS layer or Socrata resource; status for anything else."""
+    out = {"url": url}
+    try:
+        if "/resource/" in url and url.endswith(".json"):
+            r = get(url, params={"$limit": 3}, timeout=60, tries=1)
+            js = r.json() if r is not None else None
+            out.update(ok=isinstance(js, list) and len(js) > 0, sample=js[:3] if isinstance(js, list) else str(js)[:300])
+            return out
+        if "/rest/services/" in url and re.search(r"/(MapServer|FeatureServer|ImageServer)(/\d+)?/?$", url):
+            meta = get(url, params={"f": "json"}, timeout=60, tries=1)
+            js = meta.json() if meta is not None else {}
+            if "error" in js or not js:
+                out.update(ok=False, error=str(js.get("error", "no response"))[:300])
+                return out
+            out.update(name=js.get("name") or js.get("mapName"), geometry=js.get("geometryType"),
+                       fields=[f["name"] for f in js.get("fields", [])][:60], max_records=js.get("maxRecordCount"),
+                       last_edit=(js.get("editingInfo") or {}).get("lastEditDate"),
+                       layers=[f"{l['id']}:{l['name']}" for l in js.get("layers", [])][:80])
+            if re.search(r"/\d+/?$", url) and "ImageServer" not in url:
+                c = get(url.rstrip("/") + "/query", params={"where": "1=1", "returnCountOnly": "true", "f": "json"}, timeout=90, tries=1).json()
+                q = get(url.rstrip("/") + "/query", params={"where": "1=1", "outFields": "*", "returnGeometry": "false",
+                                                           "resultRecordCount": 3, "f": "json"}, timeout=90, tries=1).json()
+                out.update(count=c.get("count"), sample=[f["attributes"] for f in q.get("features", [])][:3])
+                out["ok"] = bool(out["sample"])
+            else:
+                out["ok"] = True
+            return out
+        if "sharing/rest/content/items" in url:
+            js = get(url, params={"f": "json"}, timeout=60, tries=1).json()
+            out.update(ok="error" not in js, title=js.get("title"), item_url=js.get("url"), type=js.get("type"), owner=js.get("owner"))
+            return out
+        r = requests_head(url)
+        out.update(ok=r[0] == 200, http=r[0], content_type=r[1])
+    except Exception as e:  # noqa: BLE001
+        out.update(ok=False, error=f"{type(e).__name__}: {e}"[:300])
+    return out
+
+
+def requests_head(url):
+    import requests
+    r = requests.get(url, headers=bd.UA, timeout=60, stream=True, allow_redirects=True)
+    r.close()
+    return r.status_code, r.headers.get("content-type")
+
+
+def stage_research_check():
+    eps = json.loads((RESEARCH / "endpoints_to_check.json").read_text())
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(8) as ex:
+        res = list(ex.map(lambda e: {**e, **_probe(e["url"])}, eps))
+    ok = sum(1 for r in res if r.get("ok"))
+    note("research_check", checked=len(res), ok=ok)
+    (OUT / "research_check.json").write_text(json.dumps({"checked_at": STATUS["generated_at"], "results": res}, indent=1, default=str))
+    log(f"  {ok}/{len(res)} endpoints answered with data")
+
+
+# ------------------------------------------------------------------ zoning (what can be built)
+ZONING_SOURCES = [  # jurisdiction, layer URL, zone field candidates (first match wins); failures are skipped and logged
+    ("Los Angeles", "https://services5.arcgis.com/7nsPwEMP38bSkCjy/arcgis/rest/services/Zoning/FeatureServer/15", ["ZONE_CMPLT", "ZONING", "Zoning"]),
+    ("Unincorporated LA County", "https://arcgis.gis.lacounty.gov/arcgis/rest/services/DRP/Open_Data/MapServer/3", ["ZONE", "ZONING", "Zone"]),
+    ("Long Beach", "https://gis.longbeach.gov/arcgis/rest/services/DevelopmentServices/Zoning/MapServer/0", ["ZONE_CODE", "ZONING", "ZONE"]),
+    ("Glendale", "https://gis.glendaleca.gov/arcgis/rest/services/Zoning/MapServer/0", ["ZONING", "ZONE"]),
+    ("Pasadena", "https://gis.cityofpasadena.net/arcgis/rest/services/Zoning_Map/FeatureServer/0", ["ZONING", "ZONE"]),
+    ("Santa Clarita", "https://services.arcgis.com/RmCCgQtiZLDCtblq/arcgis/rest/services/City_of_Santa_Clarita_Layers/FeatureServer/2", ["ZONING_CODE", "ZONING", "ZONE"]),
+    ("Lancaster", "https://gis.cityoflancasterca.gov/arcgis/rest/services/Zoning/MapServer/0", ["ZONE_CLASS", "ZONING", "ZONE"]),
+    ("Palmdale", "https://gis.cityofpalmdale.org/arcgis/rest/services/Public/Zoning/MapServer/0", ["ZONE", "ZONING"]),
+    ("Torrance", "https://gis.torranceca.gov/arcgis/rest/services/Public_Services/Torrance_Zoning/MapServer/0", ["ZONE", "ZONING"]),
+    ("Pomona", "https://gis.ci.pomona.ca.us/arcgis/rest/services/Planning/Zoning/MapServer/0", ["ZONE_CODE", "ZONING", "ZONE"]),
+    ("Inglewood", "https://gis.cityofinglewood.org/arcgis/rest/services/Planning/Inglewood_Zoning/MapServer/0", ["ZONE", "ZONING"]),
+    ("Burbank", "https://gis.burbankca.gov/arcgis/rest/services/Planning/Zoning/MapServer/0", ["ZONE", "ZONING"]),
+    ("Carson", "https://gis.carsonca.gov/arcgis/rest/services/Zoning/MapServer/0", ["ZONE_CODE", "ZONING", "ZONE"]),
+]
+
+
+def zone_category(z):
+    """Broad use category from a zone code (LA City Chapter 1 / 1A, County Title 22 and common city codes)."""
+    raw = str(z).upper().strip()
+    if raw.startswith("[") and re.fullmatch(r"(\[[^\]]*\])+", raw):  # LA Chapter 1A: [FORM][USE-DENSITY]
+        parts = re.findall(r"\[([^\]]*)\]", raw)
+        raw = parts[1] if len(parts) > 1 else parts[0]
+    t = re.sub(r"\[[^\]]*\]|\([^)]*\)|^Q|^T|^D(?!X)", "", raw).strip()
+    t = t.lstrip("-([ ")
+    if not t or t in ("NONE", "NAN"):
+        return None
+    if re.match(r"^(OS|O-S|PF|PR|P-R|REC|PARK|GW|W-|W$)", t):
+        return "open space / public"
+    if re.match(r"^(M|MR|I|IL|IG|IH|IP|CM|BP|LM|HI|LI|UI|HJ|HR|M-)", t) and not re.match(r"^(MU|MX|MF|MD|MH)", t):
+        return "industrial"
+    if re.match(r"^(C|CR|CN|CG|CC|CB|CO|CS|CP|DX|MU|MX|MXD|TOD|NC|B-|CBD|SP|DT|CX)", t):
+        return "commercial / mixed use"
+    if re.match(r"^(RAS|R ?[2-5]|R-[2-5])", t):
+        return "multifamily"
+    if re.match(r"^(R ?1|R-1|RS|RE|RA|R-A|RU|RZ|RW1|R1|SF|RL|RR|E-|A-?1|A1|A2|A-2|RVL|RLD|R-7|R-10|R-20|UR1|UR2)", t):
+        return "single-family"
+    if re.match(r"^(R ?[2-5]|R-[2-5]|RD|RW2|RAS|RM|MF|RMD|RH|MD|HD|R-M|R-3|UR[3-5]|RPD|R-?\d{4})", t):
+        return "multifamily"
+    if re.match(r"^(P|PB|PK)\b", t):
+        return "parking"
+    if re.match(r"^A", t):
+        return "agricultural"
+    return "other"
+
+
+def stage_zoning():
+    frames, status = [], {}
+    for juris, url, zf in ZONING_SOURCES:
+        try:
+            meta = get(url, params={"f": "json"}, timeout=60, tries=2).json()
+            flds = [f["name"] for f in meta.get("fields", [])]
+            zc = next((f for f in zf if f in flds), None) or next((f for f in flds if re.search(r"^zon|zone|zoning", f, re.I)), None)
+            if not zc:
+                status[juris] = f"no zone field in {flds[:20]}"
+                continue
+            g = arcgis_all(url, fields=zc, bbox=BBOX, max_rows=400000)
+            if g is None or not len(g):
+                status[juris] = "no features"
+                continue
+            g = g[g.geometry.notna() & g.geom_type.isin(["Polygon", "MultiPolygon"])].copy()
+            g = gpd.GeoDataFrame({"juris": juris, "zone": g[zc].astype(str).str.strip(), "geometry": g.geometry}, crs=4326)
+            frames.append(g)
+            status[juris] = f"ok: {len(g):,} polygons from {zc}"
+        except Exception as e:  # noqa: BLE001
+            status[juris] = f"failed: {e}"[:200]
+    # official SB 79 transit stops / zones from SCAG, if published as a public layer
+    sb79 = None
+    for u in _agol_find("SB 79 TOD stops zones", ["79"])[:5]:
+        try:
+            meta = get(u, params={"f": "json"}, timeout=60).json()
+            for l in meta.get("layers", []):
+                g = arcgis_all(f"{u.rstrip('/')}/{l['id']}", bbox=BBOX, max_rows=50000)
+                if g is not None and len(g):
+                    g["layer"] = l["name"]
+                    sb79 = g if sb79 is None else pd.concat([sb79, g], ignore_index=True)
+            if sb79 is not None:
+                note("zoning", sb79_url=u, sb79_features=len(sb79), sb79_fields=list(sb79.columns)[:30])
+                break
+        except Exception as e:  # noqa: BLE001
+            note("zoning", sb79_error=f"{u}: {e}"[:200])
+    if sb79 is not None:
+        sb79 = gpd.GeoDataFrame(sb79, geometry="geometry", crs=4326)
+        keep = [c for c in sb79.columns if c != "geometry" and sb79[c].dtype == object][:6]
+        sb79[keep + ["layer", "geometry"]].to_file(OUT / "map_sb79.geojson", driver="GeoJSON", COORDINATE_PRECISION=5)
+    note("zoning", sources=status)
+    if not frames:
+        raise RuntimeError("no zoning layer answered: " + json.dumps(status)[:500])
+    z = gpd.GeoDataFrame(pd.concat(frames, ignore_index=True), crs=4326)
+    z["cat"] = z.zone.map(zone_category)
+    zm = z.to_crs(M)
+    zm["geometry"] = zm.geometry.make_valid().simplify(2)
+    zm = zm[zm.geom_type.isin(["Polygon", "MultiPolygon"]) & ~zm.is_empty]
+    import gzip
+    with gzip.open(OUT / "map_zoning.geojson.gz", "wt") as f:
+        f.write(re.sub(r"(-?\d+\.\d{5})\d+", r"\1", zm.to_crs(4326).to_json(drop_id=True)))
+    # per block group: share of zoned land by category and the most common zone codes
+    bg = block_groups().to_crs(M)[["GEOID", "geometry"]]
+    ov = gpd.overlay(zm[["juris", "zone", "cat", "geometry"]], bg, how="intersection", keep_geom_type=True)
+    ov["a"] = ov.area
+    tot = ov.groupby("GEOID").a.sum()
+    shares = ov.pivot_table(index="GEOID", columns="cat", values="a", aggfunc="sum").div(tot, axis=0).round(3)
+    shares.columns = ["zshare_" + re.sub(r"\W+", "_", c).strip("_") for c in shares.columns]
+    top = ov.groupby(["GEOID", "zone"]).a.sum().reset_index().sort_values("a", ascending=False)
+    topz = top.groupby("GEOID").apply(lambda d: "; ".join(f"{z} {a / d.a.sum():.0%}" for z, a in zip(d.zone.head(4), d.a.head(4))))
+    jur = ov.groupby("GEOID").juris.agg(lambda s: s.mode().iat[0])
+    out = shares.join(topz.rename("zone_top")).join(jur.rename("zone_juris")).join((tot / bg.set_index("GEOID").area).clip(0, 1).rename("zone_coverage"))
+    out = out.reindex(bg.GEOID)
+    save(out.reset_index(), "bg_zoning")
+    note("zoning", polygons=len(zm), bgs_covered=int(out.zone_coverage.gt(0.2).sum()),
+         categories={k: int(v) for k, v in z.cat.value_counts().items()})
+
 
 STAGES = {"geo": stage_geo, "osm": stage_osm, "transit": stage_transit, "sales": stage_sales, "crime": stage_crime,
           "requests311": stage_requests311, "crashes": stage_crashes, "trees": stage_trees,
           "parcels": stage_parcels, "assets": stage_assets,
-          "tra": stage_tra, "assessed": stage_assessed, "basemap": stage_basemap}
+          "tra": stage_tra, "assessed": stage_assessed, "basemap": stage_basemap,
+          "research_check": stage_research_check, "zoning": stage_zoning}
 
 
 def main():

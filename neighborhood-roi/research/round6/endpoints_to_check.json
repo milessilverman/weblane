@@ -1,0 +1,242 @@
+[
+ {
+  "id": "A1_CAMS",
+  "url": "https://services.arcgis.com/RmCCgQtiZLDCtblq/ArcGIS/rest/services/eGIS_Addressing_ROAD_LINES/FeatureServer/0",
+  "from": "partA_audit"
+ },
+ {
+  "id": "A1_BOE",
+  "url": "https://maps.lacity.org/arcgis/rest/services/Mapping/NavigateLA/MapServer/341",
+  "from": "partA_audit"
+ },
+ {
+  "id": "A1_TIGER_LOCAL",
+  "url": "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Transportation_LargeScale/MapServer/2",
+  "from": "partA_audit"
+ },
+ {
+  "id": "A1_TIGER_SECONDARY",
+  "url": "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Transportation_LargeScale/MapServer/1",
+  "from": "partA_audit"
+ },
+ {
+  "id": "A4_COUNTYWIDE_PARKS",
+  "url": "https://services.arcgis.com/RmCCgQtiZLDCtblq/arcgis/rest/services/Countywide_Parks_and_Open_Space__(Public_-_Hosted2)/FeatureServer/0",
+  "from": "partA_audit"
+ },
+ {
+  "id": "A4_CPAD_UNITS",
+  "url": "https://gis.cnra.ca.gov/arcgis/rest/services/Boundaries/CPAD_AccessType/MapServer/1",
+  "from": "partA_audit"
+ },
+ {
+  "id": "A4_DPR_FACILITIES",
+  "url": "https://services.arcgis.com/RmCCgQtiZLDCtblq/ArcGIS/rest/services/DPR_Park_Facilities/FeatureServer/0",
+  "from": "partA_audit"
+ },
+ {
+  "id": "A4_PNA_2016",
+  "url": "https://public.gis.lacounty.gov/arcgis/rest/services/PARKS/Park_Needs_Assessment/MapServer/35",
+  "from": "partA_audit"
+ },
+ {
+  "id": "A4_TRAIL_LABELS",
+  "url": "https://public.gis.lacounty.gov/arcgis/rest/services/PARKS/Trails/MapServer/0",
+  "from": "partA_audit"
+ },
+ {
+  "id": "A5_TRAIL_AMENITIES",
+  "url": "https://public.gis.lacounty.gov/arcgis/rest/services/PARKS/Trails/MapServer/1",
+  "from": "partA_audit"
+ },
+ {
+  "id": "A4_TRAILHEADS",
+  "url": "https://public.gis.lacounty.gov/arcgis/rest/services/PARKS/Trails/MapServer/3",
+  "from": "partA_audit"
+ },
+ {
+  "id": "A5_LAPARKS_SOCRATA",
+  "url": "https://data.lacity.org/resource/ukgg-rgf9.json",
+  "from": "partA_audit"
+ },
+ {
+  "id": "A1_OSM_SoCal",
+  "url": "https://download.geofabrik.de/north-america/us/california/socal-latest.osm.pbf",
+  "from": "partA_audit"
+ },
+ {
+  "id": "A4_CPAD_2026A_ZIP",
+  "url": "https://data.cnra.ca.gov/dataset/0ae3cd9f-0612-4572-8862-9e9a1c41e659/resource/cadf9163-aa38-44ae-851a-86b35d4c6c0c/download/cpad_2026a_release.zip",
+  "from": "partA_audit"
+ },
+ {
+  "id": "R_CAMS",
+  "url": "https://services.arcgis.com/RmCCgQtiZLDCtblq/arcgis/rest/services/eGIS_Addressing_ROAD_LINES/FeatureServer/0",
+  "from": "pasted_report"
+ },
+ {
+  "id": "R_LA_STREETS",
+  "url": "https://engpermits.lacity.org/arcgis/rest/services/NavigateLA/Streets_and_Highways/MapServer/0",
+  "from": "pasted_report"
+ },
+ {
+  "id": "R_CALTRANS_SHN",
+  "url": "https://caltrans-gis.dot.ca.gov/arcgis/rest/services/CHhighway/SHN_Lines/FeatureServer/0",
+  "from": "pasted_report"
+ },
+ {
+  "id": "R_COUNTY_PARKS",
+  "url": "https://services.arcgis.com/RmCCgQtiZLDCtblq/arcgis/rest/services/Countywide_Parks_and_Open_Space__(Public_-_Hosted2)/FeatureServer/0",
+  "from": "pasted_report"
+ },
+ {
+  "id": "R_PNA_PLUS",
+  "url": "https://services.arcgis.com/RmCCgQtiZLDCtblq/arcgis/rest/services/PNA_Plus_Map_Layers/FeatureServer/20",
+  "from": "pasted_report"
+ },
+ {
+  "id": "R_LMS_PARKS",
+  "url": "https://public.gis.lacounty.gov/public/rest/services/LACounty_Dynamic/LMS_Data_Public/MapServer/8",
+  "from": "pasted_report"
+ },
+ {
+  "id": "R_LMS_ROOT",
+  "url": "https://public.gis.lacounty.gov/public/rest/services/LACounty_Dynamic/LMS_Data_Public/MapServer",
+  "from": "pasted_report"
+ },
+ {
+  "id": "R_PARCELS",
+  "url": "https://public.gis.lacounty.gov/public/rest/services/LACounty_Cache/LACounty_Parcel/MapServer/0",
+  "from": "pasted_report"
+ },
+ {
+  "id": "R_ROLL_SOCRATA",
+  "url": "https://data.lacounty.gov/resource/97tk-rvev.json",
+  "from": "pasted_report"
+ },
+ {
+  "id": "R_SCAG_LANDUSE_ITEM",
+  "url": "https://www.arcgis.com/sharing/rest/content/items/3e9c888c6aae45ab8e140abeec42cd1e",
+  "from": "pasted_report"
+ },
+ {
+  "id": "R_DRP_ZONING",
+  "url": "https://arcgis.gis.lacounty.gov/arcgis/rest/services/DRP/Open_Data/MapServer/3",
+  "from": "pasted_report"
+ },
+ {
+  "id": "R_LA_ZONING",
+  "url": "https://services5.arcgis.com/7nsPwEMP38bSkCjy/arcgis/rest/services/Zoning/FeatureServer/15",
+  "from": "pasted_report"
+ },
+ {
+  "id": "R_LADBS_PERMITS",
+  "url": "https://data.lacity.org/resource/yv8d-476g.json",
+  "from": "pasted_report"
+ },
+ {
+  "id": "R_LARIAC_BLDG",
+  "url": "https://services.arcgis.com/RmCCgQtiZLDCtblq/arcgis/rest/services/LARIAC_Buildings_2023/FeatureServer/0",
+  "from": "pasted_report"
+ },
+ {
+  "id": "R_LB_ZONING",
+  "url": "https://gis.longbeach.gov/arcgis/rest/services/DevelopmentServices/Zoning/MapServer/0",
+  "from": "pasted_report"
+ },
+ {
+  "id": "R_GLENDALE_ZONING",
+  "url": "https://gis.glendaleca.gov/arcgis/rest/services/Zoning/MapServer/0",
+  "from": "pasted_report"
+ },
+ {
+  "id": "R_PASADENA_ZONING",
+  "url": "https://gis.cityofpasadena.net/arcgis/rest/services/Zoning_Map/FeatureServer/0",
+  "from": "pasted_report"
+ },
+ {
+  "id": "R_SM_ZONING",
+  "url": "https://data.smgov.net/resource/zoning.json",
+  "from": "pasted_report"
+ },
+ {
+  "id": "R_SANTACLARITA_ZONING",
+  "url": "https://services.arcgis.com/RmCCgQtiZLDCtblq/arcgis/rest/services/City_of_Santa_Clarita_Layers/FeatureServer/2",
+  "from": "pasted_report"
+ },
+ {
+  "id": "R_LANCASTER_ZONING",
+  "url": "https://gis.cityoflancasterca.gov/arcgis/rest/services/Zoning/MapServer/0",
+  "from": "pasted_report"
+ },
+ {
+  "id": "R_PALMDALE_ZONING",
+  "url": "https://gis.cityofpalmdale.org/arcgis/rest/services/Public/Zoning/MapServer/0",
+  "from": "pasted_report"
+ },
+ {
+  "id": "R_TORRANCE_ZONING",
+  "url": "https://gis.torranceca.gov/arcgis/rest/services/Public_Services/Torrance_Zoning/MapServer/0",
+  "from": "pasted_report"
+ },
+ {
+  "id": "R_POMONA_ZONING",
+  "url": "https://gis.ci.pomona.ca.us/arcgis/rest/services/Planning/Zoning/MapServer/0",
+  "from": "pasted_report"
+ },
+ {
+  "id": "R_INGLEWOOD_ZONING",
+  "url": "https://gis.cityofinglewood.org/arcgis/rest/services/Planning/Inglewood_Zoning/MapServer/0",
+  "from": "pasted_report"
+ },
+ {
+  "id": "R_BURBANK_ZONING",
+  "url": "https://gis.burbankca.gov/arcgis/rest/services/Planning/Zoning/MapServer/0",
+  "from": "pasted_report"
+ },
+ {
+  "id": "R_CARSON_ZONING",
+  "url": "https://gis.carsonca.gov/arcgis/rest/services/Zoning/MapServer/0",
+  "from": "pasted_report"
+ },
+ {
+  "id": "R_CPAD_2026A",
+  "url": "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/CPAD_2026a_Holdings/FeatureServer/0",
+  "from": "pasted_report"
+ },
+ {
+  "id": "R_HWY_SHIELDS",
+  "url": "https://public.gis.lacounty.gov/public/rest/services/LACounty_Dynamic/Transportation/MapServer/5",
+  "from": "pasted_report"
+ },
+ {
+  "id": "R_TREE_CANOPY",
+  "url": "https://services.arcgis.com/RmCCgQtiZLDCtblq/arcgis/rest/services/Tree_Canopy_Assessment_LA/FeatureServer/0",
+  "from": "pasted_report"
+ },
+ {
+  "id": "R_METRO_ROW",
+  "url": "https://services1.arcgis.com/8CpG8dloenUpduDG/arcgis/rest/services/Metro_Rail_Rights_Of_Way/FeatureServer/0",
+  "from": "pasted_report"
+ },
+ {
+  "id": "R_LACFCD_DRAINS",
+  "url": "https://dpw.gis.lacounty.gov/dpw/rest/services/Drains_Maintained_by_LACFCD/FeatureServer/0",
+  "from": "pasted_report"
+ },
+ {
+  "id": "R_CEC_TRANSMISSION",
+  "url": "https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/California_Electric_Transmission_Lines/FeatureServer/0",
+  "from": "pasted_report"
+ },
+ {
+  "id": "R_USGS_3DEP",
+  "url": "https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer",
+  "from": "pasted_report"
+ },
+ {
+  "id": "R_FCC_BDC",
+  "url": "https://broadbandmap.fcc.gov/data-download",
+  "from": "pasted_report"
+ }
+]

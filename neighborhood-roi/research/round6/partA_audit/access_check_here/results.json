@@ -1,0 +1,26 @@
+{
+  "run_at": "2026-11-02T17:51:50.513023+00:00",
+  "scope": "Unauthenticated read-only metadata/sample checks. Not a licence or completeness audit.",
+  "results": [
+    {
+      "id": "A1_CAMS",
+      "url": "https://services.arcgis.com/RmCCgQtiZLDCtblq/ArcGIS/rest/services/eGIS_Addressing_ROAD_LINES/FeatureServer/0",
+      "checked_at": "2026-11-02T17:51:38.269984+00:00",
+      "runner_claim": "This execution host only; no inference about other networks.",
+      "machine_check": "NR",
+      "records": "NR",
+      "feature_count": "NR",
+      "error": "HTTPError: HTTP Error 403: Forbidden"
+    },
+    {
+      "id": "A5_LAPARKS_SOCRATA",
+      "url": "https://data.lacity.org/resource/ukgg-rgf9.json",
+      "checked_at": "2026-11-02T17:51:43.988863+00:00",
+      "runner_claim": "This execution host only; no inference about other networks.",
+      "machine_check": "NR",
+      "records": "NR",
+      "feature_count": "NR",
+      "error": "HTTPError: HTTP Error 403: Forbidden"
+    }
+  ]
+}

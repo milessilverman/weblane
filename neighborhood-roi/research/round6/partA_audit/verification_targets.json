@@ -1,0 +1,486 @@
+[
+  {
+    "id": "A1_CAMS",
+    "kind": "arcgis",
+    "url": "https://services.arcgis.com/RmCCgQtiZLDCtblq/ArcGIS/rest/services/eGIS_Addressing_ROAD_LINES/FeatureServer/0",
+    "count_scope": "Publisher countywide scope; full layer",
+    "where": "1=1",
+    "expected_fields": [
+      "OBJECTID",
+      "FullName",
+      "Type",
+      "StPreDir"
+    ],
+    "sample_fields": [
+      "OBJECTID",
+      "FullName",
+      "Type",
+      "StPreDir",
+      "StName",
+      "StPostType",
+      "StPostDir",
+      "LCity_L",
+      "LCity_R",
+      "Jurisdiction",
+      "Source",
+      "SourceID",
+      "UpdateDate"
+    ],
+    "identifier_fields": [
+      "UNIT_ID",
+      "ZIP",
+      "Zip_L",
+      "Zip_R",
+      "ZIP_CODE",
+      "TRL_ID",
+      "FEATURE_ID",
+      "SEG_ID",
+      "OID",
+      "SourceID",
+      "RouteS",
+      "PMRouteID"
+    ]
+  },
+  {
+    "id": "A1_BOE",
+    "kind": "arcgis",
+    "url": "https://maps.lacity.org/arcgis/rest/services/Mapping/NavigateLA/MapServer/341",
+    "count_scope": "LA City layer, not County",
+    "where": "1=1",
+    "expected_fields": [
+      "ASSETID",
+      "STNAME",
+      "STSFX",
+      "SFXDIR"
+    ],
+    "sample_fields": [
+      "ASSETID",
+      "STNAME",
+      "STSFX",
+      "SFXDIR",
+      "TDIR",
+      "STNAME_A",
+      "STSFX_A",
+      "STATUS",
+      "SECT_ID"
+    ],
+    "identifier_fields": [
+      "UNIT_ID",
+      "ZIP",
+      "Zip_L",
+      "Zip_R",
+      "ZIP_CODE",
+      "TRL_ID",
+      "FEATURE_ID",
+      "SEG_ID",
+      "OID",
+      "SourceID",
+      "RouteS",
+      "PMRouteID"
+    ]
+  },
+  {
+    "id": "A1_TIGER_LOCAL",
+    "kind": "arcgis",
+    "url": "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Transportation_LargeScale/MapServer/2",
+    "count_scope": "National full layer; NOT an LA County count",
+    "where": "1=1",
+    "expected_fields": [
+      "OBJECTID",
+      "OID",
+      "NAME",
+      "BASENAME"
+    ],
+    "sample_fields": [
+      "OBJECTID",
+      "OID",
+      "NAME",
+      "BASENAME",
+      "MTFCC",
+      "RTTYP",
+      "PREDIRABRV",
+      "PRETYPEABRV",
+      "SUFDIRABRV",
+      "SUFTYPEABRV"
+    ],
+    "identifier_fields": [
+      "UNIT_ID",
+      "ZIP",
+      "Zip_L",
+      "Zip_R",
+      "ZIP_CODE",
+      "TRL_ID",
+      "FEATURE_ID",
+      "SEG_ID",
+      "OID",
+      "SourceID",
+      "RouteS",
+      "PMRouteID"
+    ]
+  },
+  {
+    "id": "A1_TIGER_SECONDARY",
+    "kind": "arcgis",
+    "url": "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Transportation_LargeScale/MapServer/1",
+    "count_scope": "National full layer; NOT an LA County count",
+    "where": "1=1",
+    "expected_fields": [
+      "OBJECTID",
+      "OID",
+      "NAME",
+      "BASENAME"
+    ],
+    "sample_fields": [
+      "OBJECTID",
+      "OID",
+      "NAME",
+      "BASENAME",
+      "MTFCC",
+      "RTTYP"
+    ],
+    "identifier_fields": [
+      "UNIT_ID",
+      "ZIP",
+      "Zip_L",
+      "Zip_R",
+      "ZIP_CODE",
+      "TRL_ID",
+      "FEATURE_ID",
+      "SEG_ID",
+      "OID",
+      "SourceID",
+      "RouteS",
+      "PMRouteID"
+    ]
+  },
+  {
+    "id": "A4_COUNTYWIDE_PARKS",
+    "kind": "arcgis",
+    "url": "https://services.arcgis.com/RmCCgQtiZLDCtblq/arcgis/rest/services/Countywide_Parks_and_Open_Space__(Public_-_Hosted2)/FeatureServer/0",
+    "count_scope": "Publisher countywide scope; full layer",
+    "where": "1=1",
+    "expected_fields": [
+      "OBJECTID",
+      "UNIT_ID",
+      "PARK_NAME",
+      "PARK_LBL"
+    ],
+    "sample_fields": [
+      "OBJECTID",
+      "UNIT_ID",
+      "PARK_NAME",
+      "PARK_LBL",
+      "ACCESS_TYP",
+      "RPT_ACRES",
+      "GIS_ACRES",
+      "AGNCY_NAME",
+      "AGNCY_LEV",
+      "AGNCY_TYP",
+      "MNG_AGENCY",
+      "COGP_TYP",
+      "NDS_AN_TYP",
+      "AMEN_RPT",
+      "TYPE",
+      "PLGND",
+      "POOLS",
+      "TENIS",
+      "BSKTB",
+      "BASEB",
+      "SOCCR",
+      "MPFLD",
+      "DGPRK",
+      "RSTRM",
+      "SPPAD",
+      "SK8PK",
+      "COMCT",
+      "GYM"
+    ],
+    "identifier_fields": [
+      "UNIT_ID",
+      "ZIP",
+      "Zip_L",
+      "Zip_R",
+      "ZIP_CODE",
+      "TRL_ID",
+      "FEATURE_ID",
+      "SEG_ID",
+      "OID",
+      "SourceID",
+      "RouteS",
+      "PMRouteID"
+    ],
+    "area_field": "GIS_ACRES"
+  },
+  {
+    "id": "A4_CPAD_UNITS",
+    "kind": "arcgis",
+    "url": "https://gis.cnra.ca.gov/arcgis/rest/services/Boundaries/CPAD_AccessType/MapServer/1",
+    "count_scope": "COUNTY='Los Angeles' filter; confirm returned county values",
+    "where": "COUNTY='Los Angeles'",
+    "expected_fields": [
+      "OBJECTID",
+      "UNIT_ID",
+      "UNIT_NAME",
+      "ACCESS_TYP"
+    ],
+    "sample_fields": [
+      "OBJECTID",
+      "UNIT_ID",
+      "UNIT_NAME",
+      "ACCESS_TYP",
+      "AGNCY_NAME",
+      "AGNCY_LEV",
+      "AGNCY_TYP",
+      "MNG_AGENCY",
+      "COUNTY",
+      "ACRES",
+      "PARK_URL",
+      "LABEL_NAME"
+    ],
+    "identifier_fields": [
+      "UNIT_ID",
+      "ZIP",
+      "Zip_L",
+      "Zip_R",
+      "ZIP_CODE",
+      "TRL_ID",
+      "FEATURE_ID",
+      "SEG_ID",
+      "OID",
+      "SourceID",
+      "RouteS",
+      "PMRouteID"
+    ],
+    "area_field": "ACRES"
+  },
+  {
+    "id": "A4_DPR_FACILITIES",
+    "kind": "arcgis",
+    "url": "https://services.arcgis.com/RmCCgQtiZLDCtblq/ArcGIS/rest/services/DPR_Park_Facilities/FeatureServer/0",
+    "count_scope": "County-operated facilities only; planned/archived retained in diagnostic full-layer count",
+    "where": "1=1",
+    "expected_fields": [
+      "OBJECTID",
+      "UNIT_ID",
+      "PARK_NAME",
+      "CITY"
+    ],
+    "sample_fields": [
+      "OBJECTID",
+      "UNIT_ID",
+      "PARK_NAME",
+      "CITY",
+      "ZIP",
+      "FULL_ADDRESS",
+      "STATUS",
+      "FACILITY_TYPE",
+      "CLASSIFICATION",
+      "AGENCY",
+      "GIS_ACRES",
+      "INVENTORY_ACRES",
+      "RESTROOM",
+      "DOG_PARK",
+      "SWIMMING_POOL",
+      "TENNIS_COURT",
+      "BASKETBALL_FULL",
+      "COMMUNITY_GARDEN",
+      "PLAZA",
+      "DRINKING_FOUNTAINS"
+    ],
+    "identifier_fields": [
+      "UNIT_ID",
+      "ZIP",
+      "Zip_L",
+      "Zip_R",
+      "ZIP_CODE",
+      "TRL_ID",
+      "FEATURE_ID",
+      "SEG_ID",
+      "OID",
+      "SourceID",
+      "RouteS",
+      "PMRouteID"
+    ],
+    "area_field": "GIS_ACRES"
+  },
+  {
+    "id": "A4_PNA_2016",
+    "kind": "arcgis",
+    "url": "https://public.gis.lacounty.gov/arcgis/rest/services/PARKS/Park_Needs_Assessment/MapServer/35",
+    "count_scope": "Publisher countywide scope; full layer",
+    "where": "1=1",
+    "expected_fields": [
+      "OBJECTID",
+      "PARK_NAME",
+      "RPT_ACRES",
+      "GIS_ACRES"
+    ],
+    "sample_fields": [
+      "OBJECTID",
+      "PARK_NAME",
+      "RPT_ACRES",
+      "GIS_ACRES",
+      "TRLS_MI",
+      "TENIS",
+      "BSKTB",
+      "BASEB",
+      "SOCCR",
+      "MPFLD",
+      "FITZN",
+      "SK8PK"
+    ],
+    "identifier_fields": [
+      "UNIT_ID",
+      "ZIP",
+      "Zip_L",
+      "Zip_R",
+      "ZIP_CODE",
+      "TRL_ID",
+      "FEATURE_ID",
+      "SEG_ID",
+      "OID",
+      "SourceID",
+      "RouteS",
+      "PMRouteID"
+    ],
+    "area_field": "GIS_ACRES"
+  },
+  {
+    "id": "A4_TRAIL_LABELS",
+    "kind": "arcgis",
+    "url": "https://public.gis.lacounty.gov/arcgis/rest/services/PARKS/Trails/MapServer/0",
+    "count_scope": "Full published trail-segment layer; not unique trail count",
+    "where": "1=1",
+    "expected_fields": [
+      "OBJECTID",
+      "name",
+      "agency",
+      "hiking"
+    ],
+    "sample_fields": [
+      "OBJECTID",
+      "name",
+      "agency",
+      "hiking",
+      "biking",
+      "horses",
+      "motor_vehicles",
+      "ada_access",
+      "pet_access"
+    ],
+    "identifier_fields": [
+      "UNIT_ID",
+      "ZIP",
+      "Zip_L",
+      "Zip_R",
+      "ZIP_CODE",
+      "TRL_ID",
+      "FEATURE_ID",
+      "SEG_ID",
+      "OID",
+      "SourceID",
+      "RouteS",
+      "PMRouteID"
+    ]
+  },
+  {
+    "id": "A5_TRAIL_AMENITIES",
+    "kind": "arcgis",
+    "url": "https://public.gis.lacounty.gov/arcgis/rest/services/PARKS/Trails/MapServer/1",
+    "count_scope": "Full published trail-amenity layer",
+    "where": "1=1",
+    "expected_fields": [
+      "OBJECTID",
+      "TRL_NAME",
+      "PARK_NAME",
+      "FEATURE_ID"
+    ],
+    "sample_fields": [
+      "OBJECTID",
+      "TRL_NAME",
+      "PARK_NAME",
+      "FEATURE_ID",
+      "TRL_ID",
+      "SEG_ID",
+      "STG_AR_ID",
+      "SUB_TYPE",
+      "FEATURE",
+      "CITY_JUR",
+      "ZIP_CODE",
+      "PARKING",
+      "LAT",
+      "LON"
+    ],
+    "identifier_fields": [
+      "UNIT_ID",
+      "ZIP",
+      "Zip_L",
+      "Zip_R",
+      "ZIP_CODE",
+      "TRL_ID",
+      "FEATURE_ID",
+      "SEG_ID",
+      "OID",
+      "SourceID",
+      "RouteS",
+      "PMRouteID"
+    ]
+  },
+  {
+    "id": "A4_TRAILHEADS",
+    "kind": "arcgis",
+    "url": "https://public.gis.lacounty.gov/arcgis/rest/services/PARKS/Trails/MapServer/3",
+    "count_scope": "Full published trailhead layer",
+    "where": "1=1",
+    "expected_fields": [
+      "OBJECTID",
+      "TRL_NAME",
+      "PARK_NAME",
+      "FEATURE_ID"
+    ],
+    "sample_fields": [
+      "OBJECTID",
+      "TRL_NAME",
+      "PARK_NAME",
+      "FEATURE_ID",
+      "TRL_ID",
+      "FEATURE",
+      "CITY_JUR",
+      "PARKING",
+      "LAT",
+      "LON"
+    ],
+    "identifier_fields": [
+      "UNIT_ID",
+      "ZIP",
+      "Zip_L",
+      "Zip_R",
+      "ZIP_CODE",
+      "TRL_ID",
+      "FEATURE_ID",
+      "SEG_ID",
+      "OID",
+      "SourceID",
+      "RouteS",
+      "PMRouteID"
+    ]
+  },
+  {
+    "id": "A5_LAPARKS_SOCRATA",
+    "kind": "socrata",
+    "url": "https://data.lacity.org/resource/ukgg-rgf9.json",
+    "count_scope": "LA City facility/amenity records; not unique park count"
+  },
+  {
+    "id": "A1_OSM_SoCal",
+    "kind": "file",
+    "url": "https://download.geofabrik.de/north-america/us/california/socal-latest.osm.pbf",
+    "count_scope": "Southern California file headers only"
+  },
+  {
+    "id": "A4_CPAD_2026A_ZIP",
+    "kind": "file",
+    "url": "https://data.cnra.ca.gov/dataset/0ae3cd9f-0612-4572-8862-9e9a1c41e659/resource/cadf9163-aa38-44ae-851a-86b35d4c6c0c/download/cpad_2026a_release.zip",
+    "count_scope": "Statewide ZIP headers only"
+  }
+]
