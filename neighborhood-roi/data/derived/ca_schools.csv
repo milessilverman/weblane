@@ -4530,6 +4530,7 @@ CDSCode,School,District,County,SOCType,lat,lon,ela_pct_met,math_pct_met
 19768690119636,Da Vinci Design,Wiseburn Unified,Los Angeles,High Schools (Public),33.918105,-118.38322,52.0,23.2
 19768690128728,Da Vinci Connect,Wiseburn Unified,Los Angeles,K-12 Schools (Public),33.919526,-118.37504,63.55,40.46
 19768690131128,Da Vinci Communications,Wiseburn Unified,Los Angeles,High Schools (Public),33.917773,-118.38398,54.26,25.58
+19768690138545,Success Learning Center,Wiseburn Unified,Los Angeles,Special Education Schools (Public),33.919306,-118.37508,,
 19768696023808,Del Aire Elementary,Wiseburn Unified,Los Angeles,Elementary Schools (Public),33.922918,-118.37207,58.09,56.57
 19768696023816,Aviation Elementary,Wiseburn Unified,Los Angeles,Elementary Schools (Public),33.906602,-118.37437,62.27,62.04
 19768696023824,Hollyglen Elementary,Wiseburn Unified,Los Angeles,Elementary Schools (Public),33.90952,-118.37273,,
@@ -11227,6 +11228,7 @@ CDSCode,School,District,County,SOCType,lat,lon,ela_pct_met,math_pct_met
 56105615630223,Providence,Ventura County Office of Education,Ventura,Juvenile Court Schools,34.254686,-119.15602,0.0,0.0
 56105615630397,Gateway Community,Ventura County Office of Education,Ventura,County Community,34.208208,-119.07572,0.0,0.0
 56105616055974,Meadows Arts and Technology Elementary,Ventura County Office of Education,Ventura,Elementary Schools (Public),34.193333,-118.84127,85.71,86.73
+56105616069231,Ventura County Special Education,Ventura County Office of Education,Ventura,Special Education Schools (Public),34.215014,-118.99823,,
 56724470000000,No Data,Briggs Elementary,Ventura,No Data,34.328592,-119.14112,33.86,26.79
 56724476054969,Briggs Elementary,Briggs Elementary,Ventura,Intermediate/Middle Schools (Public),34.328151,-119.10541,31.08,22.42
 56724476054977,Olivelands Elementary,Briggs Elementary,Ventura,Elementary Schools (Public),34.328592,-119.14112,40.21,36.73

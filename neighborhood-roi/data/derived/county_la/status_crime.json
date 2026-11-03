@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-02T18:02:51.826913+00:00",
+ "generated_at": "2026-11-03T17:07:34.688562+00:00",
  "sources": {
   "crime": {
    "lapd_k7nn-b2ep_cols": [
@@ -198,7 +198,7 @@
     "Santa Monica PD": 7116
    },
    "ok": true,
-   "seconds": 784.3
+   "seconds": 411.4
   }
  }
 }

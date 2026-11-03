@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-02T18:02:10.538570+00:00",
+ "generated_at": "2026-11-03T17:07:12.257335+00:00",
  "sources": {
   "tra": {
    "af91_url": "https://auditor.lacounty.gov/wp-content/uploads/2026/10/AF91.zip",
@@ -16,7 +16,7 @@
    ],
    "boe_district_rows": 180004,
    "ok": true,
-   "seconds": 29.6
+   "seconds": 23.3
   }
  }
 }

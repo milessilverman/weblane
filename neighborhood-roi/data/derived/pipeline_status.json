@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-02T18:47:31.417819+00:00",
+  "generated_at": "2026-11-03T17:43:04.935034+00:00",
   "sources": {
     "census_tract_boundaries": {
       "ok": true,
@@ -17,7 +17,7 @@
     "census_acs_5yr": {
       "vintage": "2020-2024 ACS 5-year (table-based summary file)",
       "ok": true,
-      "seconds": 14.7,
+      "seconds": 14.3,
       "rows": 8505,
       "columns": [
         "GEOID",
@@ -42,7 +42,7 @@
     },
     "bls_oews_cost_factor": {
       "ok": true,
-      "seconds": 0.7,
+      "seconds": 0.5,
       "rows": 10,
       "columns": [
         "county_fips",
@@ -55,7 +55,7 @@
     },
     "usaspending_projects": {
       "ok": true,
-      "seconds": 62.2,
+      "seconds": 43.1,
       "rows": 1721,
       "columns": [
         "internal_id",
@@ -79,7 +79,7 @@
       "url": "https://www.fhfa.gov/hpi/download/annual/hpi_at_tract.csv",
       "latest_year": 2025,
       "ok": true,
-      "seconds": 3.6,
+      "seconds": 10.3,
       "rows": 5350,
       "columns": [
         "GEOID",
@@ -94,11 +94,24 @@
       "ok": false,
       "error": "NRI tract table not found"
     },
+    "openstreetmap": {
+      "method": "geofabrik+osmium",
+      "parks": 58916,
+      "points": {
+        "school": 23951,
+        "neighborhood": 9140,
+        "rail_station": 7877,
+        "grocery": 7289,
+        "library": 2474
+      },
+      "ok": true,
+      "seconds": 1810.2
+    },
     "cdc_places": {
       "dataset": "PLACES: Census Tract Data (GIS Friendly Format), 2025 release",
       "dataset_id": "yjkw-uj5s",
       "ok": true,
-      "seconds": 16.0,
+      "seconds": 22.9,
       "rows": 8375,
       "columns": [
         "GEOID",
@@ -114,8 +127,8 @@
     "ca_school_scores": {
       "caaspp_year": "2024-25",
       "ok": true,
-      "seconds": 6.0,
-      "rows": 11588,
+      "seconds": 6.5,
+      "rows": 11590,
       "columns": [
         "CDSCode",
         "School",
@@ -165,7 +178,7 @@
         "tesctyscor"
       ],
       "ok": true,
-      "seconds": 8.5,
+      "seconds": 4.2,
       "rows": 7483,
       "columns": [
         "GEOID",
@@ -180,7 +193,7 @@
     },
     "epa_walkability": {
       "ok": true,
-      "seconds": 32.7,
+      "seconds": 70.7,
       "rows": 8366,
       "columns": [
         "GEOID",
@@ -189,7 +202,7 @@
     },
     "zillow_zhvi_zip": {
       "ok": true,
-      "seconds": 3.9,
+      "seconds": 4.3,
       "rows": 1057,
       "columns": [
         "RegionName",
@@ -206,7 +219,7 @@
     },
     "census_zcta_boundaries": {
       "ok": true,
-      "seconds": 1.5,
+      "seconds": 1.8,
       "rows": 33791,
       "columns": [
         "ZCTA5CE20",
@@ -215,7 +228,7 @@
     },
     "zillow_zhvi_neighborhood": {
       "ok": true,
-      "seconds": 9.1,
+      "seconds": 3.4,
       "rows": 2140,
       "columns": [
         "RegionID",

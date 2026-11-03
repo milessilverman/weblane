@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-02T21:36:22.179762+00:00",
+ "generated_at": "2026-11-03T17:07:49.561298+00:00",
  "sources": {
   "basemap": {
    "streets": 512002,
@@ -75,7 +75,7 @@
    "rail_construction_lines": 18,
    "stations_construction": 34,
    "ok": true,
-   "seconds": 408.4
+   "seconds": 508.2
   },
   "facilities": {
    "lms_layers": [

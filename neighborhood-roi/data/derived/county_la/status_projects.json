@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-02T23:14:06.439705+00:00",
+ "generated_at": "2026-11-03T17:08:39.452180+00:00",
  "sources": {
   "projects": {
    "lahd_rows": 616,
@@ -221,7 +221,7 @@
    "he_sites": 175336,
    "he_capacity": 265013.57952251995,
    "ok": true,
-   "seconds": 296.5
+   "seconds": 359.0
   }
  }
 }
