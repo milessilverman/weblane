@@ -1,0 +1,12 @@
+{
+  "name": "everyspace",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Rent out any part of your property, short or long term.",
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test test/*.test.js"
+  }
+}
