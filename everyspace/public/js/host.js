@@ -59,7 +59,7 @@ export async function renderHostListings(view) {
           <a class="btn small ghost" href="#/host/new?property=${p.id}">${icon.plus} Add space</a></div>
         ${tree(p.spaces).map(([s, d]) => s.rentable === false
           ? `<div class="container-row" style="--d:${d}">🏗️ <strong>${esc(s.title)}</strong> <span class="muted small">groups the spaces below, not rented itself</span></div>`
-          : `<a class="list-row link listing-row" style="--d:${d}" href="#/space/${s.id}">${art(s, { className: 'art mini' })}
+          : `<a class="list-row link listing-row" style="--d:${d}" href="#/host/space/${s.id}">${art(s, { className: 'art mini' })}${s.paused ? '<span class="paused-dot" title="Paused">⏸</span>' : ''}
             <div><strong>${esc(s.title)}</strong><div class="muted small">${cat(s.category).icon} ${esc(cat(s.category).label)}${(s.quantity ?? 1) > 1 ? ` · ×${s.quantity}` : ''} · ${stars(s.rating)}</div>
             <div class="small">${TERM_ORDER.filter((t) => s.rates?.[t] != null).map((t) => `${money(s.rates[t])}/${term(t).unit}${t === 'lease' ? ' lease' : ''}`).join(' · ')}</div>
             ${s.addonNote ? `<span class="badge warn">${esc(s.addonNote)}</span>` : ''}</div>${icon.chevron}</a>`).join('')}

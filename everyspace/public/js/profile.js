@@ -24,6 +24,7 @@ export async function renderProfile(view) {
       <h2 class="section-title">About everyspace</h2>
       <div class="menu">
         <a href="#/earn">💸 <span>What could my place earn?</span>${icon.chevron}</a>
+        <a href="#/fair-price">🛡️ <span>How pricing works & price-beat guarantee</span>${icon.chevron}</a>
         ${isBiz ? '' : '<a href="#/biz">💼 <span>Everyspace for Business</span>' + icon.chevron + '</a>'}
         <a href="#/plan">📄 <span>The plan</span>${icon.chevron}</a>
         <a href="#/catalog">🧭 <span>Everything you can rent out</span>${icon.chevron}</a>

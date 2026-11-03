@@ -75,12 +75,19 @@ function draw(view, props) {
     </div>`;
   } else if (d.step === 3) {
     const sug = c.typical ?? {};
+    // What similar listings nearby charge (fetched once per category).
+    if (d.market?.cat !== d.category) {
+      d.market = { cat: d.category, data: {} };
+      api(`market?category=${d.category}`).then((m) => { d.market = { cat: d.category, data: m }; if (d.step === 3) draw(view, props); });
+    }
+    const near = (t) => { const m = d.market.data[t]; return m?.count ? ` · Nearby ${money(m.min)}–${money(m.max)}` : ''; };
     for (const t of c.terms) { if (d.rates[t] == null) d.rates[t] = sug[t] ?? ''; if (d.on[t] == null) d.on[t] = true; }
     const eventy = ['parking', 'outdoor'].includes(c.group) && c.terms.some((t) => t === 'daily' || t === 'hourly');
     body = `<h1 class="page-title">Set your prices</h1><p class="muted">Starting points are typical for your area. Turn off any length you don't want.</p>
       <div class="price-list">${c.terms.map((t) => `<div class="price-item ${d.on[t] ? '' : 'off'}">
         <label class="switch"><input type="checkbox" data-on="${t}" ${d.on[t] ? 'checked' : ''}><span></span></label>
-        <div><strong>${term(t).label}</strong><div class="muted small">${sug[t] ? `Typical: ${money(sug[t])}/${term(t).unit}` : ''}</div></div>
+        <div><strong>${term(t).label}</strong><div class="muted small">${sug[t] ? `Typical: ${money(sug[t])}/${term(t).unit}` : ''}${near(t)}</div>
+          ${d.on[t] && Number(d.rates[t]) > 0 ? `<div class="small payout">You get ${money(d.rates[t] * 0.97)} · renter pays ${money(d.rates[t] * 1.1)}</div>` : ''}</div>
         <label class="money-input">$<input type="number" min="0" step="1" data-rate="${t}" value="${esc(d.rates[t])}" ${d.on[t] ? '' : 'disabled'}><span>/${term(t).unit}</span></label></div>`).join('')}</div>
       ${eventy ? `<div class="card pad"><strong>🎟️ Event pricing (optional)</strong><p class="muted small">Charge more on fair, game or parade days.</p>
         <div class="form"><label>Event name<input id="ev-name" value="${esc(d.event.name)}" placeholder="County Fair"></label>

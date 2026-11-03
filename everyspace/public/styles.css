@@ -634,3 +634,38 @@ body[data-mode="business"] .tabbar a.on::before { background: color-mix(in srgb,
 .summary-card { box-shadow: var(--shadow); border: 0; }
 .explore-head { padding-top: max(18px, env(safe-area-inset-top)); }
 .stepper output { min-width: 44px; }
+
+/* ---------- price transparency ---------- */
+span.block { display: block; }
+.all-in { font-size: 11px; font-weight: 600; color: var(--muted); }
+.cmp-line { font-size: 12px; font-weight: 600; }
+.cmp-line.ok { color: var(--ok); }
+.cmp-line.beat { color: var(--accent-2); }
+.compare { display: grid; border-radius: 14px; overflow: hidden; box-shadow: var(--shadow); background: var(--panel); margin-bottom: 12px; }
+.compare-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+.compare-row > span { display: grid; }
+.compare-row.ours { background: var(--accent-soft); }
+.compare-row.lower { background: var(--accent-2-soft); }
+.compare-verdict { padding: 10px 14px; font-size: 14px; font-weight: 600; }
+.compare-verdict.ok { color: var(--ok); }
+.compare-verdict.beat { color: var(--accent-2); }
+.compare.mini { box-shadow: none; border: 1px solid var(--line); margin-top: 6px; }
+.compare.mini > .muted { padding: 8px 12px 4px; }
+.compare.mini .compare-row { padding: 6px 12px; font-size: 14px; }
+.money-flow { display: flex; gap: 3px; margin: 10px 0 6px; border-radius: 12px; overflow: hidden; }
+.money-flow > div { display: grid; padding: 8px 10px; background: var(--accent); color: var(--accent-ink); min-width: 0; }
+.money-flow > div:nth-child(2) { background: color-mix(in srgb, var(--accent) 55%, var(--panel)); color: var(--ink); }
+.money-flow > div.fee { background: var(--accent-2-soft); color: var(--accent-2); }
+.money-flow span { font-size: 11px; opacity: .85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.small-flow strong { font-size: 13px; }
+.guarantee { display: flex; align-items: center; gap: 12px; margin-top: 14px; padding: 14px 16px; border-radius: 16px; background: var(--biz); color: #eef2f6; }
+.guarantee > span { font-size: 26px; }
+.guarantee > div { flex: 1; display: grid; gap: 2px; }
+.guarantee > div span { font-size: 13px; opacity: .8; }
+.guarantee > svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; }
+.qline.beat { color: var(--accent-2); font-weight: 600; }
+.qline.beat .muted { font-weight: 400; }
+.payout { color: var(--ok); margin-top: 2px; }
+.paused-dot { position: relative; left: -22px; top: 14px; margin-right: -18px; background: var(--panel); border-radius: 50%; font-size: 12px; padding: 2px; box-shadow: var(--shadow); }
+.manage .block > .two { align-items: end; margin-top: 10px; }
+.manage-price { align-items: flex-start; }

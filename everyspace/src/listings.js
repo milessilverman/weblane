@@ -3,12 +3,14 @@ import { category, CATEGORIES, TERMS } from './catalog.js';
 import { unitsFree } from './availability.js';
 import { describeAddon } from './describe.js';
 import { ratingFor } from './social.js';
+import { unitComparison } from './compare.js';
+import { SERVICE_FEE } from './pricing.js';
 
 export function search(db, { group, category: cat, term, start, end, q, city, audience = 'consumer', userId } = {}) {
   const text = q?.toLowerCase();
   const results = [];
   for (const s of db.spaces) {
-    if (s.rentable === false) continue;
+    if (s.rentable === false || s.paused) continue;
     const c = CATEGORIES[s.category];
     const prop = db.properties.find((p) => p.id === s.propertyId);
     if (c.audience !== audience) continue;
@@ -30,6 +32,9 @@ export function search(db, { group, category: cat, term, start, end, q, city, au
       policy: s.policy ?? 'standalone',
       addonNote: describeAddon(db, s),
       fromPrice: cheapest(s),
+      // All-in price (what the renter actually pays per unit) and how it compares with the same listing elsewhere.
+      allIn: cheapest(s) && Math.round(cheapest(s).amount * (1 + SERVICE_FEE) * 100) / 100,
+      compare: (() => { const t = cheapest(s)?.term; const c = t && unitComparison(s, t); return c ? { cheaperHere: c.cheaperHere, vs: c.rows[0].name, theirs: c.rows[0].theirs, ours: c.ours } : null; })(),
     });
   }
   const packages = audience !== 'consumer' ? [] : db.packages

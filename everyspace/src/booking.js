@@ -4,6 +4,7 @@ import { checkAvailability, HOLDING } from './availability.js';
 import { priceLine, totals } from './pricing.js';
 import { duration, toMs } from './time.js';
 import { withArticle } from './describe.js';
+import { applyComparison } from './compare.js';
 
 export class BookingError extends Error {
   constructor(message, details = []) { super(message); this.details = details; }
@@ -120,7 +121,10 @@ function describeAnchors(db, addon) {
 export function quote(db, cart) {
   const ev = evaluateCart(db, cart);
   const availability = checkAvailability(db, ev.items, cart.start, cart.end, { excludeBookingId: cart.excludeBookingId });
-  return { mode: ev.mode, package: ev.pkg?.name ?? null, availability, ...totals(ev.lines, cart.term, cart.start, cart.end, ev.pkg) };
+  const q = { mode: ev.mode, package: ev.pkg?.name ?? null, availability, ...totals(ev.lines, cart.term, cart.start, cart.end, ev.pkg) };
+  // Same space listed elsewhere? Show the comparison and beat any cheaper verified price (single-space bookings).
+  if (!ev.pkg && ev.items.length === 1) applyComparison(ev.spaces[0], q, { ...cart, items: ev.items });
+  return q;
 }
 
 const INITIAL = { instant: 'confirmed', request: 'pending', proposal: 'proposed' };
@@ -144,7 +148,8 @@ export function createBooking(db, cart, { now = new Date().toISOString(), newId 
     end: cart.end,
     mode: q.mode,
     status: INITIAL[q.mode],
-    quote: { total: q.total, rent: q.rent, serviceFee: q.serviceFee, hostPayout: q.hostPayout, packageDiscount: q.packageDiscount, deposit: q.deposit, schedule: q.schedule, lines: q.lines },
+    quote: { total: q.total, rent: q.rent, serviceFee: q.serviceFee, hostPayout: q.hostPayout, packageDiscount: q.packageDiscount, deposit: q.deposit,
+      schedule: q.schedule, lines: q.lines, priceBeat: q.priceBeat ?? null },
     note: cart.note ?? '',
     history: [{ at: now, status: INITIAL[q.mode], by: cart.renterId }],
     createdAt: now,

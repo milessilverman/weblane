@@ -118,7 +118,32 @@ Rules:
 * Owners list both kinds from the same hosting mode. The listing flow asks first: **Rent to people** or **Lease to companies**. Business listings skip the add-on step and ask for site facts.
 * Business accounts get their own tabs: **Sites** (list or map, filtered by site type) and **Pipeline** (proposals by stage, with active rent per year).
 
-## 1c. Growth features
+## 1c. Transparent prices and the price-beat guarantee
+
+**All-in, always.** Every price a renter sees, from search cards to the listing page to checkout, already includes the 10% service fee. Listing pages split it out: the owner's price, the service fee, and a "where your money goes" bar (owner 97%, owner fee 3%, service fee +10%). There are no cleaning fees or surprise fees at checkout.
+
+**Same space elsewhere.** If the owner also lists the space on another site, the listing shows a **Price check**: our all-in price next to each other site's estimated all-in price for one unit (their price plus their renter fee and any cleaning or booking fee), with the date we last checked it.
+* Where the data comes from: links **owners add themselves** in Manage listing, and links **renters send** in price-match claims. We don't scrape other sites (their terms usually forbid it). We re-verify linked listings on a schedule.
+* Other sites' fees come from one table of estimates, labeled "estimate" until verified (RESEARCH.md §1).
+
+**Price-beat guarantee.**
+1. *Before booking:* if a linked listing is cheaper for the same booking, checkout automatically beats it by 5% of their price. The receipt shows a "Price beat vs X" line.
+2. *After booking:* within 48 hours of booking, or any time before it starts, a renter can send a link and the other site's total. If the link is the owner's own cross-listing and the price matches what we have on file (within 3%), the refund (difference + 5%) is instant. Otherwise a person checks it within 24 hours.
+3. **Everyspace pays, never the owner.** Payouts are unchanged, and both receipts say so.
+4. One claim per booking; same space, same dates, full total with fees. Caps and funding are an open decision (RESEARCH.md §1.4).
+
+## 1d. Owner-friendly by default
+
+* **Keep 97%.** One flat 3% owner fee, shown on every booking as "you get $X".
+* **Manage listing** for every space:
+  * Go live or pause with one switch. A paused listing leaves search immediately; existing bookings stay.
+  * Edit prices with **nearby price ranges** (min–max and median of similar listings) and a live "renter pays $X · you get $Y" line.
+  * Block dates on a calendar, with a reason (using it yourself, booked elsewhere).
+  * Link the same listing on other sites. If it's cheaper elsewhere, the owner sees a friendly warning: we're covering the difference, but matching wins more bookings.
+* **Pricing help when listing:** typical local prices plus the live range of similar listings, and the payout shown as they type.
+* **No surprises:** access details are only shared after confirmation, a deposit is held for higher-risk spaces, and conversations are tied to each booking.
+
+## 1e. Growth features
 
 * **Earnings estimator.** Anyone can tap "Earn from your place" and say what they have: driveway spots, garage bays, backyard hours, spare-room nights, roof area, a wall or frontage. It shows estimated monthly and yearly income, split into money from people and money from companies, using typical local prices and realistic occupancy. One tap starts a listing for any of those things.
 * **Saved.** A heart on every card saves it to a Saved tab.
@@ -227,6 +252,7 @@ The same model works for a single house. For example, an owner can rent the ADU 
 | **0: rules prototype (done)** | Catalog, data model, availability with quantity, hierarchy, and conflicts, add-on and package rules, pricing with event rates, booking modes and states, JSON API, tests |
 | **0.5: app prototype (done)** | Installable mobile-first app. Renters: explore with map, events and bundles, listing pages with availability calendar and reviews, checkout for every rental length, trips with access details, messaging, reviews. Hosts: today dashboard, approve or decline in chat, listings tree, earnings by month, step-by-step listing wizard with the required checklist. Works offline as a single HTML file. |
 | **0.75: two sides + polish (done)** | Everyspace for Business (Sites, Pipeline, landing page, business-only rule), new categories (kitchen, sport court, boat dock, pasture, fleet parking, signage, parcel lockers), earnings estimator, Saved, guest favorites, ideas row, desktop listing layout with a booking card and gallery, refreshed visual design. |
+| **0.9: transparency + owner tools (done)** | All-in prices everywhere, money breakdown, price check against owners' cross-listings, automatic price beat at checkout, price-match claims with fraud checks, How pricing works page; Manage listing (pause, prices with nearby ranges and payout preview, block dates, cross-listings, "cheaper elsewhere" warning). Open research in RESEARCH.md. |
 | 1: MVP | Real auth, Postgres, Stripe Connect payouts, photo uploads, map search, messaging, notifications |
 | 2: Trust | ID verification, reviews, check-in/out photo log, disputes, insurance partner |
 | 3: Long-term | Lease templates and e-sign, autopay, move-in/out, maintenance requests |

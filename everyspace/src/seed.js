@@ -197,6 +197,22 @@ export function seed() {
       specs: { 'Usable roof': '2,400 sq ft', 'Est. system': '38 kW', Faces: 'Flat (tilt racks)', 'Roof installed': '2020', 'Electrical service': '600 A, 3-phase', Utility: 'Riverside Public Utilities' } },
   ];
 
+  // Owners' own listings of the same space on other sites (demo links, not real listings).
+  // The pool is deliberately cheaper on Swimply so the price beat shows up at checkout.
+  const xl = (platform, slug, rates, cleaningFee = 0) => ({ platform, url: `https://www.${{ airbnb: 'airbnb.com', vrbo: 'vrbo.com', spothero: 'spothero.com', neighbor: 'neighbor.com', swimply: 'swimply.com', peerspace: 'peerspace.com' }[platform]}/demo/${slug}`,
+    rates, cleaningFee, verifiedAt: '2026-10-28', demo: true });
+  const cross = {
+    s_maple_home: [xl('airbnb', 'maple-st-house', { daily: 225, weekly: 1400 }, 75), xl('vrbo', 'maple-st-house', { daily: 230, weekly: 1450 }, 85)],
+    s_maple_driveway: [xl('spothero', 'maple-driveway', { hourly: 6, daily: 45 })],
+    s_maple_bay: [xl('neighbor', 'maple-garage-bay', { monthly: 99 })],
+    s_elm_pool: [xl('swimply', 'elm-saltwater-pool', { hourly: 38 })],
+    s_elm_adu: [xl('airbnb', 'elm-garden-adu', { daily: 125, weekly: 760 }, 50)],
+    s_elm_shop: [xl('peerspace', 'elm-woodshop', { hourly: 25, daily: 140 })],
+    s_ana_room: [xl('airbnb', 'stadium-lofts-room', { daily: 89, weekly: 600 }, 20)],
+    s_lake_home: [xl('airbnb', 'lakeview-cottage', { daily: 170, weekly: 1050 }, 60), xl('vrbo', 'lakeview-cottage', { daily: 175 }, 70)],
+  };
+  for (const s of spaces) if (cross[s.id]) s.externalListings = cross[s.id];
+
   const packages = [
     { id: 'pk_1a_2park', propertyId: 'p_oak', name: 'Unit 1A + 2 parking spaces',
       items: [{ spaceId: 's_oak_1a', qty: 1 }, { spaceId: 's_oak_parking', qty: 2 }],

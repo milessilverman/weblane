@@ -108,7 +108,10 @@ export function spaceCard(s) {
     <div class="card-body">
       <div class="row-between"><strong class="title">${esc(s.title)}</strong>${stars(s.rating)}</div>
       <div class="muted small">${s.icon} ${esc(s.categoryLabel)} · ${esc(s.property.title)}</div>
-      <div class="price">${r ? `from ${priceTag(r)}` : ''}</div>
+      <div class="price">${r ? `from ${priceTag({ ...r, amount: s.allIn ?? r.amount })} <span class="all-in">all-in</span>` : ''}</div>
+      ${s.compare ? (s.compare.cheaperHere
+        ? `<div class="cmp-line ok">✓ ${money(s.compare.theirs - s.compare.ours)} less than ${esc(s.compare.vs)}</div>`
+        : `<div class="cmp-line beat">🛡️ Cheaper on ${esc(s.compare.vs)}? We'll beat it</div>`) : ''}
       ${badges ? `<div class="badges">${badges}</div>` : ''}
     </div></a>`;
 }

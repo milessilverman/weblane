@@ -6,6 +6,9 @@ import { createPackage, createProperty, createSpace, search } from './listings.j
 import { describeAddon } from './describe.js';
 import { addReview, canReview, effectiveStatus, messagesFor, postMessage, ratingFor, systemMessage, threadsFor } from './social.js';
 import { calendar, hostSummary } from './host.js';
+import { BEAT_PCT, CLAIM_WINDOW_HOURS, evaluateClaim, PLATFORMS, unitComparison } from './compare.js';
+import { marketFor, ownerView, updateSpace } from './owner.js';
+import { HOST_FEE, SERVICE_FEE } from './pricing.js';
 
 export class NotFound extends Error {}
 
@@ -61,6 +64,24 @@ export function handleApi(store, method, path, body = {}, params = new URLSearch
       return ['consumer', 'business'].flatMap((audience) => search(db, { userId, audience }).spaces).filter((x) => x.saved);
     }],
     ['POST', /^saves$/, () => mutate(() => toggleSave(db, body.userId, body.spaceId))],
+    // Owner tools
+    ['GET', /^spaces\/([\w-]+)\/manage$/, ([, id]) => ownerView(db, id, params.get('userId'))],
+    ['POST', /^spaces\/([\w-]+)\/update$/, ([, id]) => mutate(() => updateSpace(db, id, body.actorId, body.changes ?? {}, opts()))],
+    ['GET', /^market$/, () => marketFor(db, params.get('category'), params.get('exclude'))],
+    // Pricing transparency
+    ['GET', /^pricing$/, () => ({ serviceFee: SERVICE_FEE, hostFee: HOST_FEE, beatPct: BEAT_PCT, claimWindowHours: CLAIM_WINDOW_HOURS, platforms: PLATFORMS })],
+    ['POST', /^bookings\/([\w-]+)\/price-match$/, ([, id]) => mutate(() => {
+      const b = db.bookings.find((x) => x.id === id);
+      if (!b) throw new BookingError('Booking not found');
+      const space = db.spaces.find((s) => s.id === b.items[0].spaceId);
+      const result = evaluateClaim(space, b, body, now());
+      if (result.errors) throw new BookingError("We can't match that price", result.errors);
+      b.priceMatch = result.claim;
+      systemMessage(db, b.id, result.claim.status === 'approved'
+        ? `Price match approved: ${result.claim.name} was cheaper, so Everyspace refunded $${result.claim.credit.toFixed(2)}${result.claim.perPeriod ? ` per ${b.quote.schedule.every}` : ''}. The owner's payout is unchanged.`
+        : `Price-match claim received for a ${result.claim.name} listing. We'll confirm it within 24 hours.`, opts());
+      return result.claim;
+    })],
     ['POST', /^reset$/, () => { store.reset(); return { ok: true }; }],
   ];
   const route = routes.find(([m, re]) => m === method && re.test(path));
@@ -106,6 +127,9 @@ function spaceDetail(db, id, userId) {
     addonNote: describeAddon(db, s),
     rating: ratingFor(db, s.id),
     saved: !!userId && (db.saves ?? []).some((x) => x.userId === userId && x.spaceId === id),
+    // Same space on other sites, one unit of each length, all-in on both sides.
+    comparisons: CATEGORIES[s.category].terms.map((t) => unitComparison(s, t)).filter(Boolean),
+    pricing: { serviceFee: SERVICE_FEE, hostFee: HOST_FEE, beatPct: BEAT_PCT },
     reviews: db.reviews.filter((r) => r.spaceId === id).sort((a, b) => (a.at < b.at ? 1 : -1))
       .map((r) => ({ ...r, author: userName(r.by) })),
     // Add-ons this space can carry (e.g. parking/lockers for an apartment)

@@ -64,6 +64,7 @@ export function checkAvailability(db, items, start, end, { excludeBookingId } = 
     const space = byId(item.spaceId);
     if (!space) { conflicts.push({ spaceId: item.spaceId, reason: 'Space not found' }); continue; }
     if (space.rentable === false) { conflicts.push({ spaceId: space.id, reason: `${space.title} is not rentable on its own` }); continue; }
+    if (space.paused) { conflicts.push({ spaceId: space.id, reason: `${space.title} isn't taking new bookings right now` }); continue; }
 
     for (const b of space.blackouts || []) {
       if (overlaps(b.start, b.end, start, end)) conflicts.push({ spaceId: space.id, reason: `${space.title} is blocked by the host (${b.reason || 'unavailable'})` });

@@ -10,6 +10,7 @@ import { renderWizard } from './wizard.js';
 import { renderProfile, renderPlan, renderCatalog } from './profile.js';
 import { renderBizHome, renderPipeline } from './biz.js';
 import { renderEarn, renderSaved } from './earn.js';
+import { renderManage, renderFairPrice } from './manage.js';
 
 // [pattern, render, meta]. meta.mode switches the app into that side; meta.nav shows the tab bar.
 const ROUTES = [
@@ -27,6 +28,8 @@ const ROUTES = [
   [/^\/host\/listings$/, renderHostListings, { nav: true, mode: 'host' }],
   [/^\/host\/earnings$/, renderHostEarnings, { nav: true, mode: 'host' }],
   [/^\/host\/new$/, renderWizard, { mode: 'host' }],
+  [/^\/host\/space\/([\w-]+)$/, renderManage, { mode: 'host' }],
+  [/^\/fair-price$/, renderFairPrice, {}],
   [/^\/biz$/, renderBizHome, { nav: 'business', mode: 'business' }],
   [/^\/biz\/pipeline$/, renderPipeline, { nav: true, mode: 'business' }],
   [/^\/earn$/, renderEarn, {}],

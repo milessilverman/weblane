@@ -2,6 +2,8 @@
 
 A marketplace app for renting out **any part of a property, for any length of time**. Examples: a backyard for a night, a driveway spot on fair weekend, a garage bay for a month, the whole house like a vacation rental, a front-yard garden plot, or a roof leased for 20 years to a company that installs solar. It also handles **apartment buildings**: a renter can take just a unit, or a unit plus parking and storage, under rules the owner sets.
 
+**Before launch, see [`RESEARCH.md`](RESEARCH.md)**: the open questions (competitor fees, legal review of the price-beat guarantee, taxes, local rules, insurance, interviews) in priority order.
+
 **Read [`SPEC.md`](SPEC.md) first.** It covers what can be rented, how bookings, pricing, add-ons and packages work, trust and legal requirements, and the build plan. The same plan is inside the app under Profile → The plan.
 
 ## Try it
@@ -37,7 +39,13 @@ The app has three sides: **renting** and **hosting** for people, and **Everyspac
 - Trips show a status timeline. Access codes appear once the booking is confirmed. You can cancel or withdraw, and leave a review once the stay has ended.
 - Each booking has a chat with the host.
 
+**Transparent pricing (everywhere):**
+- Every price is **all-in** (includes the 10% service fee). Listing pages show the owner's price, the fee, and where the money goes.
+- **Price check:** if the owner also lists the space on Airbnb, Vrbo, SpotHero, Neighbor, Swimply or Peerspace, the listing compares totals including the other site's fees. Try the Whole house (cheapest here) or the Saltwater pool (cheaper on Swimply).
+- **Price-beat guarantee:** cheaper elsewhere → beaten by 5% automatically at checkout. Found one after booking → "Found it cheaper?" on the trip page. Everyspace pays; owners' payouts never change. Rules are under Profile → How pricing works.
+
 **Hosting (Today, Listings, Inbox, Earnings):**
+- **Manage listing** (tap any listing): pause or go live, edit prices next to nearby price ranges with a "you get $X" preview, block dates, and link the same listing on other sites.
 - **Today:** requests to approve or decline, solar proposals to move forward (site visit, then contract, then confirmed), and upcoming check-ins.
 - **Listings:** grouped by property, with nesting (building → units, garage → bays).
 - **Earnings:** payouts by month, with leases spread across their months, and a breakdown per listing.
@@ -74,10 +82,12 @@ The app has three sides: **renting** and **hosting** for people, and **Everyspac
 | `src/social.js` | Messages, reviews, and display status (active or completed) |
 | `src/host.js` | Host dashboard, payout schedule, availability calendar |
 | `src/listings.js` | Search, and creating properties, spaces (checklist enforced), and packages |
+| `src/compare.js` | Other sites' fees, comparisons, the automatic price beat, price-match claims |
+| `src/owner.js` | Owner tools: edit, pause, block dates, cross-listings, nearby price ranges |
 | `src/routes.js` | API routes, shared by the server and the single-file build |
 | `src/server.js` | Node HTTP server |
 | `public/js/` | The app: `main.js` (router and navigation for the three sides), `explore`, `space`, `book`, `trips`, `inbox`, `host`, `wizard`, `biz` (business side), `earn` (estimator and Saved), `profile`, `calendar`, `art` (drawn illustrations), `core` (shared helpers) |
 | `scripts/build-standalone.mjs` | Bundles everything into `dist/everyspace.html` |
-| `scripts/e2e.cjs` | Playwright click-through of 25 flows: `node scripts/e2e.cjs shots http://localhost:3000/` |
+| `scripts/e2e.cjs` | Playwright click-through of 31 flows: `node scripts/e2e.cjs shots http://localhost:3000/` |
 
 This is a prototype. Logins, real payments, a database, photo uploads, and identity verification are Phase 1 in the spec.

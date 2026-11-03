@@ -78,6 +78,24 @@ fs.mkdirSync(outDir, { recursive: true });
     if (!(await p.textContent('#chat')).includes('See you Saturday')) throw new Error('sent message not shown');
     await shot('08-chat'); await overflow('chat');
   });
+  await step('price match claim on an unknown link goes to review', async () => {
+    const id = await p.evaluate(() => location.hash.split('/').pop());
+    await go(`#/trip/${id}`); await p.waitForSelector('#pm-url');
+    await p.fill('#pm-url', 'https://www.spothero.com/parking/other-lot-near-fair'); await p.fill('#pm-total', '30'); await p.click('#pm-send');
+    await p.waitForSelector('#pm-url', { state: 'detached' }); if (!/in review/.test(await p.textContent('.quote'))) throw new Error('claim not shown as in review'); await shot('08b-price-match');
+  });
+  await step('listing shows price check, money breakdown and guarantee', async () => {
+    await go('#/space/s_maple_home'); await p.waitForSelector('.compare');
+    if (!/Cheapest here/.test(await p.textContent('.compare-verdict'))) throw new Error('expected cheapest-here verdict');
+    if (!(await p.$('.money-flow')) || !(await p.$('.guarantee'))) throw new Error('missing breakdown or guarantee');
+    await shot('08c-price-check'); await overflow('price check');
+  });
+  await step('checkout beats a cheaper price elsewhere', async () => {
+    await go('#/book/s_elm_pool'); await p.waitForSelector('#quote .qline'); await p.waitForTimeout(400);
+    if (!(await p.$('#quote .qline.beat'))) throw new Error('no price beat line for the pool');
+    await shot('08d-price-beat');
+  });
+  await step('how pricing works page', async () => { await go('#/fair-price'); await p.waitForSelector('.money-flow'); await overflow('fair price'); await shot('08e-fair-price'); });
   await step('add-on-only parking explains the rule', async () => {
     await go('#/book/s_oak_parking'); await p.waitForTimeout(700);
     const q = await p.textContent('#quote'); if (!/only available with/.test(q)) throw new Error(q.slice(0, 100));
@@ -123,6 +141,21 @@ fs.mkdirSync(outDir, { recursive: true });
     await p.click('#next'); await p.waitForTimeout(700);
     const t = await p.textContent('.page-title'); if (t !== 'Side-yard parking') throw new Error(`landed on "${t}"`);
     await shot('21-new-listing');
+  });
+  await step('Maya manages a listing: price, pause, block dates, cross-list', async () => {
+    await go('#/host/space/s_maple_attic'); await p.waitForSelector('#save-prices'); await shot('21b-manage'); await overflow('manage');
+    await p.fill('[data-rate="monthly"]', '58'); await p.click('#save-prices'); await p.waitForSelector('#save-prices');
+    if ((await p.inputValue('[data-rate="monthly"]')) !== '58') throw new Error('price not saved');
+    await p.click('label.switch'); await p.waitForTimeout(500);
+    if (!/Paused/.test(await p.textContent('.manage'))) throw new Error('did not pause');
+    await p.click('label.switch'); await p.waitForTimeout(500);
+    await p.fill('#ext-url', 'https://www.neighbor.com/l/attic-123'); await p.fill('#ext-price', '65'); await p.click('#add-ext'); await p.waitForTimeout(500);
+    if (!/Neighbor/.test(await p.textContent('#ext-list'))) throw new Error('cross-listing not added');
+  });
+  await step('Luis sees the "cheaper elsewhere" warning on his pool', async () => {
+    await go('#/profile'); await p.click('[data-user="u_luis"]'); await p.waitForSelector('.greeting');
+    await go('#/host/space/s_elm_pool'); await p.waitForSelector('.notice.warn'); await shot('21c-parity');
+    await go('#/profile'); await p.click('[data-user="u_maya"]'); await p.waitForSelector('.greeting');
   });
   await step('Maya approves Kim from the chat', async () => {
     await go('#/chat/bk_seed_6'); await p.waitForSelector('.action-bar'); await shot('22-host-chat');

@@ -9,6 +9,32 @@ const MODE_TEXT = {
   proposal: ['Proposal', 'Send a proposal; the owner reviews it, then a site assessment and contract. Rent starts once you are installed.'],
 };
 
+// Same space on other sites, plus where the money goes and the guarantee.
+function priceCheck(s) {
+  const fee = s.pricing.serviceFee, hostFee = s.pricing.hostFee;
+  const t = TERM_ORDER.find((k) => s.rates?.[k] != null);
+  const cmp = s.comparisons.find((c) => c.term === t) ?? s.comparisons[0];
+  const unit = cmp ? term(cmp.term).unit : t && term(t).unit;
+  const base = t ? s.rates[t] : 0;
+  const flow = base ? `<div class="money-flow small-flow" aria-label="Where your money goes">
+      <div style="flex:${(1 - hostFee) * 100}"><strong>${money(base * (1 - hostFee))}</strong><span>owner</span></div>
+      <div style="flex:${hostFee * 100 + 8}"><strong>${money(base * hostFee)}</strong><span>owner fee</span></div>
+      <div style="flex:${fee * 100 + 8}" class="fee"><strong>${money(base * fee)}</strong><span>service fee</span></div></div>
+      <div class="muted small">Per ${unit}: you pay ${money(base * (1 + fee))}. The owner keeps ${Math.round((1 - hostFee) * 100)}% of their price. No other fees.</div>` : '';
+  const compareRows = cmp ? `<div class="compare">
+      <div class="compare-row ours"><span><strong>Everyspace</strong><span class="muted small">all-in, 1 ${unit}</span></span><strong>${money(cmp.ours)}</strong></div>
+      ${cmp.rows.map((r) => `<div class="compare-row ${r.theirs < cmp.ours ? 'lower' : ''}"><span><strong>${esc(r.name)}</strong>
+        <span class="muted small">incl. ~${Math.round(r.feePct * 100)}% fee${r.cleaningFee ? ` + ${money(r.cleaningFee)} cleaning` : ''} · checked ${r.verifiedAt ? fmtDate(r.verifiedAt) : '—'}${r.demo ? ' · demo' : ''}</span></span>
+        <strong>${money(r.theirs)}</strong></div>`).join('')}
+      <div class="compare-verdict ${cmp.cheaperHere ? 'ok' : 'beat'}">${cmp.cheaperHere
+        ? `✓ Cheapest here. You save ${money(Math.min(...cmp.rows.map((r) => r.theirs)) - cmp.ours)} per ${unit} vs ${esc(cmp.rows[0].name)}.`
+        : `${esc(cmp.rows[0].name)} is lower, so we'll <strong>beat it by ${Math.round(s.pricing.beatPct * 100)}%</strong> automatically at checkout. Everyspace pays the difference.`}</div></div>` : '';
+  return `<h2 class="section-title">Price check</h2>
+    ${compareRows || '<div class="muted small">Not listed on other sites that we know of.</div>'}
+    ${flow}
+    <a class="guarantee" href="#/fair-price"><span>🛡️</span><div><strong>Price-beat guarantee</strong><span>Find this space cheaper elsewhere for the same dates and we refund the difference plus ${Math.round(s.pricing.beatPct * 100)}%.</span></div>${icon.chevron}</a>`;
+}
+
 export async function renderSpace(view, [id]) {
   const s = await api(`spaces/${id}?userId=${state.user}`);
   const c = s.categoryInfo;
@@ -21,16 +47,20 @@ export async function renderSpace(view, [id]) {
   const canBook = !mine && (!business || state.me.kind === 'business');
   const near = s.nearby.filter((n) => (cat(n.category).audience === 'business') === business);
 
+  const fee = s.pricing.serviceFee;
   const priceBlock = `<div class="rate-table">
-      ${rates.map((t) => `<div><span>${business && t === 'infrastructure' ? 'Annual rent (5–25 yr agreement)' : term(t).label}</span><strong>${money(s.rates[t])}<span class="muted">/${term(t).unit}</span></strong></div>`).join('')}
+      ${rates.map((t) => `<div><span>${business && t === 'infrastructure' ? 'Annual rent (5–25 yr agreement)' : term(t).label}
+        ${business ? '' : `<span class="muted small block">Owner's price ${money(s.rates[t])} + ${money(s.rates[t] * fee)} service fee</span>`}</span>
+        <strong>${money(business ? s.rates[t] : s.rates[t] * (1 + fee))}<span class="muted">/${term(t).unit}${business ? '' : ' all-in'}</span></strong></div>`).join('')}
       ${Object.entries(s.addonRates ?? {}).map(([t, v]) => `<div class="ok"><span>${term(t).label} with a rental here</span><strong>${money(v)}<span class="muted">/${term(t).unit}</span></strong></div>`).join('')}
     </div>`;
 
   const bookCta = mine
-    ? `<div><strong>This is your listing</strong><div class="muted small">Renters see it exactly like this.</div></div><a class="btn ghost" href="#/host/listings">My listings</a>`
+    ? `<div><strong>This is your listing</strong><div class="muted small">Renters see it exactly like this.</div></div><a class="btn" href="#/host/space/${s.id}">Manage</a>`
     : !canBook
       ? `<div><strong>For business accounts</strong><div class="muted small">Companies lease this site on Everyspace for Business.</div></div><a class="btn ghost" href="#/biz">Learn more</a>`
-      : `<div><div class="price">${r ? `${business ? '' : 'from '}${priceTag(r)}` : ''}</div><div class="muted small">${MODE_TEXT[mode][0]}</div></div>
+      : `<div><div class="price">${r ? (business ? priceTag(r) : `from ${priceTag({ ...r, amount: r.amount * (1 + s.pricing.serviceFee) })}`) : ''}</div>
+          <div class="muted small">${business ? '' : 'All-in · '}${MODE_TEXT[mode][0]}</div></div>
          <a class="btn" href="#/book/${s.id}">${mode === 'proposal' ? 'Send proposal' : s.policy === 'addon' ? 'Add to my rental' : 'Reserve'}</a>`;
 
   view.innerHTML = `
@@ -61,6 +91,8 @@ export async function renderSpace(view, [id]) {
         <h2 class="section-title">${business ? 'Rent' : 'Prices'}</h2>
         ${priceBlock}
         ${upcomingEvents.length ? `<div class="notice event">🎟️ <div><strong>Event pricing</strong>${upcomingEvents.map((e) => `<div class="small">${esc(e.name)}, ${fmtDate(e.start)}${e.end !== e.start ? `–${fmtDate(e.end)}` : ''}: ${[e.daily && `${money(e.daily)}/day`, e.hourly && `${money(e.hourly)}/hr`].filter(Boolean).join(' · ')}</div>`).join('')}</div></div>` : ''}
+
+        ${business ? '' : priceCheck(s)}
 
         ${s.addons.length || s.packages.length ? `<h2 class="section-title">Make it a bundle</h2>
           ${s.addons.map((a) => `<div class="list-row">${art(a, { className: 'art mini' })}<div><strong>${esc(a.title)}</strong>

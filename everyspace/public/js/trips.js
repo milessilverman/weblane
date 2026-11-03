@@ -63,10 +63,19 @@ export async function renderTrip(view, [id]) {
         ${q.lines.map((l) => `<div class="qline"><div>${l.qty > 1 ? `${l.qty} × ` : ''}${esc(l.title)}<div class="muted small">${esc(l.detail)} × ${money(l.unitRate)}</div></div><span>${money(l.amount)}</span></div>`).join('')}
         ${q.packageDiscount ? `<div class="qline ok"><span>Bundle discount</span><span>−${money(q.packageDiscount)}</span></div>` : ''}
         ${q.serviceFee != null ? `<div class="qline"><span>Service fee</span><span>${money(q.serviceFee)}</span></div>` : ''}
+        ${q.priceBeat ? `<div class="qline beat"><span>🛡️ Price beat vs ${esc(q.priceBeat.name)} (paid by Everyspace)</span><span>−${money(q.priceBeat.credit)}${q.schedule?.recurring ? `/${q.schedule.every}` : ''}</span></div>` : ''}
         <div class="qline total"><span>Total</span><span>${money(q.total)}</span></div>
         ${q.schedule?.recurring ? `<div class="qline muted"><span>Billed every ${q.schedule.every}</span><span>${money(q.schedule.recurring)}</span></div>` : ''}
-        ${isHost && q.hostPayout != null ? `<div class="qline ok"><span>Your payout (after 3% host fee)</span><span>${money(q.hostPayout)}</span></div>` : ''}
+        ${b.priceMatch ? `<div class="qline ${b.priceMatch.status === 'approved' ? 'beat' : 'muted'}"><span>🛡️ Price match vs ${esc(b.priceMatch.name)} ${b.priceMatch.status === 'approved' ? '(refunded)' : '(in review)'}</span><span>−${money(b.priceMatch.credit)}${b.priceMatch.perPeriod ? `/${q.schedule.every}` : ''}</span></div>` : ''}
+        ${isHost && q.hostPayout != null ? `<div class="qline ok"><span>Your payout (after 3% owner fee)${q.priceBeat || b.priceMatch ? ' · unchanged by price beats' : ''}</span><span>${money(q.hostPayout)}</span></div>` : ''}
       </div></section>` : ''}
+
+      ${!isHost && q && !b.priceMatch && !['cancelled', 'declined'].includes(b.status) && b.effective !== 'completed' ? `<section class="block" id="pm"><h2>🛡️ Found it cheaper?</h2>
+        <p class="muted small">Same space, same dates, cheaper total somewhere else (including their fees)? Send the link within 48 hours of booking or any time before it starts. We'll refund the difference plus 5%.</p>
+        <div class="form"><label>Link to the other listing<input id="pm-url" placeholder="https://www.airbnb.com/rooms/…"></label>
+        <label>Their total${q.schedule?.recurring ? ` per ${q.schedule.every}` : ''}, including fees<input id="pm-total" type="number" min="0" step="0.01"></label>
+        <button class="btn ghost" id="pm-send">Claim price match</button><div id="pm-msg"></div></div></section>` : ''}
+      ${b.priceMatch ? `<div class="notice ${b.priceMatch.status === 'approved' ? 'ok' : ''}">🛡️ ${esc(b.priceMatch.note)}</div>` : ''}
 
       ${b.canReview ? `<section class="block" id="review"><h2>How was it?</h2>
         <div class="star-input" id="stars">${[1, 2, 3, 4, 5].map((n) => `<button type="button" data-star="${n}" aria-label="${n} stars">★</button>`).join('')}</div>
@@ -84,6 +93,13 @@ export async function renderTrip(view, [id]) {
     if (!confirm('Cancel this booking?')) return;
     try { await api(`bookings/${b.id}/cancel`, { actorId: state.user }); toast('Booking cancelled'); renderTrip(view, [id]); }
     catch (e) { $('#msg').innerHTML = errorBox(e); }
+  };
+  if ($('#pm-send')) $('#pm-send').onclick = async () => {
+    try {
+      const c = await api(`bookings/${b.id}/price-match`, { userId: state.user, url: $('#pm-url').value.trim(), theirTotal: $('#pm-total').value });
+      toast(c.status === 'approved' ? `Refund of ${money(c.credit)} on its way` : 'Claim received, we\'ll confirm within 24h');
+      renderTrip(view, [id]);
+    } catch (e) { $('#pm-msg').innerHTML = errorBox(e); }
   };
   if (b.canReview) {
     let rating = 0;
