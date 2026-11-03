@@ -2,6 +2,7 @@
 import { category, CATEGORIES, TERMS } from './catalog.js';
 import { unitsFree } from './availability.js';
 import { describeAddon } from './describe.js';
+import { ratingFor } from './social.js';
 
 export function search(db, { group, category: cat, term, start, end, q, city } = {}) {
   const text = q?.toLowerCase();
@@ -20,7 +21,9 @@ export function search(db, { group, category: cat, term, start, end, q, city } =
       ...s,
       categoryLabel: c.label,
       group: c.group,
-      property: { id: prop.id, title: prop.title, city: prop.city },
+      property: { id: prop.id, title: prop.title, city: prop.city, lat: prop.lat, lng: prop.lng, hostId: prop.hostId },
+      icon: c.icon,
+      rating: ratingFor(db, s.id),
       unitsFree: free,
       policy: s.policy ?? 'standalone',
       addonNote: describeAddon(db, s),
@@ -30,7 +33,8 @@ export function search(db, { group, category: cat, term, start, end, q, city } =
   const packages = db.packages
     .filter((p) => !text || p.name.toLowerCase().includes(text))
     .filter((p) => !group || p.items.some((i) => CATEGORIES[db.spaces.find((s) => s.id === i.spaceId).category].group === group))
-    .map((p) => ({ ...p, property: db.properties.find((x) => x.id === p.propertyId) }));
+    .map((p) => ({ ...p, property: db.properties.find((x) => x.id === p.propertyId),
+      items: p.items.map((i) => ({ ...i, category: db.spaces.find((x) => x.id === i.spaceId)?.category })) }));
   return { spaces: results, packages };
 }
 
@@ -61,6 +65,8 @@ export function createSpace(db, input, newId) {
     rates[t] = Number(v);
   }
   if (rentable && !Object.keys(rates).length && !input.addonRates) throw new Error('Set at least one price');
+  const missing = rentable ? cat.checklist.filter((item) => !input.checklist?.includes(item)) : [];
+  if (missing.length) throw new Error(`Confirm before publishing: ${missing.join('; ')}`);
   if (input.parentId) {
     const parent = db.spaces.find((s) => s.id === input.parentId);
     if (!parent || parent.propertyId !== prop.id) throw new Error('Parent must be a space on the same property');
@@ -71,7 +77,8 @@ export function createSpace(db, input, newId) {
   }
   const s = {
     id: newId('s'),
-    ...pick(input, ['propertyId', 'parentId', 'category', 'title', 'description', 'size', 'addonRates', 'eventRates', 'conflictsWith', 'blackouts', 'minDuration', 'mode']),
+    ...pick(input, ['propertyId', 'parentId', 'category', 'title', 'description', 'size', 'addonRates', 'eventRates', 'conflictsWith', 'blackouts', 'minDuration', 'mode', 'amenities', 'access']),
+    ...(rentable ? { checklist: cat.checklist } : {}),
     quantity: Math.max(1, Number(input.quantity) || 1),
     rates,
     policy,

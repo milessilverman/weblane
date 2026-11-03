@@ -179,7 +179,8 @@ The same model works for a single house. For example, an owner can rent the ADU 
 
 | Phase | Scope |
 |---|---|
-| **0: prototype (this commit)** | Catalog, data model, availability with quantity, hierarchy, and conflicts, add-on and package rules, pricing with event rates, booking modes and states, JSON API, demo web UI, tests |
+| **0: rules prototype (done)** | Catalog, data model, availability with quantity, hierarchy, and conflicts, add-on and package rules, pricing with event rates, booking modes and states, JSON API, tests |
+| **0.5: app prototype (done)** | Installable mobile-first app. Renters: explore with map, events and bundles, listing pages with availability calendar and reviews, checkout for every rental length, trips with access details, messaging, reviews. Hosts: today dashboard, approve or decline in chat, listings tree, earnings by month, step-by-step listing wizard with the required checklist. Works offline as a single HTML file. |
 | 1: MVP | Real auth, Postgres, Stripe Connect payouts, photo uploads, map search, messaging, notifications |
 | 2: Trust | ID verification, reviews, check-in/out photo log, disputes, insurance partner |
 | 3: Long-term | Lease templates and e-sign, autopay, move-in/out, maintenance requests |

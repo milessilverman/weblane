@@ -1,40 +1,71 @@
 # Everyspace (working name)
 
-A marketplace for renting out **any part of a property, for any length of time**. Examples: a backyard for a night, a driveway spot on fair weekend, a garage bay for a month, the whole house like a vacation rental, a front-yard garden plot, or a roof leased for 20 years to a company that installs solar. It also handles **apartment buildings**: a renter can take just a unit, or a unit plus parking and storage, under rules the owner sets.
+A marketplace app for renting out **any part of a property, for any length of time**. Examples: a backyard for a night, a driveway spot on fair weekend, a garage bay for a month, the whole house like a vacation rental, a front-yard garden plot, or a roof leased for 20 years to a company that installs solar. It also handles **apartment buildings**: a renter can take just a unit, or a unit plus parking and storage, under rules the owner sets.
 
-**Read [`SPEC.md`](SPEC.md) first.** It covers what can be rented, how bookings, pricing, add-ons and packages work, trust and legal requirements, and the build plan.
+**Read [`SPEC.md`](SPEC.md) first.** It covers what can be rented, how bookings, pricing, add-ons and packages work, trust and legal requirements, and the build plan. The same plan is inside the app under Profile → The plan.
 
-## Run it
+## Try it
 
-Needs Node 20+ and has no dependencies.
+**Without installing anything:** open `dist/everyspace.html` in any browser, on a phone or a computer. The whole app runs inside that one file and works offline. Your changes are saved in that browser.
+
+**With the dev server** (Node 20+, no dependencies). It serves the app as an installable web app with an offline cache:
 
 ```bash
-npm start        # http://localhost:3000 (data saved to data/db.json)
-npm test         # rule tests: quantity, hierarchy, add-ons, packages, solar flow…
-npm run build    # dist/everyspace.html: plan + full demo in one file, no server needed
+npm start        # http://localhost:3000, data saved to data/db.json
+npm test         # rules and API tests
+npm run build    # rebuild dist/everyspace.html after changing anything
 ```
 
-Use the "Acting as" menu to switch between demo users:
+## What's in the app
 
-- **Sam / Priya** (renters). Book festival parking (event pricing), the backyard by the hour, or Unit 1A with 2 parking spaces and a locker. Priya already leases 1B, so she can add parking later and gets the tenant price on lockers.
-- **Maya** hosts a house with 11 spaces: whole home, backyard, room, driveway, RV pad, garage bays, attic, garden plots, roof for solar, and a battery pad.
-- **Jordan** hosts a 6-unit building with tenants-only parking (max 2 per unit), lockers with a tenant discount, EV chargers, and two packages.
-- **SunCo Solar** is an infrastructure partner. Send a 20-year roof proposal, then advance it as Maya: site assessment, contract, confirmed.
+**Renting (Explore, Trips, Inbox):**
+- Search with category chips, dates, and rental length. Toggle between a list and a map.
+- "Coming up nearby" shows event pricing, such as the Harvest Festival and stadium home games.
+- Bundles, such as an apartment plus parking.
+- Listing pages with photos-style illustrations, prices for every rental length, event rates, add-ons, an availability calendar, reviews, and other spaces at the same address.
+- Checkout adapts to the rental length:
+  - **Hourly:** a time slot.
+  - **Nightly or weekly:** a calendar range picker.
+  - **Monthly:** a start date and a number of months.
+  - **Lease:** 6–24 months.
+  - **Solar and other infrastructure:** 5–25 years.
+- Checkout also covers quantity, add-ons with tenant pricing, switching to a bundle, a live price breakdown and payment schedule, and a message to the host.
+- Trips show a status timeline. Access codes appear once the booking is confirmed. You can cancel or withdraw, and leave a review once the stay has ended.
+- Each booking has a chat with the host.
 
-"Reset demo" restores the seed data.
+**Hosting (Today, Listings, Inbox, Earnings):**
+- **Today:** requests to approve or decline, solar proposals to move forward (site visit, then contract, then confirmed), and upcoming check-ins.
+- **Listings:** grouped by property, with nesting (building → units, garage → bays).
+- **Earnings:** payouts by month, with leases spread across their months, and a breakdown per listing.
+- **New listing wizard:** what → where → details → prices (with typical local prices and optional event pricing) → who can rent it (anyone, add-on only, or cheaper as an add-on) → the required checklist and access instructions → publish.
+
+**Demo people:** use Profile → "Try it as someone else":
+
+| Person | Role | Things to try |
+|---|---|---|
+| Sam | Renter | Book festival parking, rent the pool by the hour, review the past pool booking. |
+| Priya | Renter | Already leases Unit 1B. Add parking later, or get a locker at the tenant price. |
+| Maya | Host, house by the fairgrounds | Kim's holiday request is waiting for an answer. |
+| Jordan | Host, 6-unit apartment building | Tenants-only parking, lockers, bundles. |
+| Luis | Host, bungalow and ranch | Pool, woodshop, ADU with a guest-only parking spot, RV lot, barn roof. |
+| Ana | Host, condo near the stadium | Game-day parking prices. |
+| SunCo Solar | Infrastructure partner | Send a 20-year roof proposal. |
 
 ## Code map
 
-| File | What it does |
+| Path | What it does |
 |---|---|
-| `src/catalog.js` | Rentable categories, allowed terms, booking modes, and host checklists |
+| `src/catalog.js` | Rentable categories, allowed rental lengths, booking modes, and host checklists |
 | `src/availability.js` | Quantity (peak overlap), parent/child blocking, `conflictsWith`, blackouts |
-| `src/booking.js` | Cart rules (terms, lengths, add-on anchors and caps, packages), quotes, booking state machine |
-| `src/pricing.js` | Rates per term, event pricing, add-on rates, package pricing, fees, payment schedule |
-| `src/listings.js` | Search, and creating properties, spaces, and packages |
+| `src/booking.js` | Cart rules (lengths, add-on anchors and caps, packages), quotes, booking states |
+| `src/pricing.js` | Rates, event pricing, add-on and package pricing, fees, payment schedule |
+| `src/social.js` | Messages, reviews, and display status (active or completed) |
+| `src/host.js` | Host dashboard, payout schedule, availability calendar |
+| `src/listings.js` | Search, and creating properties, spaces (checklist enforced), and packages |
 | `src/routes.js` | API routes, shared by the server and the single-file build |
-| `src/server.js` | Node HTTP server for the API and the UI |
-| `scripts/build-standalone.mjs` | Builds `dist/everyspace.html` (the API runs in the browser; data is saved in localStorage) |
-| `public/` | Demo web UI (vanilla JS) |
+| `src/server.js` | Node HTTP server |
+| `public/js/` | The app: `main.js` (router and navigation), `explore`, `space`, `book`, `trips`, `inbox`, `host`, `wizard`, `profile`, `calendar`, `art` (drawn illustrations), `core` (shared helpers) |
+| `scripts/build-standalone.mjs` | Bundles everything into `dist/everyspace.html` |
+| `scripts/e2e.cjs` | Playwright click-through of 20 flows: `node scripts/e2e.cjs shots http://localhost:3000/` |
 
-This is a prototype. Auth, payments, a real database, photos, and maps are Phase 1 in the spec.
+This is a prototype. Logins, real payments, a database, photo uploads, and identity verification are Phase 1 in the spec.

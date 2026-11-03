@@ -2,105 +2,24 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Everyspace</title>
+  <meta name="description" content="Rent out any part of your place: a backyard for a night, a parking spot for the fair, a garage bay, a roof for solar.">
+  <meta name="theme-color" content="#2f6f4f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header class="top">
-    <div class="brand">Everyspace <span>rent out any part of your place</span></div>
-    <nav class="tabs" id="tabs">
-      <button data-tab="find" class="on">Find space</button>
-      <button data-tab="host">Host</button>
-      <button data-tab="bookings">Bookings</button>
-      <button data-tab="catalog">What can I rent?</button>
-      <button data-tab="plan">The plan</button>
-    </nav>
-    <div class="who">
-      <label>Acting as <select id="user"></select></label>
-      <button id="reset" class="ghost" title="Restore demo data">Reset demo</button>
-    </div>
-  </header>
-
-  <main>
-    <section id="find" class="view">
-      <form id="filters" class="filters">
-        <div class="chips" id="groups"></div>
-        <div class="row">
-          <label>Term <select name="term" id="f-term"><option value="">Any</option></select></label>
-          <label>From <input name="start" id="f-start" type="date"></label>
-          <label>To <input name="end" id="f-end" type="date"></label>
-          <label class="grow">Search <input name="q" placeholder="garage, fair, solar…"></label>
-        </div>
-      </form>
-      <div class="split">
-        <div id="results" class="results"></div>
-        <aside id="detail" class="detail empty">Pick a space to see prices, add-ons and book it.</aside>
-      </div>
-    </section>
-
-    <section id="host" class="view" hidden>
-      <div id="host-props"></div>
-      <div class="forms">
-        <form id="new-space" class="card">
-          <h3>List a space</h3>
-          <label>Property <select name="propertyId" required></select></label>
-          <label>Category <select name="category" required></select></label>
-          <div class="hint" id="cat-hint"></div>
-          <label>Title <input name="title" required placeholder="e.g. Driveway spot by the gate"></label>
-          <label>Description <input name="description"></label>
-          <div class="row">
-            <label>How many identical units <input name="quantity" type="number" min="1" value="1"></label>
-            <label>Inside of (optional) <select name="parentId"><option value="">— nothing —</option></select></label>
-          </div>
-          <fieldset><legend>Prices</legend><div id="rate-inputs" class="row"></div></fieldset>
-          <fieldset><legend>Who can rent it</legend>
-            <select name="policy">
-              <option value="standalone">Anyone, on its own</option>
-              <option value="addon">Only as an add-on to another rental</option>
-              <option value="both">Anyone, cheaper as an add-on</option>
-            </select>
-            <div id="addon-opts" hidden>
-              <label>Add-on to <select name="anchorCategory"></select></label>
-              <label>Max per anchor <input name="maxPerAnchor" type="number" min="1" value="1"></label>
-              <label>Add-on monthly price (optional) <input name="addonMonthly" type="number" min="0"></label>
-            </div>
-          </fieldset>
-          <button>Publish space</button>
-          <div class="msg" data-msg></div>
-        </form>
-        <form id="new-property" class="card">
-          <h3>Add a property</h3>
-          <label>Name / address <input name="title" required></label>
-          <label>City <input name="city" required></label>
-          <label>Type <select name="type">
-            <option value="single_family">Single-family home</option>
-            <option value="multi_unit">Apartment / multi-unit building</option>
-            <option value="condo">Condo / townhouse</option>
-            <option value="land">Land / lot</option>
-          </select></label>
-          <button>Add property</button>
-          <div class="msg" data-msg></div>
-        </form>
-        <form id="new-package" class="card">
-          <h3>Create a package</h3>
-          <label>Property <select name="propertyId"></select></label>
-          <label>Name <input name="name" required placeholder="Unit 2A + 1 parking"></label>
-          <div id="pkg-items" class="pkg-items"></div>
-          <div class="row">
-            <label>Pricing <select name="ptype"><option value="percent">% off</option><option value="fixed">Fixed monthly</option></select></label>
-            <label>Value <input name="pvalue" type="number" min="0" required></label>
-          </div>
-          <button>Create package</button>
-          <div class="msg" data-msg></div>
-        </form>
-      </div>
-    </section>
-
-    <section id="bookings" class="view" hidden><div id="booking-list"></div></section>
-    <section id="catalog" class="view" hidden><div id="catalog-list"></div></section>
-    <section id="plan" class="view" hidden><article id="plan-body" class="plan"></article></section>
-  </main>
-  <script type="module" src="app.js"></script>
+  <div id="app">
+    <main id="view" class="view"><div class="splash"><div class="brand">every<b>space</b></div></div></main>
+    <nav id="nav" class="tabbar" hidden></nav>
+  </div>
+  <div id="sheet" hidden></div>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>

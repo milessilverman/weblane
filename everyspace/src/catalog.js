@@ -88,6 +88,19 @@ export const CATEGORIES = {
   building: c('container', 'Building / container', [], 'whole', 'instant', []),
 };
 
+const ICONS = {
+  entire_home: '🏠', apartment_unit: '🏢', adu: '🏡', private_room: '🛏️',
+  backyard: '🌳', yard_campsite: '⛺', pool: '🏊', workspace: '🛠️', film_location: '🎬',
+  parking_spot: '🅿️', rv_parking: '🚐', ev_charging: '⚡',
+  garage_storage: '📦', attic_storage: '🧳', basement_storage: '🗄️',
+  garden_plot: '🥕', beehive_site: '🐝',
+  rooftop_solar: '☀️', battery_site: '🔋', charger_site: '🔌', telecom_site: '📡',
+  building: '🏗️',
+};
+for (const [k, icon] of Object.entries(ICONS)) CATEGORIES[k].icon = icon;
+
+export const GROUP_ICONS = { living: '🏠', outdoor: '🌳', parking: '🅿️', storage: '📦', land: '🥕', energy: '☀️', container: '🏗️' };
+
 export function category(key) {
   const cat = CATEGORIES[key];
   if (!cat) throw new Error(`Unknown category: ${key}`);

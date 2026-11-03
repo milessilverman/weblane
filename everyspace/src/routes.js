@@ -1,30 +1,61 @@
 // API routes, independent of transport. Used by the Node server and by the
 // single-file standalone build (which calls them directly in the browser).
-import { CATEGORIES, GROUPS, MODES, TERMS } from './catalog.js';
+import { CATEGORIES, GROUPS, GROUP_ICONS, MODES, TERMS } from './catalog.js';
 import { BookingError, createBooking, isAnchorFor, quote, transition } from './booking.js';
 import { createPackage, createProperty, createSpace, search } from './listings.js';
 import { describeAddon } from './describe.js';
+import { addReview, canReview, effectiveStatus, messagesFor, postMessage, ratingFor, systemMessage, threadsFor } from './social.js';
+import { calendar, hostSummary } from './host.js';
 
 export class NotFound extends Error {}
 
+const SHOW_ACCESS = new Set(['confirmed', 'active']);
+const ACTION_TEXT = {
+  confirmed: 'Host approved the booking. Access details are now in your trip.',
+  declined: 'Host declined the request.',
+  cancelled: 'Booking was cancelled.',
+  site_assessment: 'Proposal accepted, site assessment is next.',
+  contract: 'Site assessment passed, contract sent for signature.',
+};
+
 // store: { db, newId(prefix), save(), reset() }
-export function handleApi(store, method, path, body = {}, params = new URLSearchParams(), { spec } = {}) {
+export function handleApi(store, method, path, body = {}, params = new URLSearchParams(), { spec, now = () => new Date().toISOString() } = {}) {
+  const db = store.db;
+  const opts = () => ({ now: now(), newId: store.newId });
   const mutate = (fn) => { const out = fn(); store.save(); return out; };
   const routes = [
-    ['GET', /^catalog$/, () => ({ terms: TERMS, groups: GROUPS, categories: CATEGORIES, modes: MODES })],
-    ['GET', /^users$/, () => store.db.users],
+    ['GET', /^catalog$/, () => ({ terms: TERMS, groups: GROUPS, groupIcons: GROUP_ICONS, categories: CATEGORIES, modes: MODES })],
+    ['GET', /^users$/, () => db.users],
     ['GET', /^spec$/, () => ({ html: spec ? spec() : '' })],
-    ['GET', /^search$/, () => search(store.db, Object.fromEntries(params))],
-    ['GET', /^properties$/, () => listProperties(store.db, params.get('hostId'))],
-    ['GET', /^spaces\/([\w-]+)$/, ([, id]) => spaceDetail(store.db, id)],
-    ['POST', /^properties$/, () => mutate(() => createProperty(store.db, body, store.newId))],
-    ['POST', /^spaces$/, () => mutate(() => createSpace(store.db, body, store.newId))],
-    ['POST', /^packages$/, () => mutate(() => createPackage(store.db, body, store.newId))],
-    ['POST', /^quote$/, () => quote(store.db, body)],
-    ['POST', /^bookings$/, () => mutate(() => createBooking(store.db, body, { newId: store.newId }))],
-    ['GET', /^bookings$/, () => listBookings(store.db, params.get('userId'))],
-    ['POST', /^bookings\/([\w-]+)\/(approve|decline|advance|cancel)$/, ([, id, action]) =>
-      mutate(() => transition(store.db, id, action, body.actorId))],
+    ['GET', /^search$/, () => search(db, Object.fromEntries(params))],
+    ['GET', /^properties$/, () => listProperties(db, params.get('hostId'))],
+    ['GET', /^spaces\/([\w-]+)$/, ([, id]) => spaceDetail(db, id)],
+    ['GET', /^spaces\/([\w-]+)\/calendar$/, ([, id]) => calendar(db, id, params.get('from') ?? now().slice(0, 10), Number(params.get('days') ?? 42))],
+    ['POST', /^properties$/, () => mutate(() => createProperty(db, body, store.newId))],
+    ['POST', /^spaces$/, () => mutate(() => createSpace(db, body, store.newId))],
+    ['POST', /^packages$/, () => mutate(() => createPackage(db, body, store.newId))],
+    ['POST', /^quote$/, () => quote(db, body)],
+    ['POST', /^bookings$/, () => mutate(() => {
+      const b = createBooking(db, body, opts());
+      const what = listBookings(db, b.renterId, now()).find((x) => x.id === b.id).itemsLabel;
+      const renter = db.users.find((u) => u.id === b.renterId)?.name;
+      systemMessage(db, b.id, b.status === 'confirmed' ? `Booking confirmed: ${what}.`
+        : b.status === 'pending' ? `${renter} requested ${what}. The host has 24 hours to respond.`
+          : `${renter} sent a proposal for ${what}.`, opts());
+      if (body.note?.trim()) postMessage(db, b.id, b.renterId, body.note, opts());
+      return b;
+    })],
+    ['GET', /^bookings$/, () => listBookings(db, params.get('userId'), now())],
+    ['POST', /^bookings\/([\w-]+)\/(approve|decline|advance|cancel)$/, ([, id, action]) => mutate(() => {
+      const b = transition(db, id, action, body.actorId, opts());
+      if (ACTION_TEXT[b.status]) systemMessage(db, b.id, ACTION_TEXT[b.status], opts());
+      return b;
+    })],
+    ['GET', /^bookings\/([\w-]+)\/messages$/, ([, id]) => messagesFor(db, id, params.get('userId'))],
+    ['POST', /^bookings\/([\w-]+)\/messages$/, ([, id]) => mutate(() => postMessage(db, id, body.from, body.text, opts()))],
+    ['POST', /^bookings\/([\w-]+)\/review$/, ([, id]) => mutate(() => addReview(db, id, body.by, body.rating, body.text, opts()))],
+    ['GET', /^threads$/, () => threadsFor(db, params.get('userId'))],
+    ['GET', /^host\/summary$/, () => hostSummary(db, params.get('hostId'), now())],
     ['POST', /^reset$/, () => { store.reset(); return { ok: true }; }],
   ];
   const route = routes.find(([m, re]) => m === method && re.test(path));
@@ -35,13 +66,13 @@ export function handleApi(store, method, path, body = {}, params = new URLSearch
 // Errors the user caused (bad input, rule broken) rather than bugs.
 export function isUserError(err) {
   return err instanceof BookingError || err instanceof SyntaxError ||
-    /required|not found|must|can't|Unknown|Invalid|Set at least|need/i.test(err.message);
+    /required|not found|must|can't|Unknown|Invalid|Set at least|need|Confirm before/i.test(err.message);
 }
 
 function listProperties(db, hostId) {
   return db.properties.filter((p) => !hostId || p.hostId === hostId).map((p) => ({
     ...p,
-    spaces: db.spaces.filter((s) => s.propertyId === p.id).map((s) => ({ ...s, addonNote: describeAddon(db, s) })),
+    spaces: db.spaces.filter((s) => s.propertyId === p.id).map((s) => ({ ...s, addonNote: describeAddon(db, s), rating: ratingFor(db, s.id) })),
     packages: db.packages.filter((k) => k.propertyId === p.id),
   }));
 }
@@ -49,25 +80,54 @@ function listProperties(db, hostId) {
 function spaceDetail(db, id) {
   const s = db.spaces.find((x) => x.id === id);
   if (!s) throw new BookingError('Space not found');
+  const property = db.properties.find((p) => p.id === s.propertyId);
+  const { access, ...publicFields } = s; // access details are only shown after booking
+  const userName = (uid) => db.users.find((u) => u.id === uid);
   return {
-    ...s,
+    ...publicFields,
     categoryInfo: CATEGORIES[s.category],
-    property: db.properties.find((p) => p.id === s.propertyId),
+    property,
+    host: userName(property.hostId),
+    parent: s.parentId ? db.spaces.find((x) => x.id === s.parentId)?.title : null,
     addonNote: describeAddon(db, s),
+    rating: ratingFor(db, s.id),
+    reviews: db.reviews.filter((r) => r.spaceId === id).sort((a, b) => (a.at < b.at ? 1 : -1))
+      .map((r) => ({ ...r, author: userName(r.by) })),
     // Add-ons this space can carry (e.g. parking/lockers for an apartment)
     addons: db.spaces.filter((a) => a.policy && a.policy !== 'standalone' && isAnchorFor(a, s))
-      .map((a) => ({ ...a, addonNote: describeAddon(db, a) })),
+      .map(({ access: _a, ...a }) => ({ ...a, addonNote: describeAddon(db, a) })),
     packages: db.packages.filter((p) => p.items.some((i) => i.spaceId === id)),
+    // Other spaces at the same place (for "More at this address")
+    nearby: db.spaces.filter((x) => x.propertyId === s.propertyId && x.id !== id && x.rentable !== false && (x.policy ?? 'standalone') !== 'addon')
+      .map((x) => ({ id: x.id, title: x.title, category: x.category, rates: x.rates })),
   };
 }
 
-function listBookings(db, userId) {
-  const title = (id) => db.spaces.find((s) => s.id === id)?.title ?? id;
-  const name = (id) => db.users.find((u) => u.id === id)?.name ?? id;
+function listBookings(db, userId, now) {
+  const space = (id) => db.spaces.find((s) => s.id === id);
+  const user = (id) => db.users.find((u) => u.id === id);
   return db.bookings
     .filter((b) => !userId || b.renterId === userId || b.hostId === userId)
-    .map((b) => ({ ...b, role: b.hostId === userId ? 'host' : 'renter', renterName: name(b.renterId), hostName: name(b.hostId),
-      itemsLabel: b.items.map((i) => `${i.qty > 1 ? `${i.qty}× ` : ''}${title(i.spaceId)}`).join(' + '),
-      packageName: db.packages.find((p) => p.id === b.packageId)?.name ?? null }))
+    .map((b) => {
+      const first = space(b.items[0].spaceId);
+      const prop = db.properties.find((p) => p.id === first?.propertyId);
+      const party = userId === b.renterId || userId === b.hostId;
+      return {
+        ...b,
+        role: b.hostId === userId ? 'host' : 'renter',
+        effective: effectiveStatus(b, now),
+        renterName: user(b.renterId)?.name, hostName: user(b.hostId)?.name,
+        renter: user(b.renterId), host: user(b.hostId),
+        primary: { id: first?.id, title: first?.title, category: first?.category },
+        property: prop && { title: prop.title, city: prop.city },
+        itemsLabel: b.items.map((i) => `${i.qty > 1 ? `${i.qty}× ` : ''}${space(i.spaceId)?.title}`).join(' + '),
+        packageName: db.packages.find((p) => p.id === b.packageId)?.name ?? null,
+        access: party && SHOW_ACCESS.has(effectiveStatus(b, now))
+          ? b.items.map((i) => ({ title: space(i.spaceId)?.title, text: space(i.spaceId)?.access ?? 'The host will message you access details.' }))
+          : null,
+        canReview: canReview(db, b, userId, now),
+        reviewed: db.reviews.some((r) => r.bookingId === b.id),
+      };
+    })
     .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
 }

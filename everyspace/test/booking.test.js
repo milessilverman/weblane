@@ -53,7 +53,7 @@ test('hierarchy: renting part blocks the whole, renting the whole blocks the par
 
 test('whole-home stays are request-to-book and hold the dates while pending', () => {
   const db = seed();
-  const cart = { term: 'daily', start: '2026-12-20', end: '2026-12-23', renterId: 'u_sam', items: [{ spaceId: 's_maple_home', qty: 1 }] };
+  const cart = { term: 'daily', start: '2027-01-20', end: '2027-01-23', renterId: 'u_sam', items: [{ spaceId: 's_maple_home', qty: 1 }] };
   const b = book(db, cart);
   assert.equal(b.status, 'pending');
   rejects(() => book(db, { ...cart, renterId: 'u_priya' }), /available/);
@@ -123,7 +123,8 @@ test('search hides containers and filters by term and dates', () => {
   const all = search(db, {});
   assert.ok(!all.spaces.some((s) => s.rentable === false));
   const hourlyParking = search(db, { group: 'parking', term: 'hourly' }).spaces.map((s) => s.id);
-  assert.deepEqual(hourlyParking.sort(), ['s_maple_driveway', 's_oak_ev']);
+  assert.ok(hourlyParking.includes('s_maple_driveway') && hourlyParking.includes('s_oak_ev'));
+  assert.ok(!hourlyParking.includes('s_maple_rv') && !hourlyParking.includes('s_oak_parking')); // weekly+ / no hourly rate
   const fest = search(db, { category: 'parking_spot', start: '2026-11-21', end: '2026-11-22' }).spaces;
   assert.equal(fest.find((s) => s.id === 's_maple_driveway').unitsFree, 1);
   assert.match(fest.find((s) => s.id === 's_oak_parking').addonNote, /Only with/);

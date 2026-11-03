@@ -1,0 +1,11 @@
+{
+  "name": "Everyspace",
+  "short_name": "Everyspace",
+  "description": "Rent out any part of your place, for an hour or for 20 years.",
+  "start_url": "./#/",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7f6f2",
+  "theme_color": "#2f6f4f",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

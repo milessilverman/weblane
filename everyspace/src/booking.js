@@ -126,6 +126,7 @@ export function createBooking(db, cart, { now = new Date().toISOString(), newId 
   const { items } = resolveItems(db, cart);
   const hostIds = new Set(items.map((i) => hostOf(db, i.spaceId)));
   if (hostIds.has(cart.renterId)) throw new BookingError("You can't book your own space");
+  if (hostIds.size > 1) throw new BookingError('Book spaces from different hosts separately');
   const booking = {
     id: newId ? newId('bk') : `bk_${Date.now()}`,
     renterId: cart.renterId,
@@ -137,7 +138,7 @@ export function createBooking(db, cart, { now = new Date().toISOString(), newId 
     end: cart.end,
     mode: q.mode,
     status: INITIAL[q.mode],
-    quote: { total: q.total, rent: q.rent, deposit: q.deposit, schedule: q.schedule, lines: q.lines },
+    quote: { total: q.total, rent: q.rent, serviceFee: q.serviceFee, hostPayout: q.hostPayout, packageDiscount: q.packageDiscount, deposit: q.deposit, schedule: q.schedule, lines: q.lines },
     note: cart.note ?? '',
     history: [{ at: now, status: INITIAL[q.mode], by: cart.renterId }],
     createdAt: now,
