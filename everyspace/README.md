@@ -11,6 +11,7 @@ Needs Node 20+ and has no dependencies.
 ```bash
 npm start        # http://localhost:3000 (data saved to data/db.json)
 npm test         # rule tests: quantity, hierarchy, add-ons, packages, solar flow…
+npm run build    # dist/everyspace.html: plan + full demo in one file, no server needed
 ```
 
 Use the "Acting as" menu to switch between demo users:
@@ -31,7 +32,9 @@ Use the "Acting as" menu to switch between demo users:
 | `src/booking.js` | Cart rules (terms, lengths, add-on anchors and caps, packages), quotes, booking state machine |
 | `src/pricing.js` | Rates per term, event pricing, add-on rates, package pricing, fees, payment schedule |
 | `src/listings.js` | Search, and creating properties, spaces, and packages |
-| `src/server.js` | JSON API and static UI |
+| `src/routes.js` | API routes, shared by the server and the single-file build |
+| `src/server.js` | Node HTTP server for the API and the UI |
+| `scripts/build-standalone.mjs` | Builds `dist/everyspace.html` (the API runs in the browser; data is saved in localStorage) |
 | `public/` | Demo web UI (vanilla JS) |
 
 This is a prototype. Auth, payments, a real database, photos, and maps are Phase 1 in the spec.

@@ -84,3 +84,16 @@ fieldset { border: 1px solid var(--line); border-radius: 8px; display: grid; gap
 .catalog-group { margin-bottom: 18px; }
 .catalog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
 .catalog-grid ul { margin: 6px 0 0 18px; padding: 0; font-size: 13px; color: var(--muted); }
+
+.plan { max-width: 860px; margin: 0 auto; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 28px 28px; line-height: 1.55; }
+.plan h1 { font-size: 26px; } .plan h2 { font-size: 20px; margin-top: 32px; } .plan h3 { font-size: 16px; margin-top: 22px; }
+.plan hr { border: 0; border-top: 1px solid var(--line); margin: 28px 0; }
+.plan code { background: var(--chip); padding: 1px 5px; border-radius: 4px; font-size: 13px; }
+.plan pre { background: var(--chip); padding: 12px; border-radius: 8px; overflow-x: auto; }
+.plan pre code { background: none; padding: 0; }
+.plan .table-wrap { overflow-x: auto; }
+.plan table { border-collapse: collapse; width: 100%; font-size: 14px; margin: 8px 0; }
+.plan th, .plan td { text-align: left; border-bottom: 1px solid var(--line); padding: 6px 8px; vertical-align: top; }
+.plan th { color: var(--muted); font-weight: 600; }
+.plan a { color: var(--accent); }
+@media (max-width: 600px) { .plan { padding: 4px 14px 18px; } }

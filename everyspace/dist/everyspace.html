@@ -1,0 +1,1531 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Everyspace</title>
+  <style>
+:root {
+  --bg: #f7f6f2; --panel: #ffffff; --ink: #1d1f1c; --muted: #6b6f68; --line: #e3e1da;
+  --accent: #2f6f4f; --accent-ink: #ffffff; --warn: #a3471d; --ok: #2f6f4f; --chip: #eef0ea;
+  --radius: 10px;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #151714; --panel: #1e211d; --ink: #ecede8; --muted: #9da197; --line: #333830;
+    --accent: #7cc39b; --accent-ink: #10140f; --warn: #f0a07a; --ok: #7cc39b; --chip: #2a2e27; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-size: 15px; line-height: 1.4; }
+button, input, select { font: inherit; color: inherit; }
+input, select { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; width: 100%; }
+button { background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 6px; padding: 7px 12px; cursor: pointer; }
+button.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+button:disabled { opacity: .5; cursor: default; }
+label { display: block; font-size: 13px; color: var(--muted); }
+label > input, label > select { margin-top: 3px; color: var(--ink); }
+
+.top { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; padding: 12px 16px; background: var(--panel); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 2; }
+.brand { font-weight: 700; font-size: 18px; }
+.brand span { font-weight: 400; color: var(--muted); font-size: 13px; margin-left: 6px; }
+.tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+.tabs button { background: transparent; color: var(--muted); }
+.tabs button.on { background: var(--chip); color: var(--ink); }
+.who { margin-left: auto; display: flex; gap: 8px; align-items: end; }
+.who select { width: auto; }
+
+main { max-width: 1200px; margin: 0 auto; padding: 16px; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; }
+.row > label { flex: 1 1 140px; }
+.row > .grow { flex: 3 1 200px; }
+.filters { display: grid; gap: 10px; margin-bottom: 14px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips button { background: var(--chip); color: var(--ink); border-radius: 999px; padding: 5px 12px; font-size: 13px; }
+.chips button.on { background: var(--accent); color: var(--accent-ink); }
+
+.split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 420px); gap: 16px; align-items: start; }
+@media (max-width: 860px) { .split { grid-template-columns: 1fr; } }
+.results { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+.card, .result, .detail { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; }
+.result { cursor: pointer; display: grid; gap: 4px; text-align: left; color: var(--ink); }
+.result:hover, .result.on { border-color: var(--accent); }
+.result .cat, .muted { color: var(--muted); font-size: 13px; }
+.result .price { font-weight: 600; }
+.tag { display: inline-block; font-size: 11px; padding: 2px 7px; border-radius: 999px; background: var(--chip); margin-right: 4px; }
+.tag.warn { color: var(--warn); }
+.tag.ok { color: var(--ok); }
+.detail { position: sticky; top: 76px; display: grid; gap: 10px; }
+.detail.empty { color: var(--muted); }
+.detail h2 { margin: 0; font-size: 18px; }
+.rates { display: flex; flex-wrap: wrap; gap: 6px; }
+.addon { display: flex; justify-content: space-between; align-items: center; gap: 8px; border-top: 1px solid var(--line); padding-top: 8px; }
+.addon input { width: 64px; }
+.quote table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.quote td { padding: 3px 0; vertical-align: top; }
+.quote td:last-child { text-align: right; white-space: nowrap; }
+.quote tr.total td { border-top: 1px solid var(--line); font-weight: 700; padding-top: 6px; }
+.err { color: var(--warn); font-size: 14px; }
+.err ul { margin: 4px 0 0 18px; padding: 0; }
+.okmsg { color: var(--ok); font-size: 14px; }
+
+.forms { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; margin-top: 16px; }
+.forms form { display: grid; gap: 10px; align-content: start; }
+.forms h3, .prop h3 { margin: 0; }
+fieldset { border: 1px solid var(--line); border-radius: 8px; display: grid; gap: 8px; }
+.hint { font-size: 12px; color: var(--muted); }
+.prop { margin-bottom: 12px; }
+.tree { list-style: none; padding: 0; margin: 8px 0 0; }
+.tree li { padding: 6px 0; border-top: 1px solid var(--line); }
+.tree .depth-1 { padding-left: 20px; }
+.tree .depth-2 { padding-left: 40px; }
+.pkg-items { display: grid; gap: 4px; max-height: 200px; overflow: auto; }
+.pkg-items label { display: flex; gap: 8px; align-items: center; color: var(--ink); }
+.pkg-items input[type=number] { width: 60px; }
+.pkg-items input[type=checkbox] { width: auto; }
+
+.booking { display: grid; gap: 6px; margin-bottom: 10px; }
+.booking .head { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.status { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+.actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.catalog-group { margin-bottom: 18px; }
+.catalog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.catalog-grid ul { margin: 6px 0 0 18px; padding: 0; font-size: 13px; color: var(--muted); }
+
+.plan { max-width: 860px; margin: 0 auto; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 28px 28px; line-height: 1.55; }
+.plan h1 { font-size: 26px; } .plan h2 { font-size: 20px; margin-top: 32px; } .plan h3 { font-size: 16px; margin-top: 22px; }
+.plan hr { border: 0; border-top: 1px solid var(--line); margin: 28px 0; }
+.plan code { background: var(--chip); padding: 1px 5px; border-radius: 4px; font-size: 13px; }
+.plan pre { background: var(--chip); padding: 12px; border-radius: 8px; overflow-x: auto; }
+.plan pre code { background: none; padding: 0; }
+.plan .table-wrap { overflow-x: auto; }
+.plan table { border-collapse: collapse; width: 100%; font-size: 14px; margin: 8px 0; }
+.plan th, .plan td { text-align: left; border-bottom: 1px solid var(--line); padding: 6px 8px; vertical-align: top; }
+.plan th { color: var(--muted); font-weight: 600; }
+.plan a { color: var(--accent); }
+@media (max-width: 600px) { .plan { padding: 4px 14px 18px; } }
+</style>
+</head>
+<body>
+  <header class="top">
+    <div class="brand">Everyspace <span>rent out any part of your place</span></div>
+    <nav class="tabs" id="tabs">
+      <button data-tab="find" class="on">Find space</button>
+      <button data-tab="host">Host</button>
+      <button data-tab="bookings">Bookings</button>
+      <button data-tab="catalog">What can I rent?</button>
+      <button data-tab="plan">The plan</button>
+    </nav>
+    <div class="who">
+      <label>Acting as <select id="user"></select></label>
+      <button id="reset" class="ghost" title="Restore demo data">Reset demo</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="find" class="view">
+      <form id="filters" class="filters">
+        <div class="chips" id="groups"></div>
+        <div class="row">
+          <label>Term <select name="term" id="f-term"><option value="">Any</option></select></label>
+          <label>From <input name="start" id="f-start" type="date"></label>
+          <label>To <input name="end" id="f-end" type="date"></label>
+          <label class="grow">Search <input name="q" placeholder="garage, fair, solar…"></label>
+        </div>
+      </form>
+      <div class="split">
+        <div id="results" class="results"></div>
+        <aside id="detail" class="detail empty">Pick a space to see prices, add-ons and book it.</aside>
+      </div>
+    </section>
+
+    <section id="host" class="view" hidden>
+      <div id="host-props"></div>
+      <div class="forms">
+        <form id="new-space" class="card">
+          <h3>List a space</h3>
+          <label>Property <select name="propertyId" required></select></label>
+          <label>Category <select name="category" required></select></label>
+          <div class="hint" id="cat-hint"></div>
+          <label>Title <input name="title" required placeholder="e.g. Driveway spot by the gate"></label>
+          <label>Description <input name="description"></label>
+          <div class="row">
+            <label>How many identical units <input name="quantity" type="number" min="1" value="1"></label>
+            <label>Inside of (optional) <select name="parentId"><option value="">— nothing —</option></select></label>
+          </div>
+          <fieldset><legend>Prices</legend><div id="rate-inputs" class="row"></div></fieldset>
+          <fieldset><legend>Who can rent it</legend>
+            <select name="policy">
+              <option value="standalone">Anyone, on its own</option>
+              <option value="addon">Only as an add-on to another rental</option>
+              <option value="both">Anyone, cheaper as an add-on</option>
+            </select>
+            <div id="addon-opts" hidden>
+              <label>Add-on to <select name="anchorCategory"></select></label>
+              <label>Max per anchor <input name="maxPerAnchor" type="number" min="1" value="1"></label>
+              <label>Add-on monthly price (optional) <input name="addonMonthly" type="number" min="0"></label>
+            </div>
+          </fieldset>
+          <button>Publish space</button>
+          <div class="msg" data-msg></div>
+        </form>
+        <form id="new-property" class="card">
+          <h3>Add a property</h3>
+          <label>Name / address <input name="title" required></label>
+          <label>City <input name="city" required></label>
+          <label>Type <select name="type">
+            <option value="single_family">Single-family home</option>
+            <option value="multi_unit">Apartment / multi-unit building</option>
+            <option value="condo">Condo / townhouse</option>
+            <option value="land">Land / lot</option>
+          </select></label>
+          <button>Add property</button>
+          <div class="msg" data-msg></div>
+        </form>
+        <form id="new-package" class="card">
+          <h3>Create a package</h3>
+          <label>Property <select name="propertyId"></select></label>
+          <label>Name <input name="name" required placeholder="Unit 2A + 1 parking"></label>
+          <div id="pkg-items" class="pkg-items"></div>
+          <div class="row">
+            <label>Pricing <select name="ptype"><option value="percent">% off</option><option value="fixed">Fixed monthly</option></select></label>
+            <label>Value <input name="pvalue" type="number" min="0" required></label>
+          </div>
+          <button>Create package</button>
+          <div class="msg" data-msg></div>
+        </form>
+      </div>
+    </section>
+
+    <section id="bookings" class="view" hidden><div id="booking-list"></div></section>
+    <section id="catalog" class="view" hidden><div id="catalog-list"></div></section>
+    <section id="plan" class="view" hidden><article id="plan-body" class="plan">
+<h1 id="everyspace-product-spec-working-name">Everyspace: product spec (working name)</h1>
+<p>Everyspace is a marketplace for renting out <strong>any part of a property</strong> for <strong>any length of time</strong>. You could rent out a backyard for one night, a driveway spot for fair weekend, a garage corner for a month, a whole house like a vacation rental, a front yard for a garden, or a roof for 20 years to someone who pays for solar panels on it.</p>
+<p>It also handles <strong>multi-unit buildings</strong>. A renter can take just an apartment, or an apartment plus two parking spaces and a storage locker, under rules the owner sets.</p>
+<p>This document covers what can be rented and how renting works. It comes before the build. The prototype in <code>src/</code> implements the core rules described here.</p>
+<hr>
+<h2 id="1-what-can-be-rented">1. What can be rented</h2>
+<p>Every listing is a <strong>space</strong>, and every space has a <strong>category</strong>. The category sets which rental lengths are allowed, how the space is measured and priced, the default booking mode, and the checklist a host has to complete before going live.</p>
+<p>Rental lengths (terms):</p>
+<div class="table-wrap"><table><thead><tr><th>Term</th><th>Unit</th><th>Typical use</th></tr></thead><tbody><tr><td>Hourly</td><td>hour</td><td>Backyard party, pool, studio session, EV charging</td></tr><tr><td>Nightly / daily</td><td>day</td><td>Vacation stay, event-day parking, overnight camping</td></tr><tr><td>Weekly</td><td>week</td><td>Longer stay, temporary storage</td></tr><tr><td>Month-to-month</td><td>month</td><td>Parking, storage, garden plot, room</td></tr><tr><td>Fixed lease</td><td>month, 6–24 mo</td><td>Apartment, ADU, long-term parking</td></tr><tr><td>Infrastructure agreement</td><td>year, 5–25 yr</td><td>Rooftop solar, battery, charger, antenna</td></tr></tbody></table></div>
+<h3 id="catalog">Catalog</h3>
+<p><strong>Living</strong></p>
+<div class="table-wrap"><table><thead><tr><th>Category</th><th>Terms</th><th>Measured by</th><th>Notes</th></tr></thead><tbody><tr><td>Entire home</td><td>daily, weekly, monthly, lease</td><td>whole</td><td>Works like Airbnb. Needs a short-term-rental permit and occupancy tax where the city requires them.</td></tr><tr><td>Apartment / unit</td><td>daily, monthly, lease</td><td>whole</td><td>A unit in a multi-unit building. It can anchor add-ons (§3).</td></tr><tr><td>ADU / guest house</td><td>daily, weekly, monthly, lease</td><td>whole</td><td></td></tr><tr><td>Private room</td><td>daily, weekly, monthly, lease</td><td>whole</td><td>Shared common areas are listed in the house rules.</td></tr></tbody></table></div>
+<p><strong>Outdoor and activity</strong></p>
+<div class="table-wrap"><table><thead><tr><th>Category</th><th>Terms</th><th>Measured by</th><th>Notes</th></tr></thead><tbody><tr><td>Backyard</td><td>hourly, daily</td><td>whole</td><td>Parties, gatherings, dog play, photo shoots. Noise curfew and guest cap are required.</td></tr><tr><td>Yard campsite</td><td>daily, weekly</td><td>site</td><td>Tent or small RV overnight. Requires restroom access.</td></tr><tr><td>Pool</td><td>hourly</td><td>whole</td><td>Lifeguard and waiver rules. Host must confirm insurance.</td></tr><tr><td>Workspace / studio / workshop</td><td>hourly, daily, monthly</td><td>whole</td><td>Home office, music room, wood shop.</td></tr><tr><td>Filming / photo location</td><td>hourly, daily</td><td>whole</td><td>Always request-to-book. City film permit may be needed.</td></tr></tbody></table></div>
+<p><strong>Parking</strong></p>
+<div class="table-wrap"><table><thead><tr><th>Category</th><th>Terms</th><th>Measured by</th><th>Notes</th></tr></thead><tbody><tr><td>Parking spot</td><td>hourly, daily, weekly, monthly, lease</td><td>spot (quantity)</td><td>Driveway, garage, or carport. <strong>Event pricing</strong> covers fair, stadium, and parade days.</td></tr><tr><td>RV / boat / trailer parking</td><td>weekly, monthly, lease</td><td>spot</td><td>Length limit and HOA check.</td></tr><tr><td>EV charging</td><td>hourly, daily, monthly</td><td>charger</td><td>Host's own charger. Price covers time and electricity.</td></tr></tbody></table></div>
+<p><strong>Storage</strong></p>
+<div class="table-wrap"><table><thead><tr><th>Category</th><th>Terms</th><th>Measured by</th><th>Notes</th></tr></thead><tbody><tr><td>Garage storage</td><td>weekly, monthly, lease</td><td>sq ft (quantity of bays)</td><td>Hazardous materials are not allowed. Host sets access hours.</td></tr><tr><td>Attic storage</td><td>monthly, lease</td><td>sq ft</td><td>Weight limit and ladder access must be disclosed.</td></tr><tr><td>Basement / closet / shed</td><td>weekly, monthly, lease</td><td>sq ft</td><td></td></tr></tbody></table></div>
+<p><strong>Land and growing</strong></p>
+<div class="table-wrap"><table><thead><tr><th>Category</th><th>Terms</th><th>Measured by</th><th>Notes</th></tr></thead><tbody><tr><td>Garden plot</td><td>monthly, lease</td><td>sq ft (quantity of plots)</td><td>Front or back yard. Water access, HOA front-yard rules, and chemical policy.</td></tr><tr><td>Beehive / small-ag site</td><td>monthly, lease</td><td>site</td><td>Local apiary rules apply.</td></tr></tbody></table></div>
+<p><strong>Energy and infrastructure.</strong> These spaces are rented to companies, not people, through long agreements.</p>
+<div class="table-wrap"><table><thead><tr><th>Category</th><th>Terms</th><th>Measured by</th><th>Notes</th></tr></thead><tbody><tr><td>Rooftop solar</td><td>infrastructure, 10–25 yr</td><td>sq ft of roof</td><td>A third party pays for, owns, and maintains the panels and pays the owner rent or a share of the power. Requires a roof-age and structural check, utility interconnection (net metering, community solar, or virtual net metering), a removal and re-roof clause, and a recorded lease or easement.</td></tr><tr><td>Battery site</td><td>infrastructure, 5–20 yr</td><td>site</td><td>Garage wall, side yard, or pad. Requires fire code setbacks (NFPA 855), a utility or virtual-power-plant program, and permits.</td></tr><tr><td>Public EV charger site</td><td>infrastructure, 5–15 yr</td><td>site</td><td>A third party installs a charger in a driveway or curb cut.</td></tr><tr><td>Telecom / sensor site</td><td>infrastructure, 5–25 yr</td><td>site</td><td>Small-cell antenna, mesh node, or weather station.</td></tr></tbody></table></div>
+<p><strong>Later:</strong> signage and billboards (heavily regulated), dock or slip space, horse paddock, and laundry or kitchen time.</p>
+<p><strong>Not allowed:</strong> public streets and curbs, shared HOA common areas the host doesn't control, and any space whose required permit the host can't show.</p>
+<hr>
+<h2 id="2-how-it-works">2. How it works</h2>
+<h3 id="properties-and-spaces">Properties and spaces</h3>
+<pre><code>Host ─┬─ Property (address, type, rules, HOA y/n, insurance)
+      └─ Space (category, quantity, rates per term, availability, parent?)
+            └─ Space (child) ...</code></pre>
+<ul><li><strong>Quantity.</strong> One listing can stand for several identical units, such as 4 driveway spots, 3 garage bays, or 8 storage lockers. Bookings use up quantity, and the listing stays available until all units are taken.</li><li><strong>Hierarchy (parent/child).</strong> A space can sit inside another one. For example, a garage bay is inside the garage, a room is inside the house, and an apartment is inside the building.<ul><li>Booking a parent blocks all of its children. If the whole house is booked, its rooms and backyard are not.</li><li>Booking any child blocks the parent as a whole. Rooms 1 and 2 can be rented separately, but then the whole house can't be.</li><li>Structural containers such as a building or a garage can be marked <strong>not rentable</strong>. They organize the listing and never block anything.</li></ul></li><li><strong>Explicit conflicts.</strong> Some spaces overlap without one sitting inside the other, such as "driveway parking" and "RV parking" in the same driveway. A host can mark them as conflicting.</li><li><strong>Independent spaces.</strong> A roof leased for solar does not conflict with the house being rented nightly. It isn't a child of the house, so the two never block each other.</li></ul>
+<h3 id="pricing">Pricing</h3>
+<ul><li>There is one rate per allowed term, such as $12/hour, $45/day, or $180/month. Weekly stays use the weekly rate plus extra days at the daily rate. Partial months are prorated at the monthly rate divided by 30.</li><li><strong>Event pricing.</strong> Hosts can set date-range overrides, for example "County Fair, Aug 14–17, $40/day" for a driveway spot. When a booking covers those dates, the override replaces the daily rate for those days.</li><li><strong>Add-on price.</strong> A space can cost less when it is attached to an anchor rental (§3).</li><li><strong>Packages</strong> have their own price, either a fixed amount per period or a % discount (§3).</li><li><strong>Fees (prototype values).</strong> Renters pay a 10% service fee, and hosts pay 3%. Long and infrastructure agreements are charged per period rather than all at once.</li><li><strong>Deposits</strong> are set by category, such as a whole home or storage, and are held, not charged.</li></ul>
+<h3 id="booking-modes">Booking modes</h3>
+<div class="table-wrap"><table><thead><tr><th>Mode</th><th>When</th><th>Flow</th></tr></thead><tbody><tr><td>Instant</td><td>Short, low-risk rentals: parking, storage, hourly yard</td><td>Pay, then <strong>confirmed</strong></td></tr><tr><td>Request</td><td>Whole homes, filming, leases, anything the host flags</td><td><strong>pending</strong> (dates held 24h), then host approves (<strong>confirmed</strong>) or declines</td></tr><tr><td>Proposal</td><td>Infrastructure agreements</td><td><strong>proposed</strong>, then <strong>site assessment</strong>, then <strong>contract</strong>, then <strong>confirmed</strong>. Rent starts when the system is commissioned.</td></tr></tbody></table></div>
+<p>A cart with several items uses its strictest mode. For example, instant parking plus a request-to-book apartment becomes a request.</p>
+<p>States: <code>pending | proposed | site_assessment | contract | confirmed | active | completed | declined | cancelled</code>. Pending and proposal-stage bookings hold the space, so nobody can double-book while the host decides.</p>
+<h3 id="payments-schedule">Payments schedule</h3>
+<ul><li><strong>Hourly, daily, or weekly:</strong> the full amount is charged at booking. The host is paid out 24h after check-in.</li><li><strong>Month-to-month or lease:</strong> the first period plus the deposit is charged at booking, then autopay each period. Month-to-month ends with 30 days' notice.</li><li><strong>Infrastructure:</strong> annual (or monthly) rent paid by the company. The platform takes its fee on each payment.</li></ul>
+<h3 id="access-and-handoff">Access and handoff</h3>
+<p>Each space has access instructions that are revealed after confirmation, such as a gate code, a lockbox, or a smart-lock code generated per booking. It also has access hours (storage 7am–9pm, for example) and a check-in/out photo log, which is used for disputes about storage contents and yard condition.</p>
+<hr>
+<h2 id="3-multi-unit-buildings-add-ons-and-packages">3. Multi-unit buildings, add-ons, and packages</h2>
+<p>The owner of an apartment building lists the <strong>building</strong> as a non-rentable container. Inside it go the <strong>units</strong>, a <strong>parking pool</strong> (for example 12 spots), a <strong>storage locker pool</strong>, and maybe EV chargers. The owner then decides how each one can be rented:</p>
+<div class="table-wrap"><table><thead><tr><th>Rental policy</th><th>Meaning</th><th>Example</th></tr></thead><tbody><tr><td><code>standalone</code></td><td>Anyone can rent it alone</td><td>Apartment 2A, EV charger by the hour</td></tr><tr><td><code>addon</code></td><td>Can be rented only with an anchor</td><td>Garage parking only for building tenants</td></tr><tr><td><code>both</code></td><td>Rentable alone, with a lower price as an add-on</td><td>Storage locker: $90/mo alone or $60/mo with a unit</td></tr></tbody></table></div>
+<p><strong>Add-on rules</strong> are set on the add-on space:</p>
+<ul><li><code>anchors</code>: which spaces can carry this add-on, such as "any unit in this building" (by category) or specific unit IDs.</li><li><code>maxPerAnchor</code>: the most of this add-on one anchor can carry, such as 2 parking spaces per apartment.</li><li>The anchor can be in the <strong>same cart</strong> or be an <strong>existing booking</strong> of the same renter that covers the whole add-on period. A tenant who signed a lease in March can add a second parking spot in June.</li><li>The add-on can't outlast the anchor. If the lease ends, the add-on has to end with it.</li></ul>
+<p><strong>Packages</strong> are bundles defined by the host, like "Unit 1A + 2 parking" at $2,650/mo fixed or "Any unit + locker" at 10% off. A package is listed as one item in search results. When booked, it becomes the underlying spaces, so availability and conflicts are still checked for each space.</p>
+<p>That gives a renter these choices:</p>
+<ol><li>Apartment only.</li><li>Apartment plus 1 or 2 parking spaces (add-ons, capped at 2).</li><li>A package, such as Apartment 1A plus 2 parking at a fixed price.</li><li>Later, add a locker to their existing lease.</li><li>A non-tenant can rent a locker alone at the standalone price, but cannot rent parking, which is add-on only.</li></ol>
+<p>The same model works for a single house. For example, an owner can rent the ADU and offer the driveway spot only to whoever rents the ADU.</p>
+<hr>
+<h2 id="4-trust-safety-and-legal">4. Trust, safety, and legal</h2>
+<ul><li><strong>Host checklist per category</strong> must be complete before a listing goes live: permits, HOA approval, insurance, and safety items such as smoke/CO detectors, pool fencing, NFPA 855, and roof assessment.</li><li><strong>Identity verification</strong> is required for both sides. Leases and infrastructure agreements also need a business or credit check.</li><li><strong>Agreements.</strong> Short rentals use platform terms of service. Leases use a state-specific lease template. Infrastructure uses a recorded lease or easement with removal, insurance, and indemnity clauses.</li><li><strong>Insurance.</strong> A host protection policy for short rentals. Infrastructure partners must name the owner as additional insured.</li><li><strong>Reviews</strong> in both directions, plus disputes backed by the check-in/out photos.</li><li><strong>Local rules engine (later).</strong> Look up the address to see short-term-rental caps, parking ordinances, and garden and front-yard rules, then turn off terms that aren't allowed.</li></ul>
+<hr>
+<h2 id="5-build-plan">5. Build plan</h2>
+<div class="table-wrap"><table><thead><tr><th>Phase</th><th>Scope</th></tr></thead><tbody><tr><td><strong>0: prototype (this commit)</strong></td><td>Catalog, data model, availability with quantity, hierarchy, and conflicts, add-on and package rules, pricing with event rates, booking modes and states, JSON API, demo web UI, tests</td></tr><tr><td>1: MVP</td><td>Real auth, Postgres, Stripe Connect payouts, photo uploads, map search, messaging, notifications</td></tr><tr><td>2: Trust</td><td>ID verification, reviews, check-in/out photo log, disputes, insurance partner</td></tr><tr><td>3: Long-term</td><td>Lease templates and e-sign, autopay, move-in/out, maintenance requests</td></tr><tr><td>4: Infrastructure marketplace</td><td>Solar, battery, and charger partner portal, roof and site assessment scheduling, rent from commissioning, revenue share</td></tr><tr><td>5: Local rules engine</td><td>Permit and ordinance lookup by address, automatic term limits</td></tr></tbody></table></div>
+</article></section>
+  </main>
+  <script>
+
+const Domain = (() => {
+// --- src/catalog.js ---
+// What can be rented, and the defaults each kind of space carries.
+// See SPEC.md §1.
+
+const TERMS = {
+  hourly: { label: 'Hourly', unit: 'hour' },
+  daily: { label: 'Nightly / daily', unit: 'day' },
+  weekly: { label: 'Weekly', unit: 'week' },
+  monthly: { label: 'Month-to-month', unit: 'month' },
+  lease: { label: 'Fixed lease', unit: 'month', min: 6, max: 24 },
+  infrastructure: { label: 'Infrastructure agreement', unit: 'year', min: 5, max: 25 },
+};
+
+// Strictness order: a cart takes the strictest mode of its items.
+const MODES = ['instant', 'request', 'proposal'];
+
+const GROUPS = {
+  living: 'Living',
+  outdoor: 'Outdoor & activity',
+  parking: 'Parking',
+  storage: 'Storage',
+  land: 'Land & growing',
+  energy: 'Energy & infrastructure',
+  container: 'Building / container',
+};
+
+const c = (group, label, terms, measure, mode, checklist, extra = {}) => ({
+  group, label, terms, measure, mode, checklist, ...extra,
+});
+
+const CATEGORIES = {
+  // Living
+  entire_home: c('living', 'Entire home', ['daily', 'weekly', 'monthly', 'lease'], 'whole', 'request',
+    ['Short-term rental permit / registration', 'Occupancy tax account', 'Smoke & CO detectors', 'Host insurance'],
+    { deposit: 300 }),
+  apartment_unit: c('living', 'Apartment / unit', ['daily', 'monthly', 'lease'], 'whole', 'request',
+    ['Rental registration', 'Habitability inspection', 'Smoke & CO detectors'], { deposit: 500 }),
+  adu: c('living', 'ADU / guest house', ['daily', 'weekly', 'monthly', 'lease'], 'whole', 'request',
+    ['Permitted ADU', 'Short-term rental permit (if < 30 nights)', 'Smoke & CO detectors'], { deposit: 300 }),
+  private_room: c('living', 'Private room', ['daily', 'weekly', 'monthly', 'lease'], 'whole', 'request',
+    ['House rules for shared areas', 'Smoke & CO detectors'], { deposit: 150 }),
+
+  // Outdoor & activity
+  backyard: c('outdoor', 'Backyard', ['hourly', 'daily'], 'whole', 'instant',
+    ['Noise curfew', 'Max guests', 'Restroom access plan']),
+  yard_campsite: c('outdoor', 'Yard campsite', ['daily', 'weekly'], 'site', 'request',
+    ['Restroom access', 'Fire policy']),
+  pool: c('outdoor', 'Pool', ['hourly'], 'whole', 'request',
+    ['Pool fencing / gate', 'Liability waiver', 'Insurance confirmation']),
+  workspace: c('outdoor', 'Workspace / studio / workshop', ['hourly', 'daily', 'monthly'], 'whole', 'instant',
+    ['Tool / equipment rules']),
+  film_location: c('outdoor', 'Filming / photo location', ['hourly', 'daily'], 'whole', 'request',
+    ['City film permit (if required)', 'Neighbor notice']),
+
+  // Parking
+  parking_spot: c('parking', 'Parking spot', ['hourly', 'daily', 'weekly', 'monthly', 'lease'], 'spot', 'instant',
+    ['Spot photos & dimensions', 'Access instructions']),
+  rv_parking: c('parking', 'RV / boat / trailer parking', ['weekly', 'monthly', 'lease'], 'spot', 'request',
+    ['Max length', 'HOA allows RV storage']),
+  ev_charging: c('parking', 'EV charging', ['hourly', 'daily', 'monthly'], 'charger', 'instant',
+    ['Charger type & kW']),
+
+  // Storage
+  garage_storage: c('storage', 'Garage storage', ['weekly', 'monthly', 'lease'], 'sqft', 'instant',
+    ['No hazardous materials policy', 'Access hours'], { deposit: 50 }),
+  attic_storage: c('storage', 'Attic storage', ['monthly', 'lease'], 'sqft', 'instant',
+    ['Weight limit', 'Ladder / access disclosure'], { deposit: 50 }),
+  basement_storage: c('storage', 'Basement / closet / shed', ['weekly', 'monthly', 'lease'], 'sqft', 'instant',
+    ['Moisture disclosure', 'Access hours'], { deposit: 50 }),
+
+  // Land & growing
+  garden_plot: c('land', 'Garden plot', ['monthly', 'lease'], 'sqft', 'request',
+    ['Water access', 'HOA front-yard rules', 'Chemical policy']),
+  beehive_site: c('land', 'Beehive / small-ag site', ['monthly', 'lease'], 'site', 'request',
+    ['Local apiary rules']),
+
+  // Energy & infrastructure
+  rooftop_solar: c('energy', 'Rooftop solar', ['infrastructure'], 'sqft', 'proposal',
+    ['Roof age & structural assessment', 'Utility interconnection path', 'Removal / re-roof clause',
+      'Recorded lease or easement', 'HOA solar rights'], { minYears: 10 }),
+  battery_site: c('energy', 'Battery site', ['infrastructure'], 'site', 'proposal',
+    ['NFPA 855 setbacks', 'Utility / VPP program', 'Electrical permit']),
+  charger_site: c('energy', 'Public EV charger site', ['infrastructure'], 'site', 'proposal',
+    ['Curb cut / access', 'Electrical service capacity']),
+  telecom_site: c('energy', 'Telecom / sensor site', ['infrastructure'], 'site', 'proposal',
+    ['RF exposure compliance', 'Structural mount assessment']),
+
+  // Non-rentable structure used to organize spaces (apartment building, garage)
+  building: c('container', 'Building / container', [], 'whole', 'instant', []),
+};
+
+function category(key) {
+  const cat = CATEGORIES[key];
+  if (!cat) throw new Error(`Unknown category: ${key}`);
+  return cat;
+}
+
+// --- src/time.js ---
+// Time helpers. All times are UTC; intervals are half-open [start, end).
+
+const HOUR = 3_600_000;
+const DAY = 24 * HOUR;
+
+function toMs(value) {
+  const ms = typeof value === 'number' ? value : Date.parse(value);
+  if (Number.isNaN(ms)) throw new Error(`Invalid date: ${value}`);
+  return ms;
+}
+
+function overlaps(aStart, aEnd, bStart, bEnd) {
+  return toMs(aStart) < toMs(bEnd) && toMs(bStart) < toMs(aEnd);
+}
+
+function addMonths(ms, n) {
+  const d = new Date(ms);
+  const day = d.getUTCDate();
+  const target = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + n, 1,
+    d.getUTCHours(), d.getUTCMinutes()));
+  const lastDay = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0)).getUTCDate();
+  target.setUTCDate(Math.min(day, lastDay));
+  return target.getTime();
+}
+
+// Whole months from start to end, plus leftover days.
+function monthsBetween(start, end) {
+  const s = toMs(start), e = toMs(end);
+  let months = 0;
+  while (addMonths(s, months + 1) <= e) months++;
+  const extraDays = Math.round((e - addMonths(s, months)) / DAY);
+  return { months, extraDays };
+}
+
+// Each UTC calendar day (as YYYY-MM-DD) that a daily booking covers.
+function eachDay(start, end) {
+  const days = [];
+  for (let t = toMs(start); t < toMs(end); t += DAY) days.push(new Date(t).toISOString().slice(0, 10));
+  return days;
+}
+
+// How long a booking is, in the units its term is priced in.
+function duration(term, start, end) {
+  const s = toMs(start), e = toMs(end);
+  if (e <= s) throw new Error('End must be after start');
+  switch (term) {
+    case 'hourly':
+      return { hours: Math.ceil((e - s) / HOUR) };
+    case 'daily':
+      return { days: Math.ceil((e - s) / DAY) };
+    case 'weekly': {
+      const days = Math.ceil((e - s) / DAY);
+      return { weeks: Math.floor(days / 7), extraDays: days % 7 };
+    }
+    case 'monthly':
+    case 'lease':
+      return monthsBetween(s, e);
+    case 'infrastructure': {
+      const { months } = monthsBetween(s, e);
+      return { years: months / 12 };
+    }
+    default:
+      throw new Error(`Unknown term: ${term}`);
+  }
+}
+
+// --- src/describe.js ---
+
+// Plain-language add-on rule, e.g. "Only with an apartment / unit here, up to 2 each".
+const withArticle = (label) => `${/^[aeiou]/i.test(label) ? 'an' : 'a'} ${label.toLowerCase()}`;
+
+function describeAddon(db, s) {
+  if (!s.addon || (s.policy ?? 'standalone') === 'standalone') return null;
+  const anchors = [
+    ...(s.addon.anchorCategories || []).map((c) => `${withArticle(CATEGORIES[c].label)} here`),
+    ...(s.addon.anchorIds || []).map((id) => db.spaces.find((x) => x.id === id)?.title ?? id),
+  ].join(' or ');
+  const cap = s.addon.maxPerAnchor ? `, up to ${s.addon.maxPerAnchor} each` : '';
+  return s.policy === 'addon'
+    ? `Only with ${anchors}${cap}`
+    : `Anyone can rent; cheaper with ${anchors}${cap}`;
+}
+
+// --- src/pricing.js ---
+// Pricing for one space, a cart of spaces, or a package. See SPEC.md §2 "Pricing".
+
+const SERVICE_FEE = 0.10; // charged to the renter
+const HOST_FEE = 0.03; // taken from the host payout
+
+const money = (n) => Math.round(n * 100) / 100;
+
+function eventRateOn(space, day, term) {
+  const ev = (space.eventRates || []).find((e) => day >= e.start && day <= e.end && e[term] != null);
+  return ev ? { rate: ev[term], name: ev.name } : null;
+}
+
+// Price `qty` units of something with `rates` (and optional eventRates) for a term + interval.
+function priceRates(rated, term, start, end, rateOverride) {
+  const rate = rateOverride ?? rated.rates?.[term];
+  if (rate == null) throw new Error(`No ${TERMS[term]?.label ?? term} rate for ${rated.title ?? rated.id}`);
+  const d = duration(term, start, end);
+  const events = new Set();
+  let amount = 0;
+  let detail;
+  switch (term) {
+    case 'hourly': {
+      for (let t = toMs(start), i = 0; i < d.hours; i++, t += HOUR) {
+        const ev = eventRateOn(rated, new Date(t).toISOString().slice(0, 10), 'hourly');
+        if (ev) events.add(ev.name);
+        amount += ev ? ev.rate : rate;
+      }
+      detail = `${d.hours} hr`;
+      break;
+    }
+    case 'daily': {
+      for (const day of eachDay(start, end)) {
+        const ev = eventRateOn(rated, day, 'daily');
+        if (ev) events.add(ev.name);
+        amount += ev ? ev.rate : rate;
+      }
+      detail = `${d.days} day${d.days === 1 ? '' : 's'}`;
+      break;
+    }
+    case 'weekly': {
+      const dayRate = rated.rates?.daily ?? rate / 7;
+      amount = d.weeks * rate + d.extraDays * dayRate;
+      detail = `${d.weeks} wk${d.extraDays ? ` + ${d.extraDays} days` : ''}`;
+      break;
+    }
+    case 'monthly':
+    case 'lease':
+      amount = d.months * rate + (d.extraDays * rate) / 30;
+      detail = `${d.months} mo${d.extraDays ? ` + ${d.extraDays} days` : ''}`;
+      break;
+    case 'infrastructure':
+      amount = d.years * rate;
+      detail = `${d.years} yr`;
+      break;
+  }
+  const periodic = ['monthly', 'lease', 'infrastructure'].includes(term)
+    ? { every: TERMS[term].unit, amount: rate }
+    : null;
+  return { rate, amount, detail, periodic, events: [...events] };
+}
+
+// One line of a quote. `asAddon` uses the cheaper add-on rate when the space has one.
+function priceLine(space, qty, term, start, end, { asAddon = false } = {}) {
+  const override = asAddon ? space.addonRates?.[term] : undefined;
+  const p = priceRates(space, term, start, end, override);
+  return {
+    spaceId: space.id,
+    title: space.title,
+    qty,
+    term,
+    asAddon: asAddon && override != null,
+    unitRate: p.rate,
+    detail: p.detail,
+    events: p.events,
+    amount: money(p.amount * qty),
+    periodic: p.periodic && { every: p.periodic.every, amount: money(p.periodic.amount * qty) },
+    deposit: (category(space.category).deposit ?? 0) * qty,
+  };
+}
+
+// Totals for a set of lines, with an optional package price applied.
+function totals(lines, term, start, end, pkg) {
+  const subtotal = money(lines.reduce((s, l) => s + l.amount, 0));
+  let periodicSum = lines.some((l) => l.periodic)
+    ? money(lines.reduce((s, l) => s + (l.periodic?.amount ?? 0), 0))
+    : null;
+
+  let discount = 0;
+  if (pkg?.pricing?.type === 'fixed') {
+    const p = priceRates({ ...pkg, rates: pkg.pricing.rates }, term, start, end);
+    discount = money(subtotal - p.amount);
+    if (periodicSum != null) periodicSum = money(p.rate);
+  } else if (pkg?.pricing?.type === 'percent') {
+    discount = money((subtotal * pkg.pricing.percent) / 100);
+    if (periodicSum != null) periodicSum = money(periodicSum * (1 - pkg.pricing.percent / 100));
+  }
+
+  const rent = money(subtotal - discount);
+  const serviceFee = money(rent * SERVICE_FEE);
+  const hostFee = money(rent * HOST_FEE);
+  const deposit = lines.reduce((s, l) => s + l.deposit, 0);
+  const unit = TERMS[term].unit;
+
+  let schedule;
+  if (term === 'infrastructure') {
+    schedule = { dueNow: 0, recurring: money(periodicSum * (1 + SERVICE_FEE)), every: unit,
+      note: 'Paid by the partner each year once the system is commissioned.' };
+  } else if (periodicSum != null) {
+    const first = money(periodicSum * (1 + SERVICE_FEE));
+    schedule = { dueNow: money(first + deposit), recurring: first, every: unit,
+      note: 'First period plus deposit now, then autopay each period.' };
+  } else {
+    schedule = { dueNow: money(rent + serviceFee), recurring: null, every: null,
+      note: deposit ? `Deposit of $${deposit} held, not charged.` : 'Charged in full at booking.' };
+  }
+
+  return {
+    lines,
+    subtotal,
+    packageDiscount: discount,
+    rent,
+    serviceFee,
+    total: money(rent + serviceFee),
+    hostFee,
+    hostPayout: money(rent - hostFee),
+    deposit,
+    schedule,
+  };
+}
+
+// --- src/availability.js ---
+// Can these spaces be booked for this interval? See SPEC.md §2 "Properties and spaces".
+//  - quantity: a listing may hold N identical units; bookings consume units
+//  - hierarchy: booking a parent blocks its children; booking a child blocks the parent
+//  - conflictsWith: spaces that overlap without nesting (driveway vs. RV pad)
+
+// States that hold a space (pending requests and proposals hold too, so no one double-books).
+const HOLDING = new Set(['pending', 'proposed', 'site_assessment', 'contract', 'confirmed', 'active']);
+
+function ancestors(db, spaceId) {
+  const out = [];
+  let s = db.spaces.find((x) => x.id === spaceId);
+  while (s?.parentId) {
+    s = db.spaces.find((x) => x.id === s.parentId);
+    if (s) out.push(s.id);
+  }
+  return out;
+}
+
+function descendants(db, spaceId) {
+  const out = [];
+  const stack = [spaceId];
+  while (stack.length) {
+    const id = stack.pop();
+    for (const child of db.spaces.filter((x) => x.parentId === id)) {
+      out.push(child.id);
+      stack.push(child.id);
+    }
+  }
+  return out;
+}
+
+// Booked units of `spaceId` per overlapping booking: [{start, end, qty}]
+function usage(db, spaceId, start, end, excludeBookingId) {
+  const uses = [];
+  for (const b of db.bookings) {
+    if (b.id === excludeBookingId || !HOLDING.has(b.status)) continue;
+    if (!overlaps(b.start, b.end, start, end)) continue;
+    for (const item of b.items) if (item.spaceId === spaceId) uses.push({ start: b.start, end: b.end, qty: item.qty, bookingId: b.id });
+  }
+  return uses;
+}
+
+// Highest number of units in use at any moment inside [start, end).
+function peakUsage(uses, start, end) {
+  const s = toMs(start), e = toMs(end);
+  const events = [];
+  for (const u of uses) {
+    events.push([Math.max(toMs(u.start), s), u.qty]);
+    events.push([Math.min(toMs(u.end), e), -u.qty]);
+  }
+  events.sort((a, b) => a[0] - b[0] || a[1] - b[1]); // ends before starts at the same instant
+  let cur = 0, peak = 0;
+  for (const [, d] of events) { cur += d; peak = Math.max(peak, cur); }
+  return peak;
+}
+
+function checkAvailability(db, items, start, end, { excludeBookingId } = {}) {
+  const conflicts = [];
+  const cartIds = items.map((i) => i.spaceId);
+  const byId = (id) => db.spaces.find((x) => x.id === id);
+
+  for (const item of items) {
+    const space = byId(item.spaceId);
+    if (!space) { conflicts.push({ spaceId: item.spaceId, reason: 'Space not found' }); continue; }
+    if (space.rentable === false) { conflicts.push({ spaceId: space.id, reason: `${space.title} is not rentable on its own` }); continue; }
+
+    for (const b of space.blackouts || []) {
+      if (overlaps(b.start, b.end, start, end)) conflicts.push({ spaceId: space.id, reason: `${space.title} is blocked by the host (${b.reason || 'unavailable'})` });
+    }
+
+    const qty = items.filter((i) => i.spaceId === space.id).reduce((s, i) => s + i.qty, 0);
+    const peak = peakUsage(usage(db, space.id, start, end, excludeBookingId), start, end);
+    if (peak + qty > (space.quantity ?? 1)) {
+      const left = Math.max(0, (space.quantity ?? 1) - peak);
+      conflicts.push({ spaceId: space.id, reason: `Only ${left} of ${space.quantity ?? 1} ${space.title} available for those dates` });
+    }
+
+    for (const aId of ancestors(db, space.id)) {
+      const a = byId(aId);
+      if (cartIds.includes(aId)) conflicts.push({ spaceId: space.id, reason: `${space.title} is already part of ${a.title} in this booking` });
+      else if (usage(db, aId, start, end, excludeBookingId).length) conflicts.push({ spaceId: space.id, reason: `${a.title} (which includes ${space.title}) is booked` });
+    }
+
+    for (const dId of descendants(db, space.id)) {
+      if (usage(db, dId, start, end, excludeBookingId).length) {
+        conflicts.push({ spaceId: space.id, reason: `Part of ${space.title} (${byId(dId).title}) is booked` });
+        break;
+      }
+    }
+
+    const linked = new Set([...(space.conflictsWith || []),
+      ...db.spaces.filter((x) => x.conflictsWith?.includes(space.id)).map((x) => x.id)]);
+    for (const cId of linked) {
+      if (cartIds.includes(cId) || usage(db, cId, start, end, excludeBookingId).length) {
+        conflicts.push({ spaceId: space.id, reason: `${space.title} shares room with ${byId(cId)?.title}, which is booked` });
+      }
+    }
+  }
+
+  return { ok: conflicts.length === 0, conflicts: dedupe(conflicts) };
+}
+
+// Units still free for the whole interval (for search results).
+function unitsFree(db, space, start, end) {
+  if (space.rentable === false) return 0;
+  const { ok } = checkAvailability(db, [{ spaceId: space.id, qty: 1 }], start, end);
+  if (!ok) return 0;
+  return (space.quantity ?? 1) - peakUsage(usage(db, space.id, start, end), start, end);
+}
+
+function dedupe(list) {
+  const seen = new Set();
+  return list.filter((c) => (seen.has(c.reason) ? false : seen.add(c.reason)));
+}
+
+// --- src/booking.js ---
+// Carts, add-on/package rules, quotes, and booking state. See SPEC.md §2–3.
+
+class BookingError extends Error {
+  constructor(message, details = []) { super(message); this.details = details; }
+}
+
+const spaceById = (db, id) => db.spaces.find((s) => s.id === id);
+
+// Does `anchor` qualify to carry add-on space `addon`?
+function isAnchorFor(addon, anchor) {
+  const rule = addon.addon;
+  if (!rule || anchor.id === addon.id) return false;
+  if (rule.anchorIds?.includes(anchor.id)) return true;
+  return !!rule.anchorCategories?.includes(anchor.category) && anchor.propertyId === addon.propertyId;
+}
+
+// Expand a package into items, or return the cart's items.
+function resolveItems(db, cart) {
+  if (!cart.packageId) return { items: cart.items || [], pkg: null };
+  const pkg = db.packages.find((p) => p.id === cart.packageId);
+  if (!pkg) throw new BookingError('Package not found');
+  return { items: pkg.items.map((i) => ({ ...i })), pkg };
+}
+
+function modeFor(space, term) {
+  let mode = space.mode ?? category(space.category).mode;
+  if (term === 'lease' && mode === 'instant') mode = 'request';
+  if (term === 'infrastructure') mode = 'proposal';
+  return mode;
+}
+
+// Validates the cart and returns priced lines. Throws BookingError listing every problem.
+function evaluateCart(db, cart) {
+  const { term, start, end, renterId } = cart;
+  if (!TERMS[term]) throw new BookingError(`Unknown term: ${term}`);
+  if (toMs(end) <= toMs(start)) throw new BookingError('End must be after start');
+  const { items, pkg } = resolveItems(db, cart);
+  if (!items.length) throw new BookingError('Choose at least one space');
+
+  const errors = [];
+  const spaces = items.map((i) => spaceById(db, i.spaceId));
+  if (spaces.some((s) => !s)) throw new BookingError('Space not found');
+
+  // 1. Term allowed and priced.
+  for (const s of spaces) {
+    const cat = category(s.category);
+    if (s.rentable === false) errors.push(`${s.title} is not rentable on its own`);
+    else if (!cat.terms.includes(term)) errors.push(`${s.title} can't be rented ${TERMS[term].label.toLowerCase()} (allowed: ${cat.terms.map((t) => TERMS[t].label).join(', ') || 'none'})`);
+    else if (s.rates?.[term] == null && s.addonRates?.[term] == null) errors.push(`${s.title} has no ${TERMS[term].label.toLowerCase()} price`);
+  }
+
+  // 2. Length limits.
+  const d = duration(term, start, end);
+  if (term === 'lease' && (d.months < TERMS.lease.min || d.months > TERMS.lease.max)) {
+    errors.push(`A fixed lease runs ${TERMS.lease.min}–${TERMS.lease.max} months`);
+  }
+  if (term === 'infrastructure') {
+    for (const s of spaces) {
+      const min = Math.max(TERMS.infrastructure.min, category(s.category).minYears ?? 0);
+      if (d.years < min || d.years > TERMS.infrastructure.max) errors.push(`${s.title} agreements run ${min}–${TERMS.infrastructure.max} years`);
+    }
+  }
+  for (const s of spaces) {
+    const min = s.minDuration?.[term];
+    if (min == null) continue;
+    const [k] = Object.keys(d).filter((x) => x !== 'extraDays');
+    if (d[k] < min) errors.push(`${s.title} needs at least ${min} ${TERMS[term].unit}${min === 1 ? '' : 's'}`);
+  }
+
+  // 3. Add-on rules: anchors in this cart, or the renter's existing bookings covering the whole interval.
+  const existing = db.bookings.filter((b) => b.renterId === renterId && HOLDING.has(b.status) && b.id !== cart.excludeBookingId);
+  const addonInfo = new Map();
+  for (const [idx, s] of spaces.entries()) {
+    if (!s.addon || s.policy === 'standalone') continue;
+    let anchors = 0;
+    items.forEach((it, j) => { if (j !== idx && isAnchorFor(s, spaces[j])) anchors += it.qty; });
+    for (const b of existing) {
+      if (toMs(b.start) > toMs(start) || toMs(b.end) < toMs(end)) continue;
+      for (const it of b.items) { const a = spaceById(db, it.spaceId); if (a && isAnchorFor(s, a)) anchors += it.qty; }
+    }
+    const wanted = items[idx].qty;
+    const alreadyHeld = existing
+      .filter((b) => toMs(b.start) < toMs(end) && toMs(start) < toMs(b.end))
+      .flatMap((b) => b.items).filter((it) => it.spaceId === s.id).reduce((n, it) => n + it.qty, 0);
+    const limit = (s.addon.maxPerAnchor ?? Infinity) * anchors;
+    const anchorNames = describeAnchors(db, s);
+
+    if (s.policy === 'addon') {
+      if (anchors === 0) errors.push(`${s.title} is only available with ${anchorNames}`);
+      else if (wanted + alreadyHeld > limit) errors.push(`${s.title}: max ${s.addon.maxPerAnchor} per ${anchorNames.replace(/^an? /, '').replace(/ here$/, '')} (you'd have ${wanted + alreadyHeld})`);
+    }
+    addonInfo.set(idx, anchors > 0 && wanted + alreadyHeld <= limit);
+  }
+
+  if (errors.length) throw new BookingError('This booking breaks a rule', errors);
+
+  const lines = items.map((it, idx) => priceLine(spaces[idx], it.qty, term, start, end, { asAddon: addonInfo.get(idx) ?? false }));
+  const mode = MODES[Math.max(...spaces.map((s) => MODES.indexOf(modeFor(s, term))))];
+  return { items, spaces, pkg, lines, mode };
+}
+
+function describeAnchors(db, addon) {
+  const parts = [];
+  for (const c of addon.addon.anchorCategories || []) parts.push(`${withArticle(CATEGORIES[c].label)} here`);
+  for (const id of addon.addon.anchorIds || []) parts.push(spaceById(db, id)?.title ?? id);
+  return parts.join(' or ') || 'another rental';
+}
+
+function quote(db, cart) {
+  const ev = evaluateCart(db, cart);
+  const availability = checkAvailability(db, ev.items, cart.start, cart.end, { excludeBookingId: cart.excludeBookingId });
+  return { mode: ev.mode, package: ev.pkg?.name ?? null, availability, ...totals(ev.lines, cart.term, cart.start, cart.end, ev.pkg) };
+}
+
+const INITIAL = { instant: 'confirmed', request: 'pending', proposal: 'proposed' };
+
+function createBooking(db, cart, { now = new Date().toISOString(), newId } = {}) {
+  if (!db.users.some((u) => u.id === cart.renterId)) throw new BookingError('Unknown renter');
+  const q = quote(db, cart);
+  if (!q.availability.ok) throw new BookingError('Not available', q.availability.conflicts.map((c) => c.reason));
+  const { items } = resolveItems(db, cart);
+  const hostIds = new Set(items.map((i) => hostOf(db, i.spaceId)));
+  if (hostIds.has(cart.renterId)) throw new BookingError("You can't book your own space");
+  const booking = {
+    id: newId ? newId('bk') : `bk_${Date.now()}`,
+    renterId: cart.renterId,
+    hostId: [...hostIds][0],
+    packageId: cart.packageId ?? null,
+    items,
+    term: cart.term,
+    start: cart.start,
+    end: cart.end,
+    mode: q.mode,
+    status: INITIAL[q.mode],
+    quote: { total: q.total, rent: q.rent, deposit: q.deposit, schedule: q.schedule, lines: q.lines },
+    note: cart.note ?? '',
+    history: [{ at: now, status: INITIAL[q.mode], by: cart.renterId }],
+    createdAt: now,
+  };
+  db.bookings.push(booking);
+  return booking;
+}
+
+function hostOf(db, spaceId) {
+  const s = spaceById(db, spaceId);
+  return db.properties.find((p) => p.id === s?.propertyId)?.hostId;
+}
+
+// action -> { from: [...], to, who: 'host' | 'renter' | 'either' }
+const TRANSITIONS = {
+  approve: { from: ['pending'], to: 'confirmed', who: 'host' },
+  decline: { from: ['pending', 'proposed', 'site_assessment', 'contract'], to: 'declined', who: 'host' },
+  advance: { from: ['proposed', 'site_assessment', 'contract'], who: 'host' },
+  cancel: { from: ['pending', 'proposed', 'site_assessment', 'contract', 'confirmed', 'active'], to: 'cancelled', who: 'either' },
+};
+const PROPOSAL_NEXT = { proposed: 'site_assessment', site_assessment: 'contract', contract: 'confirmed' };
+
+function transition(db, bookingId, action, actorId, { now = new Date().toISOString() } = {}) {
+  const b = db.bookings.find((x) => x.id === bookingId);
+  if (!b) throw new BookingError('Booking not found');
+  const t = TRANSITIONS[action];
+  if (!t) throw new BookingError(`Unknown action: ${action}`);
+  const allowed = t.who === 'host' ? [b.hostId] : [b.hostId, b.renterId];
+  if (!allowed.includes(actorId)) throw new BookingError(`Only the ${t.who === 'host' ? 'host' : 'host or renter'} can ${action} this booking`);
+  if (!t.from.includes(b.status)) throw new BookingError(`Can't ${action} a ${b.status} booking`);
+  b.status = action === 'advance' ? PROPOSAL_NEXT[b.status] : t.to;
+  b.history.push({ at: now, status: b.status, by: actorId });
+  return b;
+}
+
+// --- src/seed.js ---
+// Demo data: a single-family house near a fairground, and a small apartment building.
+
+function seed() {
+  const users = [
+    { id: 'u_maya', name: 'Maya (host, house)' },
+    { id: 'u_jordan', name: 'Jordan (host, apartments)' },
+    { id: 'u_sam', name: 'Sam (renter)' },
+    { id: 'u_priya', name: 'Priya (renter)' },
+    { id: 'u_sunco', name: 'SunCo Solar (infrastructure partner)' },
+  ];
+
+  const properties = [
+    { id: 'p_maple', hostId: 'u_maya', title: '412 Maple St', city: 'Riverside', type: 'single_family',
+      hoa: false, notes: '3 blocks from the county fairgrounds.' },
+    { id: 'p_oak', hostId: 'u_jordan', title: 'Oak Court Apartments', city: 'Riverside', type: 'multi_unit',
+      hoa: false, notes: '6-unit building with a 12-space garage and storage lockers.' },
+  ];
+
+  const harvest = { name: 'Harvest Festival', start: '2026-11-20', end: '2026-11-22' };
+
+  const spaces = [
+    // --- 412 Maple St ---------------------------------------------------
+    { id: 's_maple_home', propertyId: 'p_maple', category: 'entire_home', title: 'Whole house (3 bd)',
+      quantity: 1, rates: { daily: 210, weekly: 1300, monthly: 3900, lease: 3600 }, minDuration: { daily: 2 },
+      description: 'Entire 3-bedroom home. Includes backyard.' },
+    { id: 's_maple_backyard', propertyId: 'p_maple', parentId: 's_maple_home', category: 'backyard',
+      title: 'Backyard with fire pit', quantity: 1, rates: { hourly: 35, daily: 180 },
+      eventRates: [{ ...harvest, hourly: 55 }], description: 'Lawn, string lights, fire pit. Quiet hours after 10pm.' },
+    { id: 's_maple_room', propertyId: 'p_maple', parentId: 's_maple_home', category: 'private_room',
+      title: 'Back bedroom', quantity: 1, rates: { daily: 75, weekly: 450, monthly: 1300 } },
+    { id: 's_maple_driveway', propertyId: 'p_maple', category: 'parking_spot', title: 'Driveway parking',
+      quantity: 3, rates: { hourly: 4, daily: 15, weekly: 80, monthly: 140 },
+      eventRates: [{ ...harvest, daily: 40, hourly: 12 }], conflictsWith: ['s_maple_rv'],
+      description: 'Three uncovered spots, 5-minute walk to the fairgrounds.' },
+    { id: 's_maple_rv', propertyId: 'p_maple', category: 'rv_parking', title: 'RV pad (uses the driveway)',
+      quantity: 1, rates: { weekly: 120, monthly: 380 }, description: 'Up to 30 ft. Takes over the whole driveway.' },
+    { id: 's_maple_garage', propertyId: 'p_maple', category: 'building', title: 'Detached garage', rentable: false, quantity: 1 },
+    { id: 's_maple_bay', propertyId: 'p_maple', parentId: 's_maple_garage', category: 'garage_storage',
+      title: 'Garage storage bay (100 sq ft)', quantity: 3, size: { sqft: 100 },
+      rates: { weekly: 30, monthly: 95, lease: 85 }, description: 'Shelved bays, access 7am–9pm.' },
+    { id: 's_maple_attic', propertyId: 'p_maple', category: 'attic_storage', title: 'Attic storage (80 sq ft)',
+      quantity: 1, size: { sqft: 80 }, rates: { monthly: 55, lease: 50 }, description: 'Pull-down ladder, boxes under 40 lb.' },
+    { id: 's_maple_garden', propertyId: 'p_maple', category: 'garden_plot', title: 'Front-yard garden plot (10×10)',
+      quantity: 2, size: { sqft: 100 }, rates: { monthly: 30, lease: 25 }, description: 'Hose bib included. Organic only.' },
+    { id: 's_maple_roof', propertyId: 'p_maple', category: 'rooftop_solar', title: 'South-facing roof (~600 sq ft)',
+      quantity: 1, size: { sqft: 600 }, rates: { infrastructure: 1100 },
+      description: '2019 roof. ~9 kW potential. Partner owns panels, pays annual rent.' },
+    { id: 's_maple_battery', propertyId: 'p_maple', category: 'battery_site', title: 'Side-yard battery pad',
+      quantity: 1, rates: { infrastructure: 600 }, description: '4×8 ft concrete pad, 12 ft from the house.' },
+
+    // --- Oak Court Apartments ---------------------------------------------
+    { id: 's_oak_bldg', propertyId: 'p_oak', category: 'building', title: 'Oak Court building', rentable: false, quantity: 1 },
+    { id: 's_oak_1a', propertyId: 'p_oak', parentId: 's_oak_bldg', category: 'apartment_unit', title: 'Unit 1A (1 bd)',
+      quantity: 1, rates: { monthly: 2150, lease: 1950 } },
+    { id: 's_oak_1b', propertyId: 'p_oak', parentId: 's_oak_bldg', category: 'apartment_unit', title: 'Unit 1B (2 bd)',
+      quantity: 1, rates: { monthly: 2750, lease: 2500 } },
+    { id: 's_oak_2a', propertyId: 'p_oak', parentId: 's_oak_bldg', category: 'apartment_unit', title: 'Unit 2A (studio, furnished)',
+      quantity: 1, rates: { daily: 140, monthly: 1900, lease: 1700 }, minDuration: { daily: 3 } },
+    { id: 's_oak_parking', propertyId: 'p_oak', parentId: 's_oak_bldg', category: 'parking_spot', title: 'Garage parking space',
+      quantity: 12, policy: 'addon', rates: { daily: 20, monthly: 150, lease: 140 },
+      addon: { anchorCategories: ['apartment_unit'], maxPerAnchor: 2 },
+      description: 'Tenants only — up to 2 per unit.' },
+    { id: 's_oak_locker', propertyId: 'p_oak', parentId: 's_oak_bldg', category: 'basement_storage', title: 'Storage locker (5×5)',
+      quantity: 8, policy: 'both', size: { sqft: 25 },
+      rates: { weekly: 30, monthly: 90, lease: 80 }, addonRates: { monthly: 60, lease: 55 },
+      addon: { anchorCategories: ['apartment_unit'], maxPerAnchor: 1 },
+      description: '$90/mo for anyone, $60/mo for tenants (1 per unit).' },
+    { id: 's_oak_ev', propertyId: 'p_oak', parentId: 's_oak_bldg', category: 'ev_charging', title: 'Level 2 EV charger',
+      quantity: 2, rates: { hourly: 6, daily: 30 }, description: 'Open to the public 6am–11pm.' },
+  ];
+
+  const packages = [
+    { id: 'pk_1a_2park', propertyId: 'p_oak', name: 'Unit 1A + 2 parking spaces',
+      items: [{ spaceId: 's_oak_1a', qty: 1 }, { spaceId: 's_oak_parking', qty: 2 }],
+      pricing: { type: 'fixed', rates: { monthly: 2400, lease: 2190 } } },
+    { id: 'pk_1b_park_locker', propertyId: 'p_oak', name: 'Unit 1B + parking + locker (10% off)',
+      items: [{ spaceId: 's_oak_1b', qty: 1 }, { spaceId: 's_oak_parking', qty: 1 }, { spaceId: 's_oak_locker', qty: 1 }],
+      pricing: { type: 'percent', percent: 10 } },
+  ];
+
+  const bookings = [
+    { id: 'bk_seed_1', renterId: 'u_priya', hostId: 'u_jordan', items: [{ spaceId: 's_oak_1b', qty: 1 }],
+      term: 'lease', start: '2026-09-01', end: '2027-09-01', mode: 'request', status: 'confirmed', packageId: null,
+      quote: null, note: '', history: [{ at: '2026-08-10T00:00:00Z', status: 'confirmed', by: 'u_jordan' }], createdAt: '2026-08-10T00:00:00Z' },
+    { id: 'bk_seed_2', renterId: 'u_sam', hostId: 'u_maya', items: [{ spaceId: 's_maple_driveway', qty: 2 }],
+      term: 'daily', start: '2026-11-21', end: '2026-11-22', mode: 'instant', status: 'confirmed', packageId: null,
+      quote: null, note: 'Festival Saturday', history: [{ at: '2026-10-30T00:00:00Z', status: 'confirmed', by: 'u_sam' }], createdAt: '2026-10-30T00:00:00Z' },
+  ];
+
+  return { users, properties, spaces, packages, bookings, seq: 1 };
+}
+
+// --- src/listings.js ---
+// Search, and creating properties / spaces / packages with validation.
+
+function search(db, { group, category: cat, term, start, end, q, city } = {}) {
+  const text = q?.toLowerCase();
+  const results = [];
+  for (const s of db.spaces) {
+    if (s.rentable === false) continue;
+    const c = CATEGORIES[s.category];
+    const prop = db.properties.find((p) => p.id === s.propertyId);
+    if (group && c.group !== group) continue;
+    if (cat && s.category !== cat) continue;
+    if (term && !(c.terms.includes(term) && (s.rates?.[term] != null || s.addonRates?.[term] != null))) continue;
+    if (city && prop.city.toLowerCase() !== city.toLowerCase()) continue;
+    if (text && !`${s.title} ${s.description ?? ''} ${c.label} ${prop.title}`.toLowerCase().includes(text)) continue;
+    const free = start && end ? unitsFree(db, s, start, end) : s.quantity ?? 1;
+    results.push({
+      ...s,
+      categoryLabel: c.label,
+      group: c.group,
+      property: { id: prop.id, title: prop.title, city: prop.city },
+      unitsFree: free,
+      policy: s.policy ?? 'standalone',
+      addonNote: describeAddon(db, s),
+      fromPrice: cheapest(s),
+    });
+  }
+  const packages = db.packages
+    .filter((p) => !text || p.name.toLowerCase().includes(text))
+    .filter((p) => !group || p.items.some((i) => CATEGORIES[db.spaces.find((s) => s.id === i.spaceId).category].group === group))
+    .map((p) => ({ ...p, property: db.properties.find((x) => x.id === p.propertyId) }));
+  return { spaces: results, packages };
+}
+
+function cheapest(s) {
+  const order = Object.keys(TERMS);
+  const t = order.find((k) => s.rates?.[k] != null) ?? order.find((k) => s.addonRates?.[k] != null);
+  return t ? { term: t, amount: s.rates?.[t] ?? s.addonRates[t], unit: TERMS[t].unit } : null;
+}
+
+function createProperty(db, input, newId) {
+  for (const k of ['hostId', 'title', 'city']) if (!input[k]) throw new Error(`${k} is required`);
+  const p = { id: newId('p'), type: 'single_family', hoa: false, notes: '', ...pick(input, ['hostId', 'title', 'city', 'type', 'hoa', 'notes']) };
+  db.properties.push(p);
+  return p;
+}
+
+function createSpace(db, input, newId) {
+  const prop = db.properties.find((p) => p.id === input.propertyId);
+  if (!prop) throw new Error('Property not found');
+  const cat = category(input.category);
+  if (!input.title) throw new Error('title is required');
+  const rentable = input.rentable !== false && cat.group !== 'container';
+  const rates = {};
+  for (const [t, v] of Object.entries(input.rates || {})) {
+    if (v === '' || v == null) continue;
+    if (!cat.terms.includes(t)) throw new Error(`${cat.label} can't be rented ${TERMS[t]?.label ?? t}`);
+    if (!(Number(v) > 0)) throw new Error(`Rate for ${t} must be positive`);
+    rates[t] = Number(v);
+  }
+  if (rentable && !Object.keys(rates).length && !input.addonRates) throw new Error('Set at least one price');
+  if (input.parentId) {
+    const parent = db.spaces.find((s) => s.id === input.parentId);
+    if (!parent || parent.propertyId !== prop.id) throw new Error('Parent must be a space on the same property');
+  }
+  const policy = input.policy ?? 'standalone';
+  if (policy !== 'standalone' && !input.addon?.anchorCategories?.length && !input.addon?.anchorIds?.length) {
+    throw new Error('Add-on spaces need at least one anchor');
+  }
+  const s = {
+    id: newId('s'),
+    ...pick(input, ['propertyId', 'parentId', 'category', 'title', 'description', 'size', 'addonRates', 'eventRates', 'conflictsWith', 'blackouts', 'minDuration', 'mode']),
+    quantity: Math.max(1, Number(input.quantity) || 1),
+    rates,
+    policy,
+    ...(policy !== 'standalone' ? { addon: input.addon } : {}),
+    ...(rentable ? {} : { rentable: false }),
+  };
+  db.spaces.push(s);
+  return s;
+}
+
+function createPackage(db, input, newId) {
+  if (!input.name) throw new Error('name is required');
+  if (!input.items?.length) throw new Error('A package needs spaces');
+  for (const it of input.items) {
+    const s = db.spaces.find((x) => x.id === it.spaceId);
+    if (!s || s.propertyId !== input.propertyId) throw new Error('Package spaces must be on the same property');
+  }
+  const p = { id: newId('pk'), ...pick(input, ['propertyId', 'name', 'items', 'pricing']) };
+  db.packages.push(p);
+  return p;
+}
+
+function pick(o, keys) {
+  const out = {};
+  for (const k of keys) if (o[k] !== undefined) out[k] = o[k];
+  return out;
+}
+
+// --- src/routes.js ---
+// API routes, independent of transport. Used by the Node server and by the
+// single-file standalone build (which calls them directly in the browser).
+
+class NotFound extends Error {}
+
+// store: { db, newId(prefix), save(), reset() }
+function handleApi(store, method, path, body = {}, params = new URLSearchParams(), { spec } = {}) {
+  const mutate = (fn) => { const out = fn(); store.save(); return out; };
+  const routes = [
+    ['GET', /^catalog$/, () => ({ terms: TERMS, groups: GROUPS, categories: CATEGORIES, modes: MODES })],
+    ['GET', /^users$/, () => store.db.users],
+    ['GET', /^spec$/, () => ({ html: spec ? spec() : '' })],
+    ['GET', /^search$/, () => search(store.db, Object.fromEntries(params))],
+    ['GET', /^properties$/, () => listProperties(store.db, params.get('hostId'))],
+    ['GET', /^spaces\/([\w-]+)$/, ([, id]) => spaceDetail(store.db, id)],
+    ['POST', /^properties$/, () => mutate(() => createProperty(store.db, body, store.newId))],
+    ['POST', /^spaces$/, () => mutate(() => createSpace(store.db, body, store.newId))],
+    ['POST', /^packages$/, () => mutate(() => createPackage(store.db, body, store.newId))],
+    ['POST', /^quote$/, () => quote(store.db, body)],
+    ['POST', /^bookings$/, () => mutate(() => createBooking(store.db, body, { newId: store.newId }))],
+    ['GET', /^bookings$/, () => listBookings(store.db, params.get('userId'))],
+    ['POST', /^bookings\/([\w-]+)\/(approve|decline|advance|cancel)$/, ([, id, action]) =>
+      mutate(() => transition(store.db, id, action, body.actorId))],
+    ['POST', /^reset$/, () => { store.reset(); return { ok: true }; }],
+  ];
+  const route = routes.find(([m, re]) => m === method && re.test(path));
+  if (!route) throw new NotFound('Not found');
+  return route[2](path.match(route[1]));
+}
+
+// Errors the user caused (bad input, rule broken) rather than bugs.
+function isUserError(err) {
+  return err instanceof BookingError || err instanceof SyntaxError ||
+    /required|not found|must|can't|Unknown|Invalid|Set at least|need/i.test(err.message);
+}
+
+function listProperties(db, hostId) {
+  return db.properties.filter((p) => !hostId || p.hostId === hostId).map((p) => ({
+    ...p,
+    spaces: db.spaces.filter((s) => s.propertyId === p.id).map((s) => ({ ...s, addonNote: describeAddon(db, s) })),
+    packages: db.packages.filter((k) => k.propertyId === p.id),
+  }));
+}
+
+function spaceDetail(db, id) {
+  const s = db.spaces.find((x) => x.id === id);
+  if (!s) throw new BookingError('Space not found');
+  return {
+    ...s,
+    categoryInfo: CATEGORIES[s.category],
+    property: db.properties.find((p) => p.id === s.propertyId),
+    addonNote: describeAddon(db, s),
+    // Add-ons this space can carry (e.g. parking/lockers for an apartment)
+    addons: db.spaces.filter((a) => a.policy && a.policy !== 'standalone' && isAnchorFor(a, s))
+      .map((a) => ({ ...a, addonNote: describeAddon(db, a) })),
+    packages: db.packages.filter((p) => p.items.some((i) => i.spaceId === id)),
+  };
+}
+
+function listBookings(db, userId) {
+  const title = (id) => db.spaces.find((s) => s.id === id)?.title ?? id;
+  const name = (id) => db.users.find((u) => u.id === id)?.name ?? id;
+  return db.bookings
+    .filter((b) => !userId || b.renterId === userId || b.hostId === userId)
+    .map((b) => ({ ...b, role: b.hostId === userId ? 'host' : 'renter', renterName: name(b.renterId), hostName: name(b.hostId),
+      itemsLabel: b.items.map((i) => `${i.qty > 1 ? `${i.qty}× ` : ''}${title(i.spaceId)}`).join(' + '),
+      packageName: db.packages.find((p) => p.id === b.packageId)?.name ?? null }))
+    .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+}
+
+return { handleApi, isUserError, NotFound, seed };
+})();
+
+(() => {
+  const KEY = 'everyspace-demo-v1';
+  let db;
+  try { db = JSON.parse(localStorage.getItem(KEY)); } catch {}
+  if (!db) db = Domain.seed();
+  const store = {
+    get db() { return db; },
+    newId: (prefix) => `${prefix}_${db.seq++}`,
+    save() { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch {} },
+    reset() { db = Domain.seed(); this.save(); },
+  };
+  window.everyspaceApi = async (path, body) => {
+    const [p, qs] = path.split('?');
+    try {
+      return JSON.parse(JSON.stringify(Domain.handleApi(store, body ? 'POST' : 'GET', p, body ?? {}, new URLSearchParams(qs))));
+    } catch (err) {
+      if (!Domain.isUserError(err) && !(err instanceof Domain.NotFound)) console.error(err);
+      const e = new Error(err.message); e.details = err.details ?? []; throw e;
+    }
+  };
+  window.EVERYSPACE_START_TAB = 'plan';
+})();
+</script>
+<script type="module">
+// Demo UI for the Everyspace prototype. No build step, no dependencies.
+const $ = (sel, root = document) => root.querySelector(sel);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const money = (n) => `$${Number(n).toLocaleString(undefined, { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 })}`;
+
+async function api(path, body) {
+  if (window.everyspaceApi) return window.everyspaceApi(path, body); // single-file build
+  const res = await fetch(`/api/${path}`, body ? { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) } : {});
+  const data = await res.json();
+  if (!res.ok) { const e = new Error(data.error); e.details = data.details; throw e; }
+  return data;
+}
+
+const state = { catalog: null, users: [], user: 'u_sam', group: '', selected: null, booking: null };
+const TERM_ORDER = ['hourly', 'daily', 'weekly', 'monthly', 'lease', 'infrastructure'];
+
+// ---------- dates ----------
+const addDays = (d, n) => { const t = new Date(`${d}T00:00:00Z`); t.setUTCDate(t.getUTCDate() + n); return t.toISOString().slice(0, 10); };
+const addMonths = (d, n) => { const t = new Date(`${d}T00:00:00Z`); t.setUTCMonth(t.getUTCMonth() + n); return t.toISOString().slice(0, 10); };
+function defaultRange(term, start) {
+  switch (term) {
+    case 'hourly': return [`${start}T18:00`, `${start}T22:00`];
+    case 'daily': return [start, addDays(start, 1)];
+    case 'weekly': return [start, addDays(start, 7)];
+    case 'monthly': return [start, addMonths(start, 1)];
+    case 'lease': return [start, addMonths(start, 12)];
+    case 'infrastructure': return [start, addMonths(start, 240)];
+  }
+}
+const toApi = (term, v) => (term === 'hourly' ? `${v}:00Z` : v);
+
+// ---------- boot ----------
+async function boot() {
+  [state.catalog, state.users] = await Promise.all([api('catalog'), api('users')]);
+  $('#user').innerHTML = state.users.map((u) => `<option value="${u.id}">${esc(u.name)}</option>`).join('');
+  $('#user').value = state.user;
+  $('#user').onchange = () => { state.user = $('#user').value; refreshAll(); };
+  $('#reset').onclick = async () => { await api('reset', {}); state.selected = null; refreshAll(); };
+
+  for (const b of $('#tabs').children) b.onclick = () => showTab(b.dataset.tab);
+
+  $('#groups').innerHTML = [['', 'Everything'], ...Object.entries(state.catalog.groups).filter(([k]) => k !== 'container')]
+    .map(([k, v]) => `<button type="button" data-group="${k}" class="${k === '' ? 'on' : ''}">${esc(v)}</button>`).join('');
+  $('#groups').onclick = (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    state.group = b.dataset.group;
+    for (const x of $('#groups').children) x.classList.toggle('on', x === b);
+    runSearch();
+  };
+  $('#f-term').innerHTML += TERM_ORDER.map((t) => `<option value="${t}">${state.catalog.terms[t].label}</option>`).join('');
+  $('#f-start').value = '2026-11-21';
+  $('#f-end').value = '2026-11-22';
+  $('#filters').oninput = debounce(runSearch, 200);
+  $('#filters').onsubmit = (e) => e.preventDefault();
+
+  setupHostForms();
+  renderCatalog();
+  refreshAll();
+  if (window.EVERYSPACE_START_TAB) showTab(window.EVERYSPACE_START_TAB);
+}
+
+function showTab(tab) {
+  for (const b of $('#tabs').children) b.classList.toggle('on', b.dataset.tab === tab);
+  for (const s of document.querySelectorAll('.view')) s.hidden = s.id !== tab;
+  if (tab === 'bookings') renderBookings();
+  if (tab === 'host') renderHost();
+  if (tab === 'plan' && !$('#plan-body').innerHTML.trim()) api('spec').then((r) => { $('#plan-body').innerHTML = r.html; });
+  window.scrollTo(0, 0);
+}
+
+function refreshAll() { runSearch(); renderHost(); renderBookings(); }
+
+// ---------- find ----------
+async function runSearch() {
+  const f = new FormData($('#filters'));
+  const params = new URLSearchParams();
+  for (const [k, v] of f) if (v) params.set(k, v);
+  if (state.group) params.set('group', state.group);
+  const { spaces, packages } = await api(`search?${params}`);
+  const cards = [
+    ...packages.map((p) => `<button class="result ${state.selected?.id === p.id ? 'on' : ''}" data-pkg="${p.id}">
+        <span class="cat">Package · ${esc(p.property.title)}</span><strong>${esc(p.name)}</strong>
+        <span class="price">${p.pricing.type === 'fixed' ? `${money(p.pricing.rates.monthly ?? Object.values(p.pricing.rates)[0])}/mo` : `${p.pricing.percent}% off together`}</span></button>`),
+    ...spaces.map((s) => {
+      const qtyNote = params.get('start') && params.get('end') ? (s.unitsFree ? `${s.unitsFree} of ${s.quantity ?? 1} free` : 'Booked for those dates') : `${s.quantity ?? 1} available`;
+      return `<button class="result ${state.selected?.id === s.id ? 'on' : ''}" data-space="${s.id}">
+        <span class="cat">${esc(s.categoryLabel)} · ${esc(s.property.title)}</span>
+        <strong>${esc(s.title)}</strong>
+        ${s.fromPrice ? `<span class="price">from ${money(s.fromPrice.amount)}/${s.fromPrice.unit}</span>` : ''}
+        <span>${s.policy === 'addon' ? '<span class="tag warn">Add-on only</span>' : ''}${s.policy === 'both' ? '<span class="tag">Add-on discount</span>' : ''}<span class="tag ${s.unitsFree ? 'ok' : 'warn'}">${qtyNote}</span></span>
+      </button>`;
+    }),
+  ];
+  $('#results').innerHTML = cards.join('') || '<p class="muted">Nothing matches. Try another term or category.</p>';
+  $('#results').onclick = (e) => {
+    const b = e.target.closest('.result'); if (!b) return;
+    if (b.dataset.space) selectSpace(b.dataset.space); else selectPackage(b.dataset.pkg, packages.find((p) => p.id === b.dataset.pkg));
+    for (const x of $('#results').children) x.classList.toggle('on', x === b);
+  };
+}
+
+async function selectSpace(id) {
+  const space = await api(`spaces/${id}`);
+  const terms = TERM_ORDER.filter((t) => space.rates?.[t] != null || space.addonRates?.[t] != null);
+  const filterTerm = $('#f-term').value;
+  const term = terms.includes(filterTerm) ? filterTerm : terms[0];
+  state.selected = { kind: 'space', id, space, terms };
+  state.booking = { term, qty: 1, addons: {}, range: initialRange(term) };
+  renderDetail();
+}
+
+function selectPackage(id, pkg) {
+  const terms = pkg.pricing.type === 'fixed' ? TERM_ORDER.filter((t) => pkg.pricing.rates[t] != null) : ['monthly', 'lease'];
+  state.selected = { kind: 'package', id, pkg, terms };
+  state.booking = { term: terms[0], range: initialRange(terms[0]) };
+  renderDetail();
+}
+
+function initialRange(term) {
+  const start = $('#f-start').value || '2026-12-01';
+  const end = $('#f-end').value;
+  if ((term === 'daily' || term === 'weekly') && end > start) return [start, end];
+  return defaultRange(term, start);
+}
+
+function renderDetail() {
+  const sel = state.selected, bk = state.booking;
+  const el = $('#detail');
+  el.classList.remove('empty');
+  const cat = state.catalog;
+  let head;
+  if (sel.kind === 'space') {
+    const s = sel.space;
+    head = `<div class="muted">${esc(s.categoryInfo.label)} · ${esc(s.property.title)}, ${esc(s.property.city)}</div>
+      <h2>${esc(s.title)}</h2>
+      ${s.description ? `<div>${esc(s.description)}</div>` : ''}
+      <div class="rates">${TERM_ORDER.filter((t) => s.rates?.[t] != null).map((t) => `<span class="tag">${money(s.rates[t])}/${cat.terms[t].unit} · ${cat.terms[t].label}</span>`).join('')}
+        ${Object.entries(s.addonRates || {}).map(([t, v]) => `<span class="tag ok">${money(v)}/${cat.terms[t].unit} as add-on</span>`).join('')}</div>
+      ${(s.eventRates || []).map((e) => `<div class="muted">Event pricing: ${esc(e.name)} ${e.start} → ${e.end}${e.daily ? ` · ${money(e.daily)}/day` : ''}${e.hourly ? ` · ${money(e.hourly)}/hr` : ''}</div>`).join('')}
+      ${s.addonNote ? `<div class="tag warn">${esc(s.addonNote)}</div>` : ''}`;
+  } else {
+    const p = sel.pkg;
+    head = `<div class="muted">Package · ${esc(p.property.title)}</div><h2>${esc(p.name)}</h2>
+      <div class="muted">${p.pricing.type === 'fixed' ? Object.entries(p.pricing.rates).map(([t, v]) => `${money(v)}/${cat.terms[t].unit} (${cat.terms[t].label})`).join(' · ') : `${p.pricing.percent}% off the separate prices`}</div>`;
+  }
+
+  const hourly = bk.term === 'hourly';
+  const s = sel.space;
+  const qtyInput = sel.kind === 'space' && (s.quantity ?? 1) > 1
+    ? `<label>How many <input id="d-qty" type="number" min="1" max="${s.quantity}" value="${bk.qty}"></label>` : '';
+  const addons = sel.kind === 'space' && s.addons?.length ? `<div><strong>Add to this rental</strong>
+      ${s.addons.map((a) => `<div class="addon"><div>${esc(a.title)}<div class="muted">${esc(a.addonNote)}</div></div>
+        <input type="number" min="0" max="${a.addon.maxPerAnchor ?? a.quantity}" value="${bk.addons[a.id] ?? 0}" data-addon="${a.id}"></div>`).join('')}</div>` : '';
+  const pkgs = sel.kind === 'space' && s.packages?.length
+    ? `<div class="muted">Also in: ${s.packages.map((p) => `<a href="#" data-usepkg="${p.id}">${esc(p.name)}</a>`).join(', ')}</div>` : '';
+
+  el.innerHTML = `${head}
+    <div class="row">
+      <label>Term <select id="d-term">${sel.terms.map((t) => `<option value="${t}" ${t === bk.term ? 'selected' : ''}>${cat.terms[t].label}</option>`).join('')}</select></label>
+      ${qtyInput}
+    </div>
+    <div class="row">
+      <label>Start <input id="d-start" type="${hourly ? 'datetime-local' : 'date'}" value="${bk.range[0]}"></label>
+      <label>End <input id="d-end" type="${hourly ? 'datetime-local' : 'date'}" value="${bk.range[1]}"></label>
+    </div>
+    ${addons}${pkgs}
+    <div class="quote" id="quote"></div>
+    <label>Note to host <input id="d-note" placeholder="optional"></label>
+    <button id="d-book">Book</button>
+    <div id="d-msg"></div>`;
+
+  $('#d-term').onchange = () => { bk.term = $('#d-term').value; bk.range = defaultRange(bk.term, bk.range[0].slice(0, 10)); renderDetail(); };
+  $('#d-start').onchange = () => { bk.range[0] = $('#d-start').value; updateQuote(); };
+  $('#d-end').onchange = () => { bk.range[1] = $('#d-end').value; updateQuote(); };
+  if ($('#d-qty')) $('#d-qty').oninput = () => { bk.qty = Math.max(1, +$('#d-qty').value || 1); updateQuote(); };
+  for (const inp of el.querySelectorAll('[data-addon]')) inp.oninput = () => { bk.addons[inp.dataset.addon] = Math.max(0, +inp.value || 0); updateQuote(); };
+  for (const a of el.querySelectorAll('[data-usepkg]')) a.onclick = async (e) => {
+    e.preventDefault();
+    const { packages } = await api('search');
+    selectPackage(a.dataset.usepkg, packages.find((p) => p.id === a.dataset.usepkg));
+  };
+  $('#d-book').onclick = book;
+  updateQuote();
+}
+
+function cartFromState() {
+  const sel = state.selected, bk = state.booking;
+  const cart = { renterId: state.user, term: bk.term, start: toApi(bk.term, bk.range[0]), end: toApi(bk.term, bk.range[1]) };
+  if (sel.kind === 'package') cart.packageId = sel.id;
+  else cart.items = [{ spaceId: sel.id, qty: bk.qty }, ...Object.entries(bk.addons).filter(([, q]) => q > 0).map(([spaceId, qty]) => ({ spaceId, qty }))];
+  return cart;
+}
+
+const modeLabel = { instant: 'Instant book', request: 'Request to book — host approves', proposal: 'Proposal — site assessment, then contract' };
+
+async function updateQuote() {
+  const box = $('#quote');
+  try {
+    const q = await api('quote', cartFromState());
+    const cat = state.catalog;
+    box.innerHTML = `<table>
+      ${q.lines.map((l) => `<tr><td>${l.qty > 1 ? `${l.qty} × ` : ''}${esc(l.title)}${l.asAddon ? ' <span class="tag ok">add-on price</span>' : ''}
+        <div class="muted">${esc(l.detail)} @ ${money(l.unitRate)}/${cat.terms[l.term].unit}${l.events.length ? ` · ${esc(l.events.join(', '))} pricing` : ''}</div></td><td>${money(l.amount)}</td></tr>`).join('')}
+      ${q.packageDiscount ? `<tr><td>Package discount</td><td>−${money(q.packageDiscount)}</td></tr>` : ''}
+      <tr><td>Service fee</td><td>${money(q.serviceFee)}</td></tr>
+      <tr class="total"><td>Total</td><td>${money(q.total)}</td></tr>
+      <tr><td class="muted">Due now${q.schedule.recurring ? `, then ${money(q.schedule.recurring)}/${q.schedule.every}` : ''}</td><td>${money(q.schedule.dueNow)}</td></tr>
+      ${q.deposit ? `<tr><td class="muted">Deposit</td><td class="muted">${money(q.deposit)}</td></tr>` : ''}
+    </table>
+    <div class="muted">${esc(q.schedule.note)}</div>
+    <div><span class="tag">${modeLabel[q.mode]}</span></div>
+    ${q.availability.ok ? '<div class="okmsg">Available ✓</div>' : `<div class="err">Not available<ul>${q.availability.conflicts.map((c) => `<li>${esc(c.reason)}</li>`).join('')}</ul></div>`}`;
+    $('#d-book').disabled = !q.availability.ok;
+    $('#d-book').textContent = q.mode === 'instant' ? 'Book now' : q.mode === 'request' ? 'Request to book' : 'Send proposal';
+  } catch (e) {
+    box.innerHTML = errorHtml(e);
+    $('#d-book').disabled = true;
+  }
+}
+
+async function book() {
+  const cart = cartFromState();
+  cart.note = $('#d-note').value;
+  try {
+    const b = await api('bookings', cart);
+    $('#d-msg').innerHTML = `<div class="okmsg">Booking ${b.id} is <strong>${b.status.replace('_', ' ')}</strong>. See the Bookings tab.</div>`;
+    runSearch();
+    updateQuote();
+  } catch (e) {
+    $('#d-msg').innerHTML = errorHtml(e);
+  }
+}
+
+const errorHtml = (e) => `<div class="err">${esc(e.message)}${e.details?.length ? `<ul>${e.details.map((d) => `<li>${esc(d)}</li>`).join('')}</ul>` : ''}</div>`;
+
+// ---------- host ----------
+let hostProps = [];
+async function renderHost() {
+  hostProps = await api(`properties?hostId=${state.user}`);
+  const cat = state.catalog;
+  $('#host-props').innerHTML = hostProps.length ? hostProps.map((p) => `<div class="card prop">
+      <h3>${esc(p.title)} <span class="muted">· ${esc(p.city)} · ${esc(p.type.replace('_', ' '))}</span></h3>
+      <ul class="tree">${orderTree(p.spaces).map(({ s, depth }) => `<li class="depth-${Math.min(depth, 2)}">
+        <strong>${esc(s.title)}</strong> <span class="muted">${esc(cat.categories[s.category].label)}${(s.quantity ?? 1) > 1 ? ` · ×${s.quantity}` : ''}</span>
+        ${s.rentable === false ? '<span class="tag">container, not rentable</span>' : ''}
+        ${s.addonNote ? `<span class="tag warn">${esc(s.addonNote)}</span>` : ''}
+        <div class="muted">${TERM_ORDER.filter((t) => s.rates?.[t] != null).map((t) => `${money(s.rates[t])}/${cat.terms[t].unit}${t === 'lease' ? ' on lease' : ''}`).join(' · ')}</div></li>`).join('')}</ul>
+      ${p.packages.length ? `<div class="muted" style="margin-top:8px">Packages: ${p.packages.map((k) => esc(k.name)).join(' · ')}</div>` : ''}
+    </div>`).join('') : '<p class="muted">You have no properties yet. Add one below — or switch to Maya or Jordan to see example hosts.</p>';
+
+  const propOpts = hostProps.map((p) => `<option value="${p.id}">${esc(p.title)}</option>`).join('');
+  for (const sel of document.querySelectorAll('#new-space [name=propertyId], #new-package [name=propertyId]')) {
+    const prev = sel.value; sel.innerHTML = propOpts; if (hostProps.some((p) => p.id === prev)) sel.value = prev;
+  }
+  syncSpaceForm();
+  syncPackageForm();
+}
+
+function orderTree(spaces) {
+  const out = [];
+  const walk = (parentId, depth) => spaces.filter((s) => (s.parentId ?? null) === parentId).forEach((s) => { out.push({ s, depth }); walk(s.id, depth + 1); });
+  walk(null, 0);
+  return out;
+}
+
+function setupHostForms() {
+  const cat = state.catalog;
+  const f = $('#new-space');
+  f.category.innerHTML = Object.entries(cat.groups).map(([g, label]) => `<optgroup label="${esc(label)}">${Object.entries(cat.categories)
+    .filter(([, c]) => c.group === g).map(([k, c]) => `<option value="${k}">${esc(c.label)}</option>`).join('')}</optgroup>`).join('');
+  f.anchorCategory.innerHTML = Object.entries(cat.categories).filter(([, c]) => c.group === 'living')
+    .map(([k, c]) => `<option value="${k}">${esc(c.label)}</option>`).join('');
+  f.onchange = (e) => { if (['category', 'propertyId', 'policy'].includes(e.target.name)) syncSpaceForm(); };
+  f.onsubmit = async (e) => {
+    e.preventDefault();
+    const d = Object.fromEntries(new FormData(f));
+    const rates = {};
+    for (const inp of f.querySelectorAll('[data-rate]')) if (inp.value) rates[inp.dataset.rate] = +inp.value;
+    const body = { propertyId: d.propertyId, category: d.category, title: d.title, description: d.description,
+      quantity: +d.quantity, parentId: d.parentId || undefined, rates, policy: d.policy };
+    if (d.policy !== 'standalone') {
+      body.addon = { anchorCategories: [d.anchorCategory], maxPerAnchor: +d.maxPerAnchor || undefined };
+      if (d.addonMonthly) body.addonRates = { monthly: +d.addonMonthly };
+    }
+    await submit(f, () => api('spaces', body), 'Published.');
+  };
+
+  const pf = $('#new-property');
+  pf.onsubmit = async (e) => {
+    e.preventDefault();
+    await submit(pf, () => api('properties', { ...Object.fromEntries(new FormData(pf)), hostId: state.user }), 'Property added.');
+  };
+
+  const kf = $('#new-package');
+  kf.onchange = (e) => { if (e.target.name === 'propertyId') syncPackageForm(); };
+  kf.onsubmit = async (e) => {
+    e.preventDefault();
+    const d = Object.fromEntries(new FormData(kf));
+    const items = [...kf.querySelectorAll('[data-pkgspace]')].filter((c) => c.checked)
+      .map((c) => ({ spaceId: c.dataset.pkgspace, qty: +kf.querySelector(`[data-pkgqty="${c.dataset.pkgspace}"]`).value || 1 }));
+    const pricing = d.ptype === 'fixed' ? { type: 'fixed', rates: { monthly: +d.pvalue } } : { type: 'percent', percent: +d.pvalue };
+    await submit(kf, () => api('packages', { propertyId: d.propertyId, name: d.name, items, pricing }), 'Package created.');
+  };
+}
+
+async function submit(form, fn, okText) {
+  const msg = form.querySelector('[data-msg]');
+  try { await fn(); msg.innerHTML = `<span class="okmsg">${okText}</span>`; form.reset(); await renderHost(); runSearch(); }
+  catch (e) { msg.innerHTML = errorHtml(e); }
+}
+
+function syncSpaceForm() {
+  const f = $('#new-space');
+  const c = state.catalog.categories[f.category.value];
+  if (!c) return;
+  $('#cat-hint').textContent = c.group === 'container'
+    ? 'A container just groups other spaces (a building, a garage). It is never rented itself.'
+    : `Default booking: ${c.mode}. Before going live you'll confirm: ${c.checklist.join('; ')}.`;
+  $('#rate-inputs').innerHTML = c.terms.map((t) => `<label>${state.catalog.terms[t].label} ($/${state.catalog.terms[t].unit})
+    <input type="number" min="0" step="0.01" data-rate="${t}"></label>`).join('') || '<span class="muted">No prices — not rentable.</span>';
+  const prop = hostProps.find((p) => p.id === f.propertyId.value);
+  f.parentId.innerHTML = '<option value="">— nothing —</option>' + (prop?.spaces ?? []).map((s) => `<option value="${s.id}">${esc(s.title)}</option>`).join('');
+  $('#addon-opts').hidden = f.policy.value === 'standalone';
+}
+
+function syncPackageForm() {
+  const kf = $('#new-package');
+  const prop = hostProps.find((p) => p.id === kf.propertyId.value);
+  $('#pkg-items').innerHTML = (prop?.spaces ?? []).filter((s) => s.rentable !== false).map((s) => `<label>
+    <input type="checkbox" data-pkgspace="${s.id}"> <span style="flex:1">${esc(s.title)}</span>
+    <input type="number" min="1" max="${s.quantity ?? 1}" value="1" data-pkgqty="${s.id}"></label>`).join('') || '<span class="muted">Add spaces first.</span>';
+}
+
+// ---------- bookings ----------
+const NEXT = { proposed: 'Start site assessment', site_assessment: 'Send contract', contract: 'Sign & confirm' };
+async function renderBookings() {
+  const list = await api(`bookings?userId=${state.user}`);
+  const cat = state.catalog;
+  $('#booking-list').innerHTML = list.length ? list.map((b) => {
+    const acts = [];
+    if (b.role === 'host' && b.status === 'pending') acts.push(['approve', 'Approve'], ['decline', 'Decline']);
+    if (b.role === 'host' && NEXT[b.status]) acts.push(['advance', NEXT[b.status]], ['decline', 'Decline']);
+    if (['pending', 'proposed', 'site_assessment', 'contract', 'confirmed', 'active'].includes(b.status)) acts.push(['cancel', 'Cancel']);
+    const range = b.term === 'hourly' ? `${b.start.slice(0, 16).replace('T', ' ')} → ${b.end.slice(11, 16)}` : `${b.start} → ${b.end}`;
+    return `<div class="card booking">
+      <div class="head"><strong>${esc(b.packageName ?? b.itemsLabel)}</strong><span class="status tag ${b.status === 'confirmed' ? 'ok' : b.status === 'declined' || b.status === 'cancelled' ? 'warn' : ''}">${b.status.replace('_', ' ')}</span></div>
+      <div class="muted">${b.role === 'host' ? `Renter: ${esc(b.renterName)}` : `Host: ${esc(b.hostName)}`} · ${cat.terms[b.term].label} · ${range}
+        ${b.quote ? ` · ${money(b.quote.total)} total${b.quote.schedule?.recurring ? ` (${money(b.quote.schedule.recurring)}/${b.quote.schedule.every})` : ''}` : ''}</div>
+      ${b.note ? `<div class="muted">“${esc(b.note)}”</div>` : ''}
+      <div class="actions">${acts.map(([a, l]) => `<button class="${a === 'cancel' || a === 'decline' ? 'ghost' : ''}" data-act="${a}" data-id="${b.id}">${l}</button>`).join('')}</div>
+    </div>`;
+  }).join('') : '<p class="muted">No bookings yet for this user.</p>';
+  $('#booking-list').onclick = async (e) => {
+    const btn = e.target.closest('[data-act]'); if (!btn) return;
+    try { await api(`bookings/${btn.dataset.id}/${btn.dataset.act}`, { actorId: state.user }); }
+    catch (err) { alert(err.message); }
+    renderBookings(); runSearch();
+  };
+}
+
+// ---------- catalog ----------
+function renderCatalog() {
+  const cat = state.catalog;
+  $('#catalog-list').innerHTML = Object.entries(cat.groups).filter(([g]) => g !== 'container').map(([g, label]) => `<div class="catalog-group">
+    <h2>${esc(label)}</h2><div class="catalog-grid">${Object.values(cat.categories).filter((c) => c.group === g).map((c) => `<div class="card">
+      <strong>${esc(c.label)}</strong>
+      <div>${c.terms.map((t) => `<span class="tag">${cat.terms[t].label}</span>`).join('')}</div>
+      <div class="muted">${{ instant: 'Instant book', request: 'Request to book', proposal: 'Proposal & contract' }[c.mode]} · priced per ${c.measure}</div>
+      <ul>${c.checklist.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></div>`).join('')}</div></div>`).join('');
+}
+
+function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
+
+boot();
+</script>
+</body>
+</html>

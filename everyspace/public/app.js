@@ -4,6 +4,7 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 const money = (n) => `$${Number(n).toLocaleString(undefined, { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 })}`;
 
 async function api(path, body) {
+  if (window.everyspaceApi) return window.everyspaceApi(path, body); // single-file build
   const res = await fetch(`/api/${path}`, body ? { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) } : {});
   const data = await res.json();
   if (!res.ok) { const e = new Error(data.error); e.details = data.details; throw e; }
@@ -55,6 +56,7 @@ async function boot() {
   setupHostForms();
   renderCatalog();
   refreshAll();
+  if (window.EVERYSPACE_START_TAB) showTab(window.EVERYSPACE_START_TAB);
 }
 
 function showTab(tab) {
@@ -62,6 +64,8 @@ function showTab(tab) {
   for (const s of document.querySelectorAll('.view')) s.hidden = s.id !== tab;
   if (tab === 'bookings') renderBookings();
   if (tab === 'host') renderHost();
+  if (tab === 'plan' && !$('#plan-body').innerHTML.trim()) api('spec').then((r) => { $('#plan-body').innerHTML = r.html; });
+  window.scrollTo(0, 0);
 }
 
 function refreshAll() { runSearch(); renderHost(); renderBookings(); }
