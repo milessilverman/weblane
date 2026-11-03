@@ -669,3 +669,11 @@ span.block { display: block; }
 .paused-dot { position: relative; left: -22px; top: 14px; margin-right: -18px; background: var(--panel); border-radius: 50%; font-size: 12px; padding: 2px; box-shadow: var(--shadow); }
 .manage .block > .two { align-items: end; margin-top: 10px; }
 .manage-price { align-items: flex-start; }
+.view.chat-view { padding-bottom: 130px; }
+.composer { flex-direction: column; gap: 8px; }
+.composer-row { display: flex; gap: 8px; }
+.quick-replies { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+.quick-replies::-webkit-scrollbar { display: none; }
+.our-cut { font-size: 13px; color: var(--muted); padding: 8px 10px; border-radius: 10px; background: var(--panel-2); }
+.take-row { align-items: center; }
+.take-row > span { gap: 2px; }

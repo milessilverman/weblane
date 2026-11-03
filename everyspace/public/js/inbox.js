@@ -14,6 +14,10 @@ export async function renderInbox(view) {
 
 const NEXT_LABEL = { proposed: 'Accept & schedule site visit', site_assessment: 'Site passed: send contract', contract: 'Contract signed: confirm' };
 
+// One-tap replies; they fill the box so people can edit before sending.
+const HOST_REPLIES = ['Thanks for booking! 😊', 'Access details are in your trip.', 'Yes, that works.', "Sorry, that won't work."];
+const RENTER_REPLIES = ['What time can I arrive?', 'Thanks so much!', 'Running a few minutes late.', 'Is there anything I should know?'];
+
 export async function renderChat(view, [bookingId]) {
   const [msgs, bookings] = await Promise.all([api(`bookings/${bookingId}/messages?userId=${state.user}`), api(`bookings?userId=${state.user}`)]);
   const b = bookings.find((x) => x.id === bookingId);
@@ -30,8 +34,11 @@ export async function renderChat(view, [bookingId]) {
     ${actions.length ? `<div class="action-bar"><span>${b.status === 'pending' ? `${esc(b.renter.name)} is waiting for your answer` : 'Infrastructure proposal'}</span>
       <div>${actions.map(([a, l]) => `<button class="btn small ${a === 'decline' ? 'ghost' : ''}" data-act="${a}">${l}</button>`).join('')}</div></div>` : ''}
     <div class="chat" id="chat">${msgs.map((m) => bubble(m, b)).join('')}</div>
-    <form class="composer" id="composer"><input id="text" placeholder="Message ${esc(other?.name)}…" autocomplete="off">
-      <button class="icon-btn send" aria-label="Send">${icon.send}</button></form>`;
+    <form class="composer" id="composer">
+      <div class="quick-replies">${(isHost ? HOST_REPLIES : RENTER_REPLIES).map((r) => `<button type="button" class="chip small" data-reply="${esc(r)}">${esc(r)}</button>`).join('')}</div>
+      <div class="composer-row"><input id="text" placeholder="Message ${esc(other?.name)}…" autocomplete="off">
+      <button class="icon-btn send" aria-label="Send">${icon.send}</button></div></form>`;
+  for (const q of $$('[data-reply]', view)) q.onclick = () => { $('#text').value = q.dataset.reply; $('#text').focus(); };
   bindBack(view);
   const chat = $('#chat');
   chat.scrollTop = chat.scrollHeight;

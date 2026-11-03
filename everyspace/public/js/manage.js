@@ -28,7 +28,18 @@ export async function renderManage(view, [id]) {
 
       ${s.parity.length ? `<div class="notice warn">⚖️ <div><strong>It's cheaper on ${esc(s.parity[0].cheapest.name)}.</strong>
         Renters here pay ${money(s.parity[0].ours)} per ${term(s.parity[0].term).unit} all-in; on ${esc(s.parity[0].cheapest.name)} about ${money(s.parity[0].cheapest.theirs)}.
-        We automatically beat their price and <strong>pay the difference ourselves</strong>. Your payout doesn't change, but lowering your price here gets you more bookings.</div></div>` : ''}
+        We give up our own cut to compete, and <strong>your payout never changes</strong>. Set the price below that pays you the same as there, and renters pay less here.</div></div>` : ''}
+
+      ${s.takeHome.length ? `<section class="block"><h2>You earn the same everywhere</h2>
+        <p class="muted small">What you take home per unit after each site's owner fee (their fees are estimates). Matching your take-home here makes Everyspace the cheapest place to book you, because our fees are lower.</p>
+        <div class="compare">${s.takeHome.map((r, i) => `<div class="compare-row take-row"><span><strong>${esc(r.name)} · ${term(r.term).label}</strong>
+            <span class="muted small">You get ${money(r.there)} there · ${r.here != null ? `${money(r.here)} here` : 'not offered here'} · renters pay ~${money(r.renterThere)} there</span>
+            <span class="small payout">Price here for the same take-home: ${money(r.sameRate)} → renters pay ${money(r.renterAtSame)}</span></span>
+            ${r.here == null || Math.abs(r.sameRate - (s.rates?.[r.term] ?? 0)) > 0.01 ? `<button class="btn small" data-same="${i}">Use ${money(r.sameRate)}</button>` : '<span class="badge ok">Matched</span>'}</div>`).join('')}</div></section>` : ''}
+
+      ${c.audience === 'business' ? '' : `<section class="block row-between"><div><h2>${(s.mode ?? c.mode) === 'instant' ? '⚡ Instant book' : '✋ You approve each request'}</h2>
+        <div class="muted small">${(s.mode ?? c.mode) === 'instant' ? 'Renters book right away. Most bookings, least work.' : 'You get 24 hours to accept or decline. Dates are held meanwhile.'}</div></div>
+        <label class="switch" title="Instant book"><input type="checkbox" id="instant" ${(s.mode ?? c.mode) === 'instant' ? 'checked' : ''}><span></span></label></section>`}
 
       <section class="block"><h2>Prices</h2>
         <div class="price-list">${terms.map((t) => {
@@ -66,6 +77,13 @@ export async function renderManage(view, [id]) {
     catch (e) { if (msgEl) msgEl.innerHTML = errorBox(e); else toast(e.message); return false; }
   };
 
+  for (const b of $$('[data-same]', view)) b.onclick = async () => {
+    const r = s.takeHome[+b.dataset.same];
+    if (await save({ rates: { ...s.rates, [r.term]: r.sameRate } }, null, `${term(r.term).label} price set to ${money(r.sameRate)}`)) renderManage(view, [id]);
+  };
+  if ($('#instant')) $('#instant').onchange = async (e) => {
+    if (await save({ mode: e.target.checked ? 'instant' : 'request' }, null, e.target.checked ? 'Instant book on' : 'You\'ll approve each request')) renderManage(view, [id]);
+  };
   $('#live').onchange = async (e) => { if (await save({ paused: !e.target.checked }, null, e.target.checked ? 'Listing is live' : 'Listing paused')) renderManage(view, [id]); };
   for (const inp of $$('[data-rate]', view)) inp.oninput = () => {
     const v = Number(inp.value);
@@ -131,17 +149,19 @@ export async function renderFairPrice(view) {
 
       <h2>Price-beat guarantee</h2>
       <ol>
-        <li><strong>Before you book:</strong> if the owner also lists the space on another site, we show you both prices side by side. If theirs is lower, we automatically beat it by ${pct(p.beatPct)} at checkout.</li>
+        <li><strong>The owner earns the same everywhere.</strong> Prices differ between sites mostly because of each site's fees. Ours are lower, so the same owner price usually costs you less here.</li>
+        <li><strong>Before you book:</strong> if the owner also lists the space on another site, we show you both prices side by side. If theirs is lower, we automatically <strong>cut our own fee</strong> to beat it by ${pct(p.beatPct)} at checkout.</li>
         <li><strong>After you book:</strong> found the same space cheaper for the same dates? Send us the link and the total within ${p.claimWindowHours} hours of booking, or any time before it starts. We refund the difference plus ${pct(p.beatPct)} of the other price.</li>
-        <li><strong>Everyspace pays for it, not the owner.</strong> The owner's payout never changes.</li>
+        <li><strong>It comes out of our cut, never the owner's.</strong> We'll give up everything we earn on a booking (our ${pct(p.serviceFee)} service fee and ${pct(p.hostFee)} owner fee) to be the cheapest. If an owner charges less somewhere else than even that covers, we say so plainly and refund all of our cut.</li>
         <li>It has to be the same space, the same dates and the full total including that site's fees.</li>
       </ol>
+      <p class="muted">Every receipt shows exactly what Everyspace earned on the booking.</p>
 
       <h2>How we compare totals</h2>
       <p class="muted">Other sites add their own fees on top of the owner's price. We include them so the comparison is fair. These are estimates and are labeled that way.</p>
-      <div class="table-wrap"><table><thead><tr><th>Site</th><th>Renter fee we assume</th><th>Per booking</th></tr></thead><tbody>
-        <tr><td><strong>Everyspace</strong></td><td><strong>${pct(p.serviceFee)}</strong></td><td>$0</td></tr>
-        ${Object.values(p.platforms).map((x) => `<tr><td>${esc(x.name)}</td><td>${pct(x.guestFeePct)}${x.verified ? '' : ' <span class="muted">(estimate)</span>'}</td><td>${money(x.perBookingFee)}</td></tr>`).join('')}
+      <div class="table-wrap"><table><thead><tr><th>Site</th><th>Renter fee</th><th>Per booking</th><th>Owner keeps</th></tr></thead><tbody>
+        <tr><td><strong>Everyspace</strong></td><td><strong>${pct(p.serviceFee)}</strong></td><td>$0</td><td><strong>${pct(1 - p.hostFee)}</strong></td></tr>
+        ${Object.values(p.platforms).map((x) => `<tr><td>${esc(x.name)}${x.verified ? '' : ' <span class="muted">(estimate)</span>'}</td><td>${pct(x.guestFeePct)}</td><td>${money(x.perBookingFee)}</td><td>${pct(1 - x.hostFeePct)}</td></tr>`).join('')}
       </tbody></table></div>
       <p class="muted small">We never copy listings from other sites. Comparisons come from links owners add themselves and from links renters send us, and we re-check them regularly.</p>
     </div>`;

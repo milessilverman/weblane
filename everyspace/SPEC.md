@@ -129,8 +129,10 @@ Rules:
 **Price-beat guarantee.**
 1. *Before booking:* if a linked listing is cheaper for the same booking, checkout automatically beats it by 5% of their price. The receipt shows a "Price beat vs X" line.
 2. *After booking:* within 48 hours of booking, or any time before it starts, a renter can send a link and the other site's total. If the link is the owner's own cross-listing and the price matches what we have on file (within 3%), the refund (difference + 5%) is instant. Otherwise a person checks it within 24 hours.
-3. **Everyspace pays, never the owner.** Payouts are unchanged, and both receipts say so.
-4. One claim per booking; same space, same dates, full total with fees. Caps and funding are an open decision (RESEARCH.md §1.4).
+3. **It comes out of our cut, never the owner's.** The owner earns the same no matter where they list; prices differ between sites mostly because of each site's fees. So we compete by shrinking our own margin: the service fee (10%) plus the owner fee (3%) on that booking.
+4. **Capped at our whole cut.** We'll go down to zero margin on a booking, but never below it. If the owner charges so much less elsewhere that even our whole cut can't beat it, checkout says so plainly ("we gave up our entire cut to get as close as we can") and the owner is nudged to match.
+5. Every quote and receipt shows **what Everyspace earns** on the booking.
+6. One claim per booking; same space, same dates, full total with fees.
 
 ## 1d. Owner-friendly by default
 
@@ -140,6 +142,10 @@ Rules:
   * Edit prices with **nearby price ranges** (min–max and median of similar listings) and a live "renter pays $X · you get $Y" line.
   * Block dates on a calendar, with a reason (using it yourself, booked elsewhere).
   * Link the same listing on other sites. If it's cheaper elsewhere, the owner sees a friendly warning: we're covering the difference, but matching wins more bookings.
+* **You earn the same everywhere.** For each linked listing, Manage listing shows the owner's take-home per unit there (after that site's owner fee) and here. It suggests the price here that pays them exactly the same; because our fees are lower, renters then pay less here. One tap applies it.
+* **Instant book or approve each request**, chosen per listing.
+* **Earnings spreadsheet:** download every booking with what the renter paid, what Everyspace earned and the owner's payout.
+* **Quick replies in chat** for common answers.
 * **Pricing help when listing:** typical local prices plus the live range of similar listings, and the payout shown as they type.
 * **No surprises:** access details are only shared after confirmation, a deposit is held for higher-risk spaces, and conversations are tied to each booking.
 
@@ -253,6 +259,7 @@ The same model works for a single house. For example, an owner can rent the ADU 
 | **0.5: app prototype (done)** | Installable mobile-first app. Renters: explore with map, events and bundles, listing pages with availability calendar and reviews, checkout for every rental length, trips with access details, messaging, reviews. Hosts: today dashboard, approve or decline in chat, listings tree, earnings by month, step-by-step listing wizard with the required checklist. Works offline as a single HTML file. |
 | **0.75: two sides + polish (done)** | Everyspace for Business (Sites, Pipeline, landing page, business-only rule), new categories (kitchen, sport court, boat dock, pasture, fleet parking, signage, parcel lockers), earnings estimator, Saved, guest favorites, ideas row, desktop listing layout with a booking card and gallery, refreshed visual design. |
 | **0.9: transparency + owner tools (done)** | All-in prices everywhere, money breakdown, price check against owners' cross-listings, automatic price beat at checkout, price-match claims with fraud checks, How pricing works page; Manage listing (pause, prices with nearby ranges and payout preview, block dates, cross-listings, "cheaper elsewhere" warning). Open research in RESEARCH.md. |
+| **0.95: beat from our cut (done)** | Price beat and claims funded from Everyspace's cut and capped at it; "Everyspace earns" on every quote and receipt; owner take-home comparison with one-tap "same take-home" price; instant-book toggle; earnings CSV; chat quick replies. |
 | 1: MVP | Real auth, Postgres, Stripe Connect payouts, photo uploads, map search, messaging, notifications |
 | 2: Trust | ID verification, reviews, check-in/out photo log, disputes, insurance partner |
 | 3: Long-term | Lease templates and e-sign, autopay, move-in/out, maintenance requests |

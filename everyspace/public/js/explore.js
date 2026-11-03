@@ -111,7 +111,9 @@ export function spaceCard(s) {
       <div class="price">${r ? `from ${priceTag({ ...r, amount: s.allIn ?? r.amount })} <span class="all-in">all-in</span>` : ''}</div>
       ${s.compare ? (s.compare.cheaperHere
         ? `<div class="cmp-line ok">✓ ${money(s.compare.theirs - s.compare.ours)} less than ${esc(s.compare.vs)}</div>`
-        : `<div class="cmp-line beat">🛡️ Cheaper on ${esc(s.compare.vs)}? We'll beat it</div>`) : ''}
+        : s.compare.beatable
+          ? `<div class="cmp-line beat">🛡️ We cut our fee to beat ${esc(s.compare.vs)}</div>`
+          : `<div class="cmp-line beat">🛡️ We cut our whole fee vs ${esc(s.compare.vs)}</div>`) : ''}
       ${badges ? `<div class="badges">${badges}</div>` : ''}
     </div></a>`;
 }

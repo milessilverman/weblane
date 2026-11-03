@@ -127,6 +127,8 @@ fs.mkdirSync(outDir, { recursive: true });
   await step('listings + earnings', async () => {
     await go('#/host/listings'); await p.waitForTimeout(300); await shot('16-listings'); await overflow('listings');
     await go('#/host/earnings'); await p.waitForTimeout(300); await shot('17-earnings'); await overflow('earnings');
+    const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#csv')]);
+    if (!dl.suggestedFilename().endsWith('.csv')) throw new Error('earnings export is not a CSV');
   });
   await step('Maya lists a new space with the wizard', async () => {
     await go('#/profile'); await p.click('[data-user="u_maya"]'); await p.waitForSelector('.greeting');
@@ -155,10 +157,16 @@ fs.mkdirSync(outDir, { recursive: true });
   await step('Luis sees the "cheaper elsewhere" warning on his pool', async () => {
     await go('#/profile'); await p.click('[data-user="u_luis"]'); await p.waitForSelector('.greeting');
     await go('#/host/space/s_elm_pool'); await p.waitForSelector('.notice.warn'); await shot('21c-parity');
+    await p.click('[data-same]'); await p.waitForTimeout(600);
+    if (await p.$('.notice.warn')) throw new Error('still cheaper elsewhere after matching take-home');
+    if (!(await p.$('#instant'))) throw new Error('no instant-book switch');
+    await shot('21d-matched');
     await go('#/profile'); await p.click('[data-user="u_maya"]'); await p.waitForSelector('.greeting');
   });
   await step('Maya approves Kim from the chat', async () => {
     await go('#/chat/bk_seed_6'); await p.waitForSelector('.action-bar'); await shot('22-host-chat');
+    await p.click('[data-reply]'); await p.click('.send'); await p.waitForTimeout(300);
+    if (!/Thanks for booking/.test(await p.textContent('#chat'))) throw new Error('quick reply not sent');
     await p.click('[data-act="approve"]'); await p.waitForTimeout(500);
     if (await p.$('.action-bar')) throw new Error('still pending');
   });

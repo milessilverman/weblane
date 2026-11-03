@@ -83,8 +83,23 @@ export async function renderHostEarnings(view) {
       <h2 class="section-title">By listing</h2>
       ${e.perSpace.length ? e.perSpace.map((p) => `<a class="list-row link" href="#/space/${p.spaceId}"><div><strong>${esc(p.title)}</strong></div><strong>${money(p.amount)}</strong></a>`).join('')
         : '<div class="muted-block">No bookings yet. Earnings show up as soon as someone books.</div>'}
+      <button class="btn ghost wide" id="csv">⬇️ Download earnings (spreadsheet)</button>
+      <p class="muted small">Every booking with what the renter paid, what Everyspace earned and what you got. Handy at tax time.</p>
       <h2 class="section-title">Payout method</h2>
       <div class="list-row"><span class="pay-icon">🏦</span><div><strong>Checking •••• 6789</strong><div class="muted small">Paid 24h after check-in, or monthly for leases (demo)</div></div></div>
     </div>`;
+  $('#csv').onclick = async () => {
+    const rows = (await api(`bookings?userId=${state.user}`)).filter((b) => b.role === 'host' && b.quote);
+    const cell = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const header = ['Booking', 'Booked on', 'Space', 'Renter', 'Length', 'Start', 'End', 'Status', 'Renter paid (total)', 'Everyspace earned', 'Your payout (total)'];
+    const lines = rows.map((b) => [b.id, b.createdAt.slice(0, 10), b.packageName ?? b.itemsLabel, b.renterName, term(b.term).label, b.start, b.end, b.effective,
+      b.quote.total, b.quote.ourCut ?? '', b.quote.hostPayout].map(cell).join(','));
+    const blob = new Blob([[header.map(cell).join(','), ...lines].join('\n')], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `everyspace-earnings-${state.me.name.toLowerCase()}.csv`;
+    document.body.append(a); a.click(); a.remove();
+    toast(`Downloaded ${rows.length} booking${rows.length === 1 ? '' : 's'}`);
+  };
 }
 

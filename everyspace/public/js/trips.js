@@ -67,6 +67,7 @@ export async function renderTrip(view, [id]) {
         <div class="qline total"><span>Total</span><span>${money(q.total)}</span></div>
         ${q.schedule?.recurring ? `<div class="qline muted"><span>Billed every ${q.schedule.every}</span><span>${money(q.schedule.recurring)}</span></div>` : ''}
         ${b.priceMatch ? `<div class="qline ${b.priceMatch.status === 'approved' ? 'beat' : 'muted'}"><span>🛡️ Price match vs ${esc(b.priceMatch.name)} ${b.priceMatch.status === 'approved' ? '(refunded)' : '(in review)'}</span><span>−${money(b.priceMatch.credit)}${b.priceMatch.perPeriod ? `/${q.schedule.every}` : ''}</span></div>` : ''}
+        ${q.ourCut != null ? `<div class="qline muted"><span>Everyspace earns${b.priceMatch?.status === 'approved' ? ' (before the price-match refund)' : ''}</span><span>${money(q.ourCut)}${q.schedule?.recurring ? `/${q.schedule.every}` : ''}</span></div>` : ''}
         ${isHost && q.hostPayout != null ? `<div class="qline ok"><span>Your payout (after 3% owner fee)${q.priceBeat || b.priceMatch ? ' · unchanged by price beats' : ''}</span><span>${money(q.hostPayout)}</span></div>` : ''}
       </div></section>` : ''}
 

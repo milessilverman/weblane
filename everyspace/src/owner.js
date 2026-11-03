@@ -1,7 +1,8 @@
 // Owner tools: edit prices, pause, block dates, manage cross-listings, and see what similar spaces charge.
 import { BookingError } from './booking.js';
 import { category, TYPICAL } from './catalog.js';
-import { normalizeExternal, unitComparison } from './compare.js';
+import { normalizeExternal, unitComparison, PLATFORMS } from './compare.js';
+import { HOST_FEE, SERVICE_FEE } from './pricing.js';
 import { toMs } from './time.js';
 
 function ownSpace(db, spaceId, actorId) {
@@ -33,6 +34,12 @@ export function updateSpace(db, spaceId, actorId, changes, { now = new Date().to
     s.rates = rates;
   }
   if (changes.paused !== undefined) s.paused = !!changes.paused;
+  if (changes.mode !== undefined) {
+    // Owners choose instant book or approving each request. Business sites always go through proposals.
+    if (cat.audience === 'business') throw new BookingError('Business sites always use proposals');
+    if (!['instant', 'request'].includes(changes.mode)) throw new BookingError('Choose instant book or request to book');
+    s.mode = changes.mode;
+  }
   if (changes.blackouts !== undefined) {
     s.blackouts = changes.blackouts.map((b) => {
       if (!b.start || !b.end || toMs(b.end) <= toMs(b.start)) throw new BookingError('Blocked dates need a start before the end');
@@ -71,5 +78,24 @@ export function ownerView(db, spaceId, actorId) {
   const parity = cat.terms.map((t) => unitComparison(s, t)).filter(Boolean)
     .filter((c) => !c.cheaperHere)
     .map((c) => ({ term: c.term, ours: c.ours, cheapest: c.rows[0] }));
-  return { ...s, categoryInfo: cat, market: marketFor(db, s.category, s.id), upcomingCount: upcoming.length, parity };
+  return { ...s, categoryInfo: cat, market: marketFor(db, s.category, s.id), upcomingCount: upcoming.length, parity, takeHome: takeHome(s) };
+}
+
+// For each linked listing: what the owner takes home there vs here, per unit, and the price here that
+// pays them exactly the same. Because our fees are lower, that price is cheaper for renters too.
+export function takeHome(s) {
+  const r2 = (n) => Math.round(n * 100) / 100;
+  const rows = [];
+  for (const e of s.externalListings ?? []) {
+    const p = PLATFORMS[e.platform];
+    if (!p) continue;
+    for (const [t, theirRate] of Object.entries(e.rates)) {
+      const there = r2(theirRate * (1 - p.hostFeePct));
+      const sameRate = r2(there / (1 - HOST_FEE));
+      const here = s.rates?.[t] != null ? r2(s.rates[t] * (1 - HOST_FEE)) : null;
+      rows.push({ platform: e.platform, name: p.name, term: t, there, here, sameRate,
+        renterThere: r2(theirRate * (1 + p.guestFeePct)), renterAtSame: r2(sameRate * (1 + SERVICE_FEE)), estimated: !p.verified });
+    }
+  }
+  return rows;
 }

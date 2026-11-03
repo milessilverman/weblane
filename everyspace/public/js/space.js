@@ -27,12 +27,17 @@ function priceCheck(s) {
         <span class="muted small">incl. ~${Math.round(r.feePct * 100)}% fee${r.cleaningFee ? ` + ${money(r.cleaningFee)} cleaning` : ''} · checked ${r.verifiedAt ? fmtDate(r.verifiedAt) : '—'}${r.demo ? ' · demo' : ''}</span></span>
         <strong>${money(r.theirs)}</strong></div>`).join('')}
       <div class="compare-verdict ${cmp.cheaperHere ? 'ok' : 'beat'}">${cmp.cheaperHere
-        ? `✓ Cheapest here. You save ${money(Math.min(...cmp.rows.map((r) => r.theirs)) - cmp.ours)} per ${unit} vs ${esc(cmp.rows[0].name)}.`
-        : `${esc(cmp.rows[0].name)} is lower, so we'll <strong>beat it by ${Math.round(s.pricing.beatPct * 100)}%</strong> automatically at checkout. Everyspace pays the difference.`}</div></div>` : '';
+        ? `✓ Cheapest here. You save ${money(Math.min(...cmp.rows.map((r) => r.theirs)) - cmp.ours)} per ${unit} vs ${esc(cmp.rows[0].name)}. The owner earns the same either way; our fees are just lower.`
+        : (() => {
+          const cut = s.rates[cmp.term] * (fee + hostFee);
+          return cmp.ours - cut < cmp.rows[0].theirs
+            ? `${esc(cmp.rows[0].name)} is lower, so at checkout we <strong>cut our own fee to beat it by ${Math.round(s.pricing.beatPct * 100)}%</strong>. The owner gets the same either way.`
+            : `${esc(cmp.rows[0].name)} is lower because the owner charges less there. At checkout we give up <strong>our entire cut (${money(cut)})</strong> to get as close as we can.`;
+        })()}</div></div>` : '';
   return `<h2 class="section-title">Price check</h2>
     ${compareRows || '<div class="muted small">Not listed on other sites that we know of.</div>'}
     ${flow}
-    <a class="guarantee" href="#/fair-price"><span>🛡️</span><div><strong>Price-beat guarantee</strong><span>Find this space cheaper elsewhere for the same dates and we refund the difference plus ${Math.round(s.pricing.beatPct * 100)}%.</span></div>${icon.chevron}</a>`;
+    <a class="guarantee" href="#/fair-price"><span>🛡️</span><div><strong>Price-beat guarantee</strong><span>Find this space cheaper elsewhere for the same dates and we cut our own fee to refund the difference plus ${Math.round(s.pricing.beatPct * 100)}%, up to everything we earn on the booking.</span></div>${icon.chevron}</a>`;
 }
 
 export async function renderSpace(view, [id]) {

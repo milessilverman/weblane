@@ -1,6 +1,7 @@
 // Demo data: five properties around one town, from a house by the fairgrounds to a ranch
 // with a barn roof for solar. Dates are around November 2026.
 import { priceLine, totals } from './pricing.js';
+import { ourCut } from './compare.js';
 
 export function seed() {
   const users = [
@@ -251,7 +252,7 @@ export function seed() {
     const lines = bk.items.map((it) => priceLine(spaces.find((s) => s.id === it.spaceId), it.qty, bk.term, bk.start, bk.end));
     const q = totals(lines, bk.term, bk.start, bk.end, null);
     bk.quote = { total: q.total, rent: q.rent, serviceFee: q.serviceFee, hostPayout: q.hostPayout, packageDiscount: 0,
-      deposit: q.deposit, schedule: q.schedule, lines: q.lines };
+      deposit: q.deposit, schedule: q.schedule, lines: q.lines, hostFee: q.hostFee, ourCut: ourCut(q, ['hourly', 'daily', 'weekly'].includes(bk.term)) };
   }
 
   const m = (bookingId, from, text, at) => db.messages.push({ id: `m_seed_${db.messages.length + 1}`, bookingId, from, text, at });

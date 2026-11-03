@@ -160,11 +160,14 @@ export async function renderBook(view, params) {
           <div class="muted small">${esc(l.detail)} × ${money(l.unitRate)}${l.events.length ? ` · <span class="event-text">${esc(l.events.join(', '))} rate</span>` : ''}</div></div><span>${money(l.amount)}</span></div>`).join('')}
         ${q.packageDiscount ? `<div class="qline ok"><span>Bundle discount</span><span>−${money(q.packageDiscount)}</span></div>` : ''}
         <div class="qline"><span>Service fee</span><span>${money(q.serviceFee)}</span></div>
-        ${q.priceBeat ? `<div class="qline beat"><div>🛡️ Price beat vs ${esc(q.priceBeat.name)}<div class="muted small">They'd charge ~${money(q.priceBeat.theirs)}${q.schedule.recurring ? `/${q.schedule.every}` : ''}; we beat it by 5%. Paid by Everyspace, not the owner.</div></div><span>−${money(q.priceBeat.credit)}${q.schedule.recurring ? `/${q.schedule.every}` : ''}</span></div>` : ''}
+        ${q.priceBeat ? `<div class="qline beat"><div>🛡️ Price beat vs ${esc(q.priceBeat.name)}<div class="muted small">${q.priceBeat.capped
+          ? `They'd charge ~${money(q.priceBeat.theirs)}${q.schedule.recurring ? `/${q.schedule.every}` : ''}. We gave up our entire cut to get as close as we can; the owner charges less there, so it's still a little cheaper on ${esc(q.priceBeat.name)}.`
+          : `They'd charge ~${money(q.priceBeat.theirs)}${q.schedule.recurring ? `/${q.schedule.every}` : ''}; we cut our own fee to beat it by 5%.`} The owner gets the same either way.</div></div><span>−${money(q.priceBeat.credit)}${q.schedule.recurring ? `/${q.schedule.every}` : ''}</span></div>` : ''}
         <div class="qline total"><span>Total</span><span>${money(q.total)}</span></div>
         <div class="qline muted"><span>Due today${q.schedule.recurring ? `, then ${money(q.schedule.recurring)}/${q.schedule.every}` : ''}</span><span>${money(q.schedule.dueNow)}</span></div>
         ${q.deposit ? `<div class="qline muted"><span>Refundable deposit (held)</span><span>${money(q.deposit)}</span></div>` : ''}
         <div class="muted small">${esc(q.schedule.note)}</div>
+        <div class="our-cut">Everyspace earns <strong>${money(q.ourCut)}</strong>${q.schedule.recurring ? `/${q.schedule.every}` : ''} on this booking · the owner gets ${money(q.hostPayout)}${q.schedule.recurring ? ' in total' : ''}</div>
         ${q.comparison ? `<div class="compare mini"><div class="muted small">Same space elsewhere, same ${q.comparison.basis === 'total' ? 'dates, total' : q.comparison.basis.replace('per ', 'price per ')} incl. their fees (estimate):</div>
           ${q.comparison.rows.map((r) => `<div class="compare-row ${r.comparable < q.comparison.ours ? 'lower' : ''}"><span>${esc(r.name)}</span><strong>${money(r.comparable)}</strong></div>`).join('')}
           <div class="compare-row ours"><span><strong>You pay here</strong></span><strong>${money(q.schedule.recurring && q.comparison.basis !== 'total' ? q.schedule.recurring : q.total)}</strong></div></div>` : ''}

@@ -4,7 +4,7 @@ import { checkAvailability, HOLDING } from './availability.js';
 import { priceLine, totals } from './pricing.js';
 import { duration, toMs } from './time.js';
 import { withArticle } from './describe.js';
-import { applyComparison } from './compare.js';
+import { applyComparison, ourCut } from './compare.js';
 
 export class BookingError extends Error {
   constructor(message, details = []) { super(message); this.details = details; }
@@ -124,6 +124,7 @@ export function quote(db, cart) {
   const q = { mode: ev.mode, package: ev.pkg?.name ?? null, availability, ...totals(ev.lines, cart.term, cart.start, cart.end, ev.pkg) };
   // Same space listed elsewhere? Show the comparison and beat any cheaper verified price (single-space bookings).
   if (!ev.pkg && ev.items.length === 1) applyComparison(ev.spaces[0], q, { ...cart, items: ev.items });
+  q.ourCut ??= ourCut(q, ['hourly', 'daily', 'weekly'].includes(cart.term)); // what Everyspace earns, shown on every receipt
   return q;
 }
 
@@ -149,7 +150,7 @@ export function createBooking(db, cart, { now = new Date().toISOString(), newId 
     mode: q.mode,
     status: INITIAL[q.mode],
     quote: { total: q.total, rent: q.rent, serviceFee: q.serviceFee, hostPayout: q.hostPayout, packageDiscount: q.packageDiscount, deposit: q.deposit,
-      schedule: q.schedule, lines: q.lines, priceBeat: q.priceBeat ?? null },
+      schedule: q.schedule, lines: q.lines, priceBeat: q.priceBeat ?? null, hostFee: q.hostFee, ourCut: q.ourCut },
     note: cart.note ?? '',
     history: [{ at: now, status: INITIAL[q.mode], by: cart.renterId }],
     createdAt: now,

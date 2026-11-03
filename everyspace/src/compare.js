@@ -8,24 +8,42 @@
 // Other sites add their own renter fees on top of the owner's price. PLATFORMS holds our best
 // estimate of each site's fee so totals compare like for like. These are ASSUMPTIONS to verify
 // before launch (see RESEARCH.md) and the UI always labels comparisons as estimates.
-import { priceRates, SERVICE_FEE } from './pricing.js';
-import { duration } from './time.js';
+import { priceRates, SERVICE_FEE, HOST_FEE } from './pricing.js';
 
-export const BEAT_PCT = 0.05; // we beat a cheaper verified total by 5% of their price
+// The price beat comes out of Everyspace's own cut (service fee + owner fee), never the owner's payout.
+// The owner earns the same here as anywhere else; we shrink our margin to be the cheapest. We'll cut
+// our margin all the way to zero if needed, but never below it, so the beat is capped at our cut.
+export const BEAT_PCT = 0.05; // we beat a cheaper verified total by 5% of their price (up to our whole cut)
 export const CLAIM_WINDOW_HOURS = 48; // claims allowed within 48h of booking, or any time before start
 
+// guestFeePct: what the site adds on top for renters. hostFeePct: what it keeps from the owner.
+// All are estimates until verified (RESEARCH.md §1.1); verified:false keeps the "estimate" label on.
 export const PLATFORMS = {
-  airbnb: { name: 'Airbnb', domain: 'airbnb.com', guestFeePct: 0.142, perBookingFee: 0, verified: false },
-  vrbo: { name: 'Vrbo', domain: 'vrbo.com', guestFeePct: 0.12, perBookingFee: 0, verified: false },
-  furnished_finder: { name: 'Furnished Finder', domain: 'furnishedfinder.com', guestFeePct: 0, perBookingFee: 0, verified: false },
-  neighbor: { name: 'Neighbor', domain: 'neighbor.com', guestFeePct: 0.10, perBookingFee: 0, verified: false },
-  spothero: { name: 'SpotHero', domain: 'spothero.com', guestFeePct: 0, perBookingFee: 2.5, verified: false },
-  swimply: { name: 'Swimply', domain: 'swimply.com', guestFeePct: 0.10, perBookingFee: 0, verified: false },
-  peerspace: { name: 'Peerspace', domain: 'peerspace.com', guestFeePct: 0.15, perBookingFee: 0, verified: false },
-  sniffspot: { name: 'Sniffspot', domain: 'sniffspot.com', guestFeePct: 0.10, perBookingFee: 0, verified: false },
-  craigslist: { name: 'Craigslist', domain: 'craigslist.org', guestFeePct: 0, perBookingFee: 0, verified: true },
-  facebook: { name: 'Facebook Marketplace', domain: 'facebook.com', guestFeePct: 0, perBookingFee: 0, verified: true },
+  airbnb: { name: 'Airbnb', domain: 'airbnb.com', guestFeePct: 0.142, hostFeePct: 0.03, perBookingFee: 0, verified: false },
+  vrbo: { name: 'Vrbo', domain: 'vrbo.com', guestFeePct: 0.12, hostFeePct: 0.08, perBookingFee: 0, verified: false },
+  furnished_finder: { name: 'Furnished Finder', domain: 'furnishedfinder.com', guestFeePct: 0, hostFeePct: 0, perBookingFee: 0, verified: false },
+  neighbor: { name: 'Neighbor', domain: 'neighbor.com', guestFeePct: 0.10, hostFeePct: 0.049, perBookingFee: 0, verified: false },
+  spothero: { name: 'SpotHero', domain: 'spothero.com', guestFeePct: 0, hostFeePct: 0.30, perBookingFee: 2.5, verified: false },
+  swimply: { name: 'Swimply', domain: 'swimply.com', guestFeePct: 0.10, hostFeePct: 0.15, perBookingFee: 0, verified: false },
+  peerspace: { name: 'Peerspace', domain: 'peerspace.com', guestFeePct: 0.15, hostFeePct: 0.15, perBookingFee: 0, verified: false },
+  sniffspot: { name: 'Sniffspot', domain: 'sniffspot.com', guestFeePct: 0.10, hostFeePct: 0.20, perBookingFee: 0, verified: false },
+  craigslist: { name: 'Craigslist', domain: 'craigslist.org', guestFeePct: 0, hostFeePct: 0, perBookingFee: 0, verified: true },
+  facebook: { name: 'Facebook Marketplace', domain: 'facebook.com', guestFeePct: 0, hostFeePct: 0, perBookingFee: 0, verified: true },
 };
+
+// Our cut on a quote: per booking for short stays, per period for monthly/lease/infrastructure.
+export function ourCut(quote, short) {
+  if (short) return money((quote.serviceFee ?? 0) + (quote.hostFee ?? (quote.rent - quote.hostPayout)));
+  const rentPerPeriod = quote.schedule.recurring / (1 + SERVICE_FEE);
+  return money(rentPerPeriod * (SERVICE_FEE + HOST_FEE));
+}
+
+// Credit for a cheaper total: difference + 5% of theirs, but never more than our own cut.
+export function beatCredit(ours, theirs, cut) {
+  const wanted = money(ours - theirs + theirs * BEAT_PCT);
+  const credit = Math.min(wanted, cut);
+  return { credit: money(credit), wanted, capped: wanted > cut, beaten: ours - credit < theirs, matched: ours - credit <= theirs };
+}
 
 const SHORT = new Set(['hourly', 'daily', 'weekly']);
 const money = (n) => Math.round(n * 100) / 100;
@@ -67,10 +85,13 @@ export function externalTotal(ext, term, start, end, qty = 1) {
 }
 
 // Compare a single-space quote with that space's cross-listings and apply the price beat if anything is cheaper.
-// Mutates and returns the quote. Everyspace pays the beat; the owner's payout never changes.
+// Mutates and returns the quote. The beat comes out of our cut; the owner's payout never changes.
 export function applyComparison(space, quote, cart) {
+  const short = SHORT.has(cart.term);
+  quote.ourCut ??= ourCut(quote, short);
+  quote.ourCutBasis = short ? 'booking' : quote.schedule.every;
   if (!space?.externalListings?.length) return quote;
-  const ours = SHORT.has(cart.term) ? quote.total : quote.schedule.recurring;
+  const ours = short ? quote.total : quote.schedule.recurring;
   if (ours == null) return quote;
   const qty = cart.items?.[0]?.qty ?? 1;
   const rows = space.externalListings.map((e) => externalTotal(e, cart.term, cart.start, cart.end, qty)).filter(Boolean)
@@ -80,9 +101,13 @@ export function applyComparison(space, quote, cart) {
   quote.comparison = { ours: money(ours), basis: SHORT.has(cart.term) ? 'total' : `per ${quote.schedule.every}`, rows };
   const cheapest = rows[0];
   if (cheapest.comparable < ours) {
-    const credit = money(ours - cheapest.comparable + cheapest.comparable * BEAT_PCT);
-    quote.priceBeat = { platform: cheapest.platform, name: cheapest.name, theirs: cheapest.comparable, credit, paidBy: 'everyspace' };
-    if (SHORT.has(cart.term)) {
+    const cut = quote.ourCut;
+    const b = beatCredit(ours, cheapest.comparable, cut);
+    const credit = b.credit;
+    quote.priceBeat = { platform: cheapest.platform, name: cheapest.name, theirs: cheapest.comparable, credit, paidBy: 'everyspace',
+      capped: b.capped, beaten: b.beaten, matched: b.matched, cutBefore: cut, cutAfter: money(cut - credit) };
+    quote.ourCut = money(cut - credit);
+    if (short) {
       quote.total = money(quote.total - credit);
       quote.schedule.dueNow = money(quote.schedule.dueNow - credit);
     } else {
@@ -139,13 +164,17 @@ export function evaluateClaim(space, booking, claim, now) {
   const qty = booking.items[0]?.qty ?? 1;
   const onFile = known && externalTotal(known, booking.term, booking.start, booking.end, qty);
   const matches = onFile && theirs >= onFile.comparable * 0.97;
-  const credit = money(ours - theirs + theirs * BEAT_PCT);
+  // Whatever is left of our cut on this booking (after any beat at checkout) is the most we can give back.
+  const cut = booking.quote.ourCut ?? ourCut(booking.quote, short);
+  const b = beatCredit(ours, theirs, cut);
+  const credit = b.credit;
+  const capNote = b.capped ? ` That's our entire cut on this booking; ${PLATFORMS[platform].name}'s price is below what the owner takes home here.` : '';
   return {
     claim: {
-      platform, name: PLATFORMS[platform].name, url: claim.url, theirs, ours, credit, at: now,
+      platform, name: PLATFORMS[platform].name, url: claim.url, theirs, ours, credit, at: now, capped: b.capped, beaten: b.beaten,
       perPeriod: !short, status: matches ? 'approved' : 'in_review',
       note: matches
-        ? 'Matched to the owner\'s linked listing. Refund issued.'
+        ? `Matched to the owner's linked listing. Refund issued, paid from Everyspace's cut.${capNote}`
         : known
           ? `That's lower than the ${PLATFORMS[platform].name} price we have on file (~${onFile ? onFile.comparable : '?'}). We'll check the listing and confirm within 24 hours.`
           : 'We\'re checking it\'s the same space, dates and all-in total. Usually within 24 hours.',

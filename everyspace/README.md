@@ -42,10 +42,11 @@ The app has three sides: **renting** and **hosting** for people, and **Everyspac
 **Transparent pricing (everywhere):**
 - Every price is **all-in** (includes the 10% service fee). Listing pages show the owner's price, the fee, and where the money goes.
 - **Price check:** if the owner also lists the space on Airbnb, Vrbo, SpotHero, Neighbor, Swimply or Peerspace, the listing compares totals including the other site's fees. Try the Whole house (cheapest here) or the Saltwater pool (cheaper on Swimply).
-- **Price-beat guarantee:** cheaper elsewhere → beaten by 5% automatically at checkout. Found one after booking → "Found it cheaper?" on the trip page. Everyspace pays; owners' payouts never change. Rules are under Profile → How pricing works.
+- **Price-beat guarantee:** cheaper elsewhere → beaten by 5% automatically at checkout. Found one after booking → "Found it cheaper?" on the trip page. The beat comes out of Everyspace's own cut (up to all of it, never more); owners' payouts never change. Every receipt shows what Everyspace earned. Rules are under Profile → How pricing works.
 
 **Hosting (Today, Listings, Inbox, Earnings):**
-- **Manage listing** (tap any listing): pause or go live, edit prices next to nearby price ranges with a "you get $X" preview, block dates, and link the same listing on other sites.
+- **Manage listing** (tap any listing): pause or go live, instant book or approve requests, edit prices next to nearby price ranges with a "you get $X" preview, block dates, and link the same listing on other sites. For each linked site it shows **what you take home there vs here** and one-tap sets the price that pays you the same (try Luis's pool).
+- **Earnings** downloads as a spreadsheet; chats have quick replies.
 - **Today:** requests to approve or decline, solar proposals to move forward (site visit, then contract, then confirmed), and upcoming check-ins.
 - **Listings:** grouped by property, with nesting (building → units, garage → bays).
 - **Earnings:** payouts by month, with leases spread across their months, and a breakdown per listing.
