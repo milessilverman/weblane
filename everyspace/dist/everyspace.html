@@ -439,6 +439,214 @@ h1, h2, h3 { line-height: 1.2; }
   .thumb-md { width: 96px; }
   .two { grid-template-columns: 1fr; }
 }
+
+/* =====================================================================
+   v3 design layer: refined tokens, depth, motion, and the new screens
+   ===================================================================== */
+:root {
+  --bg: #faf8f4; --panel: #ffffff; --panel-2: #f2efe8; --ink: #17201b; --muted: #66706a; --line: #e8e4dc;
+  --accent: #1f6b4a; --accent-ink: #ffffff; --accent-soft: #e2f0e8; --accent-2: #e8673c; --accent-2-soft: #fdebe3;
+  --biz: #1c2733; --biz-2: #2d3d4f; --biz-accent: #f5b43a;
+  --shadow: 0 1px 2px rgba(23,32,27,.04), 0 6px 20px rgba(23,32,27,.06);
+  --shadow-lg: 0 2px 6px rgba(23,32,27,.06), 0 18px 40px rgba(23,32,27,.12);
+  --radius: 16px;
+  font-family: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-feature-settings: "cv11", "ss01";
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1311; --panel: #181d1a; --panel-2: #212823; --ink: #eef0ec; --muted: #a0a89f; --line: #2c342e;
+    --accent: #6fcf9a; --accent-ink: #0b130e; --accent-soft: #1f3328; --accent-2: #ff8a5c; --accent-2-soft: #3a241b;
+    --biz: #0d141c; --biz-2: #18232f;
+    --shadow: 0 1px 2px rgba(0,0,0,.4); --shadow-lg: 0 10px 30px rgba(0,0,0,.5);
+  }
+}
+body { -webkit-font-smoothing: antialiased; }
+h1, h2, h3, .page-title, .section-title { letter-spacing: -.02em; }
+.page-title { font-size: clamp(24px, 4vw, 32px); font-weight: 750; }
+.section-title { font-size: 20px; font-weight: 700; margin: 30px 0 12px; }
+.lead { font-size: 16px; line-height: 1.6; }
+.view.enter { opacity: 0; transform: translateY(6px); }
+.view { transition: opacity .22s ease, transform .22s ease; }
+.btn { transition: transform .12s ease, box-shadow .2s ease, background .2s; box-shadow: 0 1px 0 rgba(0,0,0,.05); }
+.btn:active:not(:disabled) { transform: scale(.97); }
+.btn:not(.ghost):not(.link):not(.danger-ghost):hover { box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 35%, transparent); }
+.badge.biz { background: var(--biz); color: var(--biz-accent); }
+.link-text { display: inline-flex; align-items: center; gap: 2px; color: var(--accent); font-weight: 600; font-size: 13px; }
+.link-text svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.4; }
+
+/* tab bar: pill indicator */
+.tabbar a { position: relative; transition: color .2s; }
+.tabbar a.on::before { content: ''; position: absolute; top: 6px; width: 44px; height: 30px; border-radius: 15px; background: var(--accent-soft); z-index: -1; }
+.tabbar a svg { margin-top: 4px; }
+body[data-mode="business"] .tabbar a.on { color: var(--biz); }
+body[data-mode="business"] .tabbar a.on::before { background: color-mix(in srgb, var(--biz-accent) 30%, transparent); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) body[data-mode="business"] .tabbar a.on { color: var(--biz-accent); } }
+
+/* ---------- explore v3 ---------- */
+.explore-head { position: static; background: none; backdrop-filter: none; padding-bottom: 4px; }
+.top-actions { display: flex; align-items: center; gap: 6px; }
+.pill-link { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; background: var(--accent-2-soft); color: var(--accent-2); font-size: 13px; font-weight: 650; }
+.pill-link svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; }
+.hero-title { font-size: clamp(30px, 6vw, 46px); line-height: 1.05; margin: 10px 0 4px; font-weight: 800; letter-spacing: -.035em; }
+.hero-title span { background: linear-gradient(90deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.search-card { display: grid; gap: 10px; padding: 12px; border-radius: 22px; background: var(--panel); border: 1px solid var(--line); box-shadow: var(--shadow); }
+.search-card .searchbar { box-shadow: none; background: var(--panel-2); border-color: transparent; }
+.when.clear { border-style: dashed; color: var(--muted); }
+.cat-bar { position: sticky; top: 0; z-index: 6; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; padding: 10px 16px 0;
+  background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); max-width: 1120px; margin: 0 auto; }
+.cat-bar::-webkit-scrollbar { display: none; }
+.cat-bar button { flex: none; display: grid; justify-items: center; gap: 2px; padding: 4px 12px 10px; border: 0; background: none; cursor: pointer; font-size: 12px; font-weight: 600;
+  color: var(--muted); border-bottom: 2px solid transparent; transition: color .2s, border-color .2s; }
+.cat-bar button span { font-size: 22px; filter: grayscale(.4); transition: transform .2s, filter .2s; }
+.cat-bar button:hover span { transform: translateY(-2px); }
+.cat-bar button.on { color: var(--ink); border-bottom-color: var(--ink); }
+.cat-bar button.on span { filter: none; }
+.chips.sub { padding-top: 12px; max-width: 1120px; margin: 0 auto; }
+.ideas { display: grid; grid-auto-flow: column; grid-auto-columns: max-content; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 16px 16px 2px; margin: 0 -16px; }
+.ideas::-webkit-scrollbar { display: none; }
+.idea { display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 14px; border: 0; cursor: pointer; font-weight: 650; font-size: 14px; color: var(--ink); transition: transform .15s; }
+.idea:hover { transform: translateY(-2px); }
+.idea span { font-size: 20px; }
+.tone-a { background: #e6eefc; } .tone-b { background: #fde9e1; } .tone-c { background: #f4ecdc; } .tone-d { background: #ddf1f2; } .tone-e { background: #e5f2df; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .idea { background: var(--panel-2); } }
+
+.space-card .thumb { box-shadow: var(--shadow); transition: box-shadow .25s; }
+.space-card .thumb .art { transition: transform .5s cubic-bezier(.2,.7,.2,1); }
+.space-card:hover .thumb { box-shadow: var(--shadow-lg); }
+.space-card:hover .thumb .art { transform: scale(1.05); }
+.fav-tag { position: absolute; left: 10px; top: 10px; background: var(--panel); color: var(--ink); font-size: 12px; font-weight: 700; padding: 5px 10px; border-radius: 999px; box-shadow: var(--shadow); }
+.save-btn { position: absolute; right: 8px; top: 8px; display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 50%; cursor: pointer;
+  background: color-mix(in srgb, #000 22%, transparent); backdrop-filter: blur(6px); transition: transform .15s; }
+.save-btn svg { width: 20px; height: 20px; fill: rgba(0,0,0,.15); stroke: #fff; stroke-width: 2; transition: fill .2s; }
+.save-btn:active { transform: scale(.85); }
+.save-btn.on svg { fill: #ff4b5c; stroke: #ff4b5c; animation: pop .35s ease; }
+@keyframes pop { 50% { transform: scale(1.3); } }
+.save-btn.icon-btn { position: static; background: var(--panel); box-shadow: var(--shadow); }
+.save-btn.icon-btn svg { stroke: var(--ink); fill: none; }
+.save-btn.icon-btn.on svg { fill: #ff4b5c; stroke: #ff4b5c; }
+.host-cta { position: relative; overflow: hidden; background: linear-gradient(120deg, #1f6b4a, #2f8a5f 55%, #e8673c 130%); color: #fff; padding: 20px; border-radius: 20px; }
+.host-cta::after { content: ''; position: absolute; right: -40px; top: -40px; width: 160px; height: 160px; border-radius: 50%; background: rgba(255,255,255,.08); }
+.host-cta strong { font-size: 18px; }
+.cta-btn { color: #1f6b4a !important; background: #fff; }
+.biz-footer { display: flex; align-items: center; gap: 14px; margin: 30px 0 8px; padding: 16px; border-radius: 18px; background: var(--biz); color: #e8edf2; }
+.biz-footer > div { flex: 1; display: grid; gap: 2px; }
+.biz-footer span:not(.biz-badge) { font-size: 13px; opacity: .8; }
+.biz-footer > svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; }
+.biz-badge { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; background: var(--biz-accent); color: var(--biz); flex: none; }
+.biz-badge svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; }
+.event-card { box-shadow: var(--shadow); border: 0; }
+.pkg-card { box-shadow: var(--shadow); border: 0; transition: transform .2s; }
+.pkg-card:hover { transform: translateY(-2px); }
+
+/* ---------- listing detail v3 ---------- */
+.gallery { display: grid; grid-template-columns: 1fr; }
+.gallery .g-side { display: none; }
+.hero-actions { position: absolute; top: max(12px, env(safe-area-inset-top)); right: 12px; display: flex; gap: 8px; }
+.hero-actions .icon-btn { background: var(--panel); box-shadow: var(--shadow); }
+@media (min-width: 760px) {
+  .gallery { grid-template-columns: 2fr 1fr; gap: 8px; padding: 16px 16px 0; }
+  .gallery .g-main .art { border-radius: 20px 0 0 20px; height: 400px; }
+  .gallery .g-side { display: grid; grid-template-rows: 1fr 1fr; gap: 8px; height: 400px; }
+  .gallery .g-side .art { border-radius: 0 20px 0 0; height: 100%; }
+  .gallery .g-side .art:last-child { border-radius: 0 0 20px 0; }
+  .hero-actions { top: 28px; right: 28px; }
+}
+.detail-layout { display: block; }
+.detail-side { display: none; }
+@media (min-width: 960px) {
+  .detail-layout { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 48px; align-items: start; }
+  .detail-side { display: block; position: sticky; top: 24px; margin-top: 24px; }
+  .book-card { display: grid; gap: 14px; padding: 22px; border-radius: 20px; border: 1px solid var(--line); background: var(--panel); box-shadow: var(--shadow-lg); }
+  .book-card .btn { width: 100%; padding: 14px; font-size: 16px; }
+  .book-card .price { font-size: 22px; }
+  .detail-bar { display: none; }
+}
+.fav-banner { display: flex; gap: 12px; align-items: center; margin: 16px 0 4px; padding: 14px 16px; border-radius: 16px; border: 1px solid var(--line); background: var(--panel); }
+.fav-banner > span { font-size: 28px; }
+.specs { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1px; margin: 0; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--line); }
+.specs > div { background: var(--panel); padding: 12px 14px; }
+.specs dt { font-size: 12px; color: var(--muted); }
+.specs dd { margin: 2px 0 0; font-weight: 650; }
+.rate-table, .facts { box-shadow: var(--shadow); border: 0; }
+
+/* ---------- business side ---------- */
+.biz-hero { background: radial-gradient(120% 140% at 100% 0%, #3b5168 0%, var(--biz) 55%); color: #eef2f6; padding: max(14px, env(safe-area-inset-top)) 16px 26px; }
+.biz-hero > * { max-width: 1088px; margin-left: auto; margin-right: auto; }
+.biz-hero h1 { font-size: clamp(26px, 5vw, 40px); margin: 14px auto 6px; letter-spacing: -.03em; }
+.biz-hero p { margin: 0 auto; opacity: .8; max-width: 640px; margin-left: max(0px, calc((100% - 1088px) / 2)); }
+.biz-hero.landing { padding-top: 20px; }
+.biz-hero.landing p { max-width: 1088px; }
+.brand.light { color: #fff; }
+.biz-tag { display: inline-block; vertical-align: middle; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; padding: 3px 8px; border-radius: 6px; background: var(--biz-accent); color: var(--biz); margin-left: 4px; }
+.icon-btn.light { color: #fff; }
+.icon-btn.light:hover { background: rgba(255,255,255,.1); }
+.biz-stats { display: flex; gap: 10px; margin-top: 18px !important; flex-wrap: wrap; }
+.biz-stats > div { flex: 1 1 120px; padding: 12px 14px; border-radius: 14px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); display: grid; }
+.biz-stats strong { font-size: 20px; }
+.biz-stats span { font-size: 12px; opacity: .7; }
+.cat-bar.biz button.on { border-bottom-color: var(--biz-accent); }
+.site-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; margin-top: 18px; }
+.site-card { background: var(--panel); border-radius: 18px; box-shadow: var(--shadow); padding: 8px; }
+.site-card .card-body { padding: 10px 6px 4px; gap: 6px; }
+.mini-specs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 4px 0; }
+.mini-specs > div { background: var(--panel-2); border-radius: 10px; padding: 6px 8px; min-width: 0; }
+.mini-specs dt { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mini-specs dd { margin: 0; font-size: 13px; font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kanban { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(250px, 1fr); gap: 12px; overflow-x: auto; margin: 18px -16px 0; padding: 0 16px 8px; scrollbar-width: thin; }
+.lane { background: var(--panel-2); border-radius: 16px; padding: 10px; display: grid; gap: 10px; align-content: start; min-height: 180px; }
+.lane h2 { font-size: 14px; margin: 4px 4px 2px; display: flex; justify-content: space-between; }
+.lane-card { border: 0; box-shadow: var(--shadow); }
+.lane-art { height: 70px; }
+.lane-card .card-body { gap: 4px; }
+.lane-empty { color: var(--muted); font-size: 13px; text-align: center; padding: 24px 0; border: 1.5px dashed var(--line); border-radius: 12px; }
+.biz-types { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; }
+.biz-type { display: flex; gap: 12px; align-items: center; padding: 12px; border-radius: 14px; background: var(--panel); border: 1px solid var(--line); }
+.biz-type > span { font-size: 26px; }
+.steps { padding-left: 20px; display: grid; gap: 10px; }
+.steps li { padding-left: 4px; }
+.steps li::marker { font-weight: 800; color: var(--accent); }
+
+/* ---------- earnings estimator ---------- */
+.earn-total { display: grid; gap: 4px; padding: 22px; border-radius: 22px; color: #fff; background: linear-gradient(135deg, #1f6b4a, #174f37 60%, #1c2733); box-shadow: var(--shadow-lg); margin-top: 8px; }
+.earn-total > span { opacity: .8; font-size: 14px; }
+.earn-total strong { font-size: clamp(36px, 8vw, 52px); letter-spacing: -.03em; line-height: 1.05; }
+.earn-total em { font-style: normal; opacity: .85; }
+.earn-split { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 12px; font-size: 13px; }
+.earn-split b { margin-left: 4px; }
+.dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+.dot.consumer { background: #8be0b2; } .dot.business { background: var(--biz-accent); }
+.split-bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 6px; background: rgba(255,255,255,.15); }
+.split-bar i { display: block; height: 100%; transition: width .3s ease; }
+.split-bar i:first-child { background: #8be0b2; } .split-bar i:last-child { background: var(--biz-accent); }
+.earn-list { display: grid; gap: 8px; }
+.earn-row { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 14px; background: var(--panel); border: 1px solid var(--line); }
+.earn-row > div { flex: 1; min-width: 0; }
+.earn-icon { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 12px; background: var(--panel-2); font-size: 22px; flex: none; }
+.chips.wrap { flex-wrap: wrap; }
+.earn-cta .chip { background: var(--accent-soft); border-color: transparent; font-weight: 600; }
+
+/* ---------- profile ---------- */
+.mode-switch { display: flex; padding: 4px; border-radius: 14px; background: var(--panel-2); gap: 4px; }
+.mode-switch button { flex: 1; border: 0; padding: 12px; border-radius: 11px; background: none; cursor: pointer; font-weight: 650; color: var(--muted); }
+.mode-switch button.on { background: var(--panel); color: var(--ink); box-shadow: var(--shadow); }
+.people-label { font-size: 13px; font-weight: 700; margin: 12px 0 6px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.people-label .muted { text-transform: none; letter-spacing: 0; font-weight: 400; }
+.divider-title { margin: 40px 0 0; padding-top: 22px; border-top: 2px dashed var(--line); }
+.divider-title span { font-size: 13px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--biz); background: var(--biz-accent); padding: 4px 10px; border-radius: 6px; }
+
+/* ---------- host & cards polish ---------- */
+.stats > * { box-shadow: var(--shadow); border: 0; }
+.stats div { display: grid; gap: 2px; padding: 12px; border-radius: var(--radius); background: var(--panel); }
+.card.pad, .request { box-shadow: var(--shadow); border: 0; }
+.bars i { background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 70%, #fff)); }
+.earn-hero { background: linear-gradient(135deg, var(--accent-soft), color-mix(in srgb, var(--accent-soft) 60%, var(--panel))); }
+.tile { transition: transform .15s, box-shadow .2s; }
+.tile:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.trip-card { box-shadow: var(--shadow); border: 0; }
+.summary-card { box-shadow: var(--shadow); border: 0; }
+.explore-head { padding-top: max(18px, env(safe-area-inset-top)); }
+.stepper output { min-width: 44px; }
 </style>
 </head>
 <body>
@@ -469,14 +677,20 @@ const TERMS = {
 const MODES = ['instant', 'request', 'proposal'];
 
 const GROUPS = {
-  living: 'Living',
-  outdoor: 'Outdoor & activity',
-  parking: 'Parking',
+  living: 'Stays',
+  outdoor: 'Activities & events',
+  parking: 'Parking & docks',
   storage: 'Storage',
   land: 'Land & growing',
   energy: 'Energy & infrastructure',
+  commercial: 'Commercial & fleet',
   container: 'Building / container',
 };
+
+// Who the listing is for. Everyday renters never see business categories; those are
+// leased to companies (solar installers, charging networks, telecoms, fleets) on the business side.
+const AUDIENCES = { consumer: 'Everyone', business: 'Businesses' };
+const GROUP_AUDIENCE = { energy: 'business', commercial: 'business' };
 
 const c = (group, label, terms, measure, mode, checklist, extra = {}) => ({
   group, label, terms, measure, mode, checklist, ...extra,
@@ -505,6 +719,10 @@ const CATEGORIES = {
     ['Tool / equipment rules']),
   film_location: c('outdoor', 'Filming / photo location', ['hourly', 'daily'], 'whole', 'request',
     ['City film permit (if required)', 'Neighbor notice']),
+  kitchen: c('outdoor', 'Kitchen', ['hourly', 'daily', 'monthly'], 'whole', 'request',
+    ['Cottage food / food handler rules', 'Cleaning checklist', 'Allergen disclosure']),
+  sport_court: c('outdoor', 'Sport court', ['hourly'], 'whole', 'instant',
+    ['Lighting hours', 'Liability waiver']),
 
   // Parking
   parking_spot: c('parking', 'Parking spot', ['hourly', 'daily', 'weekly', 'monthly', 'lease'], 'spot', 'instant',
@@ -513,6 +731,8 @@ const CATEGORIES = {
     ['Max length', 'HOA allows RV storage']),
   ev_charging: c('parking', 'EV charging', ['hourly', 'daily', 'monthly'], 'charger', 'instant',
     ['Charger type & kW']),
+  dock_slip: c('parking', 'Boat dock / slip', ['daily', 'weekly', 'monthly', 'lease'], 'slip', 'request',
+    ['Max boat length & draft', 'Dock condition & insurance']),
 
   // Storage
   garage_storage: c('storage', 'Garage storage', ['weekly', 'monthly', 'lease'], 'sqft', 'instant',
@@ -527,6 +747,8 @@ const CATEGORIES = {
     ['Water access', 'HOA front-yard rules', 'Chemical policy']),
   beehive_site: c('land', 'Beehive / small-ag site', ['monthly', 'lease'], 'site', 'request',
     ['Local apiary rules']),
+  pasture: c('land', 'Pasture / paddock', ['monthly', 'lease'], 'acre', 'request',
+    ['Fencing & water', 'Livestock zoning']),
 
   // Energy & infrastructure
   rooftop_solar: c('energy', 'Rooftop solar', ['infrastructure'], 'sqft', 'proposal',
@@ -539,6 +761,14 @@ const CATEGORIES = {
   telecom_site: c('energy', 'Telecom / sensor site', ['infrastructure'], 'site', 'proposal',
     ['RF exposure compliance', 'Structural mount assessment']),
 
+  // Commercial & fleet (business side)
+  fleet_parking: c('commercial', 'Fleet & van parking', ['monthly', 'lease'], 'spot', 'proposal',
+    ['Zoning allows commercial vehicles', 'Overnight access & lighting', 'Neighbor notice']),
+  signage: c('commercial', 'Sign / billboard site', ['lease', 'infrastructure'], 'site', 'proposal',
+    ['Local sign ordinance permit', 'Structural / wind load review', 'Illumination hours']),
+  parcel_locker: c('commercial', 'Parcel locker host', ['lease', 'infrastructure'], 'site', 'proposal',
+    ['Power outlet within 6 ft', '24/7 or posted access', 'Property insurance notice']),
+
   // Non-rentable structure used to organize spaces (apartment building, garage)
   building: c('container', 'Building / container', [], 'whole', 'instant', []),
 };
@@ -550,11 +780,33 @@ const ICONS = {
   garage_storage: '📦', attic_storage: '🧳', basement_storage: '🗄️',
   garden_plot: '🥕', beehive_site: '🐝',
   rooftop_solar: '☀️', battery_site: '🔋', charger_site: '🔌', telecom_site: '📡',
+  kitchen: '🍳', sport_court: '🎾', dock_slip: '⛵', pasture: '🐴',
+  fleet_parking: '🚚', signage: '🪧', parcel_locker: '📮',
   building: '🏗️',
 };
-for (const [k, icon] of Object.entries(ICONS)) CATEGORIES[k].icon = icon;
 
-const GROUP_ICONS = { living: '🏠', outdoor: '🌳', parking: '🅿️', storage: '📦', land: '🥕', energy: '☀️', container: '🏗️' };
+// Typical local prices: starting points for new listings and the earnings estimator.
+const TYPICAL = {
+  entire_home: { daily: 180, weekly: 1100, monthly: 3500, lease: 3200 }, apartment_unit: { daily: 120, monthly: 2000, lease: 1850 },
+  adu: { daily: 110, weekly: 650, monthly: 1800, lease: 1700 }, private_room: { daily: 70, weekly: 420, monthly: 1100, lease: 1000 },
+  backyard: { hourly: 30, daily: 150 }, yard_campsite: { daily: 30, weekly: 180 }, pool: { hourly: 40 },
+  workspace: { hourly: 15, daily: 80, monthly: 400 }, film_location: { hourly: 150, daily: 900 },
+  kitchen: { hourly: 25, daily: 150, monthly: 900 }, sport_court: { hourly: 20 },
+  parking_spot: { hourly: 4, daily: 15, weekly: 70, monthly: 130, lease: 120 }, rv_parking: { weekly: 70, monthly: 220, lease: 200 },
+  ev_charging: { hourly: 5, daily: 25, monthly: 120 }, dock_slip: { daily: 40, weekly: 220, monthly: 350, lease: 320 },
+  garage_storage: { weekly: 25, monthly: 90, lease: 80 }, attic_storage: { monthly: 50, lease: 45 }, basement_storage: { weekly: 20, monthly: 60, lease: 55 },
+  garden_plot: { monthly: 25, lease: 20 }, beehive_site: { monthly: 15, lease: 12 }, pasture: { monthly: 120, lease: 100 },
+  rooftop_solar: { infrastructure: 1000 }, battery_site: { infrastructure: 600 }, charger_site: { infrastructure: 1500 }, telecom_site: { infrastructure: 3500 },
+  fleet_parking: { monthly: 180, lease: 160 }, signage: { lease: 400, infrastructure: 4200 }, parcel_locker: { lease: 75, infrastructure: 900 },
+};
+
+for (const [k, cat] of Object.entries(CATEGORIES)) {
+  cat.icon = ICONS[k];
+  cat.audience = GROUP_AUDIENCE[cat.group] ?? 'consumer';
+  if (TYPICAL[k]) cat.typical = TYPICAL[k];
+}
+
+const GROUP_ICONS = { living: '🏠', outdoor: '🎉', parking: '🅿️', storage: '📦', land: '🌱', energy: '☀️', commercial: '🚚', container: '🏗️' };
 
 function category(key) {
   const cat = CATEGORIES[key];
@@ -562,7 +814,7 @@ function category(key) {
   return cat;
 }
 
-__m['catalog'] = { TERMS, MODES, GROUPS, CATEGORIES, GROUP_ICONS, category };
+__m['catalog'] = { TERMS, MODES, GROUPS, AUDIENCES, CATEGORIES, TYPICAL, GROUP_ICONS, category };
 })();
 // ---- src/time.js ----
 (() => {
@@ -969,6 +1221,12 @@ function evaluateCart(db, cart) {
     else if (s.rates?.[term] == null && s.addonRates?.[term] == null) errors.push(`${s.title} has no ${TERMS[term].label.toLowerCase()} price`);
   }
 
+  // 1b. Infrastructure and commercial sites are leased to businesses only.
+  const renter = db.users.find((u) => u.id === renterId);
+  if (spaces.some((s) => category(s.category).audience === 'business') && renter?.kind !== 'business') {
+    errors.push('Only verified business accounts can lease infrastructure and commercial sites');
+  }
+
   // 2. Length limits.
   const d = duration(term, start, end);
   if (term === 'lease' && (d.months < TERMS.lease.min || d.months > TERMS.lease.max)) {
@@ -1276,7 +1534,11 @@ function seed() {
     { id: 'u_jordan', name: 'Jordan', tagline: 'Host, Oak Court Apartments', joined: '2022-11', color: '#8a5a2b' },
     { id: 'u_luis', name: 'Luis', tagline: 'Host, Elm Ave bungalow & Hillcrest ranch', joined: '2024-02', color: '#6a4fb3' },
     { id: 'u_ana', name: 'Ana', tagline: 'Host, Stadium Lofts condo', joined: '2025-01', color: '#c2552d' },
-    { id: 'u_sunco', name: 'SunCo Solar', tagline: 'Infrastructure partner', joined: '2021-06', color: '#d39b16' },
+    { id: 'u_rosa', name: 'Rosa', tagline: 'Host, Lakeview cottage', joined: '2023-09', color: '#1f7a8c' },
+    { id: 'u_sunco', name: 'SunCo Solar', tagline: 'Business · solar installer', joined: '2021-06', color: '#d39b16', kind: 'business' },
+    { id: 'u_voltway', name: 'VoltWay Charging', tagline: 'Business · EV charging network', joined: '2022-03', color: '#2f6fb3', kind: 'business' },
+    { id: 'u_parcel', name: 'ParcelPoint', tagline: 'Business · parcel lockers', joined: '2023-01', color: '#b3402f', kind: 'business' },
+    { id: 'u_greenleaf', name: 'Greenleaf Delivery', tagline: 'Business · delivery fleet', joined: '2024-06', color: '#3d8a3d', kind: 'business' },
     { id: 'u_dev', name: 'Dev', tagline: 'Renter', joined: '2024-04', color: '#2c8c8c' },
     { id: 'u_kim', name: 'Kim', tagline: 'Renter', joined: '2025-07', color: '#7a7a2a' },
   ];
@@ -1292,6 +1554,8 @@ function seed() {
       lat: 33.986, lng: -117.362, notes: 'Condo two blocks from the stadium. HOA allows rentals of owned parking.' },
     { id: 'p_hill', hostId: 'u_luis', title: 'Hillcrest ranch', city: 'Riverside', type: 'land', hoa: false,
       lat: 33.962, lng: -117.392, notes: '5 acres on the edge of town. Barn, hilltop, road frontage.' },
+    { id: 'p_lake', hostId: 'u_rosa', title: 'Lakeview cottage', city: 'Riverside', type: 'single_family', hoa: false,
+      lat: 33.958, lng: -117.372, notes: 'Cottage on the river with a private dock.' },
   ];
 
   const harvest = { name: 'Harvest Festival', start: '2026-11-20', end: '2026-11-22' };
@@ -1333,9 +1597,11 @@ function seed() {
     { id: 's_maple_roof', propertyId: 'p_maple', category: 'rooftop_solar', title: 'South-facing roof (~600 sq ft)',
       quantity: 1, size: { sqft: 600 }, rates: { infrastructure: 1100 },
       description: '2019 roof. ~9 kW potential. Partner owns panels, pays annual rent.',
+      specs: { 'Usable roof': '600 sq ft', 'Est. system': '9 kW', Faces: 'South', 'Roof installed': '2019', Shading: 'None', 'Electrical service': '200 A', Utility: 'Riverside Public Utilities' },
       amenities: ['South-facing', '2019 roof', 'No shading'], access: 'Site visit scheduled after proposal.' },
     { id: 's_maple_battery', propertyId: 'p_maple', category: 'battery_site', title: 'Side-yard battery pad',
       quantity: 1, rates: { infrastructure: 600 }, description: '4×8 ft concrete pad, 12 ft from the house.',
+      specs: { Pad: '4×8 ft concrete', 'Distance to house': '12 ft', 'Electrical service': '200 A', 'Est. capacity': '13–27 kWh', Utility: 'Riverside Public Utilities' },
       amenities: ['Concrete pad', '200A panel'], access: 'Site visit scheduled after proposal.' },
 
     // --- Oak Court Apartments (Jordan) -------------------------------------
@@ -1410,11 +1676,49 @@ function seed() {
       access: 'Follow the yellow posts from the gate.' },
     { id: 's_hill_solar', propertyId: 'p_hill', category: 'rooftop_solar', title: 'Barn roof (~1,800 sq ft)', quantity: 1,
       size: { sqft: 1800 }, rates: { infrastructure: 2800 }, description: 'Metal roof, 2021. ~30 kW potential.',
+      specs: { 'Usable roof': '1,800 sq ft', 'Est. system': '30 kW', Faces: 'South / southwest', 'Roof installed': '2021 (metal)', 'Electrical service': '400 A', Utility: 'SCE' },
       amenities: ['Metal roof', '400A service'], access: 'Site visit scheduled after proposal.' },
     { id: 's_hill_tower', propertyId: 'p_hill', category: 'telecom_site', title: 'Hilltop antenna / sensor site', quantity: 1,
-      rates: { infrastructure: 4000 }, amenities: ['Highest point in town', 'Power nearby'], access: 'Site visit scheduled after proposal.' },
+      rates: { infrastructure: 4000 }, amenities: ['Highest point in town', 'Power nearby'],
+      specs: { Elevation: '1,240 ft', 'Line of sight': 'Downtown + I-215', Power: '200 A at barn, 300 ft', 'Road access': 'Gravel, 4WD not needed' }, access: 'Site visit scheduled after proposal.' },
     { id: 's_hill_charger', propertyId: 'p_hill', category: 'charger_site', title: 'Road-frontage EV charger site', quantity: 1,
-      rates: { infrastructure: 1800 }, amenities: ['On a state highway', '400A service'], access: 'Site visit scheduled after proposal.' },
+      rates: { infrastructure: 1800 }, amenities: ['On a state highway', '400A service'],
+      specs: { Frontage: '180 ft on Hwy 91 frontage road', 'Daily traffic': '~22,000 vehicles', 'Electrical service': '400 A, 3-phase nearby', 'Room for': '4–6 DC fast chargers' }, access: 'Site visit scheduled after proposal.' },
+
+    // --- More everyday spaces ------------------------------------------
+    { id: 's_elm_kitchen', propertyId: 'p_elm', category: 'kitchen', title: "Baker's kitchen with double oven", quantity: 1,
+      rates: { hourly: 25, daily: 150, monthly: 900 }, description: 'Big island, double convection oven, stand mixer. Great for cottage-food bakers.',
+      amenities: ['Double oven', 'Stand mixer', '8 ft island'], access: 'Side door code 4402; kitchen only.' },
+    { id: 's_hill_pasture', propertyId: 'p_hill', category: 'pasture', title: 'Fenced horse pasture (1 acre)', quantity: 2,
+      rates: { monthly: 120, lease: 100 }, description: 'Irrigated pasture with a run-in shed and water trough.',
+      amenities: ['Run-in shed', 'Auto waterer', 'Trailer parking'], access: 'Ranch gate, code on the confirmation.' },
+    { id: 's_lake_home', propertyId: 'p_lake', category: 'entire_home', title: 'Lakeview cottage (2 bd)', quantity: 1,
+      rates: { daily: 165, weekly: 1000, monthly: 3000 }, minDuration: { daily: 2 }, description: 'Cozy cottage with river views and a private dock.',
+      amenities: ['Sleeps 4', 'Kayaks', 'Fire pit', 'Dock access'], access: 'Keypad on the front door.' },
+    { id: 's_lake_dock', propertyId: 'p_lake', category: 'dock_slip', title: 'Private boat slip (up to 24 ft)', quantity: 2,
+      rates: { daily: 40, weekly: 220, monthly: 350, lease: 320 }, description: 'Covered slip with power and water.',
+      amenities: ['Up to 24 ft', 'Shore power', 'Water'], access: 'Dock gate code on the confirmation.' },
+    { id: 's_lake_court', propertyId: 'p_lake', category: 'sport_court', title: 'Lakeside pickleball court', quantity: 1,
+      rates: { hourly: 20 }, eventRates: [], description: 'Lit court with paddles and balls to borrow.',
+      amenities: ['Lights until 10pm', 'Paddles included'], access: 'Court gate code 1122.' },
+
+    // --- Business side: commercial & fleet --------------------------------
+    { id: 's_hill_fleet', propertyId: 'p_hill', category: 'fleet_parking', title: 'Overnight van lot (8 vans)', quantity: 8,
+      rates: { monthly: 180, lease: 160 }, description: 'Lit gravel lot next to the highway on-ramp. Suits delivery vans.',
+      amenities: ['Lighting', 'Camera', '2 min to highway'], access: 'Gate code issued per vehicle.',
+      specs: { Spaces: '8 van-sized', Surface: 'Compacted gravel', Lighting: 'LED, dusk to dawn', 'Highway access': 'Hwy 91, 0.4 mi', 'Hours': '24/7' } },
+    { id: 's_hill_sign', propertyId: 'p_hill', category: 'signage', title: 'Highway-facing sign site', quantity: 1,
+      rates: { lease: 400, infrastructure: 4200 }, description: 'Road frontage facing ~22,000 cars a day.',
+      amenities: ['Permitted zone', 'Power nearby'], access: 'Site visit scheduled after proposal.',
+      specs: { 'Daily traffic': '~22,000 vehicles', Facing: 'Eastbound Hwy 91', 'Max sign': '12×24 ft (city code)', Power: 'Yes, 50 ft' } },
+    { id: 's_oak_locker_wall', propertyId: 'p_oak', category: 'parcel_locker', title: 'Lobby wall for a parcel locker', quantity: 1,
+      rates: { lease: 75, infrastructure: 900 }, description: 'Covered lobby wall by the mailboxes, open 6am–11pm.',
+      amenities: ['Covered', 'Outlet nearby', 'Foot traffic'], access: 'Building manager meets the installer.',
+      specs: { Wall: '10 ft wide × 8 ft tall', Power: '120 V outlet, 4 ft', Access: '6am–11pm, residents + couriers', 'Units nearby': '~400 households within 0.5 mi' } },
+    { id: 's_oak_roof', propertyId: 'p_oak', category: 'rooftop_solar', title: 'Apartment flat roof (~2,400 sq ft)', quantity: 1,
+      size: { sqft: 2400 }, rates: { infrastructure: 3600 }, description: 'Flat membrane roof, replaced 2020. Could host community solar for the tenants.',
+      amenities: ['Flat roof', 'Roof hatch'], access: 'Site visit scheduled after proposal.',
+      specs: { 'Usable roof': '2,400 sq ft', 'Est. system': '38 kW', Faces: 'Flat (tilt racks)', 'Roof installed': '2020', 'Electrical service': '600 A, 3-phase', Utility: 'Riverside Public Utilities' } },
   ];
 
   const packages = [
@@ -1442,10 +1746,13 @@ function seed() {
     b('bk_seed_6', 'u_kim', 'u_maya', [{ spaceId: 's_maple_home', qty: 1 }], 'daily', '2026-12-18', '2026-12-21', 'pending', 'Family visit for the holidays, 4 adults.', '2026-11-01T00:00:00Z'),
     b('bk_seed_7', 'u_sam', 'u_luis', [{ spaceId: 's_elm_pool', qty: 1 }], 'hourly', '2026-10-11T19:00:00Z', '2026-10-11T22:00:00Z', 'completed', 'Birthday swim', '2026-10-02T00:00:00Z'),
     b('bk_seed_8', 'u_dev', 'u_jordan', [{ spaceId: 's_oak_ev', qty: 1 }], 'hourly', '2026-10-20T16:00:00Z', '2026-10-20T19:00:00Z', 'completed', '', '2026-10-20T00:00:00Z'),
+    b('bk_seed_9', 'u_voltway', 'u_luis', [{ spaceId: 's_hill_charger', qty: 1 }], 'infrastructure', '2027-03-01', '2039-03-01', 'site_assessment', 'Planning 4 × 150 kW chargers.', '2026-10-15T00:00:00Z'),
+    b('bk_seed_10', 'u_sunco', 'u_maya', [{ spaceId: 's_maple_battery', qty: 1 }], 'infrastructure', '2026-06-01', '2041-06-01', 'confirmed', 'Home battery in our VPP program.', '2026-04-02T00:00:00Z'),
   ];
   bookings.find((x) => x.id === 'bk_seed_6').mode = 'request';
+  for (const id of ['bk_seed_9', 'bk_seed_10']) bookings.find((x) => x.id === id).mode = 'proposal';
 
-  const db = { users, properties, spaces, packages, bookings, messages: [], reviews: [], seq: 1 };
+  const db = { users, properties, spaces, packages, bookings, messages: [], reviews: [], saves: [{ userId: 'u_sam', spaceId: 's_elm_pool' }, { userId: 'u_sam', spaceId: 's_lake_home' }], seq: 1 };
 
   // Price the seed bookings the same way a real booking is priced.
   for (const bk of bookings) {
@@ -1463,6 +1770,10 @@ function seed() {
   m('bk_seed_6', 'u_kim', 'Hi! Visiting my parents for the holidays. We are quiet and tidy, 4 adults, no pets.', '2026-11-01T00:02:00Z');
   m('bk_seed_7', 'system', 'Booking confirmed: Saltwater pool & patio, Oct 11, 7–10pm.', '2026-10-02T00:00:00Z');
   m('bk_seed_7', 'u_luis', 'Pool will be heated to 84°. Towels are in the cabana.', '2026-10-10T18:00:00Z');
+  m('bk_seed_9', 'system', 'VoltWay Charging sent a proposal for Road-frontage EV charger site.', '2026-10-15T00:00:00Z');
+  m('bk_seed_9', 'u_voltway', 'We would like to install 4 DC fast chargers. Rent is $1,800/yr plus 5% of charging revenue.', '2026-10-15T00:05:00Z');
+  m('bk_seed_9', 'system', 'Proposal accepted, site assessment is next.', '2026-10-18T00:00:00Z');
+  m('bk_seed_9', 'u_luis', 'Site visit any weekday morning works. Gate code 9191.', '2026-10-18T02:00:00Z');
 
   const r = (spaceId, by, rating, text, at, bookingId = null) => db.reviews.push({ id: `r_seed_${db.reviews.length + 1}`, spaceId, bookingId, by, rating, text, at });
   r('s_maple_driveway', 'u_dev', 5, 'Walked to the fair in 5 minutes. Way better than the $40 lots.', '2025-08-18');
@@ -1479,6 +1790,10 @@ function seed() {
   r('s_ana_room', 'u_kim', 4, 'Comfy room with a view of the stadium lights.', '2026-08-02');
   r('s_hill_camp', 'u_sam', 5, 'Best sunset in the county. Bring a warm sleeping bag.', '2026-10-05');
   r('s_oak_2a', 'u_dev', 4, 'Clean furnished studio, quick check-in.', '2026-07-11');
+  r('s_lake_home', 'u_priya', 5, 'Morning coffee on the dock was unreal. Kayaks were a bonus.', '2026-08-21');
+  r('s_lake_home', 'u_dev', 5, 'Spotless and so peaceful.', '2026-09-30');
+  r('s_lake_dock', 'u_kim', 5, 'Easy slip, Rosa was super helpful.', '2026-07-04');
+  r('s_elm_kitchen', 'u_priya', 5, 'Baked 12 dozen cookies for my market stall here. Ovens are amazing.', '2026-10-02');
 
   return db;
 }
@@ -1493,13 +1808,14 @@ const { unitsFree } = __m['availability'];
 const { describeAddon } = __m['describe'];
 const { ratingFor } = __m['social'];
 
-function search(db, { group, category: cat, term, start, end, q, city } = {}) {
+function search(db, { group, category: cat, term, start, end, q, city, audience = 'consumer', userId } = {}) {
   const text = q?.toLowerCase();
   const results = [];
   for (const s of db.spaces) {
     if (s.rentable === false) continue;
     const c = CATEGORIES[s.category];
     const prop = db.properties.find((p) => p.id === s.propertyId);
+    if (c.audience !== audience) continue;
     if (group && c.group !== group) continue;
     if (cat && s.category !== cat) continue;
     if (term && !(c.terms.includes(term) && (s.rates?.[term] != null || s.addonRates?.[term] != null))) continue;
@@ -1513,13 +1829,14 @@ function search(db, { group, category: cat, term, start, end, q, city } = {}) {
       property: { id: prop.id, title: prop.title, city: prop.city, lat: prop.lat, lng: prop.lng, hostId: prop.hostId },
       icon: c.icon,
       rating: ratingFor(db, s.id),
+      saved: !!userId && (db.saves ?? []).some((x) => x.userId === userId && x.spaceId === s.id),
       unitsFree: free,
       policy: s.policy ?? 'standalone',
       addonNote: describeAddon(db, s),
       fromPrice: cheapest(s),
     });
   }
-  const packages = db.packages
+  const packages = audience !== 'consumer' ? [] : db.packages
     .filter((p) => !text || p.name.toLowerCase().includes(text))
     .filter((p) => !group || p.items.some((i) => CATEGORIES[db.spaces.find((s) => s.id === i.spaceId).category].group === group))
     .map((p) => ({ ...p, property: db.properties.find((x) => x.id === p.propertyId),
@@ -1566,7 +1883,7 @@ function createSpace(db, input, newId) {
   }
   const s = {
     id: newId('s'),
-    ...pick(input, ['propertyId', 'parentId', 'category', 'title', 'description', 'size', 'addonRates', 'eventRates', 'conflictsWith', 'blackouts', 'minDuration', 'mode', 'amenities', 'access']),
+    ...pick(input, ['propertyId', 'parentId', 'category', 'title', 'description', 'size', 'addonRates', 'eventRates', 'conflictsWith', 'blackouts', 'minDuration', 'mode', 'amenities', 'access', 'specs']),
     ...(rentable ? { checklist: cat.checklist } : {}),
     quantity: Math.max(1, Number(input.quantity) || 1),
     rates,
@@ -1602,7 +1919,7 @@ __m['listings'] = { search, createProperty, createSpace, createPackage };
 (() => {
 // API routes, independent of transport. Used by the Node server and by the
 // single-file standalone build (which calls them directly in the browser).
-const { CATEGORIES, GROUPS, GROUP_ICONS, MODES, TERMS } = __m['catalog'];
+const { AUDIENCES, CATEGORIES, GROUPS, GROUP_ICONS, MODES, TERMS, TYPICAL } = __m['catalog'];
 const { BookingError, createBooking, isAnchorFor, quote, transition } = __m['booking'];
 const { createPackage, createProperty, createSpace, search } = __m['listings'];
 const { describeAddon } = __m['describe'];
@@ -1626,12 +1943,12 @@ function handleApi(store, method, path, body = {}, params = new URLSearchParams(
   const opts = () => ({ now: now(), newId: store.newId });
   const mutate = (fn) => { const out = fn(); store.save(); return out; };
   const routes = [
-    ['GET', /^catalog$/, () => ({ terms: TERMS, groups: GROUPS, groupIcons: GROUP_ICONS, categories: CATEGORIES, modes: MODES })],
+    ['GET', /^catalog$/, () => ({ terms: TERMS, groups: GROUPS, groupIcons: GROUP_ICONS, categories: CATEGORIES, modes: MODES, audiences: AUDIENCES, typical: TYPICAL })],
     ['GET', /^users$/, () => db.users],
     ['GET', /^spec$/, () => ({ html: spec ? spec() : '' })],
     ['GET', /^search$/, () => search(db, Object.fromEntries(params))],
     ['GET', /^properties$/, () => listProperties(db, params.get('hostId'))],
-    ['GET', /^spaces\/([\w-]+)$/, ([, id]) => spaceDetail(db, id)],
+    ['GET', /^spaces\/([\w-]+)$/, ([, id]) => spaceDetail(db, id, params.get('userId'))],
     ['GET', /^spaces\/([\w-]+)\/calendar$/, ([, id]) => calendar(db, id, params.get('from') ?? now().slice(0, 10), Number(params.get('days') ?? 42))],
     ['POST', /^properties$/, () => mutate(() => createProperty(db, body, store.newId))],
     ['POST', /^spaces$/, () => mutate(() => createSpace(db, body, store.newId))],
@@ -1658,6 +1975,11 @@ function handleApi(store, method, path, body = {}, params = new URLSearchParams(
     ['POST', /^bookings\/([\w-]+)\/review$/, ([, id]) => mutate(() => addReview(db, id, body.by, body.rating, body.text, opts()))],
     ['GET', /^threads$/, () => threadsFor(db, params.get('userId'))],
     ['GET', /^host\/summary$/, () => hostSummary(db, params.get('hostId'), now())],
+    ['GET', /^saves$/, () => {
+      const userId = params.get('userId');
+      return ['consumer', 'business'].flatMap((audience) => search(db, { userId, audience }).spaces).filter((x) => x.saved);
+    }],
+    ['POST', /^saves$/, () => mutate(() => toggleSave(db, body.userId, body.spaceId))],
     ['POST', /^reset$/, () => { store.reset(); return { ok: true }; }],
   ];
   const route = routes.find(([m, re]) => m === method && re.test(path));
@@ -1679,7 +2001,16 @@ function listProperties(db, hostId) {
   }));
 }
 
-function spaceDetail(db, id) {
+function toggleSave(db, userId, spaceId) {
+  if (!db.users.some((u) => u.id === userId)) throw new BookingError('Unknown user');
+  if (!db.spaces.some((s) => s.id === spaceId)) throw new BookingError('Space not found');
+  db.saves ??= [];
+  const i = db.saves.findIndex((x) => x.userId === userId && x.spaceId === spaceId);
+  if (i >= 0) db.saves.splice(i, 1); else db.saves.push({ userId, spaceId });
+  return { saved: i < 0 };
+}
+
+function spaceDetail(db, id, userId) {
   const s = db.spaces.find((x) => x.id === id);
   if (!s) throw new BookingError('Space not found');
   const property = db.properties.find((p) => p.id === s.propertyId);
@@ -1693,6 +2024,7 @@ function spaceDetail(db, id) {
     parent: s.parentId ? db.spaces.find((x) => x.id === s.parentId)?.title : null,
     addonNote: describeAddon(db, s),
     rating: ratingFor(db, s.id),
+    saved: !!userId && (db.saves ?? []).some((x) => x.userId === userId && x.spaceId === id),
     reviews: db.reviews.filter((r) => r.spaceId === id).sort((a, b) => (a.at < b.at ? 1 : -1))
       .map((r) => ({ ...r, author: userName(r.by) })),
     // Add-ons this space can carry (e.g. parking/lockers for an apartment)
@@ -1738,8 +2070,8 @@ __m['routes'] = { NotFound, handleApi, isUserError };
 })();
 const { handleApi, isUserError, NotFound } = __m.routes;
 const { seed } = __m.seed;
-const SPEC_HTML = "<h1 id=\"everyspace-product-spec-working-name\">Everyspace: product spec (working name)<\/h1>\n<p>Everyspace is a marketplace for renting out <strong>any part of a property<\/strong> for <strong>any length of time<\/strong>. You could rent out a backyard for one night, a driveway spot for fair weekend, a garage corner for a month, a whole house like a vacation rental, a front yard for a garden, or a roof for 20 years to someone who pays for solar panels on it.<\/p>\n<p>It also handles <strong>multi-unit buildings<\/strong>. A renter can take just an apartment, or an apartment plus two parking spaces and a storage locker, under rules the owner sets.<\/p>\n<p>This document covers what can be rented and how renting works. It comes before the build. The prototype in <code>src/<\/code> implements the core rules described here.<\/p>\n<hr>\n<h2 id=\"1-what-can-be-rented\">1. What can be rented<\/h2>\n<p>Every listing is a <strong>space<\/strong>, and every space has a <strong>category<\/strong>. The category sets which rental lengths are allowed, how the space is measured and priced, the default booking mode, and the checklist a host has to complete before going live.<\/p>\n<p>Rental lengths (terms):<\/p>\n<div class=\"table-wrap\"><table><thead><tr><th>Term<\/th><th>Unit<\/th><th>Typical use<\/th><\/tr><\/thead><tbody><tr><td>Hourly<\/td><td>hour<\/td><td>Backyard party, pool, studio session, EV charging<\/td><\/tr><tr><td>Nightly / daily<\/td><td>day<\/td><td>Vacation stay, event-day parking, overnight camping<\/td><\/tr><tr><td>Weekly<\/td><td>week<\/td><td>Longer stay, temporary storage<\/td><\/tr><tr><td>Month-to-month<\/td><td>month<\/td><td>Parking, storage, garden plot, room<\/td><\/tr><tr><td>Fixed lease<\/td><td>month, 6–24 mo<\/td><td>Apartment, ADU, long-term parking<\/td><\/tr><tr><td>Infrastructure agreement<\/td><td>year, 5–25 yr<\/td><td>Rooftop solar, battery, charger, antenna<\/td><\/tr><\/tbody><\/table><\/div>\n<h3 id=\"catalog\">Catalog<\/h3>\n<p><strong>Living<\/strong><\/p>\n<div class=\"table-wrap\"><table><thead><tr><th>Category<\/th><th>Terms<\/th><th>Measured by<\/th><th>Notes<\/th><\/tr><\/thead><tbody><tr><td>Entire home<\/td><td>daily, weekly, monthly, lease<\/td><td>whole<\/td><td>Works like Airbnb. Needs a short-term-rental permit and occupancy tax where the city requires them.<\/td><\/tr><tr><td>Apartment / unit<\/td><td>daily, monthly, lease<\/td><td>whole<\/td><td>A unit in a multi-unit building. It can anchor add-ons (§3).<\/td><\/tr><tr><td>ADU / guest house<\/td><td>daily, weekly, monthly, lease<\/td><td>whole<\/td><td><\/td><\/tr><tr><td>Private room<\/td><td>daily, weekly, monthly, lease<\/td><td>whole<\/td><td>Shared common areas are listed in the house rules.<\/td><\/tr><\/tbody><\/table><\/div>\n<p><strong>Outdoor and activity<\/strong><\/p>\n<div class=\"table-wrap\"><table><thead><tr><th>Category<\/th><th>Terms<\/th><th>Measured by<\/th><th>Notes<\/th><\/tr><\/thead><tbody><tr><td>Backyard<\/td><td>hourly, daily<\/td><td>whole<\/td><td>Parties, gatherings, dog play, photo shoots. Noise curfew and guest cap are required.<\/td><\/tr><tr><td>Yard campsite<\/td><td>daily, weekly<\/td><td>site<\/td><td>Tent or small RV overnight. Requires restroom access.<\/td><\/tr><tr><td>Pool<\/td><td>hourly<\/td><td>whole<\/td><td>Lifeguard and waiver rules. Host must confirm insurance.<\/td><\/tr><tr><td>Workspace / studio / workshop<\/td><td>hourly, daily, monthly<\/td><td>whole<\/td><td>Home office, music room, wood shop.<\/td><\/tr><tr><td>Filming / photo location<\/td><td>hourly, daily<\/td><td>whole<\/td><td>Always request-to-book. City film permit may be needed.<\/td><\/tr><\/tbody><\/table><\/div>\n<p><strong>Parking<\/strong><\/p>\n<div class=\"table-wrap\"><table><thead><tr><th>Category<\/th><th>Terms<\/th><th>Measured by<\/th><th>Notes<\/th><\/tr><\/thead><tbody><tr><td>Parking spot<\/td><td>hourly, daily, weekly, monthly, lease<\/td><td>spot (quantity)<\/td><td>Driveway, garage, or carport. <strong>Event pricing<\/strong> covers fair, stadium, and parade days.<\/td><\/tr><tr><td>RV / boat / trailer parking<\/td><td>weekly, monthly, lease<\/td><td>spot<\/td><td>Length limit and HOA check.<\/td><\/tr><tr><td>EV charging<\/td><td>hourly, daily, monthly<\/td><td>charger<\/td><td>Host's own charger. Price covers time and electricity.<\/td><\/tr><\/tbody><\/table><\/div>\n<p><strong>Storage<\/strong><\/p>\n<div class=\"table-wrap\"><table><thead><tr><th>Category<\/th><th>Terms<\/th><th>Measured by<\/th><th>Notes<\/th><\/tr><\/thead><tbody><tr><td>Garage storage<\/td><td>weekly, monthly, lease<\/td><td>sq ft (quantity of bays)<\/td><td>Hazardous materials are not allowed. Host sets access hours.<\/td><\/tr><tr><td>Attic storage<\/td><td>monthly, lease<\/td><td>sq ft<\/td><td>Weight limit and ladder access must be disclosed.<\/td><\/tr><tr><td>Basement / closet / shed<\/td><td>weekly, monthly, lease<\/td><td>sq ft<\/td><td><\/td><\/tr><\/tbody><\/table><\/div>\n<p><strong>Land and growing<\/strong><\/p>\n<div class=\"table-wrap\"><table><thead><tr><th>Category<\/th><th>Terms<\/th><th>Measured by<\/th><th>Notes<\/th><\/tr><\/thead><tbody><tr><td>Garden plot<\/td><td>monthly, lease<\/td><td>sq ft (quantity of plots)<\/td><td>Front or back yard. Water access, HOA front-yard rules, and chemical policy.<\/td><\/tr><tr><td>Beehive / small-ag site<\/td><td>monthly, lease<\/td><td>site<\/td><td>Local apiary rules apply.<\/td><\/tr><\/tbody><\/table><\/div>\n<p><strong>Energy and infrastructure.<\/strong> These spaces are rented to companies, not people, through long agreements.<\/p>\n<div class=\"table-wrap\"><table><thead><tr><th>Category<\/th><th>Terms<\/th><th>Measured by<\/th><th>Notes<\/th><\/tr><\/thead><tbody><tr><td>Rooftop solar<\/td><td>infrastructure, 10–25 yr<\/td><td>sq ft of roof<\/td><td>A third party pays for, owns, and maintains the panels and pays the owner rent or a share of the power. Requires a roof-age and structural check, utility interconnection (net metering, community solar, or virtual net metering), a removal and re-roof clause, and a recorded lease or easement.<\/td><\/tr><tr><td>Battery site<\/td><td>infrastructure, 5–20 yr<\/td><td>site<\/td><td>Garage wall, side yard, or pad. Requires fire code setbacks (NFPA 855), a utility or virtual-power-plant program, and permits.<\/td><\/tr><tr><td>Public EV charger site<\/td><td>infrastructure, 5–15 yr<\/td><td>site<\/td><td>A third party installs a charger in a driveway or curb cut.<\/td><\/tr><tr><td>Telecom / sensor site<\/td><td>infrastructure, 5–25 yr<\/td><td>site<\/td><td>Small-cell antenna, mesh node, or weather station.<\/td><\/tr><\/tbody><\/table><\/div>\n<p><strong>Later:<\/strong> signage and billboards (heavily regulated), dock or slip space, horse paddock, and laundry or kitchen time.<\/p>\n<p><strong>Not allowed:<\/strong> public streets and curbs, shared HOA common areas the host doesn't control, and any space whose required permit the host can't show.<\/p>\n<hr>\n<h2 id=\"2-how-it-works\">2. How it works<\/h2>\n<h3 id=\"properties-and-spaces\">Properties and spaces<\/h3>\n<pre><code>Host ─┬─ Property (address, type, rules, HOA y/n, insurance)\n      └─ Space (category, quantity, rates per term, availability, parent?)\n            └─ Space (child) ...<\/code><\/pre>\n<ul><li><strong>Quantity.<\/strong> One listing can stand for several identical units, such as 4 driveway spots, 3 garage bays, or 8 storage lockers. Bookings use up quantity, and the listing stays available until all units are taken.<\/li><li><strong>Hierarchy (parent/child).<\/strong> A space can sit inside another one. For example, a garage bay is inside the garage, a room is inside the house, and an apartment is inside the building.<ul><li>Booking a parent blocks all of its children. If the whole house is booked, its rooms and backyard are not.<\/li><li>Booking any child blocks the parent as a whole. Rooms 1 and 2 can be rented separately, but then the whole house can't be.<\/li><li>Structural containers such as a building or a garage can be marked <strong>not rentable<\/strong>. They organize the listing and never block anything.<\/li><\/ul><\/li><li><strong>Explicit conflicts.<\/strong> Some spaces overlap without one sitting inside the other, such as \"driveway parking\" and \"RV parking\" in the same driveway. A host can mark them as conflicting.<\/li><li><strong>Independent spaces.<\/strong> A roof leased for solar does not conflict with the house being rented nightly. It isn't a child of the house, so the two never block each other.<\/li><\/ul>\n<h3 id=\"pricing\">Pricing<\/h3>\n<ul><li>There is one rate per allowed term, such as $12/hour, $45/day, or $180/month. Weekly stays use the weekly rate plus extra days at the daily rate. Partial months are prorated at the monthly rate divided by 30.<\/li><li><strong>Event pricing.<\/strong> Hosts can set date-range overrides, for example \"County Fair, Aug 14–17, $40/day\" for a driveway spot. When a booking covers those dates, the override replaces the daily rate for those days.<\/li><li><strong>Add-on price.<\/strong> A space can cost less when it is attached to an anchor rental (§3).<\/li><li><strong>Packages<\/strong> have their own price, either a fixed amount per period or a % discount (§3).<\/li><li><strong>Fees (prototype values).<\/strong> Renters pay a 10% service fee, and hosts pay 3%. Long and infrastructure agreements are charged per period rather than all at once.<\/li><li><strong>Deposits<\/strong> are set by category, such as a whole home or storage, and are held, not charged.<\/li><\/ul>\n<h3 id=\"booking-modes\">Booking modes<\/h3>\n<div class=\"table-wrap\"><table><thead><tr><th>Mode<\/th><th>When<\/th><th>Flow<\/th><\/tr><\/thead><tbody><tr><td>Instant<\/td><td>Short, low-risk rentals: parking, storage, hourly yard<\/td><td>Pay, then <strong>confirmed<\/strong><\/td><\/tr><tr><td>Request<\/td><td>Whole homes, filming, leases, anything the host flags<\/td><td><strong>pending<\/strong> (dates held 24h), then host approves (<strong>confirmed<\/strong>) or declines<\/td><\/tr><tr><td>Proposal<\/td><td>Infrastructure agreements<\/td><td><strong>proposed<\/strong>, then <strong>site assessment<\/strong>, then <strong>contract<\/strong>, then <strong>confirmed<\/strong>. Rent starts when the system is commissioned.<\/td><\/tr><\/tbody><\/table><\/div>\n<p>A cart with several items uses its strictest mode. For example, instant parking plus a request-to-book apartment becomes a request.<\/p>\n<p>States: <code>pending | proposed | site_assessment | contract | confirmed | active | completed | declined | cancelled<\/code>. Pending and proposal-stage bookings hold the space, so nobody can double-book while the host decides.<\/p>\n<h3 id=\"payments-schedule\">Payments schedule<\/h3>\n<ul><li><strong>Hourly, daily, or weekly:<\/strong> the full amount is charged at booking. The host is paid out 24h after check-in.<\/li><li><strong>Month-to-month or lease:<\/strong> the first period plus the deposit is charged at booking, then autopay each period. Month-to-month ends with 30 days' notice.<\/li><li><strong>Infrastructure:<\/strong> annual (or monthly) rent paid by the company. The platform takes its fee on each payment.<\/li><\/ul>\n<h3 id=\"access-and-handoff\">Access and handoff<\/h3>\n<p>Each space has access instructions that are revealed after confirmation, such as a gate code, a lockbox, or a smart-lock code generated per booking. It also has access hours (storage 7am–9pm, for example) and a check-in/out photo log, which is used for disputes about storage contents and yard condition.<\/p>\n<hr>\n<h2 id=\"3-multi-unit-buildings-add-ons-and-packages\">3. Multi-unit buildings, add-ons, and packages<\/h2>\n<p>The owner of an apartment building lists the <strong>building<\/strong> as a non-rentable container. Inside it go the <strong>units<\/strong>, a <strong>parking pool<\/strong> (for example 12 spots), a <strong>storage locker pool<\/strong>, and maybe EV chargers. The owner then decides how each one can be rented:<\/p>\n<div class=\"table-wrap\"><table><thead><tr><th>Rental policy<\/th><th>Meaning<\/th><th>Example<\/th><\/tr><\/thead><tbody><tr><td><code>standalone<\/code><\/td><td>Anyone can rent it alone<\/td><td>Apartment 2A, EV charger by the hour<\/td><\/tr><tr><td><code>addon<\/code><\/td><td>Can be rented only with an anchor<\/td><td>Garage parking only for building tenants<\/td><\/tr><tr><td><code>both<\/code><\/td><td>Rentable alone, with a lower price as an add-on<\/td><td>Storage locker: $90/mo alone or $60/mo with a unit<\/td><\/tr><\/tbody><\/table><\/div>\n<p><strong>Add-on rules<\/strong> are set on the add-on space:<\/p>\n<ul><li><code>anchors<\/code>: which spaces can carry this add-on, such as \"any unit in this building\" (by category) or specific unit IDs.<\/li><li><code>maxPerAnchor<\/code>: the most of this add-on one anchor can carry, such as 2 parking spaces per apartment.<\/li><li>The anchor can be in the <strong>same cart<\/strong> or be an <strong>existing booking<\/strong> of the same renter that covers the whole add-on period. A tenant who signed a lease in March can add a second parking spot in June.<\/li><li>The add-on can't outlast the anchor. If the lease ends, the add-on has to end with it.<\/li><\/ul>\n<p><strong>Packages<\/strong> are bundles defined by the host, like \"Unit 1A + 2 parking\" at $2,650/mo fixed or \"Any unit + locker\" at 10% off. A package is listed as one item in search results. When booked, it becomes the underlying spaces, so availability and conflicts are still checked for each space.<\/p>\n<p>That gives a renter these choices:<\/p>\n<ol><li>Apartment only.<\/li><li>Apartment plus 1 or 2 parking spaces (add-ons, capped at 2).<\/li><li>A package, such as Apartment 1A plus 2 parking at a fixed price.<\/li><li>Later, add a locker to their existing lease.<\/li><li>A non-tenant can rent a locker alone at the standalone price, but cannot rent parking, which is add-on only.<\/li><\/ol>\n<p>The same model works for a single house. For example, an owner can rent the ADU and offer the driveway spot only to whoever rents the ADU.<\/p>\n<hr>\n<h2 id=\"4-trust-safety-and-legal\">4. Trust, safety, and legal<\/h2>\n<ul><li><strong>Host checklist per category<\/strong> must be complete before a listing goes live: permits, HOA approval, insurance, and safety items such as smoke/CO detectors, pool fencing, NFPA 855, and roof assessment.<\/li><li><strong>Identity verification<\/strong> is required for both sides. Leases and infrastructure agreements also need a business or credit check.<\/li><li><strong>Agreements.<\/strong> Short rentals use platform terms of service. Leases use a state-specific lease template. Infrastructure uses a recorded lease or easement with removal, insurance, and indemnity clauses.<\/li><li><strong>Insurance.<\/strong> A host protection policy for short rentals. Infrastructure partners must name the owner as additional insured.<\/li><li><strong>Reviews<\/strong> in both directions, plus disputes backed by the check-in/out photos.<\/li><li><strong>Local rules engine (later).<\/strong> Look up the address to see short-term-rental caps, parking ordinances, and garden and front-yard rules, then turn off terms that aren't allowed.<\/li><\/ul>\n<hr>\n<h2 id=\"5-build-plan\">5. Build plan<\/h2>\n<div class=\"table-wrap\"><table><thead><tr><th>Phase<\/th><th>Scope<\/th><\/tr><\/thead><tbody><tr><td><strong>0: rules prototype (done)<\/strong><\/td><td>Catalog, data model, availability with quantity, hierarchy, and conflicts, add-on and package rules, pricing with event rates, booking modes and states, JSON API, tests<\/td><\/tr><tr><td><strong>0.5: app prototype (done)<\/strong><\/td><td>Installable mobile-first app. Renters: explore with map, events and bundles, listing pages with availability calendar and reviews, checkout for every rental length, trips with access details, messaging, reviews. Hosts: today dashboard, approve or decline in chat, listings tree, earnings by month, step-by-step listing wizard with the required checklist. Works offline as a single HTML file.<\/td><\/tr><tr><td>1: MVP<\/td><td>Real auth, Postgres, Stripe Connect payouts, photo uploads, map search, messaging, notifications<\/td><\/tr><tr><td>2: Trust<\/td><td>ID verification, reviews, check-in/out photo log, disputes, insurance partner<\/td><\/tr><tr><td>3: Long-term<\/td><td>Lease templates and e-sign, autopay, move-in/out, maintenance requests<\/td><\/tr><tr><td>4: Infrastructure marketplace<\/td><td>Solar, battery, and charger partner portal, roof and site assessment scheduling, rent from commissioning, revenue share<\/td><\/tr><tr><td>5: Local rules engine<\/td><td>Permit and ordinance lookup by address, automatic term limits<\/td><\/tr><\/tbody><\/table><\/div>";
-const KEY = 'everyspace-demo-v2';
+const SPEC_HTML = "<h1 id=\"everyspace-product-spec-working-name\">Everyspace: product spec (working name)<\/h1>\n<p>Everyspace is a marketplace for renting out <strong>any part of a property<\/strong> for <strong>any length of time<\/strong>. You could rent out a backyard for one night, a driveway spot for fair weekend, a garage corner for a month, a whole house like a vacation rental, a front yard for a garden, or a roof for 20 years to someone who pays for solar panels on it.<\/p>\n<p>It also handles <strong>multi-unit buildings<\/strong>. A renter can take just an apartment, or an apartment plus two parking spaces and a storage locker, under rules the owner sets.<\/p>\n<p>The app has <strong>two sides<\/strong>. The <strong>everyday app<\/strong> is for people renting from people: parking, storage, yards, rooms, homes, kitchens, docks. <strong>Everyspace for Business<\/strong> is a separate side where companies lease roofs, pads, road frontage, walls and lots on multi-year agreements. Someone scrolling for a place to park never sees a rooftop solar lease, and a solar installer doesn't wade through backyard parties (§1b).<\/p>\n<p>This document covers what can be rented and how renting works. It comes before the build. The prototype in <code>src/<\/code> implements the core rules described here.<\/p>\n<hr>\n<h2 id=\"1-what-can-be-rented\">1. What can be rented<\/h2>\n<p>Every listing is a <strong>space<\/strong>, and every space has a <strong>category<\/strong>. The category sets which rental lengths are allowed, how the space is measured and priced, the default booking mode, and the checklist a host has to complete before going live.<\/p>\n<p>Rental lengths (terms):<\/p>\n<div class=\"table-wrap\"><table><thead><tr><th>Term<\/th><th>Unit<\/th><th>Typical use<\/th><\/tr><\/thead><tbody><tr><td>Hourly<\/td><td>hour<\/td><td>Backyard party, pool, studio session, EV charging<\/td><\/tr><tr><td>Nightly / daily<\/td><td>day<\/td><td>Vacation stay, event-day parking, overnight camping<\/td><\/tr><tr><td>Weekly<\/td><td>week<\/td><td>Longer stay, temporary storage<\/td><\/tr><tr><td>Month-to-month<\/td><td>month<\/td><td>Parking, storage, garden plot, room<\/td><\/tr><tr><td>Fixed lease<\/td><td>month, 6–24 mo<\/td><td>Apartment, ADU, long-term parking<\/td><\/tr><tr><td>Infrastructure agreement<\/td><td>year, 5–25 yr<\/td><td>Rooftop solar, battery, charger, antenna<\/td><\/tr><\/tbody><\/table><\/div>\n<h3 id=\"catalog\">Catalog<\/h3>\n<p><strong>Living<\/strong><\/p>\n<div class=\"table-wrap\"><table><thead><tr><th>Category<\/th><th>Terms<\/th><th>Measured by<\/th><th>Notes<\/th><\/tr><\/thead><tbody><tr><td>Entire home<\/td><td>daily, weekly, monthly, lease<\/td><td>whole<\/td><td>Works like Airbnb. Needs a short-term-rental permit and occupancy tax where the city requires them.<\/td><\/tr><tr><td>Apartment / unit<\/td><td>daily, monthly, lease<\/td><td>whole<\/td><td>A unit in a multi-unit building. It can anchor add-ons (§3).<\/td><\/tr><tr><td>ADU / guest house<\/td><td>daily, weekly, monthly, lease<\/td><td>whole<\/td><td><\/td><\/tr><tr><td>Private room<\/td><td>daily, weekly, monthly, lease<\/td><td>whole<\/td><td>Shared common areas are listed in the house rules.<\/td><\/tr><\/tbody><\/table><\/div>\n<p><strong>Outdoor and activity<\/strong><\/p>\n<div class=\"table-wrap\"><table><thead><tr><th>Category<\/th><th>Terms<\/th><th>Measured by<\/th><th>Notes<\/th><\/tr><\/thead><tbody><tr><td>Backyard<\/td><td>hourly, daily<\/td><td>whole<\/td><td>Parties, gatherings, dog play, photo shoots. Noise curfew and guest cap are required.<\/td><\/tr><tr><td>Yard campsite<\/td><td>daily, weekly<\/td><td>site<\/td><td>Tent or small RV overnight. Requires restroom access.<\/td><\/tr><tr><td>Pool<\/td><td>hourly<\/td><td>whole<\/td><td>Lifeguard and waiver rules. Host must confirm insurance.<\/td><\/tr><tr><td>Workspace / studio / workshop<\/td><td>hourly, daily, monthly<\/td><td>whole<\/td><td>Home office, music room, wood shop.<\/td><\/tr><tr><td>Filming / photo location<\/td><td>hourly, daily<\/td><td>whole<\/td><td>Always request-to-book. City film permit may be needed.<\/td><\/tr><tr><td>Kitchen<\/td><td>hourly, daily, monthly<\/td><td>whole<\/td><td>Cottage-food bakers, meal prep, cooking classes. Food-handler rules and allergen disclosure.<\/td><\/tr><tr><td>Sport court<\/td><td>hourly<\/td><td>whole<\/td><td>Pickleball, tennis, basketball. Lighting hours and waiver.<\/td><\/tr><\/tbody><\/table><\/div>\n<p><strong>Parking<\/strong><\/p>\n<div class=\"table-wrap\"><table><thead><tr><th>Category<\/th><th>Terms<\/th><th>Measured by<\/th><th>Notes<\/th><\/tr><\/thead><tbody><tr><td>Parking spot<\/td><td>hourly, daily, weekly, monthly, lease<\/td><td>spot (quantity)<\/td><td>Driveway, garage, or carport. <strong>Event pricing<\/strong> covers fair, stadium, and parade days.<\/td><\/tr><tr><td>RV / boat / trailer parking<\/td><td>weekly, monthly, lease<\/td><td>spot<\/td><td>Length limit and HOA check.<\/td><\/tr><tr><td>EV charging<\/td><td>hourly, daily, monthly<\/td><td>charger<\/td><td>Host's own charger. Price covers time and electricity.<\/td><\/tr><tr><td>Boat dock / slip<\/td><td>daily, weekly, monthly, lease<\/td><td>slip<\/td><td>Max boat length and draft, dock condition and insurance.<\/td><\/tr><\/tbody><\/table><\/div>\n<p><strong>Storage<\/strong><\/p>\n<div class=\"table-wrap\"><table><thead><tr><th>Category<\/th><th>Terms<\/th><th>Measured by<\/th><th>Notes<\/th><\/tr><\/thead><tbody><tr><td>Garage storage<\/td><td>weekly, monthly, lease<\/td><td>sq ft (quantity of bays)<\/td><td>Hazardous materials are not allowed. Host sets access hours.<\/td><\/tr><tr><td>Attic storage<\/td><td>monthly, lease<\/td><td>sq ft<\/td><td>Weight limit and ladder access must be disclosed.<\/td><\/tr><tr><td>Basement / closet / shed<\/td><td>weekly, monthly, lease<\/td><td>sq ft<\/td><td><\/td><\/tr><\/tbody><\/table><\/div>\n<p><strong>Land and growing<\/strong><\/p>\n<div class=\"table-wrap\"><table><thead><tr><th>Category<\/th><th>Terms<\/th><th>Measured by<\/th><th>Notes<\/th><\/tr><\/thead><tbody><tr><td>Garden plot<\/td><td>monthly, lease<\/td><td>sq ft (quantity of plots)<\/td><td>Front or back yard. Water access, HOA front-yard rules, and chemical policy.<\/td><\/tr><tr><td>Beehive / small-ag site<\/td><td>monthly, lease<\/td><td>site<\/td><td>Local apiary rules apply.<\/td><\/tr><tr><td>Pasture / paddock<\/td><td>monthly, lease<\/td><td>acre<\/td><td>Horses, goats, grazing. Fencing, water and livestock zoning.<\/td><\/tr><\/tbody><\/table><\/div>\n<h3 id=\"business-side-leased-to-companies-only\">Business side (leased to companies only)<\/h3>\n<p>These never appear in the everyday app. They're listed on <strong>Everyspace for Business<\/strong>, and only verified business accounts can send proposals on them (§1b).<\/p>\n<p><strong>Energy and infrastructure.<\/strong><\/p>\n<div class=\"table-wrap\"><table><thead><tr><th>Category<\/th><th>Terms<\/th><th>Measured by<\/th><th>Notes<\/th><\/tr><\/thead><tbody><tr><td>Rooftop solar<\/td><td>infrastructure, 10–25 yr<\/td><td>sq ft of roof<\/td><td>A third party pays for, owns, and maintains the panels and pays the owner rent or a share of the power. Requires a roof-age and structural check, utility interconnection (net metering, community solar, or virtual net metering), a removal and re-roof clause, and a recorded lease or easement.<\/td><\/tr><tr><td>Battery site<\/td><td>infrastructure, 5–20 yr<\/td><td>site<\/td><td>Garage wall, side yard, or pad. Requires fire code setbacks (NFPA 855), a utility or virtual-power-plant program, and permits.<\/td><\/tr><tr><td>Public EV charger site<\/td><td>infrastructure, 5–15 yr<\/td><td>site<\/td><td>A third party installs a charger in a driveway or curb cut.<\/td><\/tr><tr><td>Telecom / sensor site<\/td><td>infrastructure, 5–25 yr<\/td><td>site<\/td><td>Small-cell antenna, mesh node, or weather station.<\/td><\/tr><\/tbody><\/table><\/div>\n<p><strong>Commercial and fleet.<\/strong><\/p>\n<div class=\"table-wrap\"><table><thead><tr><th>Category<\/th><th>Terms<\/th><th>Measured by<\/th><th>Notes<\/th><\/tr><\/thead><tbody><tr><td>Fleet &amp; van parking<\/td><td>monthly, lease<\/td><td>spot<\/td><td>Overnight lots for delivery and service fleets. Zoning must allow commercial vehicles; lighting and neighbor notice.<\/td><\/tr><tr><td>Sign / billboard site<\/td><td>lease, 5–25 yr<\/td><td>site<\/td><td>Road frontage. Local sign ordinance permit, structural/wind review, illumination hours.<\/td><\/tr><tr><td>Parcel locker host<\/td><td>lease, 5–25 yr<\/td><td>site<\/td><td>A lobby or exterior wall with power for a carrier's locker bank.<\/td><\/tr><\/tbody><\/table><\/div>\n<p><strong>Later:<\/strong> laundry time, music/practice rooms by the hour, farmland leases, drone landing pads, cell-on-wheels event sites.<\/p>\n<p><strong>Not allowed:<\/strong> public streets and curbs, shared HOA common areas the host doesn't control, and any space whose required permit the host can't show.<\/p>\n<hr>\n<h2 id=\"1b-two-sides-everyday-and-business\">1b. Two sides: everyday and business<\/h2>\n<p>Each category has an <strong>audience<\/strong>:<\/p>\n<div class=\"table-wrap\"><table><thead><tr><th><\/th><th>Everyday app<\/th><th>Everyspace for Business<\/th><\/tr><\/thead><tbody><tr><td>Who rents<\/td><td>People<\/td><td>Verified companies (solar installers, charging networks, telecoms, parcel-locker networks, fleets, sign companies)<\/td><\/tr><tr><td>What's listed<\/td><td>Stays, activities, parking and docks, storage, land<\/td><td>Energy &amp; infrastructure, commercial &amp; fleet<\/td><\/tr><tr><td>Typical length<\/td><td>An hour to two years<\/td><td>Monthly fleet leases to 25-year agreements<\/td><\/tr><tr><td>How it's booked<\/td><td>Instant or request to book<\/td><td>Proposal → site assessment → contract → installation<\/td><\/tr><tr><td>What renters see<\/td><td>Photos, reviews, availability calendar<\/td><td>Site facts: roof size and age, electrical service, traffic counts, access<\/td><\/tr><\/tbody><\/table><\/div>\n<p>Rules:<\/p>\n<ul><li>Everyday search never returns business categories. Business search returns only business categories, and bundles don't apply there.<\/li><li>Only accounts verified as businesses can quote or propose on business sites. People see a landing page explaining the business side instead.<\/li><li>Owners list both kinds from the same hosting mode. The listing flow asks first: <strong>Rent to people<\/strong> or <strong>Lease to companies<\/strong>. Business listings skip the add-on step and ask for site facts.<\/li><li>Business accounts get their own tabs: <strong>Sites<\/strong> (list or map, filtered by site type) and <strong>Pipeline<\/strong> (proposals by stage, with active rent per year).<\/li><\/ul>\n<h2 id=\"1c-growth-features\">1c. Growth features<\/h2>\n<ul><li><strong>Earnings estimator.<\/strong> Anyone can tap \"Earn from your place\" and say what they have: driveway spots, garage bays, backyard hours, spare-room nights, roof area, a wall or frontage. It shows estimated monthly and yearly income, split into money from people and money from companies, using typical local prices and realistic occupancy. One tap starts a listing for any of those things.<\/li><li><strong>Saved.<\/strong> A heart on every card saves it to a Saved tab.<\/li><li><strong>Guest favorites.<\/strong> Spaces rated 4.8 or higher with at least two reviews get a badge and their own row in Explore.<\/li><li><strong>Ideas.<\/strong> One-tap starting points in Explore, like \"Park for the game\", \"Throw a party\", \"Store your stuff\", \"Dock your boat\".<\/li><\/ul>\n<hr>\n<h2 id=\"2-how-it-works\">2. How it works<\/h2>\n<h3 id=\"properties-and-spaces\">Properties and spaces<\/h3>\n<pre><code>Host ─┬─ Property (address, type, rules, HOA y/n, insurance)\n      └─ Space (category, quantity, rates per term, availability, parent?)\n            └─ Space (child) ...<\/code><\/pre>\n<ul><li><strong>Quantity.<\/strong> One listing can stand for several identical units, such as 4 driveway spots, 3 garage bays, or 8 storage lockers. Bookings use up quantity, and the listing stays available until all units are taken.<\/li><li><strong>Hierarchy (parent/child).<\/strong> A space can sit inside another one. For example, a garage bay is inside the garage, a room is inside the house, and an apartment is inside the building.<ul><li>Booking a parent blocks all of its children. If the whole house is booked, its rooms and backyard are not.<\/li><li>Booking any child blocks the parent as a whole. Rooms 1 and 2 can be rented separately, but then the whole house can't be.<\/li><li>Structural containers such as a building or a garage can be marked <strong>not rentable<\/strong>. They organize the listing and never block anything.<\/li><\/ul><\/li><li><strong>Explicit conflicts.<\/strong> Some spaces overlap without one sitting inside the other, such as \"driveway parking\" and \"RV parking\" in the same driveway. A host can mark them as conflicting.<\/li><li><strong>Independent spaces.<\/strong> A roof leased for solar does not conflict with the house being rented nightly. It isn't a child of the house, so the two never block each other.<\/li><\/ul>\n<h3 id=\"pricing\">Pricing<\/h3>\n<ul><li>There is one rate per allowed term, such as $12/hour, $45/day, or $180/month. Weekly stays use the weekly rate plus extra days at the daily rate. Partial months are prorated at the monthly rate divided by 30.<\/li><li><strong>Event pricing.<\/strong> Hosts can set date-range overrides, for example \"County Fair, Aug 14–17, $40/day\" for a driveway spot. When a booking covers those dates, the override replaces the daily rate for those days.<\/li><li><strong>Add-on price.<\/strong> A space can cost less when it is attached to an anchor rental (§3).<\/li><li><strong>Packages<\/strong> have their own price, either a fixed amount per period or a % discount (§3).<\/li><li><strong>Fees (prototype values).<\/strong> Renters pay a 10% service fee, and hosts pay 3%. Long and infrastructure agreements are charged per period rather than all at once.<\/li><li><strong>Deposits<\/strong> are set by category, such as a whole home or storage, and are held, not charged.<\/li><\/ul>\n<h3 id=\"booking-modes\">Booking modes<\/h3>\n<div class=\"table-wrap\"><table><thead><tr><th>Mode<\/th><th>When<\/th><th>Flow<\/th><\/tr><\/thead><tbody><tr><td>Instant<\/td><td>Short, low-risk rentals: parking, storage, hourly yard<\/td><td>Pay, then <strong>confirmed<\/strong><\/td><\/tr><tr><td>Request<\/td><td>Whole homes, filming, leases, anything the host flags<\/td><td><strong>pending<\/strong> (dates held 24h), then host approves (<strong>confirmed<\/strong>) or declines<\/td><\/tr><tr><td>Proposal<\/td><td>Infrastructure agreements<\/td><td><strong>proposed<\/strong>, then <strong>site assessment<\/strong>, then <strong>contract<\/strong>, then <strong>confirmed<\/strong>. Rent starts when the system is commissioned.<\/td><\/tr><\/tbody><\/table><\/div>\n<p>A cart with several items uses its strictest mode. For example, instant parking plus a request-to-book apartment becomes a request.<\/p>\n<p>States: <code>pending | proposed | site_assessment | contract | confirmed | active | completed | declined | cancelled<\/code>. Pending and proposal-stage bookings hold the space, so nobody can double-book while the host decides.<\/p>\n<h3 id=\"payments-schedule\">Payments schedule<\/h3>\n<ul><li><strong>Hourly, daily, or weekly:<\/strong> the full amount is charged at booking. The host is paid out 24h after check-in.<\/li><li><strong>Month-to-month or lease:<\/strong> the first period plus the deposit is charged at booking, then autopay each period. Month-to-month ends with 30 days' notice.<\/li><li><strong>Infrastructure:<\/strong> annual (or monthly) rent paid by the company. The platform takes its fee on each payment.<\/li><\/ul>\n<h3 id=\"access-and-handoff\">Access and handoff<\/h3>\n<p>Each space has access instructions that are revealed after confirmation, such as a gate code, a lockbox, or a smart-lock code generated per booking. It also has access hours (storage 7am–9pm, for example) and a check-in/out photo log, which is used for disputes about storage contents and yard condition.<\/p>\n<hr>\n<h2 id=\"3-multi-unit-buildings-add-ons-and-packages\">3. Multi-unit buildings, add-ons, and packages<\/h2>\n<p>The owner of an apartment building lists the <strong>building<\/strong> as a non-rentable container. Inside it go the <strong>units<\/strong>, a <strong>parking pool<\/strong> (for example 12 spots), a <strong>storage locker pool<\/strong>, and maybe EV chargers. The owner then decides how each one can be rented:<\/p>\n<div class=\"table-wrap\"><table><thead><tr><th>Rental policy<\/th><th>Meaning<\/th><th>Example<\/th><\/tr><\/thead><tbody><tr><td><code>standalone<\/code><\/td><td>Anyone can rent it alone<\/td><td>Apartment 2A, EV charger by the hour<\/td><\/tr><tr><td><code>addon<\/code><\/td><td>Can be rented only with an anchor<\/td><td>Garage parking only for building tenants<\/td><\/tr><tr><td><code>both<\/code><\/td><td>Rentable alone, with a lower price as an add-on<\/td><td>Storage locker: $90/mo alone or $60/mo with a unit<\/td><\/tr><\/tbody><\/table><\/div>\n<p><strong>Add-on rules<\/strong> are set on the add-on space:<\/p>\n<ul><li><code>anchors<\/code>: which spaces can carry this add-on, such as \"any unit in this building\" (by category) or specific unit IDs.<\/li><li><code>maxPerAnchor<\/code>: the most of this add-on one anchor can carry, such as 2 parking spaces per apartment.<\/li><li>The anchor can be in the <strong>same cart<\/strong> or be an <strong>existing booking<\/strong> of the same renter that covers the whole add-on period. A tenant who signed a lease in March can add a second parking spot in June.<\/li><li>The add-on can't outlast the anchor. If the lease ends, the add-on has to end with it.<\/li><\/ul>\n<p><strong>Packages<\/strong> are bundles defined by the host, like \"Unit 1A + 2 parking\" at $2,650/mo fixed or \"Any unit + locker\" at 10% off. A package is listed as one item in search results. When booked, it becomes the underlying spaces, so availability and conflicts are still checked for each space.<\/p>\n<p>That gives a renter these choices:<\/p>\n<ol><li>Apartment only.<\/li><li>Apartment plus 1 or 2 parking spaces (add-ons, capped at 2).<\/li><li>A package, such as Apartment 1A plus 2 parking at a fixed price.<\/li><li>Later, add a locker to their existing lease.<\/li><li>A non-tenant can rent a locker alone at the standalone price, but cannot rent parking, which is add-on only.<\/li><\/ol>\n<p>The same model works for a single house. For example, an owner can rent the ADU and offer the driveway spot only to whoever rents the ADU.<\/p>\n<hr>\n<h2 id=\"4-trust-safety-and-legal\">4. Trust, safety, and legal<\/h2>\n<ul><li><strong>Host checklist per category<\/strong> must be complete before a listing goes live: permits, HOA approval, insurance, and safety items such as smoke/CO detectors, pool fencing, NFPA 855, and roof assessment.<\/li><li><strong>Identity verification<\/strong> is required for both sides. Leases and infrastructure agreements also need a business or credit check.<\/li><li><strong>Agreements.<\/strong> Short rentals use platform terms of service. Leases use a state-specific lease template. Infrastructure uses a recorded lease or easement with removal, insurance, and indemnity clauses.<\/li><li><strong>Insurance.<\/strong> A host protection policy for short rentals. Infrastructure partners must name the owner as additional insured.<\/li><li><strong>Reviews<\/strong> in both directions, plus disputes backed by the check-in/out photos.<\/li><li><strong>Local rules engine (later).<\/strong> Look up the address to see short-term-rental caps, parking ordinances, and garden and front-yard rules, then turn off terms that aren't allowed.<\/li><\/ul>\n<hr>\n<h2 id=\"5-build-plan\">5. Build plan<\/h2>\n<div class=\"table-wrap\"><table><thead><tr><th>Phase<\/th><th>Scope<\/th><\/tr><\/thead><tbody><tr><td><strong>0: rules prototype (done)<\/strong><\/td><td>Catalog, data model, availability with quantity, hierarchy, and conflicts, add-on and package rules, pricing with event rates, booking modes and states, JSON API, tests<\/td><\/tr><tr><td><strong>0.5: app prototype (done)<\/strong><\/td><td>Installable mobile-first app. Renters: explore with map, events and bundles, listing pages with availability calendar and reviews, checkout for every rental length, trips with access details, messaging, reviews. Hosts: today dashboard, approve or decline in chat, listings tree, earnings by month, step-by-step listing wizard with the required checklist. Works offline as a single HTML file.<\/td><\/tr><tr><td><strong>0.75: two sides + polish (done)<\/strong><\/td><td>Everyspace for Business (Sites, Pipeline, landing page, business-only rule), new categories (kitchen, sport court, boat dock, pasture, fleet parking, signage, parcel lockers), earnings estimator, Saved, guest favorites, ideas row, desktop listing layout with a booking card and gallery, refreshed visual design.<\/td><\/tr><tr><td>1: MVP<\/td><td>Real auth, Postgres, Stripe Connect payouts, photo uploads, map search, messaging, notifications<\/td><\/tr><tr><td>2: Trust<\/td><td>ID verification, reviews, check-in/out photo log, disputes, insurance partner<\/td><\/tr><tr><td>3: Long-term<\/td><td>Lease templates and e-sign, autopay, move-in/out, maintenance requests<\/td><\/tr><tr><td>4: Infrastructure marketplace<\/td><td>Solar, battery, and charger partner portal, roof and site assessment scheduling, rent from commissioning, revenue share<\/td><\/tr><tr><td>5: Local rules engine<\/td><td>Permit and ordinance lookup by address, automatic term limits<\/td><\/tr><\/tbody><\/table><\/div>";
+const KEY = 'everyspace-demo-v3';
 let db;
 try { db = JSON.parse(localStorage.getItem(KEY)); } catch {}
 if (!db) db = seed();
@@ -1789,7 +2121,7 @@ const state = {
   catalog: null,
   users: [],
   user: store.get('user', 'u_sam'),
-  mode: store.get('mode', 'guest'), // 'guest' | 'host'
+  mode: store.get('mode', 'guest'), // 'guest' | 'host' | 'business'
   filters: { group: '', category: '', term: '', start: '', end: '', q: '' },
   view: 'list',
   get me() { return this.users.find((u) => u.id === this.user) ?? this.users[0]; },
@@ -1874,7 +2206,31 @@ const icon = {
   calendar: '<svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16"/></svg>',
   chevron: '<svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>',
   close: '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  heart: '<svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 017-2.6A4 4 0 0119 10c0 5.6-7 10-7 10z"/></svg>',
+  share: '<svg viewBox="0 0 24 24"><path d="M12 4v11M7.5 8.5L12 4l4.5 4.5M5 13v6h14v-6"/></svg>',
+  briefcase: '<svg viewBox="0 0 24 24"><rect x="3.5" y="7.5" width="17" height="12" rx="2"/><path d="M9 7.5V5.5h6v2M3.5 12.5h17"/></svg>',
+  pipeline: '<svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="5" height="15" rx="1.5"/><rect x="10" y="4.5" width="5" height="10" rx="1.5"/><rect x="16.5" y="4.5" width="4" height="6" rx="1.5"/></svg>',
+  spark: '<svg viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M18 6l-2.5 2.5M8.5 15.5L6 18"/></svg>',
 };
+
+const isFavorite = (r) => r?.count >= 2 && r.avg >= 4.8;
+const saveBtn = (id, saved, extra = '') => `<button class="save-btn ${saved ? 'on' : ''} ${extra}" data-save="${esc(id)}" aria-label="${saved ? 'Remove from saved' : 'Save'}" aria-pressed="${saved ? 'true' : 'false'}">${icon.heart}</button>`;
+
+// One listener for every heart button in the app.
+function bindSaves() {
+  document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-save]');
+    if (!btn) return;
+    e.preventDefault(); e.stopPropagation();
+    try {
+      const { saved } = await api('saves', { userId: state.user, spaceId: btn.dataset.save });
+      for (const b of $$(`[data-save="${btn.dataset.save}"]`)) { b.classList.toggle('on', saved); b.setAttribute('aria-pressed', String(saved)); }
+      toast(saved ? 'Saved to your list' : 'Removed from saved');
+      const card = btn.closest('.space-card');
+      if (!saved && location.hash === '#/saved' && card) card.hidden = true;
+    } catch (err) { toast(err.message); }
+  }, true);
+}
 
 function topbar(title, { back = true, right = '' } = {}) {
   return `<header class="topbar">${back ? `<button class="icon-btn" data-back aria-label="Back">${icon.back}</button>` : '<span></span>'}
@@ -1913,9 +2269,10 @@ function closeSheet() {
   setTimeout(() => { wrap.hidden = true; wrap.innerHTML = ''; }, 200);
 }
 
-function stepper(name, value, { min = 0, max = 99 } = {}) {
-  return `<div class="stepper" data-stepper="${esc(name)}" data-min="${min}" data-max="${max}">
-    <button type="button" data-step="-1" aria-label="Fewer">−</button><output>${value}</output><button type="button" data-step="1" aria-label="More">+</button></div>`;
+// A − value + control. `inc` is how much one tap changes the value (e.g. 100 sq ft).
+function stepper(name, value, { min = 0, max = 99, inc = 1 } = {}) {
+  return `<div class="stepper" data-stepper="${esc(name)}" data-min="${min}" data-max="${max}" data-inc="${inc}" data-value="${value}">
+    <button type="button" data-step="-1" aria-label="Fewer">−</button><output>${Number(value).toLocaleString('en-US')}</output><button type="button" data-step="1" aria-label="More">+</button></div>`;
 }
 // Wire every stepper under root; onChange(name, value)
 function bindSteppers(root, onChange) {
@@ -1924,19 +2281,20 @@ function bindSteppers(root, onChange) {
     const update = (v) => {
       const min = +s.dataset.min, max = +s.dataset.max;
       v = Math.max(min, Math.min(max, v));
-      out.textContent = v;
+      s.dataset.value = v;
+      out.textContent = v.toLocaleString('en-US');
       $('[data-step="-1"]', s).disabled = v <= min;
       $('[data-step="1"]', s).disabled = v >= max;
       return v;
     };
-    update(+out.textContent);
-    for (const b of $$('[data-step]', s)) b.onclick = () => onChange(s.dataset.stepper, update(+out.textContent + +b.dataset.step));
+    update(+s.dataset.value);
+    for (const b of $$('[data-step]', s)) b.onclick = () => onChange(s.dataset.stepper, update(+s.dataset.value + b.dataset.step * s.dataset.inc));
   }
 }
 
 function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
 
-__m['core'] = { $, $$, esc, money, api, state, cat, term, TERM_ORDER, TERM_SHORT, cheapestRate, priceTag, today, addDays, addMonths, fmtDate, fmtTime, fmtRange, ago, avatar, stars, statusPill, errorBox, icon, topbar, bindBack, go, toast, openSheet, closeSheet, stepper, bindSteppers, debounce };
+__m['core'] = { $, $$, esc, money, api, state, cat, term, TERM_ORDER, TERM_SHORT, cheapestRate, priceTag, today, addDays, addMonths, fmtDate, fmtTime, fmtRange, ago, avatar, stars, statusPill, errorBox, icon, isFavorite, saveBtn, bindSaves, topbar, bindBack, go, toast, openSheet, closeSheet, stepper, bindSteppers, debounce };
 })();
 // ---- public/js/art.js ----
 (() => {
@@ -2037,19 +2395,75 @@ const SCENES = {
     telecom_site: `<path d="M0 170 Q150 110 300 170 V200 H0 Z" fill="${p.ground}"/><path d="M150 30 L125 150 M150 30 L175 150 M132 115 L168 115 M137 85 L163 85 M142 58 L158 58" stroke="#666" stroke-width="4" fill="none"/>
       ${[1, 2, 3].map((i) => `<path d="M${150 - i * 18} ${30 - i * 6} q${i * 18} -${i * 12} ${i * 36} 0" stroke="${p.accent}" stroke-width="3" fill="none"/>`).join('')}`,
   })[c] ?? '',
+  commercial: (p, c) => ({
+    fleet_parking: `<rect x="0" y="120" width="300" height="80" fill="#a7a59c"/>${[0, 1, 2, 3].map((i) => `<path d="M${30 + i * 70} 200 L${45 + i * 70} 125" stroke="#f2f2f2" stroke-width="3"/>`).join('')}
+      ${[0, 1, 2].map((i) => van(42 + i * 72, 112, i === 1 ? p.accent : '#f4f4f2')).join('')}
+      <rect x="268" y="40" width="5" height="110" fill="#555"/><path d="M262 40 h22" stroke="#555" stroke-width="5"/><ellipse cx="282" cy="46" rx="9" ry="4" fill="#ffe9a8"/>`,
+    signage: `<rect x="0" y="165" width="300" height="35" fill="#8d9096"/><path d="M0 182 H300" stroke="#f2f2f2" stroke-width="3" stroke-dasharray="16 12"/>
+      <rect x="132" y="92" width="8" height="74" fill="#6b6b6b"/><rect x="170" y="92" width="8" height="74" fill="#6b6b6b"/>
+      <rect x="70" y="28" width="170" height="70" rx="4" fill="#fff" stroke="#444" stroke-width="4"/><rect x="78" y="36" width="154" height="54" fill="${p.accent}" opacity=".9"/>
+      <rect x="92" y="50" width="70" height="9" rx="4" fill="#fff"/><rect x="92" y="66" width="110" height="7" rx="3" fill="#fff" opacity=".8"/>${tree(40, 140, .7)}${tree(270, 142, .6)}`,
+    parcel_locker: `<rect x="0" y="0" width="300" height="200" fill="${p.wall}"/><rect x="0" y="160" width="300" height="40" fill="#cfc7b8"/>
+      <rect x="60" y="34" width="180" height="128" rx="6" fill="${p.accent}"/>
+      ${Array.from({ length: 4 }, (_, r) => Array.from({ length: 5 }, (_, k) => (k === 2 && r < 2) ? '' : `<rect x="${70 + k * 33}" y="${44 + r * 29}" width="28" height="24" rx="2" fill="#fff" opacity=".88"/><circle cx="${93 + k * 33}" cy="${56 + r * 29}" r="1.8" fill="#888"/>`).join('')).join('')}
+      <rect x="136" y="46" width="28" height="48" rx="3" fill="#1d2a3a"/><rect x="140" y="50" width="20" height="16" fill="#7fd1ff"/>`,
+  })[c] ?? '',
   container: (p) => `<rect x="70" y="40" width="160" height="120" fill="${p.wall}"/>`,
 };
+
+const van = (x, y, color) => `<g transform="translate(${x} ${y})"><rect x="0" y="0" width="58" height="34" rx="5" fill="${color}" stroke="#777" stroke-width="1.5"/>
+  <path d="M58 10 h10 l8 12 v12 h-18 z" fill="${color}" stroke="#777" stroke-width="1.5"/><path d="M60 13 h7 l5 8 h-12 z" fill="#cfe9ff"/>
+  <circle cx="14" cy="36" r="6" fill="#2b2b2b"/><circle cx="62" cy="36" r="6" fill="#2b2b2b"/></g>`;
+
+// Extra scenes for newer categories, merged into their groups.
+const EXTRA = {
+  kitchen: (p) => `<rect x="0" y="0" width="300" height="200" fill="${p.wall}"/>
+    ${Array.from({ length: 6 }, (_, r) => Array.from({ length: 15 }, (_, k) => `<rect x="${k * 20 + (r % 2) * 10}" y="${70 + r * 10}" width="19" height="9" fill="#fff" opacity=".55"/>`).join('')).join('')}
+    <rect x="0" y="128" width="300" height="12" fill="#d9c9b0"/><rect x="0" y="140" width="300" height="60" fill="#8a6338"/>
+    <rect x="170" y="140" width="80" height="60" fill="#3a3a3a"/><rect x="180" y="152" width="60" height="30" rx="3" fill="#ffb066" opacity=".85"/>
+    <path d="M40 20 v24 M110 20 v24" stroke="#555" stroke-width="2"/><path d="M28 44 h24 l-4 10 h-16z M98 44 h24 l-4 10 h-16z" fill="${p.accent}"/>
+    <rect x="62" y="104" width="22" height="24" rx="4" fill="${p.accent}"/><circle cx="73" cy="102" r="8" fill="#ddd"/>`,
+  sport_court: (p) => `<path d="M30 200 L80 100 H220 L270 200 Z" fill="#4c8f6a"/><path d="M50 196 L92 108 H208 L250 196 Z" fill="none" stroke="#fff" stroke-width="3"/>
+    <path d="M150 108 V196 M71 152 H229" stroke="#fff" stroke-width="2.5"/><rect x="60" y="140" width="180" height="14" fill="none" stroke="#333" stroke-width="2"/>
+    ${Array.from({ length: 12 }, (_, i) => `<path d="M${64 + i * 15} 140 v14" stroke="#333" stroke-width="1"/>`).join('')}
+    <rect x="262" y="40" width="5" height="150" fill="#555"/><ellipse cx="258" cy="44" rx="12" ry="5" fill="#ffe9a8"/>${tree(28, 120, .7)}`,
+  dock_slip: (p) => `<rect x="0" y="118" width="300" height="82" fill="#5aa8d8"/>
+    ${[0, 1, 2, 3].map((i) => `<path d="M${10 + i * 70} ${150 + (i % 2) * 12} q15 -6 30 0" stroke="#fff" stroke-width="2" fill="none" opacity=".7"/>`).join('')}
+    <rect x="150" y="110" width="150" height="14" fill="#a0784b"/>${[0, 1, 2, 3, 4].map((i) => `<rect x="${156 + i * 30}" y="110" width="6" height="40" fill="#7a5532"/>`).join('')}
+    <path d="M40 140 h90 l-14 22 h-62 z" fill="#fff" stroke="#999"/><rect x="66" y="122" width="34" height="18" rx="3" fill="${p.accent}"/><path d="M84 70 v52" stroke="#777" stroke-width="3"/><path d="M86 74 l30 40 h-30 z" fill="#fff"/>
+    <path d="M0 118 Q60 96 120 112" fill="${p.ground}"/>`,
+  pasture: (p) => `<path d="M0 130 Q90 95 180 125 T300 115 V200 H0 Z" fill="#8ec27a"/>
+    <rect x="200" y="78" width="60" height="44" fill="#b5523b"/><path d="M194 80 L230 56 L266 80 Z" fill="#7d3426"/><rect x="222" y="98" width="16" height="24" fill="#f3e6d3"/>
+    ${Array.from({ length: 9 }, (_, i) => `<rect x="${10 + i * 34}" y="150" width="5" height="34" fill="#8a6338"/>`).join('')}<path d="M10 158 H300 M10 172 H300" stroke="#8a6338" stroke-width="4"/>
+    <g transform="translate(70 112)" fill="#6b4226"><ellipse cx="30" cy="20" rx="30" ry="13"/><path d="M50 14 l18 -18 l8 4 l-12 22 z"/><rect x="6" y="28" width="6" height="22"/><rect x="16" y="28" width="6" height="22"/><rect x="40" y="28" width="6" height="22"/><rect x="50" y="28" width="6" height="22"/><path d="M0 16 q-12 8 -6 22" stroke="#4a2c18" stroke-width="5" fill="none"/></g>`,
+};
+const EXTRA_PALETTES = [
+  { sky: ['#ffc6a8', '#ffeede'], ground: '#9dc584', accent: '#d9603b', wall: '#fbeee0', roof: '#8a3d2a' },
+  { sky: ['#a9d4f5', '#e9f5ff'], ground: '#94c98f', accent: '#2f6fb3', wall: '#f1efe9', roof: '#4a4a6a' },
+];
+const ALL_PALETTES = [...PALETTES, ...EXTRA_PALETTES];
+const INTERIOR = new Set(['private_room', 'workspace', 'kitchen', 'basement_storage', 'parcel_locker']);
+
+function sky(h, p) {
+  const cloud = (x, y, s) => `<g transform="translate(${x} ${y}) scale(${s})" fill="#fff" opacity=".85"><ellipse cx="0" cy="0" rx="18" ry="9"/><ellipse cx="14" cy="-5" rx="14" ry="10"/><ellipse cx="28" cy="1" rx="14" ry="8"/></g>`;
+  const sunX = 30 + (h % 240);
+  return `${h % 3 ? `<circle cx="${sunX}" cy="${28 + (h % 20)}" r="16" fill="#fff4c2" opacity=".9"/>` : ''}
+    ${cloud(20 + (h % 90), 30 + (h % 25), 0.8)}${cloud(170 + (h % 80), 18 + (h % 30), 0.6)}`;
+}
 
 function art(space, { className = 'art' } = {}) {
   const c = space.category;
   const group = window.everyspaceCatalog?.categories?.[c]?.group ?? 'living';
   const h = hash(space.id ?? c);
-  const p = PALETTES[h % PALETTES.length];
+  const p = ALL_PALETTES[h % ALL_PALETTES.length];
   const id = `sky${h}`;
-  const scene = SCENES[group]?.(p, c, space) || SCENES.living(p, 'entire_home');
+  const scene = EXTRA[c]?.(p) || SCENES[group]?.(p, c, space) || SCENES.living(p, 'entire_home');
+  const outside = !INTERIOR.has(c);
   return `<svg class="${className}" viewBox="0 0 300 200" preserveAspectRatio="xMidYMid slice" role="img" aria-label="${(space.title ?? '').replace(/"/g, '')}">
-    <defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${p.sky[0]}"/><stop offset="1" stop-color="${p.sky[1]}"/></linearGradient></defs>
-    <rect width="300" height="200" fill="url(#${id})"/><rect y="150" width="300" height="50" fill="${p.ground}"/>${scene}</svg>`;
+    <defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${p.sky[0]}"/><stop offset="1" stop-color="${p.sky[1]}"/></linearGradient>
+      <linearGradient id="g${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${p.ground}"/><stop offset="1" stop-color="${p.ground}" stop-opacity=".75"/></linearGradient></defs>
+    <rect width="300" height="200" fill="url(#${id})"/>${outside ? sky(h, p) : ''}<rect y="150" width="300" height="50" fill="url(#g${id})"/>
+    ${outside ? '<ellipse cx="150" cy="156" rx="120" ry="6" fill="#000" opacity=".06"/>' : ''}${scene}</svg>`;
 }
 
 __m['art'] = { art };
@@ -2119,74 +2533,104 @@ __m['calendar'] = { calendarPicker, nights };
 })();
 // ---- public/js/explore.js ----
 (() => {
-// Explore: search, category chips, dates, events, list and map.
-const { $, $$, api, esc, state, cat, term, icon, cheapestRate, priceTag, stars, fmtDate, today, openSheet, closeSheet, debounce, TERM_ORDER, TERM_SHORT, money } = __m['core'];
+// Explore: everyday spaces only. Infrastructure and commercial sites live on the business side.
+const { $, $$, api, esc, state, term, icon, cheapestRate, priceTag, stars, fmtDate, today, openSheet, closeSheet, debounce, money, saveBtn, isFavorite, TERM_ORDER, TERM_SHORT } = __m['core'];
 const { art } = __m['art'];
+
+const CONSUMER_GROUPS = ['living', 'outdoor', 'parking', 'storage', 'land'];
+
+// Quick ideas: one tap sets a sensible filter.
+const IDEAS = [
+  { label: 'Park for the game', emoji: '🏟️', tone: 'a', set: { group: 'parking', q: 'stadium' } },
+  { label: 'Throw a party', emoji: '🎉', tone: 'b', set: { group: 'outdoor', category: 'backyard' } },
+  { label: 'Store your stuff', emoji: '📦', tone: 'c', set: { group: 'storage' } },
+  { label: 'Weekend away', emoji: '🛶', tone: 'd', set: { group: 'living', term: 'daily' } },
+  { label: 'Grow food', emoji: '🥕', tone: 'e', set: { group: 'land' } },
+  { label: 'Bake & cook', emoji: '🍳', tone: 'b', set: { group: 'outdoor', category: 'kitchen' } },
+  { label: 'Dock your boat', emoji: '⛵', tone: 'd', set: { group: 'parking', category: 'dock_slip' } },
+];
 
 async function renderExplore(view) {
   const f = state.filters;
-  const groups = Object.entries(state.catalog.groups).filter(([k]) => k !== 'container');
+  const filtered = Object.values(f).some(Boolean);
   const whenLabel = f.start && f.end ? `${fmtDate(f.start)} – ${fmtDate(f.end)}` : 'Any dates';
   view.innerHTML = `
     <div class="explore-head">
       <div class="brand-row"><div class="brand">every<b>space</b></div>
-        <button class="icon-btn" id="toggle-view" aria-label="Toggle map">${state.view === 'map' ? icon.list : icon.map}</button></div>
-      <label class="searchbar">${icon.search}<input id="q" placeholder="Backyard, parking near the fair, solar…" value="${esc(f.q)}" autocomplete="off"></label>
-      <div class="when-row">
-        <button class="when" id="when">${icon.calendar}<span>${esc(whenLabel)}</span></button>
-        <button class="when ${f.term ? 'set' : ''}" id="how-long"><span>${f.term ? TERM_SHORT[f.term] : 'Any length'}</span></button>
+        <div class="top-actions"><a class="pill-link" href="#/earn">${icon.spark}<span>Earn from your place</span></a>
+        <button class="icon-btn" id="toggle-view" aria-label="${state.view === 'map' ? 'Show list' : 'Show map'}">${state.view === 'map' ? icon.list : icon.map}</button></div></div>
+      ${filtered ? '' : '<h1 class="hero-title">Rent any space,<br><span>for an hour or a year.</span></h1>'}
+      <div class="search-card">
+        <label class="searchbar">${icon.search}<input id="q" placeholder="Backyard, parking near the fair, garage…" value="${esc(f.q)}" autocomplete="off"></label>
+        <div class="when-row">
+          <button class="when ${f.start ? 'set' : ''}" id="when">${icon.calendar}<span>${esc(whenLabel)}</span></button>
+          <button class="when ${f.term ? 'set' : ''}" id="how-long"><span>${f.term ? TERM_SHORT[f.term] : 'Any length'}</span></button>
+          ${filtered ? '<button class="when clear" id="clear">Clear all</button>' : ''}
+        </div>
       </div>
-      <div class="chips scroll" id="groups">
-        <button class="chip ${!f.group ? 'on' : ''}" data-group="">✨ All</button>
-        ${groups.map(([k, v]) => `<button class="chip ${f.group === k ? 'on' : ''}" data-group="${k}">${state.catalog.groupIcons[k]} ${esc(v)}</button>`).join('')}
-      </div>
-      ${f.group ? `<div class="chips scroll sub" id="cats">
-        <button class="chip small ${!f.category ? 'on' : ''}" data-cat="">All ${esc(state.catalog.groups[f.group].toLowerCase())}</button>
-        ${Object.entries(state.catalog.categories).filter(([, c]) => c.group === f.group).map(([k, c]) => `<button class="chip small ${f.category === k ? 'on' : ''}" data-cat="${k}">${c.icon} ${esc(c.label)}</button>`).join('')}
-      </div>` : ''}
     </div>
+    <nav class="cat-bar" id="groups" aria-label="Categories">
+      <button class="${!f.group ? 'on' : ''}" data-group=""><span>✨</span>All</button>
+      ${CONSUMER_GROUPS.map((k) => `<button class="${f.group === k ? 'on' : ''}" data-group="${k}"><span>${state.catalog.groupIcons[k]}</span>${esc(state.catalog.groups[k])}</button>`).join('')}
+    </nav>
+    ${f.group ? `<div class="chips scroll sub" id="cats">
+      <button class="chip small ${!f.category ? 'on' : ''}" data-cat="">All</button>
+      ${Object.entries(state.catalog.categories).filter(([, c]) => c.group === f.group).map(([k, c]) => `<button class="chip small ${f.category === k ? 'on' : ''}" data-cat="${k}">${c.icon} ${esc(c.label)}</button>`).join('')}
+    </div>` : ''}
     <div id="explore-body" class="explore-body"><div class="skeleton-grid">${'<div class="skeleton"></div>'.repeat(6)}</div></div>`;
 
   $('#q').oninput = debounce((e) => { f.q = e.target.value; loadResults(); }, 220);
   $('#groups').onclick = (e) => { const b = e.target.closest('[data-group]'); if (!b) return; f.group = b.dataset.group; f.category = ''; renderExplore(view); };
   if ($('#cats')) $('#cats').onclick = (e) => { const b = e.target.closest('[data-cat]'); if (!b) return; f.category = b.dataset.cat; renderExplore(view); };
+  if ($('#clear')) $('#clear').onclick = () => { Object.keys(f).forEach((k) => { f[k] = ''; }); renderExplore(view); };
   $('#toggle-view').onclick = () => { state.view = state.view === 'map' ? 'list' : 'map'; renderExplore(view); };
   $('#when').onclick = () => datesSheet(() => renderExplore(view));
   $('#how-long').onclick = () => termSheet(() => renderExplore(view));
-  await loadResults();
+  await loadResults(view);
 }
 
-async function loadResults() {
+async function loadResults(view) {
   const f = state.filters;
-  const params = new URLSearchParams();
+  const params = new URLSearchParams({ userId: state.user });
   for (const k of ['group', 'category', 'term', 'start', 'end', 'q']) if (f[k]) params.set(k, f[k]);
   const { spaces, packages } = await api(`search?${params}`);
   const body = $('#explore-body');
   if (!body) return;
   const filtered = Object.values(f).some(Boolean);
 
-  if (state.view === 'map') { renderMap(body, spaces); return; }
+  if (state.view === 'map') { renderMap(body, spaces, spaceCard); return; }
 
   const sections = [];
   if (!filtered) {
+    sections.push(`<div class="ideas">${IDEAS.map((i, n) => `<button class="idea tone-${i.tone}" data-idea="${n}"><span>${i.emoji}</span>${esc(i.label)}</button>`).join('')}</div>`);
     sections.push(eventsSection(spaces));
-    sections.push(`<a class="host-cta" href="#/host/new" data-hostcta><div><strong>Have a spare driveway, yard or roof?</strong>
-      <span>List any part of your place in a few minutes.</span></div><span class="cta-btn">Start earning</span></a>`);
+    const loved = spaces.filter((s) => isFavorite(s.rating)).sort((a, b) => b.rating.avg - a.rating.avg || b.rating.count - a.rating.count);
+    if (loved.length) sections.push(`<h2 class="section-title">Guest favorites</h2><div class="hscroll">${loved.map(spaceCard).join('')}</div>`);
   }
-  const visiblePkgs = packages.filter(() => !f.category && (!f.group || f.group === 'living'));
-  if (visiblePkgs.length) {
-    sections.push(`<h2 class="section-title">Bundles</h2><div class="hscroll">${visiblePkgs.map(packageCard).join('')}</div>`);
+  const visiblePkgs = packages.filter(() => !f.category && (!f.group || f.group === 'living' || f.group === 'parking'));
+  if (visiblePkgs.length) sections.push(`<h2 class="section-title">Bundles <span class="muted small">a place + parking or storage, priced together</span></h2><div class="hscroll">${visiblePkgs.map(packageCard).join('')}</div>`);
+  if (!filtered) {
+    sections.push(`<a class="host-cta" href="#/earn"><div><strong>Your driveway could pay your phone bill.</strong>
+      <span>See what your parking, garage, yard or spare room could earn.</span></div><span class="cta-btn">Estimate</span></a>`);
   }
-  sections.push(`<h2 class="section-title">${filtered ? `${spaces.length} space${spaces.length === 1 ? '' : 's'}` : 'All spaces nearby'}</h2>
-    ${spaces.length ? `<div class="grid">${spaces.map(spaceCard).join('')}</div>` : '<div class="empty">Nothing matches. Try another category, length or dates.</div>'}`);
+  sections.push(`<h2 class="section-title">${filtered ? `${spaces.length} space${spaces.length === 1 ? '' : 's'}` : 'Everything nearby'}</h2>
+    ${spaces.length ? `<div class="grid">${spaces.map(spaceCard).join('')}</div>` : '<div class="empty"><div class="empty-icon">🔍</div>Nothing matches. Try another category, length or dates.</div>'}`);
+  if (!filtered) {
+    sections.push(`<a class="biz-footer" href="#/biz"><span class="biz-badge">${icon.briefcase}</span><div><strong>Everyspace for Business</strong>
+      <span>Solar installers, charging networks, telecoms and fleets lease roofs, lots and walls on our business side.</span></div>${icon.chevron}</a>`);
+  }
   body.innerHTML = sections.join('');
-  const cta = $('[data-hostcta]', body);
-  if (cta) cta.onclick = () => state.setMode('host');
+  for (const b of $$('[data-idea]', body)) b.onclick = () => {
+    Object.keys(f).forEach((k) => { f[k] = ''; });
+    Object.assign(f, IDEAS[+b.dataset.idea].set);
+    renderExplore(view ?? $('#view'));
+  };
 }
 
 function spaceCard(s) {
   const r = cheapestRate(s);
   const datesSet = state.filters.start && state.filters.end;
+  const fav = isFavorite(s.rating);
   const badges = [
     s.policy === 'addon' ? '<span class="badge warn">Add-on only</span>' : '',
     s.policy === 'both' ? '<span class="badge">Tenant discount</span>' : '',
@@ -2195,10 +2639,10 @@ function spaceCard(s) {
     s.eventRates?.some((e) => e.end >= today()) ? '<span class="badge event">Event pricing</span>' : '',
   ].join('');
   return `<a class="card space-card" href="#/space/${s.id}">
-    <div class="thumb">${art(s)}<span class="cat-tag">${s.icon} ${esc(s.categoryLabel)}</span></div>
+    <div class="thumb">${art(s)}${fav ? '<span class="fav-tag">★ Guest favorite</span>' : ''}${saveBtn(s.id, s.saved)}</div>
     <div class="card-body">
       <div class="row-between"><strong class="title">${esc(s.title)}</strong>${stars(s.rating)}</div>
-      <div class="muted small">${esc(s.property.title)} · ${esc(s.property.city)}</div>
+      <div class="muted small">${s.icon} ${esc(s.categoryLabel)} · ${esc(s.property.title)}</div>
       <div class="price">${r ? `from ${priceTag(r)}` : ''}</div>
       ${badges ? `<div class="badges">${badges}</div>` : ''}
     </div></a>`;
@@ -2209,7 +2653,7 @@ function packageCard(p) {
     ? `${money(p.pricing.rates.monthly ?? Object.values(p.pricing.rates)[0])}<span>/month</span>` : `<span>Save ${p.pricing.percent}%</span>`;
   return `<a class="card pkg-card" href="#/book/pkg/${p.id}">
     <div class="pkg-art n${Math.min(3, p.items.length)}">${p.items.slice(0, 3).map((i) => `<div>${art({ id: i.spaceId, category: i.category })}</div>`).join('')}</div>
-    <div class="card-body"><span class="badge">Bundle</span><strong class="title">${esc(p.name)}</strong>
+    <div class="card-body"><span class="badge event">Bundle</span><strong class="title">${esc(p.name)}</strong>
     <div class="muted small">${esc(p.property.title)}</div><div class="price">${price}</div></div></a>`;
 }
 
@@ -2226,11 +2670,11 @@ function eventsSection(spaces) {
   return `<h2 class="section-title">Coming up nearby</h2><div class="hscroll">${list.map((e) => `<a class="card event-card" href="#/space/${e.spaces[0].id}">
       <div class="event-date"><span>${fmtDate(e.start).split(' ')[0]}</span><b>${e.start.slice(8)}${e.end !== e.start ? `–${e.end.slice(8)}` : ''}</b></div>
       <div><strong>${esc(e.name)}</strong><div class="muted small">${e.spaces.map((s) => esc(s.title)).join(' · ')}</div>
-      <div class="small">${e.daily ? `${money(e.daily)}/day` : ''}${e.daily && e.hourly ? ' · ' : ''}${e.hourly ? `${money(e.hourly)}/hr` : ''} event rate</div></div></a>`).join('')}</div>`;
+      <div class="small event-text">${e.daily ? `${money(e.daily)}/day` : ''}${e.daily && e.hourly ? ' · ' : ''}${e.hourly ? `${money(e.hourly)}/hr` : ''}</div></div></a>`).join('')}</div>`;
 }
 
-// ---------- map ----------
-function renderMap(body, spaces) {
+// ---------- map (shared with the business side) ----------
+function renderMap(body, spaces, card = spaceCard) {
   const byProp = new Map();
   for (const s of spaces) {
     if (!byProp.has(s.property.id)) byProp.set(s.property.id, { prop: s.property, spaces: [] });
@@ -2248,21 +2692,24 @@ function renderMap(body, spaces) {
   const streets = [];
   for (let i = 0; i < 9; i++) streets.push(`<path d="M0 ${40 + i * 55} L${W} ${20 + i * 58}" class="street ${i % 3 === 1 ? 'major' : ''}"/>`);
   for (let i = 0; i < 8; i++) streets.push(`<path d="M${30 + i * 52} 0 L${50 + i * 50} ${H}" class="street ${i % 3 === 2 ? 'major' : ''}"/>`);
+  const label = (p) => {
+    const rates = p.spaces.map(cheapestRate).filter(Boolean).sort((a, b) => a.amount - b.amount);
+    return rates[0] ? money(rates[0].amount) : '—';
+  };
   body.innerHTML = `<div class="map-wrap"><svg class="map" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice">
       <rect width="${W}" height="${H}" class="land"/><path d="M-10 380 Q120 330 200 400 T410 360 V490 H-10 Z" class="water"/>
       <rect x="250" y="70" width="90" height="70" rx="12" class="park"/><rect x="40" y="200" width="70" height="60" rx="10" class="park"/>
       ${streets.join('')}
       <text x="295" y="110" class="map-label">Fairgrounds</text><text x="60" y="235" class="map-label">Park</text><text x="140" y="440" class="map-label">River</text>
-      ${pts.map((p, i) => { const r = p.spaces.map(cheapestRate).filter(Boolean).sort((a, b) => a.amount - b.amount)[0];
-        return `<g class="pin" data-pin="${i}" transform="translate(${x(p.prop.lng)} ${y(p.prop.lat)})" tabindex="0" role="button">
-          <rect x="-30" y="-36" width="60" height="26" rx="13"/><text y="-18">${r ? money(r.amount) : '—'}</text><path d="M-6 -11 L0 -2 L6 -11 Z"/>
-          ${p.spaces.length > 1 ? `<circle class="pin-count" cx="28" cy="-36" r="10"/><text class="pin-count-text" x="28" y="-32">${p.spaces.length}</text>` : ''}</g>`; }).join('')}
+      ${pts.map((p, i) => `<g class="pin" data-pin="${i}" transform="translate(${x(p.prop.lng)} ${y(p.prop.lat)})" tabindex="0" role="button" aria-label="${esc(p.prop.title)}">
+          <rect x="-30" y="-36" width="60" height="26" rx="13"/><text y="-18">${label(p)}</text><path d="M-6 -11 L0 -2 L6 -11 Z"/>
+          ${p.spaces.length > 1 ? `<circle class="pin-count" cx="28" cy="-36" r="10"/><text class="pin-count-text" x="28" y="-32">${p.spaces.length}</text>` : ''}</g>`).join('')}
     </svg><div class="map-panel" id="map-panel"><div class="muted">Tap a pin to see what's there.</div></div></div>`;
   const show = (i) => {
     const p = pts[i];
     for (const g of $$('.pin', body)) g.classList.toggle('on', g.dataset.pin === String(i));
     $('#map-panel').innerHTML = `<div class="row-between"><strong>${esc(p.prop.title)}</strong><span class="muted small">${p.spaces.length} space${p.spaces.length > 1 ? 's' : ''}</span></div>
-      <div class="hscroll">${p.spaces.map(spaceCard).join('')}</div>`;
+      <div class="hscroll">${p.spaces.map(card).join('')}</div>`;
   };
   for (const g of $$('.pin', body)) { g.onclick = () => show(+g.dataset.pin); g.onkeydown = (e) => { if (e.key === 'Enter') show(+g.dataset.pin); }; }
   show(0);
@@ -2276,15 +2723,14 @@ function datesSheet(done) {
       <label>To<input type="date" id="s-end" value="${f.end}" min="${today()}"></label></div>
       <div class="quick chips">${[['Tonight', 0, 1], ['This weekend', null, null], ['Next 7 days', 0, 7], ['Next month', 0, 30]].map(([l, a, b]) => `<button class="chip small" data-q="${l}" data-a="${a}" data-b="${b}">${l}</button>`).join('')}</div>
       <div class="sheet-actions"><button class="btn ghost" id="s-clear">Any dates</button><button class="btn" id="s-apply">Show spaces</button></div></div>`, { title: 'When?' });
+  const iso = (ms) => new Date(ms).toISOString().slice(0, 10);
   for (const b of $$('[data-q]', body)) b.onclick = () => {
-    const t = today();
+    const t = Date.parse(`${today()}T00:00:00Z`);
     if (b.dataset.q === 'This weekend') {
-      const d = new Date(`${t}T00:00:00Z`); const toSat = (6 - d.getUTCDay() + 7) % 7;
-      $('#s-start').value = new Date(d.getTime() + toSat * 864e5).toISOString().slice(0, 10);
-      $('#s-end').value = new Date(d.getTime() + (toSat + 2) * 864e5).toISOString().slice(0, 10);
+      const toSat = (6 - new Date(t).getUTCDay() + 7) % 7;
+      $('#s-start').value = iso(t + toSat * 864e5); $('#s-end').value = iso(t + (toSat + 2) * 864e5);
     } else {
-      $('#s-start').value = new Date(Date.parse(`${t}T00:00:00Z`) + b.dataset.a * 864e5).toISOString().slice(0, 10);
-      $('#s-end').value = new Date(Date.parse(`${t}T00:00:00Z`) + b.dataset.b * 864e5).toISOString().slice(0, 10);
+      $('#s-start').value = iso(t + b.dataset.a * 864e5); $('#s-end').value = iso(t + b.dataset.b * 864e5);
     }
   };
   $('#s-clear').onclick = () => { f.start = ''; f.end = ''; closeSheet(); done(); };
@@ -2298,97 +2744,122 @@ function datesSheet(done) {
 function termSheet(done) {
   const f = state.filters;
   const hints = { hourly: 'Parties, pool time, a few hours of parking', daily: 'Overnight stays, event-day parking, camping', weekly: 'Short stays, moving-week storage',
-    monthly: 'Parking, storage, garden plots, rooms', lease: 'Apartments and long-term spaces, 6–24 months', infrastructure: 'Solar, batteries, chargers, antennas — for companies' };
+    monthly: 'Parking, storage, garden plots, rooms', lease: 'Apartments and long-term spaces, 6–24 months' };
   const body = openSheet(`<div class="option-list">
       <button class="option ${!f.term ? 'on' : ''}" data-t=""><strong>Any length</strong></button>
-      ${TERM_ORDER.map((t) => `<button class="option ${f.term === t ? 'on' : ''}" data-t="${t}"><strong>${term(t).label}</strong><span class="muted small">${hints[t]}</span></button>`).join('')}
+      ${TERM_ORDER.filter((t) => hints[t]).map((t) => `<button class="option ${f.term === t ? 'on' : ''}" data-t="${t}"><strong>${term(t).label}</strong><span class="muted small">${hints[t]}</span></button>`).join('')}
     </div>`, { title: 'How long?' });
   for (const b of $$('[data-t]', body)) b.onclick = () => { f.term = b.dataset.t; closeSheet(); done(); };
 }
 
-
-__m['explore'] = { renderExplore, spaceCard };
+__m['explore'] = { renderExplore, spaceCard, renderMap };
 })();
 // ---- public/js/space.js ----
 (() => {
-// Listing detail page.
-const { $, api, esc, state, cat, term, icon, money, stars, avatar, fmtDate, today, bindBack, cheapestRate, priceTag, TERM_ORDER } = __m['core'];
+// Listing detail page (everyday spaces and business sites).
+const { $, api, esc, state, cat, term, icon, money, stars, avatar, fmtDate, today, bindBack, cheapestRate, priceTag, saveBtn, isFavorite, toast, TERM_ORDER } = __m['core'];
 const { art } = __m['art'];
 const { calendarPicker } = __m['calendar'];
 
 const MODE_TEXT = {
   instant: ['Instant book', 'Book and get access details right away.'],
   request: ['Request to book', 'The host has 24 hours to approve. Your dates are held while they decide.'],
-  proposal: ['Proposal', 'Companies send a proposal, then a site assessment and contract. Rent starts once the system is installed.'],
+  proposal: ['Proposal', 'Send a proposal; the owner reviews it, then a site assessment and contract. Rent starts once you are installed.'],
 };
 
 async function renderSpace(view, [id]) {
-  const s = await api(`spaces/${id}`);
+  const s = await api(`spaces/${id}?userId=${state.user}`);
   const c = s.categoryInfo;
+  const business = c.audience === 'business';
   const mine = s.property.hostId === state.user;
   const rates = TERM_ORDER.filter((t) => s.rates?.[t] != null);
   const upcomingEvents = (s.eventRates ?? []).filter((e) => e.end >= today());
   const r = cheapestRate(s);
   const mode = s.mode ?? c.mode;
+  const canBook = !mine && (!business || state.me.kind === 'business');
+  const near = s.nearby.filter((n) => (cat(n.category).audience === 'business') === business);
+
+  const priceBlock = `<div class="rate-table">
+      ${rates.map((t) => `<div><span>${business && t === 'infrastructure' ? 'Annual rent (5–25 yr agreement)' : term(t).label}</span><strong>${money(s.rates[t])}<span class="muted">/${term(t).unit}</span></strong></div>`).join('')}
+      ${Object.entries(s.addonRates ?? {}).map(([t, v]) => `<div class="ok"><span>${term(t).label} with a rental here</span><strong>${money(v)}<span class="muted">/${term(t).unit}</span></strong></div>`).join('')}
+    </div>`;
+
+  const bookCta = mine
+    ? `<div><strong>This is your listing</strong><div class="muted small">Renters see it exactly like this.</div></div><a class="btn ghost" href="#/host/listings">My listings</a>`
+    : !canBook
+      ? `<div><strong>For business accounts</strong><div class="muted small">Companies lease this site on Everyspace for Business.</div></div><a class="btn ghost" href="#/biz">Learn more</a>`
+      : `<div><div class="price">${r ? `${business ? '' : 'from '}${priceTag(r)}` : ''}</div><div class="muted small">${MODE_TEXT[mode][0]}</div></div>
+         <a class="btn" href="#/book/${s.id}">${mode === 'proposal' ? 'Send proposal' : s.policy === 'addon' ? 'Add to my rental' : 'Reserve'}</a>`;
 
   view.innerHTML = `
-    <div class="hero">${art(s, { className: 'art hero-art' })}
-      <button class="icon-btn floating" data-back aria-label="Back">${icon.back}</button></div>
-    <div class="page">
-      <div class="muted small">${c.icon} ${esc(c.label)} · ${esc(s.property.city)}</div>
-      <h1 class="page-title">${esc(s.title)}</h1>
-      <div class="meta-row">${stars(s.rating)}<span>·</span><span>${esc(s.property.title)}</span>
-        ${(s.quantity ?? 1) > 1 ? `<span>·</span><span>${s.quantity} available</span>` : ''}</div>
-      ${s.addonNote ? `<div class="notice warn">🔗 ${esc(s.addonNote)}</div>` : ''}
-      ${s.parent ? `<div class="notice">Part of <strong>${esc(s.parent)}</strong>. When that whole space is booked, this one is too.</div>` : ''}
-
-      <div class="host-row">${avatar(s.host, 44)}<div><strong>Hosted by ${esc(s.host.name)}</strong>
-        <div class="muted small">On everyspace since ${esc(s.host.joined)}</div></div></div>
-
-      ${s.description ? `<p>${esc(s.description)}</p>` : ''}
-      ${s.amenities?.length ? `<div class="amenities">${s.amenities.map((a) => `<span>${esc(a)}</span>`).join('')}</div>` : ''}
-
-      <h2 class="section-title">Prices</h2>
-      <div class="rate-table">
-        ${rates.map((t) => `<div><span>${term(t).label}</span><strong>${money(s.rates[t])}<span class="muted">/${term(t).unit}</span></strong></div>`).join('')}
-        ${Object.entries(s.addonRates ?? {}).map(([t, v]) => `<div class="ok"><span>${term(t).label} with a rental here</span><strong>${money(v)}<span class="muted">/${term(t).unit}</span></strong></div>`).join('')}
-      </div>
-      ${upcomingEvents.length ? `<div class="notice event">🎟️ <div><strong>Event pricing</strong>${upcomingEvents.map((e) => `<div class="small">${esc(e.name)}, ${fmtDate(e.start)}${e.end !== e.start ? `–${fmtDate(e.end)}` : ''}: ${[e.daily && `${money(e.daily)}/day`, e.hourly && `${money(e.hourly)}/hr`].filter(Boolean).join(' · ')}</div>`).join('')}</div></div>` : ''}
-
-      ${s.addons.length || s.packages.length ? `<h2 class="section-title">Make it a bundle</h2>
-        ${s.addons.map((a) => `<div class="list-row">${art(a, { className: 'art mini' })}<div><strong>${esc(a.title)}</strong>
-          <div class="muted small">${esc(a.addonNote)}</div></div><span class="small">${(() => { const x = cheapestRate({ rates: a.addonRates ?? a.rates }); return x ? `${money(x.amount)}/${x.unit}` : ''; })()}</span></div>`).join('')}
-        ${s.packages.map((p) => `<a class="list-row link" href="#/book/pkg/${p.id}"><span class="pkg-icon">📦</span><div><strong>${esc(p.name)}</strong>
-          <div class="muted small">${p.pricing.type === 'fixed' ? Object.entries(p.pricing.rates).map(([t, v]) => `${money(v)}/${term(t).unit} ${t === 'lease' ? 'on lease' : ''}`).join(' · ') : `${p.pricing.percent}% off together`}</div></div>${icon.chevron}</a>`).join('')}` : ''}
-
-      ${c.group !== 'energy' ? '<h2 class="section-title">Availability</h2><div id="cal"></div>' : ''}
-
-      <h2 class="section-title">Things to know</h2>
-      <div class="facts">
-        <div><strong>${MODE_TEXT[mode][0]}</strong><span>${MODE_TEXT[mode][1]}</span></div>
-        ${c.deposit ? `<div><strong>Deposit</strong><span>${money(c.deposit)} held, not charged, released after checkout.</span></div>` : ''}
-        <div><strong>Cancellation</strong><span>${rates.some((t) => ['lease', 'infrastructure'].includes(t)) ? 'Leases and agreements follow their contract terms.' : 'Free cancellation until 24 hours before start.'}</span></div>
-        <div><strong>Host confirmed</strong><span>${c.checklist.map(esc).join(' · ')}</span></div>
-        ${s.minDuration ? `<div><strong>Minimum</strong><span>${Object.entries(s.minDuration).map(([t, n]) => `${n} ${term(t).unit}s ${term(t).label.toLowerCase()}`).join(', ')}</span></div>` : ''}
-      </div>
-
-      <h2 class="section-title">${s.rating.count ? `★ ${s.rating.avg.toFixed(1)} · ${s.rating.count} review${s.rating.count > 1 ? 's' : ''}` : 'Reviews'}</h2>
-      ${s.reviews.length ? `<div class="reviews">${s.reviews.map((rv) => `<div class="review">${avatar(rv.author, 32)}<div>
-        <div><strong>${esc(rv.author?.name)}</strong> <span class="muted small">${fmtDate(rv.at, { year: true })}</span></div>
-        <div class="stars-line">${'★'.repeat(rv.rating)}${'☆'.repeat(5 - rv.rating)}</div><p>${esc(rv.text)}</p></div></div>`).join('')}</div>`
-        : '<div class="muted">No reviews yet. Be the first.</div>'}
-
-      ${s.nearby.length ? `<h2 class="section-title">More at ${esc(s.property.title)}</h2>
-        <div class="hscroll">${s.nearby.map((n) => `<a class="card mini-card" href="#/space/${n.id}">${art(n)}<div class="card-body"><strong class="title">${esc(n.title)}</strong>
-          <div class="muted small">${cat(n.category).icon} ${esc(cat(n.category).label)}</div><div class="price small">${(() => { const x = cheapestRate(n); return x ? `from ${priceTag(x)}` : ''; })()}</div></div></a>`).join('')}</div>` : ''}
+    <div class="hero gallery">
+      <div class="g-main">${art(s, { className: 'art hero-art' })}</div>
+      <div class="g-side">${art({ ...s, id: `${s.id}~2` })}${art({ ...s, id: `${s.id}~3` })}</div>
+      <button class="icon-btn floating" data-back aria-label="Back">${icon.back}</button>
+      <div class="hero-actions"><button class="icon-btn" id="share" aria-label="Share">${icon.share}</button>${saveBtn(s.id, s.saved, 'icon-btn')}</div>
     </div>
-    <div class="reserve-bar">
-      ${mine ? `<div><strong>This is your listing</strong><div class="muted small">Switch to traveling mode to see it as a renter.</div></div><a class="btn ghost" href="#/host/listings">My listings</a>`
-        : `<div><div class="price">${r ? `from ${priceTag(r)}` : ''}</div><div class="muted small">${MODE_TEXT[mode][0]}</div></div>
-           <a class="btn" href="#/book/${s.id}">${mode === 'proposal' ? 'Send proposal' : s.policy === 'addon' ? 'Add to my rental' : 'Reserve'}</a>`}
-    </div>`;
+    <div class="page detail-layout">
+      <div class="detail-main">
+        <div class="muted small">${c.icon} ${esc(c.label)} · ${esc(s.property.city)}${business ? ' · <span class="badge biz">Business site</span>' : ''}</div>
+        <h1 class="page-title">${esc(s.title)}</h1>
+        <div class="meta-row">${stars(s.rating)}<span>·</span><span>${esc(s.property.title)}</span>
+          ${(s.quantity ?? 1) > 1 ? `<span>·</span><span>${s.quantity} available</span>` : ''}</div>
+        ${isFavorite(s.rating) ? `<div class="fav-banner"><span>🏆</span><div><strong>Guest favorite</strong><div class="muted small">One of the best-rated spaces nearby, rated ${s.rating.avg.toFixed(1)} by ${s.rating.count} renters.</div></div></div>` : ''}
+        ${s.addonNote ? `<div class="notice warn">🔗 ${esc(s.addonNote)}</div>` : ''}
+        ${s.parent ? `<div class="notice">Part of <strong>${esc(s.parent)}</strong>. When that whole space is booked, this one is too.</div>` : ''}
+
+        <div class="host-row">${avatar(s.host, 44)}<div><strong>${business ? 'Owner' : 'Hosted by'} ${esc(s.host.name)}</strong>
+          <div class="muted small">On everyspace since ${esc(s.host.joined)}</div></div></div>
+
+        ${s.description ? `<p class="lead">${esc(s.description)}</p>` : ''}
+        ${s.amenities?.length ? `<div class="amenities">${s.amenities.map((a) => `<span>${esc(a)}</span>`).join('')}</div>` : ''}
+
+        ${s.specs ? `<h2 class="section-title">Site facts</h2><dl class="specs">${Object.entries(s.specs).map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>` : ''}
+
+        <h2 class="section-title">${business ? 'Rent' : 'Prices'}</h2>
+        ${priceBlock}
+        ${upcomingEvents.length ? `<div class="notice event">🎟️ <div><strong>Event pricing</strong>${upcomingEvents.map((e) => `<div class="small">${esc(e.name)}, ${fmtDate(e.start)}${e.end !== e.start ? `–${fmtDate(e.end)}` : ''}: ${[e.daily && `${money(e.daily)}/day`, e.hourly && `${money(e.hourly)}/hr`].filter(Boolean).join(' · ')}</div>`).join('')}</div></div>` : ''}
+
+        ${s.addons.length || s.packages.length ? `<h2 class="section-title">Make it a bundle</h2>
+          ${s.addons.map((a) => `<div class="list-row">${art(a, { className: 'art mini' })}<div><strong>${esc(a.title)}</strong>
+            <div class="muted small">${esc(a.addonNote)}</div></div><span class="small">${(() => { const x = cheapestRate({ rates: a.addonRates ?? a.rates }); return x ? `${money(x.amount)}/${x.unit}` : ''; })()}</span></div>`).join('')}
+          ${s.packages.map((p) => `<a class="list-row link" href="#/book/pkg/${p.id}"><span class="pkg-icon">📦</span><div><strong>${esc(p.name)}</strong>
+            <div class="muted small">${p.pricing.type === 'fixed' ? Object.entries(p.pricing.rates).map(([t, v]) => `${money(v)}/${term(t).unit} ${t === 'lease' ? 'on lease' : ''}`).join(' · ') : `${p.pricing.percent}% off together`}</div></div>${icon.chevron}</a>`).join('')}` : ''}
+
+        ${business ? '' : '<h2 class="section-title">Availability</h2><div id="cal"></div>'}
+
+        <h2 class="section-title">Things to know</h2>
+        <div class="facts">
+          <div><strong>${MODE_TEXT[mode][0]}</strong><span>${MODE_TEXT[mode][1]}</span></div>
+          ${business ? '<div><strong>How it works</strong><span>Proposal → site assessment → contract → installation. The owner is never responsible for your equipment, insurance or removal.</span></div>' : ''}
+          ${c.deposit ? `<div><strong>Deposit</strong><span>${money(c.deposit)} held, not charged, released after checkout.</span></div>` : ''}
+          <div><strong>Cancellation</strong><span>${rates.some((t) => ['lease', 'infrastructure'].includes(t)) || business ? 'Leases and agreements follow their contract terms.' : 'Free cancellation until 24 hours before start.'}</span></div>
+          <div><strong>Owner confirmed</strong><span>${c.checklist.map(esc).join(' · ')}</span></div>
+          ${s.minDuration ? `<div><strong>Minimum</strong><span>${Object.entries(s.minDuration).map(([t, n]) => `${n} ${term(t).unit}s ${term(t).label.toLowerCase()}`).join(', ')}</span></div>` : ''}
+        </div>
+
+        ${business ? '' : `<h2 class="section-title">${s.rating.count ? `★ ${s.rating.avg.toFixed(1)} · ${s.rating.count} review${s.rating.count > 1 ? 's' : ''}` : 'Reviews'}</h2>
+        ${s.reviews.length ? `<div class="reviews">${s.reviews.map((rv) => `<div class="review">${avatar(rv.author, 36)}<div>
+          <div><strong>${esc(rv.author?.name)}</strong> <span class="muted small">${fmtDate(rv.at, { year: true })}</span></div>
+          <div class="stars-line">${'★'.repeat(rv.rating)}${'☆'.repeat(5 - rv.rating)}</div><p>${esc(rv.text)}</p></div></div>`).join('')}</div>`
+          : '<div class="muted-block">No reviews yet. Be the first.</div>'}`}
+
+        ${near.length ? `<h2 class="section-title">More at ${esc(s.property.title)}</h2>
+          <div class="hscroll">${near.map((n) => `<a class="card mini-card" href="#/space/${n.id}">${art(n)}<div class="card-body"><strong class="title">${esc(n.title)}</strong>
+            <div class="muted small">${cat(n.category).icon} ${esc(cat(n.category).label)}</div><div class="price small">${(() => { const x = cheapestRate(n); return x ? `from ${priceTag(x)}` : ''; })()}</div></div></a>`).join('')}</div>` : ''}
+      </div>
+      <aside class="detail-side"><div class="book-card">${bookCta}</div></aside>
+    </div>
+    <div class="reserve-bar detail-bar">${bookCta}</div>`;
   bindBack(view);
   if ($('#cal')) calendarPicker($('#cal'), { spaceId: s.id, mode: 'view', start: state.filters.start || '' });
+  $('#share').onclick = async () => {
+    const url = location.href;
+    try {
+      if (navigator.share) await navigator.share({ title: s.title, url });
+      else { await navigator.clipboard.writeText(url); toast('Link copied'); }
+    } catch { /* share sheet dismissed */ }
+  };
 }
 
 __m['space'] = { renderSpace };
@@ -2649,7 +3120,7 @@ async function renderTrip(view, [id]) {
   const cancellable = ['pending', 'proposed', 'site_assessment', 'contract', 'confirmed'].includes(b.status) && b.effective !== 'completed';
   const q = b.quote;
 
-  view.innerHTML = `${topbar(isHost ? 'Booking' : 'Your trip')}
+  view.innerHTML = `${topbar(isHost ? 'Booking' : state.me.kind === 'business' ? 'Agreement' : 'Your trip')}
     <div class="hero short">${art(b.primary, { className: 'art hero-art' })}</div>
     <div class="page narrow">
       <div class="row-between">${statusPill(b.effective)}<span class="muted small">#${esc(b.id)}</span></div>
@@ -2877,18 +3348,6 @@ __m['host'] = { renderHostToday, renderHostListings, renderHostEarnings };
 const { $, $$, api, esc, state, cat, term, icon, money, topbar, bindBack, bindSteppers, stepper, errorBox, go, toast } = __m['core'];
 const { art } = __m['art'];
 
-// Typical local prices, used as starting points the host can change.
-const SUGGEST = {
-  entire_home: { daily: 180, weekly: 1100, monthly: 3500, lease: 3200 }, apartment_unit: { daily: 120, monthly: 2000, lease: 1850 },
-  adu: { daily: 110, weekly: 650, monthly: 1800, lease: 1700 }, private_room: { daily: 70, weekly: 420, monthly: 1100, lease: 1000 },
-  backyard: { hourly: 30, daily: 150 }, yard_campsite: { daily: 30, weekly: 180 }, pool: { hourly: 40 },
-  workspace: { hourly: 15, daily: 80, monthly: 400 }, film_location: { hourly: 150, daily: 900 },
-  parking_spot: { hourly: 4, daily: 15, weekly: 70, monthly: 130, lease: 120 }, rv_parking: { weekly: 70, monthly: 220, lease: 200 },
-  ev_charging: { hourly: 5, daily: 25, monthly: 120 }, garage_storage: { weekly: 25, monthly: 90, lease: 80 },
-  attic_storage: { monthly: 50, lease: 45 }, basement_storage: { weekly: 20, monthly: 60, lease: 55 },
-  garden_plot: { monthly: 25, lease: 20 }, beehive_site: { monthly: 15, lease: 12 },
-  rooftop_solar: { infrastructure: 1000 }, battery_site: { infrastructure: 600 }, charger_site: { infrastructure: 1500 }, telecom_site: { infrastructure: 3500 },
-};
 const DEFAULT_TITLE = { parking_spot: 'Driveway parking spot', backyard: 'Backyard for gatherings', garage_storage: 'Garage storage space',
   attic_storage: 'Attic storage', garden_plot: 'Garden plot', rooftop_solar: 'Roof space for solar', entire_home: 'Whole home', private_room: 'Private room' };
 const ANCHOR_CATS = ['apartment_unit', 'adu', 'entire_home', 'private_room'];
@@ -2901,7 +3360,12 @@ const fresh = (propertyId) => ({ step: 0, category: '', propertyId: propertyId ?
   checklist: [], access: '' });
 
 async function renderWizard(view, _params, query) {
-  if (!draft || query.get('property') || query.get('fresh')) draft = fresh(query.get('property'));
+  if (!draft || query.get('property') || query.get('fresh')) {
+    draft = fresh(query.get('property'));
+    draft.tab = query.get('audience') === 'business' ? 'business' : 'consumer';
+    const pre = query.get('category');
+    if (pre && state.catalog.categories[pre]) { draft.category = pre; draft.tab = cat(pre).audience; }
+  }
   const props = await api(`properties?hostId=${state.user}`);
   if (!draft.propertyId && props.length) draft.propertyId = props[0].id;
   draw(view, props);
@@ -2911,18 +3375,28 @@ function draw(view, props) {
   const d = draft;
   const c = d.category ? cat(d.category) : null;
   const isContainer = c?.group === 'container';
-  const steps = isContainer ? [0, 1, 2, 6] : [0, 1, 2, 3, 4, 5, 6];
+  // Business sites skip "who can rent it": they're always leased to companies on their own.
+  const steps = isContainer ? [0, 1, 2, 6] : c?.audience === 'business' ? [0, 1, 2, 3, 5, 6] : [0, 1, 2, 3, 4, 5, 6];
   const pos = steps.indexOf(d.step);
   const prop = props.find((p) => p.id === d.propertyId);
   let body = '';
 
   if (d.step === 0) {
-    body = `<h1 class="page-title">What do you want to rent out?</h1><p class="muted">Pick the closest match. You can list more later.</p>
-      ${Object.entries(state.catalog.groups).filter(([g]) => g !== 'container').map(([g, label]) => `<h2 class="section-title">${state.catalog.groupIcons[g]} ${esc(label)}</h2>
-        <div class="tiles">${Object.entries(state.catalog.categories).filter(([, x]) => x.group === g).map(([k, x]) => `<button type="button" class="tile ${d.category === k ? 'on' : ''}" data-cat="${k}">
-          <span class="tile-icon">${x.icon}</span><strong>${esc(x.label)}</strong><span class="muted small">${x.terms.map((t) => term(t).label).join(' · ')}</span></button>`).join('')}</div>`).join('')}
-      <h2 class="section-title">🏗️ Organize</h2><div class="tiles"><button type="button" class="tile ${d.category === 'building' ? 'on' : ''}" data-cat="building"><span class="tile-icon">🏗️</span>
-        <strong>Building or garage (group)</strong><span class="muted small">Holds other spaces, e.g. an apartment building or a garage with bays. Not rented itself.</span></button></div>`;
+    const tab = d.tab ?? 'consumer';
+    const cats = state.catalog.categories;
+    const groups = Object.entries(state.catalog.groups).filter(([g]) => g !== 'container' && Object.values(cats).some((x) => x.group === g && x.audience === tab));
+    const typical = (x) => (x.typical ? (([t, v]) => `Typical ${money(v)}/${term(t).unit}`)(Object.entries(x.typical).at(-1)) : '');
+    body = `<h1 class="page-title">What do you want to rent out?</h1>
+      <div class="segmented wide" id="aud"><button type="button" data-aud="consumer" class="${tab === 'consumer' ? 'on' : ''}">🙋 Rent to people</button>
+        <button type="button" data-aud="business" class="${tab === 'business' ? 'on' : ''}">🏢 Lease to companies</button></div>
+      <p class="muted">${tab === 'consumer'
+        ? 'Neighbors and visitors book by the hour, night, month or lease. Pick the closest match; you can list more later.'
+        : 'Solar installers, charging networks, telecoms and fleets sign multi-year agreements and handle installation, insurance and removal. These listings only appear on Everyspace for Business.'}</p>
+      ${groups.map(([g, label]) => `<h2 class="section-title">${state.catalog.groupIcons[g]} ${esc(label)}</h2>
+        <div class="tiles">${Object.entries(cats).filter(([, x]) => x.group === g).map(([k, x]) => `<button type="button" class="tile ${d.category === k ? 'on' : ''}" data-cat="${k}">
+          <span class="tile-icon">${x.icon}</span><strong>${esc(x.label)}</strong><span class="muted small">${typical(x)}</span></button>`).join('')}</div>`).join('')}
+      ${tab === 'consumer' ? `<h2 class="section-title">🏗️ Organize</h2><div class="tiles"><button type="button" class="tile ${d.category === 'building' ? 'on' : ''}" data-cat="building"><span class="tile-icon">🏗️</span>
+        <strong>Building or garage (group)</strong><span class="muted small">Holds other spaces, like an apartment building or a garage with bays. Not rented itself.</span></button></div>` : ''}`;
   } else if (d.step === 1) {
     body = `<h1 class="page-title">Where is it?</h1>
       <div class="option-list">${props.map((p) => `<button type="button" class="option ${d.propertyId === p.id ? 'on' : ''}" data-prop="${p.id}"><strong>${esc(p.title)}</strong>
@@ -2946,7 +3420,7 @@ function draw(view, props) {
       ${isContainer ? '' : `<label>Highlights <span class="muted small">comma separated</span><input id="w-amen" value="${esc(d.amenities)}" placeholder="Covered, Lockable, Fits SUVs"></label>`}
     </div>`;
   } else if (d.step === 3) {
-    const sug = SUGGEST[d.category] ?? {};
+    const sug = c.typical ?? {};
     for (const t of c.terms) { if (d.rates[t] == null) d.rates[t] = sug[t] ?? ''; if (d.on[t] == null) d.on[t] = true; }
     const eventy = ['parking', 'outdoor'].includes(c.group) && c.terms.some((t) => t === 'daily' || t === 'hourly');
     body = `<h1 class="page-title">Set your prices</h1><p class="muted">Starting points are typical for your area. Turn off any length you don't want.</p>
@@ -2998,6 +3472,7 @@ function draw(view, props) {
   const redraw = () => draw(view, props);
   const sync = () => { const n = $('#next'); if (n) n.disabled = !validate(d, c); };
   for (const b of $$('[data-cat]', view)) b.onclick = () => { if (d.category !== b.dataset.cat) { Object.assign(d, { category: b.dataset.cat, title: '', rates: {}, on: {}, checklist: [] }); } redraw(); };
+  for (const b of $$('[data-aud]', view)) b.onclick = () => { d.tab = b.dataset.aud; redraw(); };
   for (const b of $$('[data-prop]', view)) b.onclick = () => { d.propertyId = b.dataset.prop; d.parentId = ''; redraw(); };
   for (const b of $$('[data-policy]', view)) b.onclick = () => { d.policy = b.dataset.policy; redraw(); };
   const bindInput = (sel, fn) => { const el = $(sel, view); if (el) el.oninput = () => { fn(el.value); sync(); }; };
@@ -3082,18 +3557,27 @@ const { $$, api, esc, state, term, icon, avatar, topbar, bindBack, go, toast } =
 async function renderProfile(view) {
   const me = state.me;
   const hosting = state.mode === 'host';
+  const isBiz = me.kind === 'business';
+  const person = (u) => `<button class="person ${u.id === state.user ? 'on' : ''}" data-user="${u.id}">${avatar(u, 40)}
+    <span><strong>${esc(u.name)}</strong><span class="muted small">${esc(u.tagline)}</span></span></button>`;
   view.innerHTML = `${topbar('Profile', { back: false })}
     <div class="page narrow">
       <div class="profile-head">${avatar(me, 72)}<div><h1>${esc(me.name)}</h1><div class="muted">${esc(me.tagline)}</div>
-        <div class="muted small">Member since ${esc(me.joined)}</div></div></div>
-      <button class="btn wide" id="switch-mode">${hosting ? '🧳 Switch to renting' : '🏡 Switch to hosting'}</button>
+        <div class="muted small">Member since ${esc(me.joined)}${isBiz ? ' · <span class="badge biz">Verified business</span>' : ''}</div></div></div>
+      ${isBiz
+        ? '<a class="btn wide" href="#/biz">💼 Browse sites</a>'
+        : `<div class="mode-switch"><button class="${hosting ? '' : 'on'}" data-mode="guest">🧳 Renting</button><button class="${hosting ? 'on' : ''}" data-mode="host">🏡 Hosting</button></div>`}
 
       <h2 class="section-title">Try it as someone else <span class="muted small">(demo)</span></h2>
-      <div class="people">${state.users.map((u) => `<button class="person ${u.id === state.user ? 'on' : ''}" data-user="${u.id}">${avatar(u, 40)}
-        <span><strong>${esc(u.name)}</strong><span class="muted small">${esc(u.tagline)}</span></span></button>`).join('')}</div>
+      <div class="people-label">People</div>
+      <div class="people">${state.users.filter((u) => u.kind !== 'business').map(person).join('')}</div>
+      <div class="people-label">Businesses <span class="muted small">use the separate business side</span></div>
+      <div class="people">${state.users.filter((u) => u.kind === 'business').map(person).join('')}</div>
 
       <h2 class="section-title">About everyspace</h2>
       <div class="menu">
+        <a href="#/earn">💸 <span>What could my place earn?</span>${icon.chevron}</a>
+        ${isBiz ? '' : '<a href="#/biz">💼 <span>Everyspace for Business</span>' + icon.chevron + '</a>'}
         <a href="#/plan">📄 <span>The plan</span>${icon.chevron}</a>
         <a href="#/catalog">🧭 <span>Everything you can rent out</span>${icon.chevron}</a>
         <button id="install" hidden>📲 <span>Install the app</span>${icon.chevron}</button>
@@ -3102,13 +3586,13 @@ async function renderProfile(view) {
       <p class="muted small fine">Prototype. Payments, ID checks and insurance are simulated.</p>
     </div>`;
 
-  $$('#switch-mode', view)[0].onclick = () => { state.setMode(hosting ? 'guest' : 'host'); go(hosting ? '#/explore' : '#/host'); };
+  for (const b of $$('[data-mode]', view)) b.onclick = () => { state.setMode(b.dataset.mode); go(b.dataset.mode === 'host' ? '#/host' : '#/explore'); };
   for (const b of $$('[data-user]', view)) b.onclick = () => {
     state.setUser(b.dataset.user);
-    const hostish = /^Host/.test(state.me.tagline);
-    state.setMode(hostish ? 'host' : 'guest');
+    const mode = state.me.kind === 'business' ? 'business' : /^Host/.test(state.me.tagline) ? 'host' : 'guest';
+    state.setMode(mode);
     toast(`Now using everyspace as ${state.me.name}`);
-    go(state.mode === 'host' ? '#/host' : '#/explore');
+    go(mode === 'host' ? '#/host' : mode === 'business' ? '#/biz' : '#/explore');
   };
   $$('#reset', view)[0].onclick = async () => {
     if (!confirm('Reset all demo data? Bookings and listings you made will be removed.')) return;
@@ -3136,7 +3620,7 @@ function renderCatalog(view) {
   view.innerHTML = `${topbar('What can I rent out?')}
     <div class="page">
       <p class="muted">Every kind of space, how long it can be rented for, and what a host confirms before listing it.</p>
-      ${Object.entries(c.groups).filter(([g]) => g !== 'container').map(([g, label]) => `<h2 class="section-title">${c.groupIcons[g]} ${esc(label)}</h2>
+      ${Object.entries(c.groups).filter(([g]) => g !== 'container').map(([g, label]) => `${g === 'energy' ? '<div class="divider-title"><span>Leased to companies</span><p class="muted small">Shown only on Everyspace for Business, never in everyday Explore.</p></div>' : ''}<h2 class="section-title">${c.groupIcons[g]} ${esc(label)}</h2>
         <div class="catalog-grid">${Object.entries(c.categories).filter(([, x]) => x.group === g).map(([, x]) => `<div class="card pad">
           <div class="row-between"><strong>${x.icon} ${esc(x.label)}</strong><span class="badge">${MODE[x.mode]}</span></div>
           <div class="term-tags">${x.terms.map((t) => `<span>${esc(term(t).label)}</span>`).join('')}</div>
@@ -3149,10 +3633,220 @@ function renderCatalog(view) {
 
 __m['profile'] = { renderProfile, renderPlan, renderCatalog };
 })();
+// ---- public/js/biz.js ----
+(() => {
+// Everyspace for Business: companies lease roofs, pads, road frontage, walls and lots.
+// Everyday renters never see these listings in Explore.
+const { $, $$, api, esc, state, cat, term, icon, money, avatar, fmtRange, topbar, bindBack, statusPill, go, toast, saveBtn, TERM_ORDER } = __m['core'];
+const { art } = __m['art'];
+const { renderMap } = __m['explore'];
+
+const BIZ_GROUPS = ['energy', 'commercial'];
+const bizCategories = () => Object.entries(state.catalog.categories).filter(([, c]) => c.audience === 'business');
+
+async function renderBizHome(view) {
+  if (state.me.kind !== 'business') return renderBizLanding(view);
+  const f = state.bizFilters ??= { category: '', view: 'list' };
+  const { spaces } = await api(`search?audience=business&userId=${state.user}`);
+  const shown = spaces.filter((s) => !f.category || s.category === f.category);
+  const counts = Object.fromEntries(bizCategories().map(([k]) => [k, spaces.filter((s) => s.category === k).length]));
+  const annual = spaces.reduce((sum, s) => sum + annualValue(s), 0);
+
+  view.innerHTML = `
+    <div class="biz-hero">
+      <div class="brand-row"><div class="brand light">every<b>space</b> <span class="biz-tag">Business</span></div>
+        <button class="icon-btn light" id="toggle-view" aria-label="${f.view === 'map' ? 'Show list' : 'Show map'}">${f.view === 'map' ? icon.list : icon.map}</button></div>
+      <h1>Sites for ${esc(state.me.name)}</h1>
+      <p>Roofs, pads, road frontage, walls and lots, leased straight from owners. No brokers.</p>
+      <div class="biz-stats"><div><strong>${spaces.length}</strong><span>sites open</span></div>
+        <div><strong>${money(Math.round(annual))}</strong><span>asking rent / yr</span></div>
+        <div><strong>${new Set(spaces.map((s) => s.property.id)).size}</strong><span>properties</span></div></div>
+    </div>
+    <nav class="cat-bar biz" id="types">
+      <button class="${!f.category ? 'on' : ''}" data-cat=""><span>🧭</span>All sites</button>
+      ${bizCategories().filter(([k]) => counts[k]).map(([k, c]) => `<button class="${f.category === k ? 'on' : ''}" data-cat="${k}"><span>${c.icon}</span>${esc(c.label)}</button>`).join('')}
+    </nav>
+    <div class="explore-body" id="biz-body"></div>`;
+  const body = $('#biz-body');
+  if (f.view === 'map') renderMap(body, shown, siteCard);
+  else body.innerHTML = shown.length ? `<div class="site-list">${shown.map(siteCard).join('')}</div>` : '<div class="empty">No sites of this type yet.</div>';
+  $('#types').onclick = (e) => { const b = e.target.closest('[data-cat]'); if (!b) return; f.category = b.dataset.cat; renderBizHome(view); };
+  $('#toggle-view').onclick = () => { f.view = f.view === 'map' ? 'list' : 'map'; renderBizHome(view); };
+}
+
+function annualValue(s) {
+  if (s.rates?.infrastructure) return s.rates.infrastructure;
+  if (s.rates?.lease) return s.rates.lease * 12 * (s.quantity ?? 1);
+  if (s.rates?.monthly) return s.rates.monthly * 12 * (s.quantity ?? 1);
+  return 0;
+}
+
+function siteCard(s) {
+  const facts = Object.entries(s.specs ?? {}).slice(0, 3);
+  const t = TERM_ORDER.find((k) => s.rates?.[k] != null);
+  return `<a class="card site-card space-card" href="#/space/${s.id}">
+    <div class="thumb">${art(s)}${saveBtn(s.id, s.saved)}</div>
+    <div class="card-body">
+      <div class="muted small">${s.icon} ${esc(s.categoryLabel)} · ${esc(s.property.title)}</div>
+      <strong class="title">${esc(s.title)}</strong>
+      ${facts.length ? `<dl class="mini-specs">${facts.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>` : ''}
+      <div class="row-between"><div class="price">${t ? `${money(s.rates[t])}<span>/${term(t).unit}${(s.quantity ?? 1) > 1 ? ' each' : ''}</span>` : ''}</div>
+        <span class="link-text">View site ${icon.chevron}</span></div>
+    </div></a>`;
+}
+
+async function renderPipeline(view) {
+  const all = (await api(`bookings?userId=${state.user}`)).filter((b) => b.role === 'renter');
+  const stages = [
+    ['proposed', 'Proposed', ['proposed', 'pending']],
+    ['site_assessment', 'Site assessment', ['site_assessment']],
+    ['contract', 'Contract', ['contract']],
+    ['live', 'Active', ['confirmed', 'active']],
+  ];
+  const yearly = (b) => (b.quote?.schedule?.every === 'year' ? b.quote.schedule.recurring : (b.quote?.schedule?.recurring ?? 0) * 12);
+  const live = all.filter((b) => ['confirmed', 'active'].includes(b.status));
+  const open = all.filter((b) => ['proposed', 'pending', 'site_assessment', 'contract'].includes(b.status));
+  view.innerHTML = `${topbar('Pipeline', { back: false })}
+    <div class="page">
+      <div class="stats">
+        <div><span>Active sites</span><strong>${live.length}</strong></div>
+        <div><span>Rent / yr (active)</span><strong>${money(Math.round(live.reduce((s, b) => s + yearly(b), 0)))}</strong></div>
+        <div><span>Open proposals</span><strong>${open.length}</strong></div>
+      </div>
+      <div class="kanban">${stages.map(([key, label, statuses]) => {
+        const items = all.filter((b) => statuses.includes(b.status));
+        return `<section class="lane"><h2>${label} <span class="muted">${items.length}</span></h2>
+          ${items.map((b) => `<a class="card lane-card" href="#/trip/${b.id}">${art(b.primary, { className: 'art lane-art' })}<div class="card-body">
+            <strong>${esc(b.itemsLabel)}</strong><div class="muted small">${esc(b.property?.title)} · ${esc(b.host?.name)}</div>
+            <div class="small">${term(b.term).label} · ${fmtRange(b)}</div>
+            <div class="row-between"><span class="small"><strong>${money(Math.round(yearly(b)))}</strong>/yr</span>${statusPill(b.effective)}</div></div></a>`).join('') || '<div class="lane-empty">Nothing here</div>'}
+        </section>`;
+      }).join('')}</div>
+      ${all.length ? '' : '<div class="empty"><div class="empty-icon">🗂️</div>No proposals yet.<a class="btn" href="#/biz">Find sites</a></div>'}
+      ${all.filter((b) => ['declined', 'cancelled'].includes(b.status)).length ? `<h2 class="section-title">Closed</h2>${all.filter((b) => ['declined', 'cancelled'].includes(b.status)).map((b) => `<a class="list-row link" href="#/trip/${b.id}"><div><strong>${esc(b.itemsLabel)}</strong><div class="muted small">${esc(b.property?.title)}</div></div>${statusPill(b.status)}</a>`).join('')}` : ''}
+    </div>`;
+}
+
+function renderBizLanding(view) {
+  const companies = state.users.filter((u) => u.kind === 'business');
+  const typical = state.catalog.typical;
+  view.innerHTML = `${topbar('Everyspace for Business')}
+    <div class="biz-hero landing">
+      <div class="brand light">every<b>space</b> <span class="biz-tag">Business</span></div>
+      <h1>Lease the sites your business needs, straight from owners.</h1>
+      <p>Solar installers, charging networks, telecoms, parcel-locker and delivery companies find roofs, pads, frontage, walls and lots,
+        and sign multi-year agreements in one place. These listings are kept off the everyday app, so homeowners' renters never see them.</p>
+    </div>
+    <div class="page narrow">
+      <h2 class="section-title">What you can lease</h2>
+      <div class="biz-types">${bizCategories().map(([k, c]) => {
+        const t = Object.entries(typical[k] ?? {})[0];
+        return `<div class="biz-type"><span>${c.icon}</span><div><strong>${esc(c.label)}</strong>
+          <div class="muted small">${t ? `Typical: ${money(t[1])}/${term(t[0]).unit}` : ''} · ${c.terms.map((x) => term(x).label).join(', ')}</div></div></div>`;
+      }).join('')}</div>
+      <h2 class="section-title">How it works</h2>
+      <ol class="steps">
+        <li><strong>Find a site.</strong> Filter by type and see the facts that matter: roof size and age, electrical service, traffic, access.</li>
+        <li><strong>Send a proposal.</strong> Rent, term and what you'll install. The owner accepts or declines.</li>
+        <li><strong>Assess and sign.</strong> Schedule the site visit, then sign a recorded lease with removal and insurance clauses.</li>
+        <li><strong>Install and pay.</strong> Rent starts at commissioning and is paid to the owner automatically.</li>
+      </ol>
+      <h2 class="section-title">Try it as a company <span class="muted small">(demo)</span></h2>
+      <div class="people">${companies.map((u) => `<button class="person" data-user="${u.id}">${avatar(u, 40)}<span><strong>${esc(u.name)}</strong><span class="muted small">${esc(u.tagline)}</span></span></button>`).join('')}</div>
+      <div class="notice">🏡 <div><strong>Own a roof, lot or wall?</strong> <span class="muted">List it from hosting mode under “Lease to companies”.</span>
+        <div style="margin-top:8px"><a class="btn small" href="#/host/new?fresh=1&audience=business">List a site</a></div></div></div>
+    </div>`;
+  bindBack(view);
+  for (const b of $$('[data-user]', view)) b.onclick = () => {
+    state.setUser(b.dataset.user); state.setMode('business');
+    toast(`Now using Everyspace for Business as ${state.me.name}`);
+    go('#/biz');
+  };
+}
+
+__m['biz'] = { renderBizHome, siteCard, renderPipeline };
+})();
+// ---- public/js/earn.js ----
+(() => {
+// "What could my place earn?" estimator, then Saved (wishlist).
+const { $, $$, api, esc, state, cat, term, money, topbar, bindBack, bindSteppers, stepper } = __m['core'];
+const { spaceCard } = __m['explore'];
+
+// Each row: what you have, how much of it, and how it turns into monthly income at typical local prices.
+const ROWS = [
+  { key: 'parking', category: 'parking_spot', label: 'Driveway or garage parking spots', unit: 'spots', max: 6, def: 2, monthly: (n, t) => n * t.monthly * 0.75 },
+  { key: 'garage', category: 'garage_storage', label: 'Garage storage bays (~100 sq ft)', unit: 'bays', max: 6, def: 1, monthly: (n, t) => n * t.monthly * 0.8 },
+  { key: 'attic', category: 'attic_storage', label: 'Attic or basement storage', unit: 'areas', max: 2, def: 0, monthly: (n, t) => n * t.monthly * 0.75 },
+  { key: 'yard', category: 'backyard', label: 'Backyard rentals', unit: 'hours / month', max: 60, def: 8, step: 4, monthly: (n, t) => n * t.hourly },
+  { key: 'room', category: 'private_room', label: 'Spare room', unit: 'nights / month', max: 30, def: 0, step: 2, monthly: (n, t) => n * t.daily },
+  { key: 'pool', category: 'pool', label: 'Pool', unit: 'hours / month', max: 60, def: 0, step: 4, monthly: (n, t) => n * t.hourly },
+  { key: 'garden', category: 'garden_plot', label: 'Garden plots', unit: 'plots', max: 8, def: 0, monthly: (n, t) => n * t.monthly * 0.9 },
+  { key: 'roof', category: 'rooftop_solar', label: 'Sunny roof area', unit: 'sq ft', max: 3000, def: 0, step: 100, business: true, monthly: (n, t) => (n / 600) * t.infrastructure / 12 },
+  { key: 'battery', category: 'battery_site', label: 'Pad or wall for a battery', unit: 'sites', max: 1, def: 0, business: true, monthly: (n, t) => n * t.infrastructure / 12 },
+  { key: 'frontage', category: 'charger_site', label: 'Road frontage for EV chargers', unit: 'sites', max: 1, def: 0, business: true, monthly: (n, t) => n * t.infrastructure / 12 },
+  { key: 'locker', category: 'parcel_locker', label: 'Wall for a parcel locker', unit: 'sites', max: 1, def: 0, business: true, monthly: (n, t) => n * t.infrastructure / 12 },
+];
+
+function renderEarn(view) {
+  const have = state.earn ??= Object.fromEntries(ROWS.map((r) => [r.key, r.def]));
+  const row = (r) => `<div class="earn-row" data-row="${r.key}"><span class="earn-icon">${cat(r.category).icon}</span>
+      <div><strong>${esc(r.label)}</strong><div class="muted small" data-amount="${r.key}"></div></div>
+      ${stepper(r.key, have[r.key], { min: 0, max: r.max, inc: r.step ?? 1 })}</div>`;
+  view.innerHTML = `${topbar('What could you earn?')}
+    <div class="page narrow">
+      <div class="earn-total"><span>Estimated income</span><strong id="total-month">$0</strong><em id="total-year"></em>
+        <div class="earn-split"><div><i class="dot consumer"></i>Everyday renters <b id="t-consumer"></b></div><div><i class="dot business"></i>From companies <b id="t-business"></b></div></div>
+        <div class="split-bar"><i id="bar-consumer"></i><i id="bar-business"></i></div></div>
+      <h2 class="section-title">Spaces you could rent to people</h2>
+      <div class="earn-list">${ROWS.filter((r) => !r.business).map(row).join('')}</div>
+      <h2 class="section-title">Spaces companies lease <span class="muted small">multi-year, paid yearly</span></h2>
+      <div class="earn-list">${ROWS.filter((r) => r.business).map(row).join('')}</div>
+      <p class="muted small">Estimates use typical prices near you and realistic occupancy (about 75% for parking and storage). Actual earnings depend on demand, season and your prices. Everyspace keeps 3%.</p>
+      <div id="earn-cta" class="earn-cta"></div>
+    </div>`;
+  bindBack(view);
+
+  const update = () => {
+    let consumer = 0, business = 0;
+    for (const r of ROWS) {
+      const n = have[r.key];
+      const m = r.monthly(n, cat(r.category).typical);
+      if (r.business) business += m; else consumer += m;
+      $(`[data-amount="${r.key}"]`, view).innerHTML = n
+        ? `${n.toLocaleString()} ${esc(r.unit)} · <strong>≈ ${money(Math.round(m))}/mo</strong>`
+        : (([t, v]) => `${esc(r.unit)} · typical ${money(v)}/${term(t).unit}`)(Object.entries(cat(r.category).typical)[0]);
+    }
+    const total = consumer + business;
+    $('#total-month').textContent = `${money(Math.round(total))}/mo`;
+    $('#total-year').textContent = `≈ ${money(Math.round(total * 12))} a year`;
+    $('#t-consumer').textContent = money(Math.round(consumer));
+    $('#t-business').textContent = money(Math.round(business));
+    $('#bar-consumer').style.width = `${total ? (consumer / total) * 100 : 50}%`;
+    $('#bar-business').style.width = `${total ? (business / total) * 100 : 50}%`;
+    const picked = ROWS.filter((r) => have[r.key] > 0);
+    $('#earn-cta').innerHTML = picked.length
+      ? `<h2 class="section-title">Start with one</h2><div class="chips wrap">${picked.map((r) => `<a class="chip" href="#/host/new?fresh=1&category=${r.category}">${cat(r.category).icon} List ${esc(cat(r.category).label.toLowerCase())}</a>`).join('')}</div>`
+      : '';
+  };
+  bindSteppers(view, (name, v) => { have[name] = v; update(); });
+  update();
+}
+
+async function renderSaved(view) {
+  const saved = await api(`saves?userId=${state.user}`);
+  view.innerHTML = `${topbar('Saved', { back: false })}
+    <div class="page">${saved.length
+      ? `<p class="muted">${saved.length} space${saved.length === 1 ? '' : 's'} you're keeping an eye on.</p><div class="grid">${saved.map((s) => spaceCard({ ...s, saved: true })).join('')}</div>`
+      : '<div class="empty"><div class="empty-icon">♡</div>Tap the heart on any space to save it here.<a class="btn" href="#/explore">Explore</a></div>'}</div>`;
+  for (const a of $$('.space-card', view)) a.setAttribute('data-saved-card', '');
+}
+
+__m['earn'] = { renderEarn, renderSaved };
+})();
 // ---- public/js/main.js ----
 (() => {
-// App shell: boot, hash router, bottom navigation, install support.
-const { $, api, state, icon, go } = __m['core'];
+// App shell: boot, hash router, bottom navigation for the three sides (renting, hosting, business).
+const { $, api, state, icon, go, bindSaves } = __m['core'];
 const { renderExplore } = __m['explore'];
 const { renderSpace } = __m['space'];
 const { renderBook } = __m['book'];
@@ -3161,11 +3855,14 @@ const { renderInbox, renderChat } = __m['inbox'];
 const { renderHostToday, renderHostListings, renderHostEarnings } = __m['host'];
 const { renderWizard } = __m['wizard'];
 const { renderProfile, renderPlan, renderCatalog } = __m['profile'];
+const { renderBizHome, renderPipeline } = __m['biz'];
+const { renderEarn, renderSaved } = __m['earn'];
 
-// [pattern, render, { nav: show bottom nav, mode: switch to this mode }]
+// [pattern, render, meta]. meta.mode switches the app into that side; meta.nav shows the tab bar.
 const ROUTES = [
   [/^\/?$/, null, { redirect: true }],
   [/^\/explore$/, renderExplore, { nav: true, mode: 'guest' }],
+  [/^\/saved$/, renderSaved, { nav: true, mode: 'guest' }],
   [/^\/space\/([\w-]+)$/, renderSpace, {}],
   [/^\/book\/(pkg)\/([\w-]+)$/, renderBook, {}],
   [/^\/book\/([\w-]+)$/, renderBook, {}],
@@ -3177,46 +3874,65 @@ const ROUTES = [
   [/^\/host\/listings$/, renderHostListings, { nav: true, mode: 'host' }],
   [/^\/host\/earnings$/, renderHostEarnings, { nav: true, mode: 'host' }],
   [/^\/host\/new$/, renderWizard, { mode: 'host' }],
+  [/^\/biz$/, renderBizHome, { nav: 'business', mode: 'business' }],
+  [/^\/biz\/pipeline$/, renderPipeline, { nav: true, mode: 'business' }],
+  [/^\/earn$/, renderEarn, {}],
   [/^\/profile$/, renderProfile, { nav: true }],
   [/^\/plan$/, renderPlan, {}],
   [/^\/catalog$/, renderCatalog, {}],
 ];
 
 const NAV = {
-  guest: [['#/explore', 'Explore', icon.explore], ['#/trips', 'Trips', icon.trips], ['#/inbox', 'Inbox', icon.inbox], ['#/profile', 'Profile', icon.user]],
+  guest: [['#/explore', 'Explore', icon.explore], ['#/saved', 'Saved', icon.heart], ['#/trips', 'Trips', icon.trips], ['#/inbox', 'Inbox', icon.inbox], ['#/profile', 'Profile', icon.user]],
   host: [['#/host', 'Today', icon.today], ['#/host/listings', 'Listings', icon.listings], ['#/inbox', 'Inbox', icon.inbox], ['#/host/earnings', 'Earnings', icon.earnings], ['#/profile', 'Profile', icon.user]],
+  business: [['#/biz', 'Sites', icon.briefcase], ['#/biz/pipeline', 'Pipeline', icon.pipeline], ['#/inbox', 'Inbox', icon.inbox], ['#/profile', 'Profile', icon.user]],
 };
+
+const home = () => (state.mode === 'host' ? '#/host' : state.mode === 'business' ? '#/biz' : '#/explore');
 
 async function route() {
   const raw = location.hash.replace(/^#/, '') || '/';
   const [path, qs] = raw.split('?');
   const found = ROUTES.find(([re]) => re.test(path));
-  if (!found || found[2].redirect) { go(state.mode === 'host' ? '#/host' : '#/explore'); return; }
+  if (!found || found[2].redirect) { go(home()); return; }
   const [re, render, meta] = found;
-  if (meta.mode && meta.mode !== state.mode) state.setMode(meta.mode);
+  const isBiz = state.me.kind === 'business';
+
+  // Companies only use the business side; people never enter it (they see a landing page instead).
+  if (isBiz && (meta.mode === 'guest' || meta.mode === 'host')) { go('#/biz'); return; }
+  let nav = meta.nav;
+  if (meta.mode === 'business' && !isBiz) {
+    if (path !== '/biz') { go('#/biz'); return; }
+    nav = false; // landing page for people
+  } else if (meta.mode && meta.mode !== state.mode) state.setMode(meta.mode);
+  if (isBiz && state.mode !== 'business') state.setMode('business');
+
   const view = $('#view');
-  view.className = `view ${meta.nav ? 'with-nav' : ''} ${meta.chat ? 'chat-view' : ''}`;
-  drawNav(meta.nav ? '#' + path : null);
+  view.className = `view ${nav ? 'with-nav' : ''} ${meta.chat ? 'chat-view' : ''} enter`;
+  document.body.dataset.mode = state.mode;
+  drawNav(nav ? `#${path}` : null);
   try {
     await render(view, path.match(re).slice(1), new URLSearchParams(qs));
   } catch (e) {
     console.error(e);
     view.innerHTML = `<div class="page"><div class="error">Something went wrong: ${e.message}</div><a class="btn" href="#/">Home</a></div>`;
   }
-  if (!meta.keepScroll) window.scrollTo(0, 0);
+  window.scrollTo(0, 0);
+  requestAnimationFrame(() => view.classList.remove('enter'));
 }
 
 function drawNav(active) {
   const nav = $('#nav');
   if (!active) { nav.hidden = true; return; }
   nav.hidden = false;
-  nav.innerHTML = NAV[state.mode].map(([href, label, svg]) => `<a href="${href}" class="${href === active ? 'on' : ''}">${svg}<span>${label}</span></a>`).join('');
+  nav.innerHTML = NAV[state.mode].map(([href, label, svg]) => `<a href="${href}" class="${href === active ? 'on' : ''}" ${href === active ? 'aria-current="page"' : ''}>${svg}<span>${label}</span></a>`).join('');
 }
 
 async function boot() {
   [state.catalog, state.users] = await Promise.all([api('catalog'), api('users')]);
   window.everyspaceCatalog = state.catalog;
   if (!state.users.some((u) => u.id === state.user)) state.setUser('u_sam');
+  bindSaves();
   window.addEventListener('hashchange', route);
   await route();
   document.body.classList.add('ready');

@@ -18,10 +18,14 @@ npm run build    # rebuild dist/everyspace.html after changing anything
 
 ## What's in the app
 
-**Renting (Explore, Trips, Inbox):**
-- Search with category chips, dates, and rental length. Toggle between a list and a map.
-- "Coming up nearby" shows event pricing, such as the Harvest Festival and stadium home games.
+The app has three sides: **renting** and **hosting** for people, and **Everyspace for Business**, where companies lease roofs, pads, frontage, walls and lots. Solar, batteries, chargers, telecom, fleet lots, signs and parcel lockers never show up in everyday Explore.
+
+**Renting (Explore, Saved, Trips, Inbox):**
+- Search with a category bar, one-tap ideas ("Park for the game", "Throw a party", "Dock your boat"…), dates, and rental length. Toggle between a list and a map.
+- "Coming up nearby" shows event pricing, such as the Harvest Festival and stadium home games. "Guest favorites" collects the best-rated spaces.
+- Heart any space to keep it in **Saved**.
 - Bundles, such as an apartment plus parking.
+- **Earn from your place:** an estimator that turns what you have (spots, bays, yard hours, roof area…) into monthly and yearly income, split into money from people and money from companies.
 - Listing pages with photos-style illustrations, prices for every rental length, event rates, add-ons, an availability calendar, reviews, and other spaces at the same address.
 - Checkout adapts to the rental length:
   - **Hourly:** a time slot.
@@ -37,7 +41,12 @@ npm run build    # rebuild dist/everyspace.html after changing anything
 - **Today:** requests to approve or decline, solar proposals to move forward (site visit, then contract, then confirmed), and upcoming check-ins.
 - **Listings:** grouped by property, with nesting (building → units, garage → bays).
 - **Earnings:** payouts by month, with leases spread across their months, and a breakdown per listing.
-- **New listing wizard:** what → where → details → prices (with typical local prices and optional event pricing) → who can rent it (anyone, add-on only, or cheaper as an add-on) → the required checklist and access instructions → publish.
+- **New listing wizard:** first choose **Rent to people** or **Lease to companies**, then what → where → details → prices (with typical local prices and optional event pricing) → who can rent it (anyone, add-on only, or cheaper as an add-on) → the required checklist and access instructions → publish.
+
+**Business (Sites, Pipeline, Inbox):**
+- **Sites:** every roof, pad, frontage, wall and lot open for lease, with the facts companies need (roof size and age, system estimate, electrical service, traffic, access) and the asking rent. Filter by site type; list or map.
+- **Pipeline:** your proposals by stage (proposed → site assessment → contract → active) with active rent per year.
+- People who open the business side see a landing page instead. Only verified business accounts can send proposals.
 
 **Demo people:** use Profile → "Try it as someone else":
 
@@ -49,7 +58,10 @@ npm run build    # rebuild dist/everyspace.html after changing anything
 | Jordan | Host, 6-unit apartment building | Tenants-only parking, lockers, bundles. |
 | Luis | Host, bungalow and ranch | Pool, woodshop, ADU with a guest-only parking spot, RV lot, barn roof. |
 | Ana | Host, condo near the stadium | Game-day parking prices. |
-| SunCo Solar | Infrastructure partner | Send a 20-year roof proposal. |
+| Rosa | Host, Lakeview cottage | Cottage stays, boat slips, pickleball court. |
+| SunCo Solar | Business | Opens on the business side. Send a 20-year proposal on the barn roof. |
+| VoltWay Charging | Business | A charger-site proposal is in site assessment. |
+| ParcelPoint, Greenleaf Delivery | Business | Parcel-locker walls; overnight van lots. |
 
 ## Code map
 
@@ -64,8 +76,8 @@ npm run build    # rebuild dist/everyspace.html after changing anything
 | `src/listings.js` | Search, and creating properties, spaces (checklist enforced), and packages |
 | `src/routes.js` | API routes, shared by the server and the single-file build |
 | `src/server.js` | Node HTTP server |
-| `public/js/` | The app: `main.js` (router and navigation), `explore`, `space`, `book`, `trips`, `inbox`, `host`, `wizard`, `profile`, `calendar`, `art` (drawn illustrations), `core` (shared helpers) |
+| `public/js/` | The app: `main.js` (router and navigation for the three sides), `explore`, `space`, `book`, `trips`, `inbox`, `host`, `wizard`, `biz` (business side), `earn` (estimator and Saved), `profile`, `calendar`, `art` (drawn illustrations), `core` (shared helpers) |
 | `scripts/build-standalone.mjs` | Bundles everything into `dist/everyspace.html` |
-| `scripts/e2e.cjs` | Playwright click-through of 20 flows: `node scripts/e2e.cjs shots http://localhost:3000/` |
+| `scripts/e2e.cjs` | Playwright click-through of 25 flows: `node scripts/e2e.cjs shots http://localhost:3000/` |
 
 This is a prototype. Logins, real payments, a database, photo uploads, and identity verification are Phase 1 in the spec.

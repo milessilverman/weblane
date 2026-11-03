@@ -4,13 +4,14 @@ import { unitsFree } from './availability.js';
 import { describeAddon } from './describe.js';
 import { ratingFor } from './social.js';
 
-export function search(db, { group, category: cat, term, start, end, q, city } = {}) {
+export function search(db, { group, category: cat, term, start, end, q, city, audience = 'consumer', userId } = {}) {
   const text = q?.toLowerCase();
   const results = [];
   for (const s of db.spaces) {
     if (s.rentable === false) continue;
     const c = CATEGORIES[s.category];
     const prop = db.properties.find((p) => p.id === s.propertyId);
+    if (c.audience !== audience) continue;
     if (group && c.group !== group) continue;
     if (cat && s.category !== cat) continue;
     if (term && !(c.terms.includes(term) && (s.rates?.[term] != null || s.addonRates?.[term] != null))) continue;
@@ -24,13 +25,14 @@ export function search(db, { group, category: cat, term, start, end, q, city } =
       property: { id: prop.id, title: prop.title, city: prop.city, lat: prop.lat, lng: prop.lng, hostId: prop.hostId },
       icon: c.icon,
       rating: ratingFor(db, s.id),
+      saved: !!userId && (db.saves ?? []).some((x) => x.userId === userId && x.spaceId === s.id),
       unitsFree: free,
       policy: s.policy ?? 'standalone',
       addonNote: describeAddon(db, s),
       fromPrice: cheapest(s),
     });
   }
-  const packages = db.packages
+  const packages = audience !== 'consumer' ? [] : db.packages
     .filter((p) => !text || p.name.toLowerCase().includes(text))
     .filter((p) => !group || p.items.some((i) => CATEGORIES[db.spaces.find((s) => s.id === i.spaceId).category].group === group))
     .map((p) => ({ ...p, property: db.properties.find((x) => x.id === p.propertyId),
@@ -77,7 +79,7 @@ export function createSpace(db, input, newId) {
   }
   const s = {
     id: newId('s'),
-    ...pick(input, ['propertyId', 'parentId', 'category', 'title', 'description', 'size', 'addonRates', 'eventRates', 'conflictsWith', 'blackouts', 'minDuration', 'mode', 'amenities', 'access']),
+    ...pick(input, ['propertyId', 'parentId', 'category', 'title', 'description', 'size', 'addonRates', 'eventRates', 'conflictsWith', 'blackouts', 'minDuration', 'mode', 'amenities', 'access', 'specs']),
     ...(rentable ? { checklist: cat.checklist } : {}),
     quantity: Math.max(1, Number(input.quantity) || 1),
     rates,

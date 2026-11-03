@@ -1,6 +1,6 @@
 // API routes, independent of transport. Used by the Node server and by the
 // single-file standalone build (which calls them directly in the browser).
-import { CATEGORIES, GROUPS, GROUP_ICONS, MODES, TERMS } from './catalog.js';
+import { AUDIENCES, CATEGORIES, GROUPS, GROUP_ICONS, MODES, TERMS, TYPICAL } from './catalog.js';
 import { BookingError, createBooking, isAnchorFor, quote, transition } from './booking.js';
 import { createPackage, createProperty, createSpace, search } from './listings.js';
 import { describeAddon } from './describe.js';
@@ -24,12 +24,12 @@ export function handleApi(store, method, path, body = {}, params = new URLSearch
   const opts = () => ({ now: now(), newId: store.newId });
   const mutate = (fn) => { const out = fn(); store.save(); return out; };
   const routes = [
-    ['GET', /^catalog$/, () => ({ terms: TERMS, groups: GROUPS, groupIcons: GROUP_ICONS, categories: CATEGORIES, modes: MODES })],
+    ['GET', /^catalog$/, () => ({ terms: TERMS, groups: GROUPS, groupIcons: GROUP_ICONS, categories: CATEGORIES, modes: MODES, audiences: AUDIENCES, typical: TYPICAL })],
     ['GET', /^users$/, () => db.users],
     ['GET', /^spec$/, () => ({ html: spec ? spec() : '' })],
     ['GET', /^search$/, () => search(db, Object.fromEntries(params))],
     ['GET', /^properties$/, () => listProperties(db, params.get('hostId'))],
-    ['GET', /^spaces\/([\w-]+)$/, ([, id]) => spaceDetail(db, id)],
+    ['GET', /^spaces\/([\w-]+)$/, ([, id]) => spaceDetail(db, id, params.get('userId'))],
     ['GET', /^spaces\/([\w-]+)\/calendar$/, ([, id]) => calendar(db, id, params.get('from') ?? now().slice(0, 10), Number(params.get('days') ?? 42))],
     ['POST', /^properties$/, () => mutate(() => createProperty(db, body, store.newId))],
     ['POST', /^spaces$/, () => mutate(() => createSpace(db, body, store.newId))],
@@ -56,6 +56,11 @@ export function handleApi(store, method, path, body = {}, params = new URLSearch
     ['POST', /^bookings\/([\w-]+)\/review$/, ([, id]) => mutate(() => addReview(db, id, body.by, body.rating, body.text, opts()))],
     ['GET', /^threads$/, () => threadsFor(db, params.get('userId'))],
     ['GET', /^host\/summary$/, () => hostSummary(db, params.get('hostId'), now())],
+    ['GET', /^saves$/, () => {
+      const userId = params.get('userId');
+      return ['consumer', 'business'].flatMap((audience) => search(db, { userId, audience }).spaces).filter((x) => x.saved);
+    }],
+    ['POST', /^saves$/, () => mutate(() => toggleSave(db, body.userId, body.spaceId))],
     ['POST', /^reset$/, () => { store.reset(); return { ok: true }; }],
   ];
   const route = routes.find(([m, re]) => m === method && re.test(path));
@@ -77,7 +82,16 @@ function listProperties(db, hostId) {
   }));
 }
 
-function spaceDetail(db, id) {
+function toggleSave(db, userId, spaceId) {
+  if (!db.users.some((u) => u.id === userId)) throw new BookingError('Unknown user');
+  if (!db.spaces.some((s) => s.id === spaceId)) throw new BookingError('Space not found');
+  db.saves ??= [];
+  const i = db.saves.findIndex((x) => x.userId === userId && x.spaceId === spaceId);
+  if (i >= 0) db.saves.splice(i, 1); else db.saves.push({ userId, spaceId });
+  return { saved: i < 0 };
+}
+
+function spaceDetail(db, id, userId) {
   const s = db.spaces.find((x) => x.id === id);
   if (!s) throw new BookingError('Space not found');
   const property = db.properties.find((p) => p.id === s.propertyId);
@@ -91,6 +105,7 @@ function spaceDetail(db, id) {
     parent: s.parentId ? db.spaces.find((x) => x.id === s.parentId)?.title : null,
     addonNote: describeAddon(db, s),
     rating: ratingFor(db, s.id),
+    saved: !!userId && (db.saves ?? []).some((x) => x.userId === userId && x.spaceId === id),
     reviews: db.reviews.filter((r) => r.spaceId === id).sort((a, b) => (a.at < b.at ? 1 : -1))
       .map((r) => ({ ...r, author: userName(r.by) })),
     // Add-ons this space can carry (e.g. parking/lockers for an apartment)

@@ -4,6 +4,8 @@ Everyspace is a marketplace for renting out **any part of a property** for **any
 
 It also handles **multi-unit buildings**. A renter can take just an apartment, or an apartment plus two parking spaces and a storage locker, under rules the owner sets.
 
+The app has **two sides**. The **everyday app** is for people renting from people: parking, storage, yards, rooms, homes, kitchens, docks. **Everyspace for Business** is a separate side where companies lease roofs, pads, road frontage, walls and lots on multi-year agreements. Someone scrolling for a place to park never sees a rooftop solar lease, and a solar installer doesn't wade through backyard parties (§1b).
+
 This document covers what can be rented and how renting works. It comes before the build. The prototype in `src/` implements the core rules described here.
 
 ---
@@ -43,6 +45,8 @@ Rental lengths (terms):
 | Pool | hourly | whole | Lifeguard and waiver rules. Host must confirm insurance. |
 | Workspace / studio / workshop | hourly, daily, monthly | whole | Home office, music room, wood shop. |
 | Filming / photo location | hourly, daily | whole | Always request-to-book. City film permit may be needed. |
+| Kitchen | hourly, daily, monthly | whole | Cottage-food bakers, meal prep, cooking classes. Food-handler rules and allergen disclosure. |
+| Sport court | hourly | whole | Pickleball, tennis, basketball. Lighting hours and waiver. |
 
 **Parking**
 
@@ -51,6 +55,7 @@ Rental lengths (terms):
 | Parking spot | hourly, daily, weekly, monthly, lease | spot (quantity) | Driveway, garage, or carport. **Event pricing** covers fair, stadium, and parade days. |
 | RV / boat / trailer parking | weekly, monthly, lease | spot | Length limit and HOA check. |
 | EV charging | hourly, daily, monthly | charger | Host's own charger. Price covers time and electricity. |
+| Boat dock / slip | daily, weekly, monthly, lease | slip | Max boat length and draft, dock condition and insurance. |
 
 **Storage**
 
@@ -66,8 +71,13 @@ Rental lengths (terms):
 |---|---|---|---|
 | Garden plot | monthly, lease | sq ft (quantity of plots) | Front or back yard. Water access, HOA front-yard rules, and chemical policy. |
 | Beehive / small-ag site | monthly, lease | site | Local apiary rules apply. |
+| Pasture / paddock | monthly, lease | acre | Horses, goats, grazing. Fencing, water and livestock zoning. |
 
-**Energy and infrastructure.** These spaces are rented to companies, not people, through long agreements.
+### Business side (leased to companies only)
+
+These never appear in the everyday app. They're listed on **Everyspace for Business**, and only verified business accounts can send proposals on them (§1b).
+
+**Energy and infrastructure.**
 
 | Category | Terms | Measured by | Notes |
 |---|---|---|---|
@@ -76,9 +86,44 @@ Rental lengths (terms):
 | Public EV charger site | infrastructure, 5–15 yr | site | A third party installs a charger in a driveway or curb cut. |
 | Telecom / sensor site | infrastructure, 5–25 yr | site | Small-cell antenna, mesh node, or weather station. |
 
-**Later:** signage and billboards (heavily regulated), dock or slip space, horse paddock, and laundry or kitchen time.
+**Commercial and fleet.**
+
+| Category | Terms | Measured by | Notes |
+|---|---|---|---|
+| Fleet & van parking | monthly, lease | spot | Overnight lots for delivery and service fleets. Zoning must allow commercial vehicles; lighting and neighbor notice. |
+| Sign / billboard site | lease, 5–25 yr | site | Road frontage. Local sign ordinance permit, structural/wind review, illumination hours. |
+| Parcel locker host | lease, 5–25 yr | site | A lobby or exterior wall with power for a carrier's locker bank. |
+
+**Later:** laundry time, music/practice rooms by the hour, farmland leases, drone landing pads, cell-on-wheels event sites.
 
 **Not allowed:** public streets and curbs, shared HOA common areas the host doesn't control, and any space whose required permit the host can't show.
+
+---
+
+## 1b. Two sides: everyday and business
+
+Each category has an **audience**:
+
+| | Everyday app | Everyspace for Business |
+|---|---|---|
+| Who rents | People | Verified companies (solar installers, charging networks, telecoms, parcel-locker networks, fleets, sign companies) |
+| What's listed | Stays, activities, parking and docks, storage, land | Energy & infrastructure, commercial & fleet |
+| Typical length | An hour to two years | Monthly fleet leases to 25-year agreements |
+| How it's booked | Instant or request to book | Proposal → site assessment → contract → installation |
+| What renters see | Photos, reviews, availability calendar | Site facts: roof size and age, electrical service, traffic counts, access |
+
+Rules:
+* Everyday search never returns business categories. Business search returns only business categories, and bundles don't apply there.
+* Only accounts verified as businesses can quote or propose on business sites. People see a landing page explaining the business side instead.
+* Owners list both kinds from the same hosting mode. The listing flow asks first: **Rent to people** or **Lease to companies**. Business listings skip the add-on step and ask for site facts.
+* Business accounts get their own tabs: **Sites** (list or map, filtered by site type) and **Pipeline** (proposals by stage, with active rent per year).
+
+## 1c. Growth features
+
+* **Earnings estimator.** Anyone can tap "Earn from your place" and say what they have: driveway spots, garage bays, backyard hours, spare-room nights, roof area, a wall or frontage. It shows estimated monthly and yearly income, split into money from people and money from companies, using typical local prices and realistic occupancy. One tap starts a listing for any of those things.
+* **Saved.** A heart on every card saves it to a Saved tab.
+* **Guest favorites.** Spaces rated 4.8 or higher with at least two reviews get a badge and their own row in Explore.
+* **Ideas.** One-tap starting points in Explore, like "Park for the game", "Throw a party", "Store your stuff", "Dock your boat".
 
 ---
 
@@ -181,6 +226,7 @@ The same model works for a single house. For example, an owner can rent the ADU 
 |---|---|
 | **0: rules prototype (done)** | Catalog, data model, availability with quantity, hierarchy, and conflicts, add-on and package rules, pricing with event rates, booking modes and states, JSON API, tests |
 | **0.5: app prototype (done)** | Installable mobile-first app. Renters: explore with map, events and bundles, listing pages with availability calendar and reviews, checkout for every rental length, trips with access details, messaging, reviews. Hosts: today dashboard, approve or decline in chat, listings tree, earnings by month, step-by-step listing wizard with the required checklist. Works offline as a single HTML file. |
+| **0.75: two sides + polish (done)** | Everyspace for Business (Sites, Pipeline, landing page, business-only rule), new categories (kitchen, sport court, boat dock, pasture, fleet parking, signage, parcel lockers), earnings estimator, Saved, guest favorites, ideas row, desktop listing layout with a booking card and gallery, refreshed visual design. |
 | 1: MVP | Real auth, Postgres, Stripe Connect payouts, photo uploads, map search, messaging, notifications |
 | 2: Trust | ID verification, reviews, check-in/out photo log, disputes, insurance partner |
 | 3: Long-term | Lease templates and e-sign, autopay, move-in/out, maintenance requests |

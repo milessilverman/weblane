@@ -22,7 +22,7 @@ export const state = {
   catalog: null,
   users: [],
   user: store.get('user', 'u_sam'),
-  mode: store.get('mode', 'guest'), // 'guest' | 'host'
+  mode: store.get('mode', 'guest'), // 'guest' | 'host' | 'business'
   filters: { group: '', category: '', term: '', start: '', end: '', q: '' },
   view: 'list',
   get me() { return this.users.find((u) => u.id === this.user) ?? this.users[0]; },
@@ -107,7 +107,31 @@ export const icon = {
   calendar: '<svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16"/></svg>',
   chevron: '<svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>',
   close: '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  heart: '<svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 017-2.6A4 4 0 0119 10c0 5.6-7 10-7 10z"/></svg>',
+  share: '<svg viewBox="0 0 24 24"><path d="M12 4v11M7.5 8.5L12 4l4.5 4.5M5 13v6h14v-6"/></svg>',
+  briefcase: '<svg viewBox="0 0 24 24"><rect x="3.5" y="7.5" width="17" height="12" rx="2"/><path d="M9 7.5V5.5h6v2M3.5 12.5h17"/></svg>',
+  pipeline: '<svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="5" height="15" rx="1.5"/><rect x="10" y="4.5" width="5" height="10" rx="1.5"/><rect x="16.5" y="4.5" width="4" height="6" rx="1.5"/></svg>',
+  spark: '<svg viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M18 6l-2.5 2.5M8.5 15.5L6 18"/></svg>',
 };
+
+export const isFavorite = (r) => r?.count >= 2 && r.avg >= 4.8;
+export const saveBtn = (id, saved, extra = '') => `<button class="save-btn ${saved ? 'on' : ''} ${extra}" data-save="${esc(id)}" aria-label="${saved ? 'Remove from saved' : 'Save'}" aria-pressed="${saved ? 'true' : 'false'}">${icon.heart}</button>`;
+
+// One listener for every heart button in the app.
+export function bindSaves() {
+  document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-save]');
+    if (!btn) return;
+    e.preventDefault(); e.stopPropagation();
+    try {
+      const { saved } = await api('saves', { userId: state.user, spaceId: btn.dataset.save });
+      for (const b of $$(`[data-save="${btn.dataset.save}"]`)) { b.classList.toggle('on', saved); b.setAttribute('aria-pressed', String(saved)); }
+      toast(saved ? 'Saved to your list' : 'Removed from saved');
+      const card = btn.closest('.space-card');
+      if (!saved && location.hash === '#/saved' && card) card.hidden = true;
+    } catch (err) { toast(err.message); }
+  }, true);
+}
 
 export function topbar(title, { back = true, right = '' } = {}) {
   return `<header class="topbar">${back ? `<button class="icon-btn" data-back aria-label="Back">${icon.back}</button>` : '<span></span>'}
@@ -146,9 +170,10 @@ export function closeSheet() {
   setTimeout(() => { wrap.hidden = true; wrap.innerHTML = ''; }, 200);
 }
 
-export function stepper(name, value, { min = 0, max = 99 } = {}) {
-  return `<div class="stepper" data-stepper="${esc(name)}" data-min="${min}" data-max="${max}">
-    <button type="button" data-step="-1" aria-label="Fewer">−</button><output>${value}</output><button type="button" data-step="1" aria-label="More">+</button></div>`;
+// A − value + control. `inc` is how much one tap changes the value (e.g. 100 sq ft).
+export function stepper(name, value, { min = 0, max = 99, inc = 1 } = {}) {
+  return `<div class="stepper" data-stepper="${esc(name)}" data-min="${min}" data-max="${max}" data-inc="${inc}" data-value="${value}">
+    <button type="button" data-step="-1" aria-label="Fewer">−</button><output>${Number(value).toLocaleString('en-US')}</output><button type="button" data-step="1" aria-label="More">+</button></div>`;
 }
 // Wire every stepper under root; onChange(name, value)
 export function bindSteppers(root, onChange) {
@@ -157,13 +182,14 @@ export function bindSteppers(root, onChange) {
     const update = (v) => {
       const min = +s.dataset.min, max = +s.dataset.max;
       v = Math.max(min, Math.min(max, v));
-      out.textContent = v;
+      s.dataset.value = v;
+      out.textContent = v.toLocaleString('en-US');
       $('[data-step="-1"]', s).disabled = v <= min;
       $('[data-step="1"]', s).disabled = v >= max;
       return v;
     };
-    update(+out.textContent);
-    for (const b of $$('[data-step]', s)) b.onclick = () => onChange(s.dataset.stepper, update(+out.textContent + +b.dataset.step));
+    update(+s.dataset.value);
+    for (const b of $$('[data-step]', s)) b.onclick = () => onChange(s.dataset.stepper, update(+s.dataset.value + b.dataset.step * s.dataset.inc));
   }
 }
 

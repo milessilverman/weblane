@@ -14,14 +14,20 @@ export const TERMS = {
 export const MODES = ['instant', 'request', 'proposal'];
 
 export const GROUPS = {
-  living: 'Living',
-  outdoor: 'Outdoor & activity',
-  parking: 'Parking',
+  living: 'Stays',
+  outdoor: 'Activities & events',
+  parking: 'Parking & docks',
   storage: 'Storage',
   land: 'Land & growing',
   energy: 'Energy & infrastructure',
+  commercial: 'Commercial & fleet',
   container: 'Building / container',
 };
+
+// Who the listing is for. Everyday renters never see business categories; those are
+// leased to companies (solar installers, charging networks, telecoms, fleets) on the business side.
+export const AUDIENCES = { consumer: 'Everyone', business: 'Businesses' };
+const GROUP_AUDIENCE = { energy: 'business', commercial: 'business' };
 
 const c = (group, label, terms, measure, mode, checklist, extra = {}) => ({
   group, label, terms, measure, mode, checklist, ...extra,
@@ -50,6 +56,10 @@ export const CATEGORIES = {
     ['Tool / equipment rules']),
   film_location: c('outdoor', 'Filming / photo location', ['hourly', 'daily'], 'whole', 'request',
     ['City film permit (if required)', 'Neighbor notice']),
+  kitchen: c('outdoor', 'Kitchen', ['hourly', 'daily', 'monthly'], 'whole', 'request',
+    ['Cottage food / food handler rules', 'Cleaning checklist', 'Allergen disclosure']),
+  sport_court: c('outdoor', 'Sport court', ['hourly'], 'whole', 'instant',
+    ['Lighting hours', 'Liability waiver']),
 
   // Parking
   parking_spot: c('parking', 'Parking spot', ['hourly', 'daily', 'weekly', 'monthly', 'lease'], 'spot', 'instant',
@@ -58,6 +68,8 @@ export const CATEGORIES = {
     ['Max length', 'HOA allows RV storage']),
   ev_charging: c('parking', 'EV charging', ['hourly', 'daily', 'monthly'], 'charger', 'instant',
     ['Charger type & kW']),
+  dock_slip: c('parking', 'Boat dock / slip', ['daily', 'weekly', 'monthly', 'lease'], 'slip', 'request',
+    ['Max boat length & draft', 'Dock condition & insurance']),
 
   // Storage
   garage_storage: c('storage', 'Garage storage', ['weekly', 'monthly', 'lease'], 'sqft', 'instant',
@@ -72,6 +84,8 @@ export const CATEGORIES = {
     ['Water access', 'HOA front-yard rules', 'Chemical policy']),
   beehive_site: c('land', 'Beehive / small-ag site', ['monthly', 'lease'], 'site', 'request',
     ['Local apiary rules']),
+  pasture: c('land', 'Pasture / paddock', ['monthly', 'lease'], 'acre', 'request',
+    ['Fencing & water', 'Livestock zoning']),
 
   // Energy & infrastructure
   rooftop_solar: c('energy', 'Rooftop solar', ['infrastructure'], 'sqft', 'proposal',
@@ -84,6 +98,14 @@ export const CATEGORIES = {
   telecom_site: c('energy', 'Telecom / sensor site', ['infrastructure'], 'site', 'proposal',
     ['RF exposure compliance', 'Structural mount assessment']),
 
+  // Commercial & fleet (business side)
+  fleet_parking: c('commercial', 'Fleet & van parking', ['monthly', 'lease'], 'spot', 'proposal',
+    ['Zoning allows commercial vehicles', 'Overnight access & lighting', 'Neighbor notice']),
+  signage: c('commercial', 'Sign / billboard site', ['lease', 'infrastructure'], 'site', 'proposal',
+    ['Local sign ordinance permit', 'Structural / wind load review', 'Illumination hours']),
+  parcel_locker: c('commercial', 'Parcel locker host', ['lease', 'infrastructure'], 'site', 'proposal',
+    ['Power outlet within 6 ft', '24/7 or posted access', 'Property insurance notice']),
+
   // Non-rentable structure used to organize spaces (apartment building, garage)
   building: c('container', 'Building / container', [], 'whole', 'instant', []),
 };
@@ -95,11 +117,33 @@ const ICONS = {
   garage_storage: '📦', attic_storage: '🧳', basement_storage: '🗄️',
   garden_plot: '🥕', beehive_site: '🐝',
   rooftop_solar: '☀️', battery_site: '🔋', charger_site: '🔌', telecom_site: '📡',
+  kitchen: '🍳', sport_court: '🎾', dock_slip: '⛵', pasture: '🐴',
+  fleet_parking: '🚚', signage: '🪧', parcel_locker: '📮',
   building: '🏗️',
 };
-for (const [k, icon] of Object.entries(ICONS)) CATEGORIES[k].icon = icon;
 
-export const GROUP_ICONS = { living: '🏠', outdoor: '🌳', parking: '🅿️', storage: '📦', land: '🥕', energy: '☀️', container: '🏗️' };
+// Typical local prices: starting points for new listings and the earnings estimator.
+export const TYPICAL = {
+  entire_home: { daily: 180, weekly: 1100, monthly: 3500, lease: 3200 }, apartment_unit: { daily: 120, monthly: 2000, lease: 1850 },
+  adu: { daily: 110, weekly: 650, monthly: 1800, lease: 1700 }, private_room: { daily: 70, weekly: 420, monthly: 1100, lease: 1000 },
+  backyard: { hourly: 30, daily: 150 }, yard_campsite: { daily: 30, weekly: 180 }, pool: { hourly: 40 },
+  workspace: { hourly: 15, daily: 80, monthly: 400 }, film_location: { hourly: 150, daily: 900 },
+  kitchen: { hourly: 25, daily: 150, monthly: 900 }, sport_court: { hourly: 20 },
+  parking_spot: { hourly: 4, daily: 15, weekly: 70, monthly: 130, lease: 120 }, rv_parking: { weekly: 70, monthly: 220, lease: 200 },
+  ev_charging: { hourly: 5, daily: 25, monthly: 120 }, dock_slip: { daily: 40, weekly: 220, monthly: 350, lease: 320 },
+  garage_storage: { weekly: 25, monthly: 90, lease: 80 }, attic_storage: { monthly: 50, lease: 45 }, basement_storage: { weekly: 20, monthly: 60, lease: 55 },
+  garden_plot: { monthly: 25, lease: 20 }, beehive_site: { monthly: 15, lease: 12 }, pasture: { monthly: 120, lease: 100 },
+  rooftop_solar: { infrastructure: 1000 }, battery_site: { infrastructure: 600 }, charger_site: { infrastructure: 1500 }, telecom_site: { infrastructure: 3500 },
+  fleet_parking: { monthly: 180, lease: 160 }, signage: { lease: 400, infrastructure: 4200 }, parcel_locker: { lease: 75, infrastructure: 900 },
+};
+
+for (const [k, cat] of Object.entries(CATEGORIES)) {
+  cat.icon = ICONS[k];
+  cat.audience = GROUP_AUDIENCE[cat.group] ?? 'consumer';
+  if (TYPICAL[k]) cat.typical = TYPICAL[k];
+}
+
+export const GROUP_ICONS = { living: '🏠', outdoor: '🎉', parking: '🅿️', storage: '📦', land: '🌱', energy: '☀️', commercial: '🚚', container: '🏗️' };
 
 export function category(key) {
   const cat = CATEGORIES[key];

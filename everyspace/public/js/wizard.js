@@ -2,18 +2,6 @@
 import { $, $$, api, esc, state, cat, term, icon, money, topbar, bindBack, bindSteppers, stepper, errorBox, go, toast } from './core.js';
 import { art } from './art.js';
 
-// Typical local prices, used as starting points the host can change.
-const SUGGEST = {
-  entire_home: { daily: 180, weekly: 1100, monthly: 3500, lease: 3200 }, apartment_unit: { daily: 120, monthly: 2000, lease: 1850 },
-  adu: { daily: 110, weekly: 650, monthly: 1800, lease: 1700 }, private_room: { daily: 70, weekly: 420, monthly: 1100, lease: 1000 },
-  backyard: { hourly: 30, daily: 150 }, yard_campsite: { daily: 30, weekly: 180 }, pool: { hourly: 40 },
-  workspace: { hourly: 15, daily: 80, monthly: 400 }, film_location: { hourly: 150, daily: 900 },
-  parking_spot: { hourly: 4, daily: 15, weekly: 70, monthly: 130, lease: 120 }, rv_parking: { weekly: 70, monthly: 220, lease: 200 },
-  ev_charging: { hourly: 5, daily: 25, monthly: 120 }, garage_storage: { weekly: 25, monthly: 90, lease: 80 },
-  attic_storage: { monthly: 50, lease: 45 }, basement_storage: { weekly: 20, monthly: 60, lease: 55 },
-  garden_plot: { monthly: 25, lease: 20 }, beehive_site: { monthly: 15, lease: 12 },
-  rooftop_solar: { infrastructure: 1000 }, battery_site: { infrastructure: 600 }, charger_site: { infrastructure: 1500 }, telecom_site: { infrastructure: 3500 },
-};
 const DEFAULT_TITLE = { parking_spot: 'Driveway parking spot', backyard: 'Backyard for gatherings', garage_storage: 'Garage storage space',
   attic_storage: 'Attic storage', garden_plot: 'Garden plot', rooftop_solar: 'Roof space for solar', entire_home: 'Whole home', private_room: 'Private room' };
 const ANCHOR_CATS = ['apartment_unit', 'adu', 'entire_home', 'private_room'];
@@ -26,7 +14,12 @@ const fresh = (propertyId) => ({ step: 0, category: '', propertyId: propertyId ?
   checklist: [], access: '' });
 
 export async function renderWizard(view, _params, query) {
-  if (!draft || query.get('property') || query.get('fresh')) draft = fresh(query.get('property'));
+  if (!draft || query.get('property') || query.get('fresh')) {
+    draft = fresh(query.get('property'));
+    draft.tab = query.get('audience') === 'business' ? 'business' : 'consumer';
+    const pre = query.get('category');
+    if (pre && state.catalog.categories[pre]) { draft.category = pre; draft.tab = cat(pre).audience; }
+  }
   const props = await api(`properties?hostId=${state.user}`);
   if (!draft.propertyId && props.length) draft.propertyId = props[0].id;
   draw(view, props);
@@ -36,18 +29,28 @@ function draw(view, props) {
   const d = draft;
   const c = d.category ? cat(d.category) : null;
   const isContainer = c?.group === 'container';
-  const steps = isContainer ? [0, 1, 2, 6] : [0, 1, 2, 3, 4, 5, 6];
+  // Business sites skip "who can rent it": they're always leased to companies on their own.
+  const steps = isContainer ? [0, 1, 2, 6] : c?.audience === 'business' ? [0, 1, 2, 3, 5, 6] : [0, 1, 2, 3, 4, 5, 6];
   const pos = steps.indexOf(d.step);
   const prop = props.find((p) => p.id === d.propertyId);
   let body = '';
 
   if (d.step === 0) {
-    body = `<h1 class="page-title">What do you want to rent out?</h1><p class="muted">Pick the closest match. You can list more later.</p>
-      ${Object.entries(state.catalog.groups).filter(([g]) => g !== 'container').map(([g, label]) => `<h2 class="section-title">${state.catalog.groupIcons[g]} ${esc(label)}</h2>
-        <div class="tiles">${Object.entries(state.catalog.categories).filter(([, x]) => x.group === g).map(([k, x]) => `<button type="button" class="tile ${d.category === k ? 'on' : ''}" data-cat="${k}">
-          <span class="tile-icon">${x.icon}</span><strong>${esc(x.label)}</strong><span class="muted small">${x.terms.map((t) => term(t).label).join(' · ')}</span></button>`).join('')}</div>`).join('')}
-      <h2 class="section-title">🏗️ Organize</h2><div class="tiles"><button type="button" class="tile ${d.category === 'building' ? 'on' : ''}" data-cat="building"><span class="tile-icon">🏗️</span>
-        <strong>Building or garage (group)</strong><span class="muted small">Holds other spaces, e.g. an apartment building or a garage with bays. Not rented itself.</span></button></div>`;
+    const tab = d.tab ?? 'consumer';
+    const cats = state.catalog.categories;
+    const groups = Object.entries(state.catalog.groups).filter(([g]) => g !== 'container' && Object.values(cats).some((x) => x.group === g && x.audience === tab));
+    const typical = (x) => (x.typical ? (([t, v]) => `Typical ${money(v)}/${term(t).unit}`)(Object.entries(x.typical).at(-1)) : '');
+    body = `<h1 class="page-title">What do you want to rent out?</h1>
+      <div class="segmented wide" id="aud"><button type="button" data-aud="consumer" class="${tab === 'consumer' ? 'on' : ''}">🙋 Rent to people</button>
+        <button type="button" data-aud="business" class="${tab === 'business' ? 'on' : ''}">🏢 Lease to companies</button></div>
+      <p class="muted">${tab === 'consumer'
+        ? 'Neighbors and visitors book by the hour, night, month or lease. Pick the closest match; you can list more later.'
+        : 'Solar installers, charging networks, telecoms and fleets sign multi-year agreements and handle installation, insurance and removal. These listings only appear on Everyspace for Business.'}</p>
+      ${groups.map(([g, label]) => `<h2 class="section-title">${state.catalog.groupIcons[g]} ${esc(label)}</h2>
+        <div class="tiles">${Object.entries(cats).filter(([, x]) => x.group === g).map(([k, x]) => `<button type="button" class="tile ${d.category === k ? 'on' : ''}" data-cat="${k}">
+          <span class="tile-icon">${x.icon}</span><strong>${esc(x.label)}</strong><span class="muted small">${typical(x)}</span></button>`).join('')}</div>`).join('')}
+      ${tab === 'consumer' ? `<h2 class="section-title">🏗️ Organize</h2><div class="tiles"><button type="button" class="tile ${d.category === 'building' ? 'on' : ''}" data-cat="building"><span class="tile-icon">🏗️</span>
+        <strong>Building or garage (group)</strong><span class="muted small">Holds other spaces, like an apartment building or a garage with bays. Not rented itself.</span></button></div>` : ''}`;
   } else if (d.step === 1) {
     body = `<h1 class="page-title">Where is it?</h1>
       <div class="option-list">${props.map((p) => `<button type="button" class="option ${d.propertyId === p.id ? 'on' : ''}" data-prop="${p.id}"><strong>${esc(p.title)}</strong>
@@ -71,7 +74,7 @@ function draw(view, props) {
       ${isContainer ? '' : `<label>Highlights <span class="muted small">comma separated</span><input id="w-amen" value="${esc(d.amenities)}" placeholder="Covered, Lockable, Fits SUVs"></label>`}
     </div>`;
   } else if (d.step === 3) {
-    const sug = SUGGEST[d.category] ?? {};
+    const sug = c.typical ?? {};
     for (const t of c.terms) { if (d.rates[t] == null) d.rates[t] = sug[t] ?? ''; if (d.on[t] == null) d.on[t] = true; }
     const eventy = ['parking', 'outdoor'].includes(c.group) && c.terms.some((t) => t === 'daily' || t === 'hourly');
     body = `<h1 class="page-title">Set your prices</h1><p class="muted">Starting points are typical for your area. Turn off any length you don't want.</p>
@@ -123,6 +126,7 @@ function draw(view, props) {
   const redraw = () => draw(view, props);
   const sync = () => { const n = $('#next'); if (n) n.disabled = !validate(d, c); };
   for (const b of $$('[data-cat]', view)) b.onclick = () => { if (d.category !== b.dataset.cat) { Object.assign(d, { category: b.dataset.cat, title: '', rates: {}, on: {}, checklist: [] }); } redraw(); };
+  for (const b of $$('[data-aud]', view)) b.onclick = () => { d.tab = b.dataset.aud; redraw(); };
   for (const b of $$('[data-prop]', view)) b.onclick = () => { d.propertyId = b.dataset.prop; d.parentId = ''; redraw(); };
   for (const b of $$('[data-policy]', view)) b.onclick = () => { d.policy = b.dataset.policy; redraw(); };
   const bindInput = (sel, fn) => { const el = $(sel, view); if (el) el.oninput = () => { fn(el.value); sync(); }; };

@@ -83,3 +83,36 @@ test('a cart cannot mix hosts', () => {
   assert.throws(() => a.post('bookings', { renterId: 'u_sam', term: 'monthly', start: '2027-01-01', end: '2027-02-01',
     items: [{ spaceId: 's_maple_attic', qty: 1 }, { spaceId: 's_ana_closet', qty: 1 }] }), /different hosts/);
 });
+
+test('everyday search never shows infrastructure; the business side does', () => {
+  const a = app();
+  const consumer = a.get('search').spaces;
+  assert.ok(consumer.length > 20);
+  assert.ok(consumer.every((s) => !['energy', 'commercial'].includes(s.group)), 'no solar/battery/fleet in everyday explore');
+  const biz = a.get('search', { audience: 'business' }).spaces;
+  assert.ok(biz.some((s) => s.id === 's_maple_roof') && biz.some((s) => s.id === 's_hill_fleet'));
+  assert.ok(biz.every((s) => ['energy', 'commercial'].includes(s.group)));
+  assert.equal(a.get('search', { audience: 'business' }).packages.length, 0);
+});
+
+test('only business accounts can propose on infrastructure sites', () => {
+  const a = app();
+  const cart = { term: 'infrastructure', start: '2027-01-01', end: '2047-01-01', items: [{ spaceId: 's_oak_roof', qty: 1 }] };
+  assert.throws(() => a.post('quote', { ...cart, renterId: 'u_sam' }), (e) => e.details.some((d) => /business accounts/.test(d)));
+  const b = a.post('bookings', { ...cart, renterId: 'u_sunco' });
+  assert.equal(b.status, 'proposed');
+  // A fleet can lease van parking monthly, also as a proposal
+  const f = a.post('bookings', { term: 'monthly', start: '2026-12-01', end: '2027-03-01', renterId: 'u_greenleaf', items: [{ spaceId: 's_hill_fleet', qty: 4 }] });
+  assert.equal(f.status, 'proposed');
+  assert.equal(f.quote.schedule.recurring, Math.round(4 * 180 * 1.1 * 100) / 100);
+});
+
+test('saving spaces to a wishlist', () => {
+  const a = app();
+  assert.deepEqual(a.get('saves', { userId: 'u_sam' }).map((s) => s.id).sort(), ['s_elm_pool', 's_lake_home']);
+  assert.deepEqual(a.post('saves', { userId: 'u_sam', spaceId: 's_maple_backyard' }), { saved: true });
+  assert.equal(a.get('spaces/s_maple_backyard', { userId: 'u_sam' }).saved, true);
+  assert.equal(a.get('search', { userId: 'u_sam', q: 'fire pit' }).spaces[0].saved, true);
+  assert.deepEqual(a.post('saves', { userId: 'u_sam', spaceId: 's_maple_backyard' }), { saved: false });
+  assert.throws(() => a.post('saves', { userId: 'u_nobody', spaceId: 's_maple_backyard' }), /Unknown user/);
+});

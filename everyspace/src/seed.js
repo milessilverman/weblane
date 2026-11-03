@@ -10,7 +10,11 @@ export function seed() {
     { id: 'u_jordan', name: 'Jordan', tagline: 'Host, Oak Court Apartments', joined: '2022-11', color: '#8a5a2b' },
     { id: 'u_luis', name: 'Luis', tagline: 'Host, Elm Ave bungalow & Hillcrest ranch', joined: '2024-02', color: '#6a4fb3' },
     { id: 'u_ana', name: 'Ana', tagline: 'Host, Stadium Lofts condo', joined: '2025-01', color: '#c2552d' },
-    { id: 'u_sunco', name: 'SunCo Solar', tagline: 'Infrastructure partner', joined: '2021-06', color: '#d39b16' },
+    { id: 'u_rosa', name: 'Rosa', tagline: 'Host, Lakeview cottage', joined: '2023-09', color: '#1f7a8c' },
+    { id: 'u_sunco', name: 'SunCo Solar', tagline: 'Business · solar installer', joined: '2021-06', color: '#d39b16', kind: 'business' },
+    { id: 'u_voltway', name: 'VoltWay Charging', tagline: 'Business · EV charging network', joined: '2022-03', color: '#2f6fb3', kind: 'business' },
+    { id: 'u_parcel', name: 'ParcelPoint', tagline: 'Business · parcel lockers', joined: '2023-01', color: '#b3402f', kind: 'business' },
+    { id: 'u_greenleaf', name: 'Greenleaf Delivery', tagline: 'Business · delivery fleet', joined: '2024-06', color: '#3d8a3d', kind: 'business' },
     { id: 'u_dev', name: 'Dev', tagline: 'Renter', joined: '2024-04', color: '#2c8c8c' },
     { id: 'u_kim', name: 'Kim', tagline: 'Renter', joined: '2025-07', color: '#7a7a2a' },
   ];
@@ -26,6 +30,8 @@ export function seed() {
       lat: 33.986, lng: -117.362, notes: 'Condo two blocks from the stadium. HOA allows rentals of owned parking.' },
     { id: 'p_hill', hostId: 'u_luis', title: 'Hillcrest ranch', city: 'Riverside', type: 'land', hoa: false,
       lat: 33.962, lng: -117.392, notes: '5 acres on the edge of town. Barn, hilltop, road frontage.' },
+    { id: 'p_lake', hostId: 'u_rosa', title: 'Lakeview cottage', city: 'Riverside', type: 'single_family', hoa: false,
+      lat: 33.958, lng: -117.372, notes: 'Cottage on the river with a private dock.' },
   ];
 
   const harvest = { name: 'Harvest Festival', start: '2026-11-20', end: '2026-11-22' };
@@ -67,9 +73,11 @@ export function seed() {
     { id: 's_maple_roof', propertyId: 'p_maple', category: 'rooftop_solar', title: 'South-facing roof (~600 sq ft)',
       quantity: 1, size: { sqft: 600 }, rates: { infrastructure: 1100 },
       description: '2019 roof. ~9 kW potential. Partner owns panels, pays annual rent.',
+      specs: { 'Usable roof': '600 sq ft', 'Est. system': '9 kW', Faces: 'South', 'Roof installed': '2019', Shading: 'None', 'Electrical service': '200 A', Utility: 'Riverside Public Utilities' },
       amenities: ['South-facing', '2019 roof', 'No shading'], access: 'Site visit scheduled after proposal.' },
     { id: 's_maple_battery', propertyId: 'p_maple', category: 'battery_site', title: 'Side-yard battery pad',
       quantity: 1, rates: { infrastructure: 600 }, description: '4×8 ft concrete pad, 12 ft from the house.',
+      specs: { Pad: '4×8 ft concrete', 'Distance to house': '12 ft', 'Electrical service': '200 A', 'Est. capacity': '13–27 kWh', Utility: 'Riverside Public Utilities' },
       amenities: ['Concrete pad', '200A panel'], access: 'Site visit scheduled after proposal.' },
 
     // --- Oak Court Apartments (Jordan) -------------------------------------
@@ -144,11 +152,49 @@ export function seed() {
       access: 'Follow the yellow posts from the gate.' },
     { id: 's_hill_solar', propertyId: 'p_hill', category: 'rooftop_solar', title: 'Barn roof (~1,800 sq ft)', quantity: 1,
       size: { sqft: 1800 }, rates: { infrastructure: 2800 }, description: 'Metal roof, 2021. ~30 kW potential.',
+      specs: { 'Usable roof': '1,800 sq ft', 'Est. system': '30 kW', Faces: 'South / southwest', 'Roof installed': '2021 (metal)', 'Electrical service': '400 A', Utility: 'SCE' },
       amenities: ['Metal roof', '400A service'], access: 'Site visit scheduled after proposal.' },
     { id: 's_hill_tower', propertyId: 'p_hill', category: 'telecom_site', title: 'Hilltop antenna / sensor site', quantity: 1,
-      rates: { infrastructure: 4000 }, amenities: ['Highest point in town', 'Power nearby'], access: 'Site visit scheduled after proposal.' },
+      rates: { infrastructure: 4000 }, amenities: ['Highest point in town', 'Power nearby'],
+      specs: { Elevation: '1,240 ft', 'Line of sight': 'Downtown + I-215', Power: '200 A at barn, 300 ft', 'Road access': 'Gravel, 4WD not needed' }, access: 'Site visit scheduled after proposal.' },
     { id: 's_hill_charger', propertyId: 'p_hill', category: 'charger_site', title: 'Road-frontage EV charger site', quantity: 1,
-      rates: { infrastructure: 1800 }, amenities: ['On a state highway', '400A service'], access: 'Site visit scheduled after proposal.' },
+      rates: { infrastructure: 1800 }, amenities: ['On a state highway', '400A service'],
+      specs: { Frontage: '180 ft on Hwy 91 frontage road', 'Daily traffic': '~22,000 vehicles', 'Electrical service': '400 A, 3-phase nearby', 'Room for': '4–6 DC fast chargers' }, access: 'Site visit scheduled after proposal.' },
+
+    // --- More everyday spaces ------------------------------------------
+    { id: 's_elm_kitchen', propertyId: 'p_elm', category: 'kitchen', title: "Baker's kitchen with double oven", quantity: 1,
+      rates: { hourly: 25, daily: 150, monthly: 900 }, description: 'Big island, double convection oven, stand mixer. Great for cottage-food bakers.',
+      amenities: ['Double oven', 'Stand mixer', '8 ft island'], access: 'Side door code 4402; kitchen only.' },
+    { id: 's_hill_pasture', propertyId: 'p_hill', category: 'pasture', title: 'Fenced horse pasture (1 acre)', quantity: 2,
+      rates: { monthly: 120, lease: 100 }, description: 'Irrigated pasture with a run-in shed and water trough.',
+      amenities: ['Run-in shed', 'Auto waterer', 'Trailer parking'], access: 'Ranch gate, code on the confirmation.' },
+    { id: 's_lake_home', propertyId: 'p_lake', category: 'entire_home', title: 'Lakeview cottage (2 bd)', quantity: 1,
+      rates: { daily: 165, weekly: 1000, monthly: 3000 }, minDuration: { daily: 2 }, description: 'Cozy cottage with river views and a private dock.',
+      amenities: ['Sleeps 4', 'Kayaks', 'Fire pit', 'Dock access'], access: 'Keypad on the front door.' },
+    { id: 's_lake_dock', propertyId: 'p_lake', category: 'dock_slip', title: 'Private boat slip (up to 24 ft)', quantity: 2,
+      rates: { daily: 40, weekly: 220, monthly: 350, lease: 320 }, description: 'Covered slip with power and water.',
+      amenities: ['Up to 24 ft', 'Shore power', 'Water'], access: 'Dock gate code on the confirmation.' },
+    { id: 's_lake_court', propertyId: 'p_lake', category: 'sport_court', title: 'Lakeside pickleball court', quantity: 1,
+      rates: { hourly: 20 }, eventRates: [], description: 'Lit court with paddles and balls to borrow.',
+      amenities: ['Lights until 10pm', 'Paddles included'], access: 'Court gate code 1122.' },
+
+    // --- Business side: commercial & fleet --------------------------------
+    { id: 's_hill_fleet', propertyId: 'p_hill', category: 'fleet_parking', title: 'Overnight van lot (8 vans)', quantity: 8,
+      rates: { monthly: 180, lease: 160 }, description: 'Lit gravel lot next to the highway on-ramp. Suits delivery vans.',
+      amenities: ['Lighting', 'Camera', '2 min to highway'], access: 'Gate code issued per vehicle.',
+      specs: { Spaces: '8 van-sized', Surface: 'Compacted gravel', Lighting: 'LED, dusk to dawn', 'Highway access': 'Hwy 91, 0.4 mi', 'Hours': '24/7' } },
+    { id: 's_hill_sign', propertyId: 'p_hill', category: 'signage', title: 'Highway-facing sign site', quantity: 1,
+      rates: { lease: 400, infrastructure: 4200 }, description: 'Road frontage facing ~22,000 cars a day.',
+      amenities: ['Permitted zone', 'Power nearby'], access: 'Site visit scheduled after proposal.',
+      specs: { 'Daily traffic': '~22,000 vehicles', Facing: 'Eastbound Hwy 91', 'Max sign': '12×24 ft (city code)', Power: 'Yes, 50 ft' } },
+    { id: 's_oak_locker_wall', propertyId: 'p_oak', category: 'parcel_locker', title: 'Lobby wall for a parcel locker', quantity: 1,
+      rates: { lease: 75, infrastructure: 900 }, description: 'Covered lobby wall by the mailboxes, open 6am–11pm.',
+      amenities: ['Covered', 'Outlet nearby', 'Foot traffic'], access: 'Building manager meets the installer.',
+      specs: { Wall: '10 ft wide × 8 ft tall', Power: '120 V outlet, 4 ft', Access: '6am–11pm, residents + couriers', 'Units nearby': '~400 households within 0.5 mi' } },
+    { id: 's_oak_roof', propertyId: 'p_oak', category: 'rooftop_solar', title: 'Apartment flat roof (~2,400 sq ft)', quantity: 1,
+      size: { sqft: 2400 }, rates: { infrastructure: 3600 }, description: 'Flat membrane roof, replaced 2020. Could host community solar for the tenants.',
+      amenities: ['Flat roof', 'Roof hatch'], access: 'Site visit scheduled after proposal.',
+      specs: { 'Usable roof': '2,400 sq ft', 'Est. system': '38 kW', Faces: 'Flat (tilt racks)', 'Roof installed': '2020', 'Electrical service': '600 A, 3-phase', Utility: 'Riverside Public Utilities' } },
   ];
 
   const packages = [
@@ -176,10 +222,13 @@ export function seed() {
     b('bk_seed_6', 'u_kim', 'u_maya', [{ spaceId: 's_maple_home', qty: 1 }], 'daily', '2026-12-18', '2026-12-21', 'pending', 'Family visit for the holidays, 4 adults.', '2026-11-01T00:00:00Z'),
     b('bk_seed_7', 'u_sam', 'u_luis', [{ spaceId: 's_elm_pool', qty: 1 }], 'hourly', '2026-10-11T19:00:00Z', '2026-10-11T22:00:00Z', 'completed', 'Birthday swim', '2026-10-02T00:00:00Z'),
     b('bk_seed_8', 'u_dev', 'u_jordan', [{ spaceId: 's_oak_ev', qty: 1 }], 'hourly', '2026-10-20T16:00:00Z', '2026-10-20T19:00:00Z', 'completed', '', '2026-10-20T00:00:00Z'),
+    b('bk_seed_9', 'u_voltway', 'u_luis', [{ spaceId: 's_hill_charger', qty: 1 }], 'infrastructure', '2027-03-01', '2039-03-01', 'site_assessment', 'Planning 4 × 150 kW chargers.', '2026-10-15T00:00:00Z'),
+    b('bk_seed_10', 'u_sunco', 'u_maya', [{ spaceId: 's_maple_battery', qty: 1 }], 'infrastructure', '2026-06-01', '2041-06-01', 'confirmed', 'Home battery in our VPP program.', '2026-04-02T00:00:00Z'),
   ];
   bookings.find((x) => x.id === 'bk_seed_6').mode = 'request';
+  for (const id of ['bk_seed_9', 'bk_seed_10']) bookings.find((x) => x.id === id).mode = 'proposal';
 
-  const db = { users, properties, spaces, packages, bookings, messages: [], reviews: [], seq: 1 };
+  const db = { users, properties, spaces, packages, bookings, messages: [], reviews: [], saves: [{ userId: 'u_sam', spaceId: 's_elm_pool' }, { userId: 'u_sam', spaceId: 's_lake_home' }], seq: 1 };
 
   // Price the seed bookings the same way a real booking is priced.
   for (const bk of bookings) {
@@ -197,6 +246,10 @@ export function seed() {
   m('bk_seed_6', 'u_kim', 'Hi! Visiting my parents for the holidays. We are quiet and tidy, 4 adults, no pets.', '2026-11-01T00:02:00Z');
   m('bk_seed_7', 'system', 'Booking confirmed: Saltwater pool & patio, Oct 11, 7–10pm.', '2026-10-02T00:00:00Z');
   m('bk_seed_7', 'u_luis', 'Pool will be heated to 84°. Towels are in the cabana.', '2026-10-10T18:00:00Z');
+  m('bk_seed_9', 'system', 'VoltWay Charging sent a proposal for Road-frontage EV charger site.', '2026-10-15T00:00:00Z');
+  m('bk_seed_9', 'u_voltway', 'We would like to install 4 DC fast chargers. Rent is $1,800/yr plus 5% of charging revenue.', '2026-10-15T00:05:00Z');
+  m('bk_seed_9', 'system', 'Proposal accepted, site assessment is next.', '2026-10-18T00:00:00Z');
+  m('bk_seed_9', 'u_luis', 'Site visit any weekday morning works. Gate code 9191.', '2026-10-18T02:00:00Z');
 
   const r = (spaceId, by, rating, text, at, bookingId = null) => db.reviews.push({ id: `r_seed_${db.reviews.length + 1}`, spaceId, bookingId, by, rating, text, at });
   r('s_maple_driveway', 'u_dev', 5, 'Walked to the fair in 5 minutes. Way better than the $40 lots.', '2025-08-18');
@@ -213,6 +266,10 @@ export function seed() {
   r('s_ana_room', 'u_kim', 4, 'Comfy room with a view of the stadium lights.', '2026-08-02');
   r('s_hill_camp', 'u_sam', 5, 'Best sunset in the county. Bring a warm sleeping bag.', '2026-10-05');
   r('s_oak_2a', 'u_dev', 4, 'Clean furnished studio, quick check-in.', '2026-07-11');
+  r('s_lake_home', 'u_priya', 5, 'Morning coffee on the dock was unreal. Kayaks were a bonus.', '2026-08-21');
+  r('s_lake_home', 'u_dev', 5, 'Spotless and so peaceful.', '2026-09-30');
+  r('s_lake_dock', 'u_kim', 5, 'Easy slip, Rosa was super helpful.', '2026-07-04');
+  r('s_elm_kitchen', 'u_priya', 5, 'Baked 12 dozen cookies for my market stall here. Ovens are amazing.', '2026-10-02');
 
   return db;
 }

@@ -95,17 +95,73 @@ const SCENES = {
     telecom_site: `<path d="M0 170 Q150 110 300 170 V200 H0 Z" fill="${p.ground}"/><path d="M150 30 L125 150 M150 30 L175 150 M132 115 L168 115 M137 85 L163 85 M142 58 L158 58" stroke="#666" stroke-width="4" fill="none"/>
       ${[1, 2, 3].map((i) => `<path d="M${150 - i * 18} ${30 - i * 6} q${i * 18} -${i * 12} ${i * 36} 0" stroke="${p.accent}" stroke-width="3" fill="none"/>`).join('')}`,
   })[c] ?? '',
+  commercial: (p, c) => ({
+    fleet_parking: `<rect x="0" y="120" width="300" height="80" fill="#a7a59c"/>${[0, 1, 2, 3].map((i) => `<path d="M${30 + i * 70} 200 L${45 + i * 70} 125" stroke="#f2f2f2" stroke-width="3"/>`).join('')}
+      ${[0, 1, 2].map((i) => van(42 + i * 72, 112, i === 1 ? p.accent : '#f4f4f2')).join('')}
+      <rect x="268" y="40" width="5" height="110" fill="#555"/><path d="M262 40 h22" stroke="#555" stroke-width="5"/><ellipse cx="282" cy="46" rx="9" ry="4" fill="#ffe9a8"/>`,
+    signage: `<rect x="0" y="165" width="300" height="35" fill="#8d9096"/><path d="M0 182 H300" stroke="#f2f2f2" stroke-width="3" stroke-dasharray="16 12"/>
+      <rect x="132" y="92" width="8" height="74" fill="#6b6b6b"/><rect x="170" y="92" width="8" height="74" fill="#6b6b6b"/>
+      <rect x="70" y="28" width="170" height="70" rx="4" fill="#fff" stroke="#444" stroke-width="4"/><rect x="78" y="36" width="154" height="54" fill="${p.accent}" opacity=".9"/>
+      <rect x="92" y="50" width="70" height="9" rx="4" fill="#fff"/><rect x="92" y="66" width="110" height="7" rx="3" fill="#fff" opacity=".8"/>${tree(40, 140, .7)}${tree(270, 142, .6)}`,
+    parcel_locker: `<rect x="0" y="0" width="300" height="200" fill="${p.wall}"/><rect x="0" y="160" width="300" height="40" fill="#cfc7b8"/>
+      <rect x="60" y="34" width="180" height="128" rx="6" fill="${p.accent}"/>
+      ${Array.from({ length: 4 }, (_, r) => Array.from({ length: 5 }, (_, k) => (k === 2 && r < 2) ? '' : `<rect x="${70 + k * 33}" y="${44 + r * 29}" width="28" height="24" rx="2" fill="#fff" opacity=".88"/><circle cx="${93 + k * 33}" cy="${56 + r * 29}" r="1.8" fill="#888"/>`).join('')).join('')}
+      <rect x="136" y="46" width="28" height="48" rx="3" fill="#1d2a3a"/><rect x="140" y="50" width="20" height="16" fill="#7fd1ff"/>`,
+  })[c] ?? '',
   container: (p) => `<rect x="70" y="40" width="160" height="120" fill="${p.wall}"/>`,
 };
+
+const van = (x, y, color) => `<g transform="translate(${x} ${y})"><rect x="0" y="0" width="58" height="34" rx="5" fill="${color}" stroke="#777" stroke-width="1.5"/>
+  <path d="M58 10 h10 l8 12 v12 h-18 z" fill="${color}" stroke="#777" stroke-width="1.5"/><path d="M60 13 h7 l5 8 h-12 z" fill="#cfe9ff"/>
+  <circle cx="14" cy="36" r="6" fill="#2b2b2b"/><circle cx="62" cy="36" r="6" fill="#2b2b2b"/></g>`;
+
+// Extra scenes for newer categories, merged into their groups.
+const EXTRA = {
+  kitchen: (p) => `<rect x="0" y="0" width="300" height="200" fill="${p.wall}"/>
+    ${Array.from({ length: 6 }, (_, r) => Array.from({ length: 15 }, (_, k) => `<rect x="${k * 20 + (r % 2) * 10}" y="${70 + r * 10}" width="19" height="9" fill="#fff" opacity=".55"/>`).join('')).join('')}
+    <rect x="0" y="128" width="300" height="12" fill="#d9c9b0"/><rect x="0" y="140" width="300" height="60" fill="#8a6338"/>
+    <rect x="170" y="140" width="80" height="60" fill="#3a3a3a"/><rect x="180" y="152" width="60" height="30" rx="3" fill="#ffb066" opacity=".85"/>
+    <path d="M40 20 v24 M110 20 v24" stroke="#555" stroke-width="2"/><path d="M28 44 h24 l-4 10 h-16z M98 44 h24 l-4 10 h-16z" fill="${p.accent}"/>
+    <rect x="62" y="104" width="22" height="24" rx="4" fill="${p.accent}"/><circle cx="73" cy="102" r="8" fill="#ddd"/>`,
+  sport_court: (p) => `<path d="M30 200 L80 100 H220 L270 200 Z" fill="#4c8f6a"/><path d="M50 196 L92 108 H208 L250 196 Z" fill="none" stroke="#fff" stroke-width="3"/>
+    <path d="M150 108 V196 M71 152 H229" stroke="#fff" stroke-width="2.5"/><rect x="60" y="140" width="180" height="14" fill="none" stroke="#333" stroke-width="2"/>
+    ${Array.from({ length: 12 }, (_, i) => `<path d="M${64 + i * 15} 140 v14" stroke="#333" stroke-width="1"/>`).join('')}
+    <rect x="262" y="40" width="5" height="150" fill="#555"/><ellipse cx="258" cy="44" rx="12" ry="5" fill="#ffe9a8"/>${tree(28, 120, .7)}`,
+  dock_slip: (p) => `<rect x="0" y="118" width="300" height="82" fill="#5aa8d8"/>
+    ${[0, 1, 2, 3].map((i) => `<path d="M${10 + i * 70} ${150 + (i % 2) * 12} q15 -6 30 0" stroke="#fff" stroke-width="2" fill="none" opacity=".7"/>`).join('')}
+    <rect x="150" y="110" width="150" height="14" fill="#a0784b"/>${[0, 1, 2, 3, 4].map((i) => `<rect x="${156 + i * 30}" y="110" width="6" height="40" fill="#7a5532"/>`).join('')}
+    <path d="M40 140 h90 l-14 22 h-62 z" fill="#fff" stroke="#999"/><rect x="66" y="122" width="34" height="18" rx="3" fill="${p.accent}"/><path d="M84 70 v52" stroke="#777" stroke-width="3"/><path d="M86 74 l30 40 h-30 z" fill="#fff"/>
+    <path d="M0 118 Q60 96 120 112" fill="${p.ground}"/>`,
+  pasture: (p) => `<path d="M0 130 Q90 95 180 125 T300 115 V200 H0 Z" fill="#8ec27a"/>
+    <rect x="200" y="78" width="60" height="44" fill="#b5523b"/><path d="M194 80 L230 56 L266 80 Z" fill="#7d3426"/><rect x="222" y="98" width="16" height="24" fill="#f3e6d3"/>
+    ${Array.from({ length: 9 }, (_, i) => `<rect x="${10 + i * 34}" y="150" width="5" height="34" fill="#8a6338"/>`).join('')}<path d="M10 158 H300 M10 172 H300" stroke="#8a6338" stroke-width="4"/>
+    <g transform="translate(70 112)" fill="#6b4226"><ellipse cx="30" cy="20" rx="30" ry="13"/><path d="M50 14 l18 -18 l8 4 l-12 22 z"/><rect x="6" y="28" width="6" height="22"/><rect x="16" y="28" width="6" height="22"/><rect x="40" y="28" width="6" height="22"/><rect x="50" y="28" width="6" height="22"/><path d="M0 16 q-12 8 -6 22" stroke="#4a2c18" stroke-width="5" fill="none"/></g>`,
+};
+const EXTRA_PALETTES = [
+  { sky: ['#ffc6a8', '#ffeede'], ground: '#9dc584', accent: '#d9603b', wall: '#fbeee0', roof: '#8a3d2a' },
+  { sky: ['#a9d4f5', '#e9f5ff'], ground: '#94c98f', accent: '#2f6fb3', wall: '#f1efe9', roof: '#4a4a6a' },
+];
+const ALL_PALETTES = [...PALETTES, ...EXTRA_PALETTES];
+const INTERIOR = new Set(['private_room', 'workspace', 'kitchen', 'basement_storage', 'parcel_locker']);
+
+function sky(h, p) {
+  const cloud = (x, y, s) => `<g transform="translate(${x} ${y}) scale(${s})" fill="#fff" opacity=".85"><ellipse cx="0" cy="0" rx="18" ry="9"/><ellipse cx="14" cy="-5" rx="14" ry="10"/><ellipse cx="28" cy="1" rx="14" ry="8"/></g>`;
+  const sunX = 30 + (h % 240);
+  return `${h % 3 ? `<circle cx="${sunX}" cy="${28 + (h % 20)}" r="16" fill="#fff4c2" opacity=".9"/>` : ''}
+    ${cloud(20 + (h % 90), 30 + (h % 25), 0.8)}${cloud(170 + (h % 80), 18 + (h % 30), 0.6)}`;
+}
 
 export function art(space, { className = 'art' } = {}) {
   const c = space.category;
   const group = window.everyspaceCatalog?.categories?.[c]?.group ?? 'living';
   const h = hash(space.id ?? c);
-  const p = PALETTES[h % PALETTES.length];
+  const p = ALL_PALETTES[h % ALL_PALETTES.length];
   const id = `sky${h}`;
-  const scene = SCENES[group]?.(p, c, space) || SCENES.living(p, 'entire_home');
+  const scene = EXTRA[c]?.(p) || SCENES[group]?.(p, c, space) || SCENES.living(p, 'entire_home');
+  const outside = !INTERIOR.has(c);
   return `<svg class="${className}" viewBox="0 0 300 200" preserveAspectRatio="xMidYMid slice" role="img" aria-label="${(space.title ?? '').replace(/"/g, '')}">
-    <defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${p.sky[0]}"/><stop offset="1" stop-color="${p.sky[1]}"/></linearGradient></defs>
-    <rect width="300" height="200" fill="url(#${id})"/><rect y="150" width="300" height="50" fill="${p.ground}"/>${scene}</svg>`;
+    <defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${p.sky[0]}"/><stop offset="1" stop-color="${p.sky[1]}"/></linearGradient>
+      <linearGradient id="g${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${p.ground}"/><stop offset="1" stop-color="${p.ground}" stop-opacity=".75"/></linearGradient></defs>
+    <rect width="300" height="200" fill="url(#${id})"/>${outside ? sky(h, p) : ''}<rect y="150" width="300" height="50" fill="url(#g${id})"/>
+    ${outside ? '<ellipse cx="150" cy="156" rx="120" ry="6" fill="#000" opacity=".06"/>' : ''}${scene}</svg>`;
 }

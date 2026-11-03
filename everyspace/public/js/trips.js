@@ -43,7 +43,7 @@ export async function renderTrip(view, [id]) {
   const cancellable = ['pending', 'proposed', 'site_assessment', 'contract', 'confirmed'].includes(b.status) && b.effective !== 'completed';
   const q = b.quote;
 
-  view.innerHTML = `${topbar(isHost ? 'Booking' : 'Your trip')}
+  view.innerHTML = `${topbar(isHost ? 'Booking' : state.me.kind === 'business' ? 'Agreement' : 'Your trip')}
     <div class="hero short">${art(b.primary, { className: 'art hero-art' })}</div>
     <div class="page narrow">
       <div class="row-between">${statusPill(b.effective)}<span class="muted small">#${esc(b.id)}</span></div>

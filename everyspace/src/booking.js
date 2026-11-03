@@ -54,6 +54,12 @@ export function evaluateCart(db, cart) {
     else if (s.rates?.[term] == null && s.addonRates?.[term] == null) errors.push(`${s.title} has no ${TERMS[term].label.toLowerCase()} price`);
   }
 
+  // 1b. Infrastructure and commercial sites are leased to businesses only.
+  const renter = db.users.find((u) => u.id === renterId);
+  if (spaces.some((s) => category(s.category).audience === 'business') && renter?.kind !== 'business') {
+    errors.push('Only verified business accounts can lease infrastructure and commercial sites');
+  }
+
   // 2. Length limits.
   const d = duration(term, start, end);
   if (term === 'lease' && (d.months < TERMS.lease.min || d.months > TERMS.lease.max)) {

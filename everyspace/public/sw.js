@@ -1,8 +1,8 @@
 // Offline shell: cache the app files; always go to the network for API calls.
-const CACHE = 'everyspace-v2';
+const CACHE = 'everyspace-v3';
 const SHELL = ['./', 'index.html', 'styles.css', 'icon.svg', 'manifest.webmanifest',
   'js/main.js', 'js/core.js', 'js/art.js', 'js/calendar.js', 'js/explore.js', 'js/space.js', 'js/book.js',
-  'js/trips.js', 'js/inbox.js', 'js/host.js', 'js/wizard.js', 'js/profile.js'];
+  'js/trips.js', 'js/inbox.js', 'js/host.js', 'js/wizard.js', 'js/profile.js', 'js/biz.js', 'js/earn.js'];
 
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL))); self.skipWaiting(); });
 self.addEventListener('activate', (e) => {

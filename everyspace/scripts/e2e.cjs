@@ -37,6 +37,25 @@ fs.mkdirSync(outDir, { recursive: true });
   await go('#/explore'); await p.waitForSelector('.space-card');
 
   await step('explore', async () => { await shot('01-explore'); await overflow('explore'); });
+  await step('everyday explore has no infrastructure', async () => {
+    const text = await p.textContent('#explore-body');
+    if (/Rooftop solar|Battery site|Fleet & van|parcel locker/i.test(text)) throw new Error('business listings leaked into everyday explore');
+  });
+  await step('save a space (heart) and see it in Saved', async () => {
+    await p.click('.grid [data-save="s_maple_backyard"]'); await p.waitForTimeout(300);
+    await go('#/saved'); await p.waitForSelector('.space-card');
+    if (!(await p.$('[data-save="s_maple_backyard"].on'))) throw new Error('backyard not in Saved');
+    await shot('01b-saved'); await overflow('saved');
+  });
+  await step('earnings estimator', async () => {
+    await go('#/earn'); await p.waitForSelector('#total-month');
+    const before = await p.textContent('#total-month');
+    await p.click('[data-stepper="roof"] [data-step="1"]'); await p.click('[data-stepper="roof"] [data-step="1"]'); await p.waitForTimeout(100);
+    if ((await p.textContent('#total-month')) === before) throw new Error('total did not change');
+    await shot('01c-earn'); await overflow('earn');
+  });
+  await step('business landing for people', async () => { await go('#/biz'); await p.waitForSelector('.biz-hero.landing'); await shot('01d-biz-landing'); await overflow('biz landing'); });
+  await go('#/explore'); await p.waitForSelector('.space-card');
   await step('group filter', async () => { await p.click('[data-group="parking"]'); await p.waitForTimeout(400); await shot('02-parking'); await p.click('[data-group=""]'); });
   await step('map', async () => {
     await p.click('#toggle-view'); await p.waitForSelector('.pin'); await p.click('.pin >> nth=1'); await p.waitForTimeout(200);
@@ -110,10 +129,20 @@ fs.mkdirSync(outDir, { recursive: true });
     await p.click('[data-act="approve"]'); await p.waitForTimeout(500);
     if (await p.$('.action-bar')) throw new Error('still pending');
   });
-  await step('SunCo sends a solar proposal', async () => {
-    await go('#/profile'); await p.click('[data-user="u_sunco"]'); await p.waitForTimeout(400);
+  await step('Maya can list a roof under "Lease to companies"', async () => {
+    await go('#/host/new?fresh=1'); await p.click('[data-aud="business"]'); await p.waitForSelector('[data-cat="rooftop_solar"]');
+    if (await p.$('[data-cat="backyard"]')) throw new Error('consumer categories shown on the companies tab');
+    await shot('22b-wizard-business');
+  });
+  await step('SunCo lands on the business side and sends a proposal', async () => {
+    await go('#/profile'); await p.click('[data-user="u_sunco"]'); await p.waitForSelector('.site-list');
+    await shot('23a-biz-sites'); await overflow('biz sites');
+    await go('#/explore'); await p.waitForTimeout(300);
+    if (!(await p.evaluate(() => location.hash)).startsWith('#/biz')) throw new Error('business account reached everyday explore');
+    await go('#/space/s_hill_solar'); await p.waitForSelector('.specs'); await shot('23b-site');
     await go('#/book/s_hill_solar'); await p.waitForSelector('#w-years'); await p.waitForTimeout(500); await shot('23-solar');
     await p.click('#confirm'); await p.waitForSelector('.success');
+    await go('#/biz/pipeline'); await p.waitForSelector('.kanban'); await shot('23c-pipeline'); await overflow('pipeline');
   });
   await step('plan + catalog', async () => {
     await go('#/plan'); await p.waitForSelector('#plan-body h2'); await overflow('plan');
@@ -123,6 +152,7 @@ fs.mkdirSync(outDir, { recursive: true });
     await p.setViewportSize({ width: 1280, height: 860 });
     await go('#/profile'); await p.click('[data-user="u_sam"]'); await p.waitForTimeout(500); await shot('25-desktop');
     await go('#/space/s_elm_pool'); await p.waitForTimeout(500); await shot('26-desktop-space');
+    await go('#/biz'); await p.waitForTimeout(300); await shot('26b-desktop-biz-landing');
   });
   await step('dark mode', async () => {
     await p.emulateMedia({ colorScheme: 'dark' }); await p.setViewportSize({ width: 390, height: 844 });
