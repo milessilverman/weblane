@@ -1598,6 +1598,10 @@ def _num(x):
     return pd.to_numeric(x, errors="coerce")
 
 
+BOE_CIP = "https://maps.lacity.org/arcgis/rest/services/Mapping/NavigateLA/MapServer/10"
+CCED = "https://gis.cnra.ca.gov/arcgis/rest/services/Boundaries/CCED_AccessType/MapServer/0"
+
+
 def _write_gz(g, name):
     import gzip
     with gzip.open(OUT / name, "wt") as f:
@@ -1671,6 +1675,28 @@ def stage_projects():
         note("projects", apr_la_rows=n)
     except Exception as e:  # noqa: BLE001
         note("projects", apr_error=str(e)[:200])
+    # 4. LA City Bureau of Engineering capital projects (points, with phase and dates)
+    try:
+        g = arcgis_all(BOE_CIP, max_rows=60000)
+        if g is not None and len(g):
+            cols = {c.lower(): c for c in g.columns}
+            pick = lambda *ks: next((cols[k.lower()] for k in ks if k.lower() in cols), None)  # noqa: E731
+            nm, ph, act, cost = pick("ProjectName", "Project_Name", "NAME", "PROJ_NAME"), pick("CurrentPhaseDescription", "ActivePhase"), pick("ProjectActive"), pick("ConstructionCost")
+            end = pick("ConsEndDate", "EndDate")
+            g = g[g.geometry.notna()]
+            if act:
+                g = g[~g[act].astype(str).str.upper().isin(["N", "NO", "FALSE", "0", "INACTIVE"])]
+            for _, r in g.iterrows():
+                pt = r.geometry.representative_point()
+                yr = r.get(end) if end else None
+                if isinstance(yr, (int, float)) and yr == yr and yr > 1e11:
+                    yr = datetime.fromtimestamp(yr / 1000, timezone.utc).year
+                rows.append({"src": "LA City Bureau of Engineering", "kind": "city capital project", "name": r.get(nm) if nm else None,
+                             "addr": None, "stage": r.get(ph) if ph else None, "detail": f"construction cost ${float(r.get(cost)):,.0f}" if cost and r.get(cost) == r.get(cost) and r.get(cost) else None,
+                             "units": np.nan, "year": str(yr)[:4] if yr else "", "lat": pt.y, "lon": pt.x})
+            note("projects", boe_cip_rows=len(g), boe_fields=list(g.columns)[:40])
+    except Exception as e:  # noqa: BLE001
+        note("projects", boe_cip_error=str(e)[:200])
     if not rows:
         raise RuntimeError("no project feed answered")
     pj = gpd.GeoDataFrame(pd.DataFrame(rows), geometry=gpd.points_from_xy([r["lon"] for r in rows], [r["lat"] for r in rows]), crs=4326)
@@ -1683,6 +1709,51 @@ def stage_projects():
     pj = gpd.GeoDataFrame(pd.concat([keep, pj[~hcd]], ignore_index=True), crs=4326).drop(columns=["key"], errors="ignore")
     note("projects", total=len(pj), by_kind={k: int(v) for k, v in pj.kind.value_counts().items()})
     _write_gz(pj, "map_projects.geojson.gz")
+    # conservation easements (state CCED): parcels that generally can't be built on
+    try:
+        ce = arcgis_all(CCED, bbox=BBOX, max_rows=20000)
+        if ce is not None and len(ce):
+            keep = [c for c in ("sitename", "esmthldr", "pubaccess", "gis_acres") if c in ce.columns]
+            ce = ce[ce.geom_type.isin(["Polygon", "MultiPolygon"])]
+            ce["geometry"] = ce.to_crs(M).geometry.simplify(5).to_crs(4326)
+            _write_gz(ce[keep + ["geometry"]], "map_easements.geojson.gz")
+            note("projects", easements=len(ce))
+    except Exception as e:  # noqa: BLE001
+        note("projects", easements_error=str(e)[:200])
+    # known sites from the research (golf, LAUSD, surplus land, redevelopments): Census geocoder or parcel number
+    try:
+        ks = pd.read_csv(RESEARCH.parent / "round7b" / "known_sites.csv", dtype=str).fillna("")
+        pts = []
+        for _, r in ks.iterrows():
+            lat = lon = None
+            if r.ain:
+                try:
+                    q = get(PARCEL_URL + "/query", params={"where": f"AIN='{r.ain}'", "outFields": "AIN", "returnGeometry": "true", "outSR": 4326, "f": "geojson"}, timeout=60, tries=2).json()
+                    f = (q.get("features") or [None])[0]
+                    if f:
+                        from shapely.geometry import shape
+                        c = shape(f["geometry"]).representative_point()
+                        lat, lon = c.y, c.x
+                except Exception:  # noqa: BLE001
+                    pass
+            if lat is None and r.address:
+                try:
+                    q = get("https://geocoding.geo.census.gov/geocoder/locations/onelineaddress",
+                            params={"address": r.address, "benchmark": "Public_AR_Current", "format": "json"}, timeout=60, tries=2).json()
+                    m = (q.get("result", {}).get("addressMatches") or [None])[0]
+                    if m:
+                        lat, lon = m["coordinates"]["y"], m["coordinates"]["x"]
+                except Exception:  # noqa: BLE001
+                    pass
+            if lat is not None:
+                pts.append({**r.to_dict(), "lat": lat, "lon": lon})
+        if pts:
+            kd = pd.DataFrame(pts)
+            gpd.GeoDataFrame(kd.drop(columns=["lat", "lon"]), geometry=gpd.points_from_xy(kd.lon, kd.lat), crs=4326) \
+                .to_file(OUT / "map_known_sites.geojson", driver="GeoJSON")
+        note("projects", known_sites=len(ks), known_sites_located=len(pts))
+    except Exception as e:  # noqa: BLE001
+        note("projects", known_sites_error=str(e)[:200])
     # 4. Housing Element site inventories: parcels each city has already identified for new homes
     frames = []
     for url, src in ((HE_SCAG, "SCAG Housing Element sites"), (HE_COUNTY, "LA County Housing Element sites")):
