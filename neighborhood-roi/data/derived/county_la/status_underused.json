@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-03T17:08:03.654554+00:00",
+ "generated_at": "2026-11-04T03:49:14.342139+00:00",
  "sources": {
   "underused": {
    "parking lot_where": "UPPER(UseDescription) LIKE '%PARKING%'",
@@ -10,6 +10,9 @@
    "vacant_rows": 99531,
    "lightly built commercial_where": "UseType IN ('Commercial','Industrial') AND Roll_ImpValue < Roll_LandValue * 0.2 AND Shape.STArea() >= 43560",
    "lightly built commercial_rows": 8534,
+   "osm_features_on_sites": 34308,
+   "osm_cover_lots": 11559,
+   "osm_constr_lots": 870,
    "sites": 105420,
    "by_kind": {
     "vacant": 98339,
@@ -24,7 +27,7 @@
     "vacant": 1444303
    },
    "ok": true,
-   "seconds": 667.8
+   "seconds": 903.6
   }
  }
 }
