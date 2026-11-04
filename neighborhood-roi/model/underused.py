@@ -32,7 +32,8 @@ SOFT_AND_FINANCE = 0.30                             # assumption: design, permit
 FEES_PER_UNIT = 25_000                              # assumption: impact/school/utility fees (LA fee matrix not recovered, I34-I37)
 UNIT_SQFT = {"apartment": 850, "house": 1_500}
 RENT_2026Q3 = {"studio": 1707, "1br": 2102, "2br": 2680}   # I20-I22: LA average rents, all stock
-NEW_RENT_PREMIUM = 1.15                             # assumption: new buildings rent above the all-stock average
+NEW_RENT_PREMIUM = 1.25                             # round 7b I3_10: 2020+ buildings rent $3,375 vs ~$2,390 all-stock; new
+                                                    # buildings cluster in pricier areas, so only part of that gap is used
 OPEX_SHARE = 0.35                                   # assumption: operating costs + vacancy as a share of rent
 CAP_RATE = 0.059                                    # I23: LA multifamily cap rate, 2026-Q3
 NEW_UNIT_SHARE = 0.6                                # for-sale houses: new house worth ~60% of the area's typical home ...
@@ -184,6 +185,28 @@ def main():
                     j = gpd.sjoin_nearest(pts[["geometry"]], sub[["geometry"]], how="left", distance_col="d")
                     pts[col] = j[~j.index.duplicated()].d
             OFFICIAL_SB79[0] = bool(len(sb))
+        # known sites from the research (County golf, LAUSD housing sites, surplus land, redevelopments) and easements
+        pts["known"], pts["easement"] = None, False
+        ksp = SRC / "map_known_sites.geojson"
+        if ksp.exists():
+            ks = gpd.read_file(ksp).to_crs(M)
+            for kind_, rad in (("golf course", 700), ("public land", 120), ("redevelopment", 250)):
+                sub = ks[ks.kind == kind_]
+                if not len(sub):
+                    continue
+                mask = g.kind.eq("golf course") if kind_ == "golf course" else ~g.kind.eq("golf course")
+                cand = pts[mask.reindex(pts.index).fillna(False)]
+                if not len(cand):
+                    continue
+                j = gpd.sjoin_nearest(cand[["geometry"]], sub[["name", "note", "geometry"]], how="inner", max_distance=rad, distance_col="dk")
+                j = j[~j.index.duplicated()]
+                pts.loc[j.index, "known"] = (j["name"] + ": " + j["note"]).values
+        esp = SRC / "map_easements.geojson.gz"
+        if esp.exists():
+            es = gpd.read_file(f"/vsigzip/{esp}").to_crs(M)
+            if len(es):
+                ej = gpd.sjoin(pts[["geometry"]], es[["geometry"]], predicate="within", how="inner")
+                pts.loc[ej.index.unique(), "easement"] = True
         lpsf = {gid: land_psf(r) for gid, r in dd.iterrows()}
         for i, r in pts.iterrows():
             gid = r.GEOID
@@ -225,7 +248,12 @@ def main():
             price, cost = unit_economics(b, houses)
             land_used = mkt * (usable / ac) if mkt == mkt and ac > 0 else 0
             margin = homes * (price - cost) - land_used if homes and price == price else np.nan
-            if r.kind == "golf course":
+            known_ = r.get("known") if isinstance(r.get("known"), str) else ""
+            if re.search(r"completed|redeveloped", known_, re.I):
+                homes, margin, idea = 0, np.nan, "Already redeveloped (see the known-site note); not counted as underused"
+            elif bool(r.get("easement", False)):
+                homes, margin, idea = 0, np.nan, "Protected by a conservation easement: generally can't be built on; keep as open space"
+            elif r.kind == "golf course":
                 idea = (f"Keep as open space and open it to the public; a {GOLF_HOUSING_SHARE:.0%} edge (~{usable:.0f} acres) could hold ~{homes:,} homes"
                         if homes else "Keep as open space; add public trails and access")
             elif cat == "industrial":
@@ -249,7 +277,8 @@ def main():
                     "rail": None if rail >= 1e9 else round(rail), "st": r.station if isinstance(r.station, str) else None,
                     "sts": r.st_status if isinstance(r.st_status, str) else None, "homes": homes,
                     "margin": None if margin != margin else round(margin), "idea": idea, "gid": gid, "i": int(i),
-                    "he": (round(float(r.he_cap)) if r.he_cap == r.he_cap else 0) if bool(r.get("he_any", False)) else None}
+                    "he": (round(float(r.he_cap)) if r.he_cap == r.he_cap else 0) if bool(r.get("he_any", False)) else None,
+                    "known": r.known if isinstance(r.get("known"), str) else None, "ease": bool(r.get("easement", False)) or None}
             out_sites.append(site)
             s_ = bg_sum.setdefault(gid, {"n": 0, "ac": 0.0, "homes": 0, "margin": 0.0, "mkt": 0.0})
             s_["n"] += 1

@@ -110,6 +110,17 @@ Current deliverable: `reports/city-pretty-la-county.html` (V2.3: real EIFD input
   and calming (local), rail (busiest bus corridor + nearest station); notes existing bikeways, LA bus lanes, SB 79
   stops and rail under construction. City/Metro plan layers to be joined when round 8 returns.
 
+## Round 7b (done in V2.11)
+- Research: `research/round7b/` (second H-K pack; honest about NR). Added: `known_sites.csv` (18 County golf
+  courses, Royal Vista, Victoria, Bella Verde, 4 LAUSD housing sites, Caltrans/City/LACDA surplus parcels, Panorama
+  Mall, NOHO West, LA Plaza Village) and `metro_projects.csv` (status/years from the research; streets and areas are
+  City Pretty approximations).
+- `projects` stage adds LA City BOE capital projects (NavigateLA/MapServer/10, 1,182 active), CCED conservation
+  easements (`map_easements.geojson.gz`), and geocodes known sites (Census geocoder or AIN) → `map_known_sites.geojson`.
+- Model: affordable housing at LAHD's $782k/unit; new-building rent premium 1.25; underused sites flagged with
+  known-site notes, easements (not buildable) and already-redeveloped lots (excluded); named corridors list Metro
+  projects and City capital projects on the street.
+
 ## Next steps
 1. (done) EIFD tax-rate-area data.
 2. Add corridor right-of-way layers (abandoned rail, transmission, flood channels, Class I paths)

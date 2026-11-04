@@ -879,7 +879,7 @@
    "kind": "value",
    "evidence": "moderate",
    "sources": [
-    "Diamond & McQuade 2019: LIHTC +6.5% within 0.1 mi in low-income areas, -2.5% in high-income; LA HHH ~$597k per unit"
+    "Diamond & McQuade 2019: LIHTC +6.5% within 0.1 mi in low-income areas, -2.5% in high-income; LAHD (Mar 2026 report, p9): 2025 affordable/supportive cohort total development cost above $782k per unit (2024 dollars)"
    ],
    "qol": [
     "housing"
@@ -3910,17 +3910,59 @@
     "SCORE"
    ],
    "apr_la_rows": 144216,
-   "total": 94399,
+   "boe_cip_rows": 1182,
+   "boe_fields": [
+    "geometry",
+    "ID",
+    "GeocodingID",
+    "Geotype",
+    "GeocodeDate",
+    "PROJECTID",
+    "NavLA_CIP",
+    "NavLA_Archive",
+    "ProgramID",
+    "ProgramName",
+    "ProjectTitle",
+    "WO_Status",
+    "PM_Name",
+    "PM_Phone",
+    "PM_EMail",
+    "ProjectActive",
+    "ProjectValid",
+    "ConsStartDate",
+    "ConsEndDate",
+    "ScheduledDesignStart",
+    "LastVisited",
+    "PrimaryWorkOrder",
+    "CouncilDistrict",
+    "ConstructionCost",
+    "ProjectNumber",
+    "CurrentPhaseDescription",
+    "CurrentPhasePercentComplete",
+    "ActivePhaseName",
+    "ActivePhasePercent",
+    "LastVisitedBy",
+    "ConstPercComp",
+    "StartDate",
+    "EndDate",
+    "TOOLTIP",
+    "NLA_URL"
+   ],
+   "total": 95581,
    "by_kind": {
     "housing completed": 43427,
     "housing permitted": 26936,
     "housing approved": 11440,
     "new ADU": 6015,
     "new house": 4914,
+    "city capital project": 1182,
     "affordable housing": 616,
     "new building": 564,
     "new apartments": 487
    },
+   "easements": 696,
+   "known_sites": 34,
+   "known_sites_located": 31,
    "SCAG Housing Element sites_rows": 173711,
    "SCAG Housing Element sites_fields": [
     "geometry",
@@ -3984,7 +4026,7 @@
    "he_sites": 175336,
    "he_capacity": 265013.57952251995,
    "ok": true,
-   "seconds": 359.0
+   "seconds": 348.6
   },
   "geo": {
    "acs_vintage": "2020-2024 ACS 5-year, block groups",

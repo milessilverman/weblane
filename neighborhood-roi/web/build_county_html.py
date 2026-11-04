@@ -224,7 +224,8 @@ def lines_bundle(name, keep):
     return out
 
 
-PJ_KINDS = ["housing completed", "housing permitted", "housing approved", "affordable housing", "new apartments", "new ADU", "new house", "new building"]
+PJ_KINDS = ["housing completed", "housing permitted", "housing approved", "affordable housing", "new apartments", "new ADU", "new house", "new building",
+            "city capital project"]
 
 
 def projects_bundle():
@@ -235,7 +236,7 @@ def projects_bundle():
     g = g[g.kind.isin(PJ_KINDS) & g.geometry.notna()]
     u = pd.to_numeric(g.units, errors="coerce")
     # single ADUs and houses are counted per neighborhood; the map shows projects of 5+ homes and city-tracked projects
-    g = g[(u >= 5) | g.kind.isin(["affordable housing", "new apartments", "new building"])]
+    g = g[(u >= 5) | g.kind.isin(["affordable housing", "new apartments", "new building", "city capital project"])]
     txt = lambda v: v if isinstance(v, str) and v.strip() and v.strip().lower() != "nan" else None  # noqa: E731
     out = []
     for r in g.itertuples():
@@ -255,7 +256,8 @@ def compact_corridor(v):
     t79 = (_re.search(r"\(([^)]*)\)", s79).group(1) if s79 else "")
     rc = next((p for p in v.get("plan", []) if p.startswith("rail under construction")), None)
     rcn = (_re.search(r"\((.*)\)", rc).group(1) if rc and "(" in rc else ("" if not rc else "-"))
-    return [v.get("st"), v.get("fr"), v.get("to"), v.get("mi"), v.get("tph"), bike, bus, n79, t79, rcn, v.get("station")]
+    return [v.get("st"), v.get("fr"), v.get("to"), v.get("mi"), v.get("tph"), bike, bus, n79, t79, rcn, v.get("station"),
+            v.get("metro") or [], v.get("city") or [], v.get("metro_area") or []]
 
 
 MONEY = {"cost", "capex", "land", "om", "value"}

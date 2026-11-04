@@ -352,7 +352,7 @@ function drawFacilityAreas() {
 
 // ---------------- work already under way: housing approved/permitted/completed (HCD reports), LA affordable pipeline, new-building permits
 const PJ_STYLE = { "housing completed": "#15803d", "housing permitted": "#2563eb", "housing approved": "#7c3aed", "affordable housing": "#db2777",
-  "new apartments": "#0891b2", "new ADU": "#ca8a04", "new house": "#a16207", "new building": "#64748b" };
+  "new apartments": "#0891b2", "new ADU": "#ca8a04", "new house": "#a16207", "new building": "#64748b", "city capital project": "#0f766e" };
 function drawProjects() {
   if (!map._loaded || !layers.proj) return;
   layers.proj.clearLayers();
@@ -379,6 +379,7 @@ function siteHtml(s) {
     ${s.lav != null ? `<br>Assessed land value: <b>${fmt$(s.lav)}</b>${s.by ? ` (Prop 13 base from ${s.by})` : ""}` : ""}
     ${s.mkt != null ? `<br>Estimated market land value: <b>~${fmt$(s.mkt)}</b>` : ""}
     <br>Zoning: ${esc(s.z || s.zc || "unknown")}${s.rail != null && s.rail < 805 ? ` · ${(s.rail / 1609).toFixed(2)} mi from ${esc(s.st || "rail")}${s.sts === "coming" ? " (station under construction)" : ""}` : ""}
+    ${s.known ? `<br><b>Known site:</b> ${esc(s.known)}` : ""}${s.ease ? `<br><b>Conservation easement:</b> recorded easement on this land (state CCED); building is generally not allowed.` : ""}
     ${s.he != null ? `<br><b>Already planned:</b> this site is in the city's Housing Element inventory${s.he ? ` for ~${fmtN(s.he)} homes` : ""}.` : ""}
     <br><b>Could be:</b> ${esc(s.idea)}
     ${s.margin != null && s.homes ? `<br>Rough development margin: <b>${s.margin >= 0 ? "~" + fmt$(s.margin) : "negative (" + fmt$(s.margin) + ")"}</b> (${fmtN(s.homes)} homes)` : ""}
@@ -520,7 +521,7 @@ const CORRIDOR_ROLE = { bus_lane: "bus", brt: "bus", transit_priority: "bus", tr
 function whereLine(id) {
   const role = CORRIDOR_ROLE[id], co = role && ((D.details[selected] || {}).m || {}).co, c = co && co[role];
   if (!c) return "";
-  const [st, fr, to, mi, tph, bike, bus, n79, t79, rc, station] = c;
+  const [st, fr, to, mi, tph, bike, bus, n79, t79, rc, station, metro, city, metroArea] = c;
   const seg = `<b>${esc(st)}</b>${fr && to && fr !== to ? ` from ${esc(fr)} to ${esc(to)}` : fr ? ` near ${esc(fr)}` : ""} (~${mi} mi)`;
   const lead = id === "rail_station" ? `Corridor: along ${seg}, the busiest bus street here${tph ? ` (${tph} buses/hr)` : ""}${station && station[0] ? `, linking to ${esc(station[0])} station (${station[1]} mi)` : ""}`
     : role === "local" ? `Where: ${seg}, the main local street through this area`
@@ -532,7 +533,10 @@ function whereLine(id) {
   if (bus) notes.push("already there: a bus-only lane on part of it (LA City)");
   if (n79) notes.push(`${n79} official SB 79 transit stop${n79 > 1 ? "s" : ""} on this stretch (${t79}), so state law already allows more homes here`);
   if (rc) notes.push("rail under construction nearby" + (rc !== "-" ? ` (${rc})` : ""));
-  return `<p class="small" style="margin:4px 0 2px">${lead}.${notes.length ? " " + notes.map(esc).join("; ") + "." : ""} <span class="muted">City and Metro plan status for this street isn't loaded yet.</span></p>`;
+  const planned = [...(metro || []), ...((id === "rail_station" ? metroArea : []) || []).filter(x => !(metro || []).includes(x)), ...(city || []).map(x => "LA City capital project: " + x)];
+  const status = planned.length ? `<b>Already planned:</b> ${planned.map(esc).join("; ")}.`
+    : `<span class="muted">No Metro project or LA City capital project found on this street${role === "bike" ? "; city bike-plan maps are still being added" : ""}.</span>`;
+  return `<p class="small" style="margin:4px 0 2px">${lead}.${notes.length ? " " + notes.map(esc).join("; ") + "." : ""} ${status}</p>`;
 }
 
 function recCard(r, i, mode) {

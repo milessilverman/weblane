@@ -113,6 +113,33 @@ def main():
     if sb79 is not None:
         sb79 = sb79[sb79.geom_type.eq("Point")]
     stop_tree = STRtree(list(stops.geometry)) if stops is not None and len(stops) else None
+    metro = pd.read_csv(ROOT / "research" / "round7b" / "metro_projects.csv", dtype=str).fillna("") if (ROOT / "research" / "round7b" / "metro_projects.csv").exists() else None
+    from shapely.geometry import box as _box
+    if metro is not None:
+        def _area(b):
+            s_, w_, n_, e_ = (float(x) for x in b.split(","))
+            return gpd.GeoSeries([_box(w_, s_, e_, n_)], crs=4326).to_crs(M).iloc[0]
+        metro["area"] = [_area(b) for b in metro.bbox_s_w_n_e]
+    cip = None
+    pjp = SRC / "map_projects.geojson.gz"
+    if pjp.exists():
+        pj = read("map_projects.geojson.gz")
+        cip = pj[pj.kind.eq("city capital project")] if "kind" in pj else None
+        cip = cip if cip is not None and len(cip) else None
+
+    def metro_on(name, line, area_only=False):
+        out_ = []
+        if metro is None:
+            return out_
+        nm = str(name).lower()
+        for _, mp in metro.iterrows():
+            if not mp.area.intersects(line):
+                continue
+            streets_ = [x.strip().lower() for x in mp.streets.split("|") if x.strip()]
+            if area_only or any(x.replace(" blvd", "").replace(" ave", "").replace(" st", "") in nm for x in streets_):
+                out_.append(f"Metro {mp['project']} ({mp['mode']}; {mp['phase']}, est. {mp['est_completion']})")
+        return out_
+
     bike_tree = STRtree(list(bikes.geometry)) if bikes is not None and len(bikes) else None
 
     def existing_bike(line):
@@ -194,9 +221,18 @@ def main():
                 if len(rc):
                     nm = sorted({str(x) for x in rc["name"].dropna()})[:2]
                     plan.append("rail under construction nearby" + (f" ({'; '.join(nm)})" if nm else ""))
-            segs[role] = {"st": pretty(n), "fr": sg["fr"], "to": sg["to"], "mi": sg["mi"], "have": have, "plan": plan}
+            metro_ = metro_on(n, sg["line"])
+            city_ = []
+            if cip is not None:
+                near_ = cip[cip.distance(sg["line"]) < 40]
+                for _, cp in near_.drop_duplicates("name").head(2).iterrows():
+                    city_.append(f"{cp['name'] or 'City capital project'}" + (f" ({cp['stage']})" if isinstance(cp.get("stage"), str) and cp["stage"] else ""))
+            segs[role] = {"st": pretty(n), "fr": sg["fr"], "to": sg["to"], "mi": sg["mi"], "have": have, "plan": plan, "metro": metro_, "city": city_}
         if "bus" in segs and top_tph:
             segs["bus"]["tph"] = round(top_tph)
+        if ids & RAIL and "bus" in segs:
+            area_m = metro_on("", bg.loc[gid, "geometry"].buffer(1500), area_only=True)
+            segs["bus"]["metro_area"] = [x for x in area_m if any(k in x for k in ("rail", "BRT"))]
         if ids & RAIL and "bus" in segs and stations is not None and len(stations):
             c = bg.loc[gid, "geometry"].centroid
             sn = stations.assign(dd=stations.distance(c)).sort_values("dd").iloc[0]
