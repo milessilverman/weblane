@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-04T00:12:48.302746+00:00",
+ "generated_at": "2026-11-04T00:52:37.347358+00:00",
  "sources": {
   "basemap": {
    "streets": 512002,
@@ -67,6 +67,13 @@
    },
    "parks_under_1ac": 2763,
    "facilities": 13052,
+   "bikeways": 28359,
+   "bikeways_by_class": {
+    "painted lane (Class II)": 22799,
+    "bike path (Class I)": 3771,
+    "protected lane (Class IV)": 1607,
+    "sharrows (Class III)": 182
+   },
    "parking": 49765,
    "surface_lots_1ac": 3109,
    "surface_lot_acres": 9151,
@@ -75,7 +82,7 @@
    "rail_construction_lines": 18,
    "stations_construction": 34,
    "ok": true,
-   "seconds": 741.7
+   "seconds": 558.3
   },
   "facilities": {
    "lms_layers": [
