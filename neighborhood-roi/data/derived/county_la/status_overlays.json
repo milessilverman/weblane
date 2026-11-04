@@ -1,0 +1,39 @@
+{
+ "generated_at": "2026-11-04T07:28:01.310963+00:00",
+ "sources": {
+  "overlays": {
+   "hpoz_rows": 43,
+   "hpoz_merged": 36,
+   "hcm_rows": 1496,
+   "hcm_merged": 1342,
+   "hc_rows": 2844,
+   "hc_merged": 704,
+   "hill_rows": 344,
+   "hill_merged": 1,
+   "slide_rows": 22113,
+   "slide_merged": 66,
+   "liq_rows": 809,
+   "liq_merged": 69,
+   "fault_rows": 96,
+   "fault_merged": 46,
+   "sra_rows": 338,
+   "sra_merged": 3,
+   "lra_rows": 822,
+   "lra_merged": 4,
+   "layers": [
+    "fault",
+    "hc",
+    "hcm",
+    "hill",
+    "hpoz",
+    "liq",
+    "lra",
+    "slide",
+    "sra"
+   ],
+   "features": 2271,
+   "ok": true,
+   "seconds": 87.0
+  }
+ }
+}
