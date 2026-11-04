@@ -186,6 +186,12 @@ Current deliverable: `reports/city-pretty-la-county.html` (V2.3: real EIFD input
   per-city FY2026-27 Metro local return (Prop A/C, Measure R/M) and Measure W municipal amounts (`D.r10.city`,
   19 cities); real funding stacks per project type (`D.r10.stacks`); register of 19 real/proposed districts under
   the EIFD calculator. Still open: city roll-growth panel, resale rates, SB 1 by city, ULA availability.
+- Validation (first run): all 27 geocoded redeveloped test sites are kept off the underused list (12 were never
+  listed; 10 caught by housing reports / Assessor value; 5 only by the research note itself). Only 1 of 9 geocoded
+  "still underused" sites is listed: the other 8 aren't coded as parking/vacant by the Assessor and are under the
+  1-acre OSM parking minimum. Next: add OSM surface parking down to 0.25 acre and Assessor commercial lots with
+  little building value. Flood-control ROW query failed in Actions (FloodROWViewer; try f=json instead of
+  geojson) and the public-owner lookup returned 0 matches (check the layer's AIN field format); both fail soft.
 
 ## Future: imagery to fill missing house facts (not built)
 - Satellite/aerial: USGS NAIP (60 cm, public domain, 2-3 yr cycle) or the USGS imagery tiles, run a roof/pool
