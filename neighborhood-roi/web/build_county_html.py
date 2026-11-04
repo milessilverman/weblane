@@ -249,6 +249,61 @@ def projects_bundle():
 
 
 
+def round10_bundle():
+    """Round-10 research for the page: plain zoning rows, city funding amounts, EIFD register, real funding stacks."""
+    R = ROOT / "research" / "round10"
+    if not R.exists():
+        return None
+    rd = lambda n: pd.read_csv(R / n, dtype=str).fillna("").rename(columns=lambda c: c.split(" ")[0])
+    nr = lambda v: "" if str(v).strip().upper() in ("NR", "NAN") else str(v).strip()
+    jn = lambda j: "Unincorporated LA County" if "Unincorporated" in j else j.replace(" / guide", "")
+    zp = {}
+    for _, r in rd("partT_zoning_plain.csv").iterrows():
+        zp.setdefault(jn(r.jurisdiction), {})[r.code.strip()] = [nr(r.plain_meaning), nr(r.max_height_ft), nr(r.max_far_or_density), nr(r.min_lot_sqft), nr(r.adu_sb9)]
+
+    def money(v):
+        m = re.match(r"\s*([\d.,]+)\s*(million)?", str(v))
+        if not m:
+            return None
+        x = float(m.group(1).replace(",", ""))
+        return round(x * 1e6 if m.group(2) else x)
+    keys = {"Proposition A local return": "pa", "Proposition C local return": "pc", "Measure R local return": "mr", "Measure M local return": "mm",
+            "Measure W municipal projected return": "mw"}
+    city = {}
+    for _, r in rd("partU_funding.csv").iterrows():
+        if ":" not in r["name"] or r.amount_unit.strip() != "annual":
+            continue
+        head, place = [x.strip() for x in r["name"].split(":", 1)]
+        k = next((v for kk, v in keys.items() if head.lower() == kk.lower()), None)
+        amt = money(r.amount)
+        if k and amt:
+            city.setdefault(place, {})[k] = amt
+    ef = [[r.eifd_name, r.jurisdiction, nr(r.status), nr(r.participants_and_shares), nr(r.projected_increment_total), nr(r.projects)]
+          for _, r in rd("partU_eifds.csv").iterrows()]
+    TYPE = {"bus-lane corridor": ["bus_lane", "transit_priority", "brt"], "protected bike lane": ["protected_bike"], "street-tree program": ["street_trees", "tiny_forest"],
+            "park": ["park_upgrade", "pocket_park", "rec_center"], "public pool": ["pool", "splash_pad"], "community clinic": ["clinic"],
+            "EV fast-charging hub": ["ev_hub"], "library": ["library"], "road diet": ["road_diet", "slow_streets"], "rail station area": ["rail_station"],
+            "river path": ["corridor_trail"], "affordable housing on public parking lot": ["affordable_housing"]}
+    st = {}
+    for (proj, typ), g in rd("partU_project_stacks.csv").groupby(["project", "improvement_type"], sort=False):
+        tot = money(g.total_cost.iloc[0])
+        src = [[r.funding_source, money(r.amount)] for _, r in g.iterrows() if money(r.amount)]
+        if not tot or not src:
+            continue
+        NAMES = {"Colorado Avenue": ("Colorado Avenue protected bikeway", "under construction 2026"), "Signal Hill": ("Signal Hill street-tree planting (510 trees)", "completed 2026"),
+                 "Houghton Park": ("Houghton Park Community Center expansion", "completed 2020"), "Carson aquatic": ("Carson pool repairs (3 pools)", "completed 2023"),
+                 "Pomona Community": ("Pomona community wellness clinic renovation", "approved 2021"), "Arroyo Charging": ("Arroyo EV charging depot (city capital part)", "opened 2022"),
+                 "Pasadena Central Library": ("Pasadena Central Library seismic retrofit", "under construction, due 2028"), "Willowbrook": ("Willowbrook/Rosa Parks station improvements", "completed 2021"),
+                 "Taylor Yard": ("Taylor Yard bike/pedestrian bridge (construction)", "opened 2022"), "Hollywood Arts": ("Hollywood Arts Collective on a city parking lot (construction loans)", "completed 2023")}
+        nm, stt = next((v for k, v in NAMES.items() if k in proj), (proj, nr(g.status.iloc[0]).split(";")[0]))
+        clean = lambda x: re.sub(r";?\s*full sub-breakdown NR|,? ?approximately|, derived residual estimate| budget line|Fund\s?206", "", str(x)).replace("Proposition", "Prop").strip(" ,;")
+        ex = {"p": nm, "c": g.city.iloc[0], "s": stt, "t": tot, "src": [[clean(n), a] for n, a in src]}
+        for cid in TYPE.get(typ, []):
+            st.setdefault(cid, ex)
+    print(f"  round 10: {sum(len(v) for v in zp.values())} zoning rows, {len(city)} cities with funding amounts, {len(ef)} districts, {len(st)} funding examples")
+    return {"zp": zp, "city": city, "eifds": ef, "stacks": st}
+
+
 def compact_corridor(v):
     """[street, from, to, miles, buses/hr, existing-bike text, bus lane 0/1, SB 79 stops, SB 79 tiers, rail names, station]"""
     import re as _re
@@ -550,7 +605,7 @@ def main():
             pts = cent.loc[idx]
             c = pts.union_all().centroid if hasattr(pts, "union_all") else pts.unary_union.centroid
             search[nm] = bg.GEOID.loc[pts.distance(c).idxmin()]
-    bundle = {"meta": {"built": date.today().isoformat(), "default_bg": default, "search": search, "rent_med": float(d.median_gross_rent.median())}, "bgs": bgs, "details": det, "catalog": lib, "funding": meta.get("funding", {}), "eifd": eifd["meta"], "upgrades": meta.get("owner_upgrades", []), "plans": gp["plans"], "gap_labels": {r_[0]: r_[1] for v in gp["bg"].values() for r_ in v["g"] + v["s"]},
+    bundle = {"meta": {"built": date.today().isoformat(), "default_bg": default, "search": search, "rent_med": float(d.median_gross_rent.median())}, "bgs": bgs, "details": det, "catalog": lib, "funding": meta.get("funding", {}), "eifd": eifd["meta"], "r10": round10_bundle(), "upgrades": meta.get("owner_upgrades", []), "plans": gp["plans"], "gap_labels": {r_[0]: r_[1] for v in gp["bg"].values() for r_ in v["g"] + v["s"]},
               "under": {"sites": und.get("sites", []), "profit": und.get("profit", {}), "soon": und.get("soon", {}), "assumptions": und.get("assumptions", {})},
               "zone_rules": pd.read_csv(ROOT / "model" / "round6" / "zone_rules.csv").to_dict("records"),
               "layers": L, "hoods": hoods_js, "hood_labels": labels(bgn, "hood"), "cities": city_js,

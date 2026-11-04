@@ -169,6 +169,24 @@ Current deliverable: `reports/city-pretty-la-county.html` (V2.3: real EIFD input
   1.35x, 20% County housing hold), what the city and County put in, and the rest by the catalog's funding sources.
   Neighborhood tiles total it. Replace assumptions and add real amounts per city from round-10 Part U.
 
+## Round 10 (done in V2.15)
+- Research in `research/round10/` (Parts S-W). Test sites -> `research/round10/known_sites_r10.csv` (41 rows: 31
+  redeveloped, 10 reported still underused), geocoded by the projects stage; `model/validate_land.py` scores the
+  screen against them and writes `research/round10/validation_results.csv`.
+- Underused stage adds: Assessor `code` (UseCode), LADBS certificates of occupancy since 2016 (Socrata 3f9m-afei,
+  by book/page/parcel or location; 5+ homes or new building) -> `cofo_date`/`cofo_units`; County Flood Control
+  right-of-way share (`FloodROWViewer/MapServer/0`) -> `flood`; public agency owner by AIN (`Infrastructure/
+  MapServer/4`) -> `owner`. Model: CofO marks built; use code 27x2/27x3 = parking structure (not a surface lot);
+  vacant 8810-8814/8899/81xx/84xx/85xx/87xx dropped (ROW, utilities, pipelines, rivers); flood >= 50% (30% vacant)
+  dropped; known research sites within 120 m marked built / under construction.
+- Zoning: `D.r10.zp` (240 rows) adds verified numbers to the plain sentences (R1 0.45 house-size ratio, R1V/F/R
+  ratio schedules and heights, height-district limits, County -P/-U suffixes); County SB 79 note (not yet in force in
+  unincorporated areas).
+- Funding: EIFD pledges now 75% city / 49% County (Artesia 2026; County range 11-50%), calculator defaults too;
+  per-city FY2026-27 Metro local return (Prop A/C, Measure R/M) and Measure W municipal amounts (`D.r10.city`,
+  19 cities); real funding stacks per project type (`D.r10.stacks`); register of 19 real/proposed districts under
+  the EIFD calculator. Still open: city roll-growth panel, resale rates, SB 1 by city, ULA availability.
+
 ## Future: imagery to fill missing house facts (not built)
 - Satellite/aerial: USGS NAIP (60 cm, public domain, 2-3 yr cycle) or the USGS imagery tiles, run a roof/pool
   segmentation model (as done for tree canopy) in GitHub Actions per parcel where OSM has no outline: building

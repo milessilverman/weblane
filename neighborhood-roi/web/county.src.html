@@ -400,7 +400,7 @@ function siteHtml(s) {
     ${s.lav != null ? `<br>Assessed land value: <b>${fmt$(s.lav)}</b>${s.by ? ` (Prop 13 base from ${s.by})` : ""}` : ""}
     ${s.mkt != null ? `<br>Estimated market land value: <b>~${fmt$(s.mkt)}</b>` : ""}
     <br>Zoning: ${esc(s.z || s.zc || "unknown")}${s.rail != null && s.rail < 805 ? ` · ${(s.rail / 1609).toFixed(2)} mi from ${esc(s.st || "rail")}${s.sts === "coming" ? " (station under construction)" : ""}` : ""}
-    ${s.known ? `<br><b>Known site:</b> ${esc(s.known)}` : ""}${s.ease ? `<br><b>Conservation easement:</b> recorded easement on this land (state CCED); building is generally not allowed.` : ""}
+    ${s.own ? `<br><b>Publicly owned:</b> ${esc(s.own)} (County public-agency parcels)` : ""}${s.known ? `<br><b>Known site:</b> ${esc(s.known)}` : ""}${s.ease ? `<br><b>Conservation easement:</b> recorded easement on this land (state CCED); building is generally not allowed.` : ""}
     ${s.he != null ? `<br><b>Already planned:</b> this site is in the city's Housing Element inventory${s.he ? ` for ~${fmtN(s.he)} homes` : ""}.` : ""}
     <br><b>${s.bs ? "Status" : "Could be"}:</b> ${esc(s.idea)}
     ${s.margin != null && s.homes ? `<br>Rough development margin: <b>${s.margin >= 0 ? "~" + fmt$(s.margin) : "negative (" + fmt$(s.margin) + ")"}</b> (${fmtN(s.homes)} homes)` : ""}
@@ -484,28 +484,42 @@ function explainZone(code, cat, juris) {
   const tags = []; let t = raw;
   t = t.replace(/[\[\(]([A-Z]+)[\]\)]/g, (_, x) => { for (const ch of x.length > 2 ? [x] : x.split("")) if (ZTAG[ch]) tags.push(ZTAG[ch]); return ""; });
   const la = /los angeles/i.test(juris || "") && !/unincorporated/i.test(juris || ""), co = /unincorporated/i.test(juris || ""), sc = /santa clarita/i.test(juris || "");
-  let base = null, extra = [];
+  let base = null, extra = [], bkey = null;
   if (co || (!la && !sc && /^[A-Z]+-\d/.test(t))) {
     const parts = t.split("-"); let b = parts[0];
     if (parts.length > 1 && /^\d(\.\d)?$|^[A-Z]$/.test(parts[1])) { b += "-" + parts[1]; parts.splice(0, 2); } else parts.splice(0, 1);
-    const hit = ZBASE_CO.find(([re]) => re.test(b)); base = hit ? hit[1] : null;
+    const hit = ZBASE_CO.find(([re]) => re.test(b)); base = hit ? hit[1] : null; bkey = b;
     for (const p of parts) { if (/^\d{4,}$/.test(p)) extra.push(`minimum lot ${fmtN(+p)} sq ft`); else if (/^\d+U$/.test(p)) extra.push(`up to ${parseInt(p)} homes per acre`);
       else if (/^\d+$/.test(p)) extra.push(`minimum lot ${p} acre${+p > 1 ? "s" : ""}`); else if (p === "DP") extra.push("needs an approved development program");
-      else if (p === "P") extra.push("parking rules apply"); else if (ZTAG[p]) extra.push(ZTAG[p]); }
+      else if (p === "P") extra.push("parking combining zone: parking lots allowed, the underlying zone still applies"); else if (ZTAG[p]) extra.push(ZTAG[p]); }
   } else if (sc) {
-    const hit = ZBASE_SC.find(([re]) => re.test(t)); base = hit ? hit[1] : null;
+    const hit = ZBASE_SC.find(([re]) => re.test(t)); base = hit ? hit[1] : null; bkey = t;
   } else {
     const parts = t.split("-"); let b = parts.shift();
     const qd = b.match(/^([QT]+)(?=[A-Z]{1,2}\d|C\d|R\d|RD|RE|RS|M\d|CM|CR|P)/); if (qd) { for (const ch of qd[1]) if (ZTAG[ch]) tags.push(ZTAG[ch]); b = b.slice(qd[1].length); }
-    const hit = ZBASE_LA.find(([re]) => re.test(b)); base = hit ? (typeof hit[1] === "function" ? hit[1](b.match(hit[0])) : hit[1]) : null;
+    const hit = ZBASE_LA.find(([re]) => re.test(b)); base = hit ? (typeof hit[1] === "function" ? hit[1](b.match(hit[0])) : hit[1]) : null; bkey = b;
     for (let p of parts) { const d = /^(1L|1VL|1XL|1SS|[1-4])D$/.test(p); if (d) p = p.slice(0, -1);
       if (ZHD_LA[p]) extra.push(ZHD_LA[p]); if (d) extra.push(ZTAG.D); else if (ZTAG[p]) extra.push(ZTAG[p]); }
   }
-  return { base: base || ZCAT_TXT[cat] || "Special zone: check the city's code.", more: [...extra, ...tags], known: !!base };
+  // round-10 research rows (official zone names, verified height and floor-area limits)
+  const jz = la ? "Los Angeles" : co ? "Unincorporated LA County" : sc ? "Santa Clarita" : String(juris || "").replace(/ \(SCAG 2019\)$/, "");
+  const rz = ((D.r10 || {}).zp || {})[jz], row = rz && bkey ? rz[bkey] : null, facts = [];
+  if (row) {
+    if (!base && row[0]) base = row[0];
+    const hm = String(row[1]).match(/^(?:front )?(\d+)/);
+    if (hm) facts.push(/front/.test(row[1]) ? `height ${row[1].replace(/,/g, " ft,")} ft` : `height ${hm[1]} ft${/(\d) stor/.test(row[1]) ? " (" + row[1].match(/(\d) stor/)[1] + " stories)" : ""}`);
+    const rf = String(row[2]).match(/RFAR ([.\d]+),.*,([.\d]+) for lot bins/), rb = String(row[2]).match(/RFAR ([.\d]+)/), dl = String(row[2]).match(/^(?:Maximum generally |Generally )?1 dwelling\/(\d+) ?sqft|^Generally (\d+) sqft lot area per dwelling/);
+    if (rf) facts.push(`house size up to ${(+rf[1]).toFixed(2)}× the lot on lots of 6,000 sq ft or less, down to ${(+rf[2]).toFixed(2)}× on lots over 10,000 sq ft`);
+    else if (rb) facts.push(`house size up to ${(+rb[1]).toFixed(2)}× the lot area`);
+    else if (dl) facts.push(`one home per ${fmtN(+(dl[1] || dl[2]))} sq ft of lot`);
+    else if (/FAR/.test(row[2]) && row[2].length < 90) facts.push(row[2].replace(/sqft/g, "sq ft"));
+    const ml = String(row[3]).match(/^(\d+)/); if (ml) facts.push(`minimum lot ${fmtN(+ml[1])} sq ft${/generally/.test(row[3]) ? " (generally)" : ""}`);
+  }
+  return { base: base || ZCAT_TXT[cat] || "Special zone: check the city's code.", more: [...extra, ...tags], facts, known: !!base, official: row ? row[0] : null };
 }
 function zoneSentence(code, cat, juris) {
   const e = explainZone(code, cat, juris); if (!e) return "";
-  return e.base + (e.more.length ? " Also: " + e.more.join("; ") + "." : "");
+  return e.base + (e.facts.length ? " Code: " + e.facts.join("; ") + "." : "") + (e.more.length ? " Also: " + e.more.join("; ") + "." : "");
 }
 
 // ---------------- zoning polygons (zoom 14+), colored by what each zone allows
@@ -570,6 +584,7 @@ function zoneRules(code, juris) {
   juris = String(juris).replace(/ \(SCAG 2019\)$/, "");
   return (D.zone_rules || []).find(r => r.jurisdiction === juris && new RegExp("^" + r.zone_prefix.replace(/[.]/g, "\\.") + "(?![0-9.])").test(t));
 }
+const p_city = m => (byId.get(selected) || { properties: {} }).properties.c || "";
 function zoningSection(m) {
   const z = m.z, tr = m.tr || [], rail = Math.min(tr[0] ?? 1e9, tr[1] ?? 1e9), tph = Math.max(tr[2] || 0, tr[3] || 0);
   let h = `<div class="section"><h3>Zoning: what can be built here</h3>`;
@@ -587,7 +602,8 @@ function zoningSection(m) {
   L_.push("<b>ADUs:</b> state law allows an ADU (up to 1,200 sq ft) and a junior ADU on single-family lots, and more on apartment lots (Gov. Code 66310 and following).");
   if (z && (z.sh["single-family"] || 0) > 0) L_.push("<b>SB 9:</b> most single-family lots can hold two homes and be split into two lots, except in very-high fire zones and historic districts.");
   const sb = m.sb || [null, null], near79 = [["Tier 1", sb[0]], ["Tier 2", sb[1]]].filter(([, d]) => d != null && d <= 805).sort((a, b) => a[1] - b[1]);
-  if (near79.length) L_.push(`<b>SB 79 (in force July 2026):</b> the nearest official ${near79[0][0]} stop (SCAG map) is ${(near79[0][1] / 1609).toFixed(2)} mi away, so ${near79[0][1] <= 402 ? "much of this area is within ¼ mile, the band with the highest allowed height and density" : "parts of this area are within ½ mile, where SB 79 allows more height and homes"}. Exact standards depend on the tier and the parcel.`);
+  if (near79.length && /^Unincorporated/i.test(m.city || p_city(m))) L_.push("<b>SB 79:</b> the County says SB 79 does not yet apply in unincorporated areas (round-10 research), even near an official stop.");
+  else if (near79.length) L_.push(`<b>SB 79 (in force July 2026):</b> the nearest official ${near79[0][0]} stop (SCAG map) is ${(near79[0][1] / 1609).toFixed(2)} mi away, so ${near79[0][1] <= 402 ? "much of this area is within ¼ mile, the band with the highest allowed height and density" : "parts of this area are within ½ mile, where SB 79 allows more height and homes"}. Exact standards depend on the tier and the parcel.`);
   else if (m.sb) L_.push("<b>SB 79:</b> no official SB 79 transit stop within ½ mile (SCAG map), so SB 79's transit upzoning doesn't apply here.");
   else if (rail <= 805) L_.push(`<b>SB 79 (in force July 2026):</b> rail is ${(rail / 1609).toFixed(2)} mi away, so parts of this area are likely in a transit upzoning zone. Check SCAG's official SB 79 map.`);
   if (rail <= 805 || tph >= 8) L_.push("<b>AB 2097:</b> within ½ mile of a major transit stop, cities can't require parking for new homes. Here " + (rail <= 805 ? "rail is within ½ mile" : `buses run ${tph}/hr nearby (likely a major stop)`) + ".");
@@ -682,7 +698,9 @@ function whereLine(id) {
 // Prop 13: a home's assessed value only catches up to market when it sells, so the project's value gain enters the
 // tax roll as homes turn over (~6% a year in LA County, an estimate pending round-10 research). The district keeps
 // the city's and County's shares of the 1% tax on that gain (pledges from the EIFD calculator defaults).
-const FUND_ASSUME = { turnover: 0.06, cityPledge: 1.0, countyPledge: 0.5, countyPledgeUninc: 1.0, admin: 0.03, rate: 0.0525, dscr: 1.35, years: 30, housing: 0.20 };
+// pledges: Artesia EIFD (formed Aug 2026): city 75% of its increment, County 49% of its share (round-10 research);
+// County shares in formed districts range from 11% (Santa Fe Springs) to 50% (La Verne, Norwalk), and policy keeps them under 100%.
+const FUND_ASSUME = { turnover: 0.06, cityPledge: 0.75, countyPledge: 0.49, countyPledgeUninc: 0.5, admin: 0.03, rate: 0.0525, dscr: 1.35, years: 30, housing: 0.20 };
 function fundPlan(r, gid) {
   const c = D.catalog[r.id]; if (!c || c.kind === "owner" || c.kind === "policy") return null;
   const m = (D.details[gid] || {}).m || {}, p = (byId.get(gid) || { properties: {} }).properties;
@@ -698,9 +716,10 @@ function fundPlan(r, gid) {
   }
   const bond = y10 * (1 - (cntyK > 0 ? A.housing : 0)) / A.dscr * ann;
   const buildable = (r.capex || 0) + (r.land || 0);                    // bonds pay for building and land, not yearly upkeep
-  const eifd = Math.min(bond, buildable), rest = Math.max(r.cost - eifd, 0);
+  const eifd = Math.min(bond, buildable), rest = Math.max(r.cost - eifd, 0), program = buildable <= 0;
   const others = (c.funding || []).filter(k => k !== "EIFD" && D.funding[k]).map(k => D.funding[k]);
-  return { eifd, bond, y10, tot, cityTot, cntyTot, cityK, cntyK, rest, others, uninc, share: r.cost > 0 ? eifd / r.cost : 0, om: r.om || 0, sh, city: p.c };
+  const cm = ((D.r10 || {}).city || {})[p.c] || null, ex = ((D.r10 || {}).stacks || {})[r.id] || null;
+  return { eifd, bond, y10, tot, cityTot, cntyTot, cityK, cntyK, rest, others, uninc, share: r.cost > 0 ? eifd / r.cost : 0, om: r.om || 0, sh, city: p.c, cm, ex, keys: c.funding || [], program };
 }
 function fundHtml(r, gid) {
   const f = fundPlan(r, gid); if (!f) return "";
@@ -709,11 +728,21 @@ function fundHtml(r, gid) {
   const lead = f.others[0];
   return `<div class="fund small"><b>Who pays — a possible funding plan</b>
     <div class="fund-bar" title="EIFD ${fmt$(f.eifd)} of ${fmt$(r.cost)}"><i style="width:${Math.min(100, f.share * 100).toFixed(1)}%"></i></div>
-    <div class="kv"><span>EIFD bonds from this project's own value gain</span><span><b>${fmt$(f.eifd)}</b> (${pct(f.share)} of the cost)</span>
+    <div class="kv">${f.program ? `<span>EIFD</span><span>bonds can't pay for a yearly program, but the ~${fmt$(f.y10)}/yr of tax growth it creates could help cover it</span>` : `<span>EIFD bonds from this project's own value gain</span><span><b>${fmt$(f.eifd)}</b> (${pct(f.share)} of the cost)</span>`}
       <span>Put in by</span><span>${who}: ~${fmt$(f.y10)}/yr of tax growth by year 10, ~${fmt$(f.tot)} over 30 years (city ${fmt$(f.cityTot)}, County ${fmt$(f.cntyTot)})</span>
       <span>Left to raise</span><span><b>${fmt$(f.rest)}</b>${f.om ? ` (incl. ${fmt$(f.om)}/yr upkeep, which bonds can't pay)` : ""}</span>
       ${f.others.length ? `<span>Best fits for the rest</span><span>${f.others.map((o, i) => `${o[2] ? `<a href="${esc(o[2])}" target="_blank" rel="noopener">${esc(o[0])}</a>` : esc(o[0])}${i === 0 ? "" : ""} <span class="muted">(${esc(o[1])})</span>`).join("; ")}</span>` : `<span>Rest</span><span>city general fund or capital budget</span>`}</div>
-    <p class="muted" style="margin:4px 0 0">How: the city (and the County, if it joins) forms an EIFD, pledges its share of the property-tax growth this project creates, and issues bonds against it; ${lead ? esc(lead[0]) : "grants and the city's budget"} would cover most of the rest. Assumes ${pct(FUND_ASSUME.turnover)} of homes resell each year (Prop 13 reassesses only on sale), city pledges 100%, County ${f.uninc ? "100% (unincorporated)" : "50%"}, ${(FUND_ASSUME.rate * 100).toFixed(2)}% 30-year bonds at ${FUND_ASSUME.dscr}x coverage${f.cntyK > 0 ? ", 20% of County-backed bonds held for housing" : ""}. A district over the whole area (calculator below) also captures ordinary growth and raises far more. Estimates until the round-10 research on real EIFDs and city budgets lands.</p></div>`;
+    ${cityMoney(f)}${f.ex ? `<p style="margin:6px 0 0"><b>Real example:</b> ${esc(f.ex.p)} (${esc(f.ex.c)}${f.ex.s ? ", " + esc(f.ex.s.split(";")[0]) : ""}): ${fmt$(f.ex.t)} — ${f.ex.src.map(([n, a]) => `${esc(n)} ${fmt$(a)} (${Math.round(100 * a / f.ex.t)}%)`).join("; ")}.</p>` : ""}
+    <p class="muted" style="margin:4px 0 0">How: the city (and the County, if it joins) forms an EIFD, pledges its share of the property-tax growth this project creates, and issues bonds against it; ${lead ? esc(lead[0]) : "grants and the city's budget"} would cover most of the rest. Assumes ${pct(FUND_ASSUME.turnover)} of homes resell each year (Prop 13 reassesses only on sale), the city pledges 75% of its share and the County 49% (Artesia's 2026 district; County shares elsewhere run 11–50%)${f.uninc ? "; in unincorporated areas the County alone, assumed 50%" : ""}, ${(FUND_ASSUME.rate * 100).toFixed(2)}% 30-year bonds at ${FUND_ASSUME.dscr}x coverage${f.cntyK > 0 ? ", 20% of County-backed bonds held for housing" : ""}. A district over the whole area (calculator below) also captures ordinary growth and raises far more. Since AB 116 (2020) EIFD bonds need no public vote.</p></div>`;
+}
+function cityMoney(f) {
+  const cm = f.cm; if (!cm) return "";
+  const lr = (cm.pa || 0) + (cm.pc || 0) + (cm.mr || 0) + (cm.mm || 0), useLR = f.keys.includes("M"), useW = f.keys.includes("W") && cm.mw;
+  if (!useLR && !useW) return `<p style="margin:6px 0 0"><b>${esc(f.city)}'s own yearly money:</b> ~${fmt$(lr)} of Metro sales-tax local return${cm.mw ? ` and ${fmt$(cm.mw)} of Measure W` : ""} (FY 2026-27 estimates), mostly for transportation and water projects; this one would rely on grants or the general fund.</p>`;
+  const parts = [];
+  if (useLR && lr) parts.push(`~${fmt$(lr)} a year of Metro local return (Prop A ${fmt$(cm.pa || 0)}, Prop C ${fmt$(cm.pc || 0)}, Measure R ${fmt$(cm.mr || 0)}, Measure M ${fmt$(cm.mm || 0)}), which can pay for street and transit projects like this`);
+  if (useW) parts.push(`${fmt$(cm.mw)} a year of Measure W municipal money for green streets, trees and stormwater`);
+  return `<p style="margin:6px 0 0"><b>What ${esc(f.city)} already gets:</b> ${parts.join("; and ")} (FY 2026-27 estimates; much is already committed).</p>`;
 }
 function fundSummary(pkg, gid) {
   const F = pkg.map(r => [r, fundPlan(r, gid)]).filter(([, f]) => f);
@@ -1248,14 +1277,23 @@ function eifdSection(p, m) {
     ${fld("e-g", "Yearly value growth (%)", 3.0, 0.1, "2% Prop 13 cap + resales")}
     ${fld("e-new", "New development, year 3 ($M)", 0, 1, "")}
     ${fld("e-city", "City share of the 1% tax (%)", "", 0.01, "")}
-    ${fld("e-cp", "City pledge (%)", 100, 5, "")}
+    ${fld("e-cp", "City pledge (%)", 75, 5, "Artesia 2026: 75%")}
     ${fld("e-county", "County General share of the 1% tax (%)", "", 0.01, "")}
-    ${fld("e-kp", "County pledge (%)", 50, 5, "")}
+    ${fld("e-kp", "County pledge (%)", 49, 1, "Artesia 49%; range 11–50%")}
     ${fld("e-rate", "Bond interest rate (%)", 5.25, 0.05, "")}
     ${fld("e-dscr", "Debt-service coverage (x)", 1.35, 0.05, "")}
     <div class="pkg" id="e-out" style="margin-top:10px"></div>
     <div id="e-split"></div>
-    <p class="small muted" id="e-note"></p><p class="small" id="e-warn"></p></div>`;
+    <p class="small muted" id="e-note"></p><p class="small" id="e-warn"></p>${eifdRegister()}</div>`;
+}
+function eifdRegister() {
+  const E = (D.r10 || {}).eifds || []; if (!E.length) return "";
+  const formed = E.filter(e => /^FORMED|ADOPTED/i.test(e[2])), other = E.filter(e => !/^FORMED|ADOPTED/i.test(e[2]));
+  const row = e => `<li><b>${esc(e[0])}</b> — ${esc(e[2].split(";")[0].toLowerCase())}${e[3] ? `; ${esc(e[3])}` : ""}${e[4] ? `; ${esc(e[4].split(";")[0])}` : ""}${e[5] ? `. Pays for: ${esc(e[5])}` : ""}.</li>`;
+  return `<details style="margin-top:8px"><summary class="small"><b>Real districts in LA County</b> (${formed.length} formed, ${other.length} proposed, expired or related)</summary>
+    <ul class="small" style="margin:6px 0 0 18px;padding:0">${formed.map(row).join("")}</ul>
+    <p class="small muted" style="margin:6px 0 2px">Proposed, expired or related:</p><ul class="small" style="margin:0 0 0 18px;padding:0">${other.map(row).join("")}</ul>
+    <p class="small muted">From the round-10 research (County, city and IFP documents, accessed Nov 2026). Shares are of each agency's own part of the 1% tax, not of the whole levy. Projected totals are lifetime forecasts, not money in hand.</p></details>`;
 }
 function eifdWire(p) {
   let scope = "bg";
