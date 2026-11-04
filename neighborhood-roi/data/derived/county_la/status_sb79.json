@@ -1,0 +1,29 @@
+{
+ "generated_at": "2026-11-04T00:12:32.026990+00:00",
+ "sources": {
+  "sb79": {
+   "candidate_urls": [
+    "https://maps.scag.ca.gov/scaggis/rest/services/LDX/City_Boundary_scag/MapServer/0",
+    "https://maps.scag.ca.gov/scaggis/rest/services/LDX/Existinglanduse_poly_LA/MapServer/0",
+    "https://maps.scag.ca.gov/scaggis/rest/services/OpenData/City_Boundaries/MapServer/1",
+    "https://maps.scag.ca.gov/scaggis/rest/services/SB79/SB79/MapServer/0",
+    "https://maps.scag.ca.gov/scaggis/rest/services/SB79/SB79/MapServer/1",
+    "https://maps.scag.ca.gov/scaggis/rest/services/SB79/SB79/MapServer/2",
+    "https://services.arcgisonline.com/arcgis/rest/services/Elevation/World_Hillshade/MapServer",
+    "https://services1.arcgis.com/HG80xaIVT1z1OdO5/arcgis/rest/services/SB79_DRAFT/FeatureServer"
+   ],
+   "items_read": 2,
+   "rows_1": "https://maps.scag.ca.gov/scaggis/rest/services/SB79/SB79/MapServer/0: 508 ['geometry', 'OBJECTID', 'CITY', 'STOP_NAME', 'STOP_ID', 'TRN_MODE', 'TRN_LINE', 'SB79_TIER', 'HQTC_15M', 'SOURCE', 'NAME', 'YEAR', 'ML_FREQ', 'PS_FREQ', 'CR_FREQ', 'FT_BRT_COR', 'FT_BRT_CO1', 'FT_BRT_CO2', 'layer_url']",
+   "rows_2": "https://maps.scag.ca.gov/scaggis/rest/services/SB79/SB79/MapServer/1: 12 ['geometry', 'OBJECTID', 'TIER', 'BUFFER', 'NAME', 'YEAR', 'layer_url']",
+   "rows_3": "https://maps.scag.ca.gov/scaggis/rest/services/SB79/SB79/MapServer/2: 3 ['geometry', 'OBJECTID', 'NOTES', 'YEAR', 'layer_url']",
+   "features": 523,
+   "geometry": {
+    "Point": 511,
+    "MultiPolygon": 9,
+    "Polygon": 3
+   },
+   "ok": true,
+   "seconds": 6.5
+  }
+ }
+}

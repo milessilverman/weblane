@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-03T17:07:49.561298+00:00",
+ "generated_at": "2026-11-04T00:12:48.302746+00:00",
  "sources": {
   "basemap": {
    "streets": 512002,
@@ -75,7 +75,7 @@
    "rail_construction_lines": 18,
    "stations_construction": 34,
    "ok": true,
-   "seconds": 508.2
+   "seconds": 741.7
   },
   "facilities": {
    "lms_layers": [
@@ -285,10 +285,10 @@
    "lms_137": 396,
    "lms_146": 115,
    "lms_166": 443,
-   "total": 5837,
+   "total": 5834,
    "by_kind": {
     "school": 2497,
-    "community center": 827,
+    "community center": 824,
     "clinic": 631,
     "fire station": 451,
     "library": 344,
@@ -301,15 +301,15 @@
     "museum": 82
    },
    "by_source": {
-    "OpenStreetMap": 3725,
+    "OpenStreetMap": 3722,
     "LA County LMS": 2112
    },
-   "footprints": 4690,
+   "footprints": 4686,
    "footprints_by_kind": {
     "school": 2833,
     "fire station": 384,
     "clinic": 310,
-    "community center": 251,
+    "community center": 247,
     "library": 227,
     "hospital": 149,
     "college": 148,
