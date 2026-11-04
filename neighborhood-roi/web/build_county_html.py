@@ -20,6 +20,8 @@ ROOT = Path(__file__).resolve().parent.parent
 WEB, SRC, MOD = ROOT / "web", ROOT / "data" / "derived" / "county_la", ROOT / "web" / "county_data"
 M = 3310
 OUT = ROOT / "reports" / "city-pretty-la-county.html"
+CHUNK_KEY = 8  # block-group details are chunked by this many leading GEOID digits (state+county+tract prefix)
+EVID_ORDER = "ABCDU"  # "Evidence shown" filter values, in the order of each block group's precomputed `tp` list
 
 
 def num(v, nd=None):
@@ -610,6 +612,32 @@ def main():
               "zone_rules": pd.read_csv(ROOT / "model" / "round6" / "zone_rules.csv").to_dict("records"),
               "layers": L, "hoods": hoods_js, "hood_labels": labels(bgn, "hood"), "cities": city_js,
               "city_labels": labels(cities.rename(columns={"name": "nm"}), "nm"), "report": rep}
+    # Speed: block-group details (over half the data) are only needed when someone opens a block group,
+    # so they ship as small gzip chunks keyed by the first 8 digits of the GEOID (state+county+tract prefix,
+    # so nearby block groups share a chunk). The page unpacks a chunk the first time any id in it is read.
+    det_all = bundle.pop("details")
+    # The map colors every block group by its best improvement under the "Evidence shown" filter. Precompute that
+    # for each filter setting so the page doesn't have to open every block group's details at start (retop()).
+    def best_for(gid, thr):
+        best, pc = None, 0
+        for a in (det_all.get(gid) or {}).get("r") or []:
+            c = lib.get(a[0]) or {}
+            g = c.get("grade", "none")
+            if c.get("kind") != "value" or not (g == "none" or g <= thr):
+                continue
+            if best is None or (a[8] or 0) > (best[8] or 0):
+                best = a
+            if (a[8] or 0) >= 1:
+                pc += a[3] or 0
+        return [best[0] if best and (best[8] or 0) >= 1 else None, best[8] if best else None, pc or None]
+    for f in bundle["bgs"]["features"]:
+        f["properties"]["tp"] = [best_for(f["properties"]["id"], thr) for thr in EVID_ORDER]
+    chunks = {}
+    for gid, v in det_all.items():
+        chunks.setdefault(gid[:CHUNK_KEY], {})[gid] = v
+    det_b64 = {k: base64.b64encode(gzip.compress(re.sub(r"\bNaN\b", "null", json.dumps(v, separators=(",", ":"), default=str)).encode(), 9)).decode()
+               for k, v in chunks.items()}
+    det_json = json.dumps({"key": CHUNK_KEY, "chunks": det_b64}, separators=(",", ":"))
     raw = json.dumps(bundle, separators=(",", ":"), default=str)
     raw = re.sub(r"\bNaN\b", "null", raw).encode()
     b64 = base64.b64encode(gzip.compress(raw, 9)).decode()
@@ -617,9 +645,12 @@ def main():
     html = (WEB / "county.src.html").read_text()
     html = html.replace("/*BASE_CSS*/", base_css).replace("/*LEAFLET_CSS*/", (WEB / "leaflet-1.9.4.css").read_text())
     html = html.replace("/*LEAFLET_JS*/", (WEB / "leaflet-1.9.4.js").read_text().replace("</script", "<\\/script"))
+    html = html.replace("/*FFLATE_JS*/", (WEB / "fflate-0.8.3.min.js").read_text().replace("</script", "<\\/script"))
+    html = html.replace("/*DETAILS*/", det_json)
     html = html.replace("/*EYEBROW*/", f"CITY PRETTY · ALL OF LOS ANGELES COUNTY · {date.today():%d %b %Y}".upper()).replace("/*BUNDLE*/", b64)
     OUT.write_text(html)
-    print(f"wrote {OUT} ({len(html)/1e6:.1f} MB; data {len(raw)/1e6:.1f} MB raw)")
+    print(f"wrote {OUT} ({len(html)/1e6:.1f} MB; core data {len(raw)/1e6:.1f} MB raw, unpacked at start; "
+          f"{len(det_all)} block-group details in {len(chunks)} chunks, unpacked on demand)")
 
 
 if __name__ == "__main__":

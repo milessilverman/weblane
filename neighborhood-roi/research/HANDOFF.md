@@ -193,6 +193,31 @@ Current deliverable: `reports/city-pretty-la-county.html` (V2.3: real EIFD input
   little building value. Flood-control ROW query failed in Actions (FloodROWViewer; try f=json instead of
   geojson) and the public-owner lookup returned 0 matches (check the layer's AIN field format); both fail soft.
 
+## Speed pass (V2.16, from the Everyspace session; see `../VISION.md`)
+- Startup measured on a fast disk: map in 6.1 s → 2.6 s, 5.6 s → 2.1 s of blocked main thread, heap 364 → 188 MB. The
+  file is still ~16 MB to download; national scale needs hosting with split files or tiles (next item).
+- `build_county_html.py`: block-group `details` (28 of 54 MB raw) ship as 190 gzip chunks keyed by GEOID[:8]
+  (`CHUNK_KEY`) in `<script id="details-chunks">`. The page wraps them in a Proxy (`lazyDetails()`), so
+  `D.details[id]` unpacks only that chunk on first read (fflate `gunzipSync`, vendored `web/fflate-0.8.3.min.js`,
+  MIT). Existing code needed no change. **Rule:** don't loop over every block group's details at start, or all
+  chunks get unpacked. Precompute in the build instead.
+- `retop()` used to read every block group's details at start. The build now writes `tp` on each `bgs` feature:
+  [best id, value per $1, package cost] for each "Evidence shown" setting in `EVID_ORDER` ("ABCDU").
+  It's verified equal to the old computation for all 32,935 (block group × setting) pairs.
+- Core bundle base64 → bytes now uses `fetch(data:)` (native) instead of a per-character JS loop.
+- Lot lines: 512 px export tiles (about 9 requests per view instead of ~36). At start, `cachedLotLines()` checks
+  `LACounty_Parcel/MapServer?f=json`; if it reports a standard web-mercator tile cache down to z17, it switches to
+  `/tile/{z}/{y}/{x}` (pre-drawn files, much faster). **Not verified against the live server** (this sandbox
+  can't reach it). It falls back to export tiles if the check fails.
+- "Loading property lines…" note (`#lots-note`, `watchLots()`) shows while lot-line tiles load at z17+, with
+  "explore this neighborhood's summary" (selects the block group under the map center).
+- Tests: `tests/e2e.cjs` (Playwright, offline; fakes the County server with slow tiles, with and without a cache):
+  startup budget, on-demand details, note show/hide, tile mode, the neighborhood link, no page errors. CI:
+  `.github/workflows/checks.yml` rebuilds the page from committed data and runs it on every push.
+- Next for speed: serve `bgs`/`under`/`zoning`/`streets` as separate files or vector tiles (PMTiles + MapLibre) from
+  static hosting (round 10 Part V: GitHub Pages ≤1 GB with range requests; Cloudflare Pages 25 MiB per file),
+  with this single offline file kept as a fallback build.
+
 ## Future: imagery to fill missing house facts (not built)
 - Satellite/aerial: USGS NAIP (60 cm, public domain, 2-3 yr cycle) or the USGS imagery tiles, run a roof/pool
   segmentation model (as done for tree canopy) in GitHub Actions per parcel where OSM has no outline: building

@@ -1,0 +1,78 @@
+# Automatic checks for both apps on every push and pull request.
+# Everyspace: unit/API tests, single-file build, and a 31-flow Playwright click-through.
+# City Pretty: rebuild the LA County page from the committed data, then offline Playwright checks
+# (startup time, on-demand block-group details, the "Loading property lines…" note, lot-line tiles).
+# Nothing here commits or deploys; the data refresh lives in neighborhood-data.yml.
+name: Checks
+
+on:
+  push:
+    paths:
+      - everyspace/**
+      - neighborhood-roi/web/**
+      - neighborhood-roi/tests/**
+      - neighborhood-roi/model/**
+      - .github/workflows/checks.yml
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  everyspace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: everyspace
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Unit and API tests
+        run: npm test
+      - name: Build the single-file app
+        run: npm run build
+      - name: Install Playwright (Chromium)
+        run: |
+          npm install --no-save playwright@1.63.0
+          npx playwright install --with-deps chromium
+      - name: End-to-end click-through (single file, offline)
+        run: node scripts/e2e.cjs e2e-shots "file://$PWD/dist/everyspace.html"
+      - name: Keep screenshots if something failed
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: everyspace-e2e-screenshots
+          path: everyspace/e2e-shots
+
+  city-pretty:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: neighborhood-roi
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Python packages for the page build
+        run: pip install geopandas pyogrio shapely pandas
+      - name: Rebuild the LA County page from committed data
+        run: python web/build_county_html.py
+      - name: Install Playwright (Chromium)
+        run: |
+          npm install --no-save playwright@1.63.0
+          npx playwright install --with-deps chromium
+      - name: Offline page checks
+        run: node tests/e2e.cjs

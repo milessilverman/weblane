@@ -45,6 +45,9 @@
 .house-loading{display:flex;gap:10px;align-items:flex-start;margin:8px 0;padding:9px 11px;border-radius:8px;background:var(--sheet-2,rgba(127,127,127,.12));border:1px solid var(--rule);font-size:13px;line-height:1.45}
 .spin{flex:none;width:14px;height:14px;margin-top:3px;border-radius:50%;border:2px solid var(--rule);border-top-color:#e8590c;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+.lots-note{position:absolute;left:50%;top:12px;transform:translateX(-50%);z-index:850;display:flex;gap:10px;align-items:flex-start;width:max-content;max-width:min(470px,calc(100% - 24px));padding:10px 12px;border-radius:10px;background:var(--sheet,#fff);color:var(--ink,#111);border:1px solid var(--rule);box-shadow:0 6px 18px rgba(0,0,0,.18);font-size:13px;line-height:1.45}
+.lots-note[hidden]{display:none}
+.lots-note button{font:inherit;color:#e8590c;background:none;border:0;padding:0;text-decoration:underline;cursor:pointer}
 .sticky-head thead th { position: sticky; top: 0; z-index: 2; background: var(--sheet); box-shadow: 0 -24px 0 var(--sheet), 0 1px 0 var(--rule-strong); padding-top: 4px; padding-bottom: 4px; }
 table.facts { width: 100%; border-collapse: collapse; } table.facts td { padding: 3px 6px 3px 0; border-top: 1px solid var(--rule); vertical-align: top; } table.facts td:first-child { color: var(--ink-2); width: 34%; }
 #addr-results { position: absolute; z-index: 1200; left: 0; right: 0; top: 100%; background: var(--sheet); border: 1px solid var(--rule-strong); border-radius: 8px; box-shadow: 0 6px 18px rgba(0,0,0,.18); overflow: hidden; }
@@ -97,13 +100,17 @@ table.facts { width: 100%; border-collapse: collapse; } table.facts td { padding
   </fieldset>
 </header>
 <div class="main">
-  <div class="mapwrap"><div id="map" role="application" aria-label="Map of Los Angeles County neighborhoods"></div><div class="legend" id="legend"></div><div id="loading">Unpacking map data…</div></div>
+  <div class="mapwrap"><div id="map" role="application" aria-label="Map of Los Angeles County neighborhoods"></div><div class="legend" id="legend"></div><div id="loading">Unpacking map data…</div>
+    <div class="lots-note" id="lots-note" role="status" aria-live="polite" hidden><span class="spin"></span><div><b>Loading property lines…</b> LA County's map server draws them as you zoom in, so this can take a few seconds.
+      In the meantime, <button type="button" id="lots-hood">explore this neighborhood's summary</button>.</div></div></div>
   <aside class="panel" id="panel" aria-live="polite"><p class="empty">Loading…</p></aside>
 </div>
 <main class="report gutter" id="report"></main>
 
 <script>/*LEAFLET_JS*/</script>
+<script>/*FFLATE_JS*/</script>
 <script type="application/octet-stream" id="bundle">/*BUNDLE*/</script>
+<script type="application/json" id="details-chunks">/*DETAILS*/</script>
 <script>
 const $ = s => document.querySelector(s);
 const css = (n, fb) => getComputedStyle(document.documentElement).getPropertyValue(n).trim() || fb;
@@ -128,9 +135,35 @@ const METRICS = {
 };
 let D, map, bgs, layers = {}, selected = null, selLayer = null, breaks = [], tiles = null, byId = new Map();
 
+// Speed: the core bundle (map shapes, scores, catalog) is unpacked at start. Block-group details ship as small
+// gzip chunks and are unpacked the first time anything reads D.details[id], so existing code needs no changes.
+async function b64Bytes(text) {
+  try { return new Uint8Array(await (await fetch("data:application/octet-stream;base64," + text)).arrayBuffer()); }
+  catch { const s = atob(text), u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u; }
+}
+function lazyDetails() {
+  const el = $("#details-chunks"), src = el && el.textContent.trim();
+  if (!src || src.startsWith("/*")) return {};
+  const { key, chunks } = JSON.parse(src), open = new Map();
+  const chunk = k => {
+    if (!open.has(k)) {
+      const b = chunks[k]; let v = {};
+      if (b) { const s = atob(b), u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i);
+        v = JSON.parse(fflate.strFromU8(fflate.gunzipSync(u))); }
+      open.set(k, v);
+    }
+    return open.get(k);
+  };
+  return new Proxy({}, {
+    get: (_, id) => typeof id === "string" ? chunk(id.slice(0, key))[id] : undefined,
+    has: (_, id) => typeof id === "string" && id in chunk(id.slice(0, key)),
+  });
+}
 async function unpack() {
-  const bin = Uint8Array.from(atob($("#bundle").textContent.trim()), c => c.charCodeAt(0));
-  return JSON.parse(await new Response(new Blob([bin]).stream().pipeThrough(new DecompressionStream("gzip"))).text());
+  const bin = await b64Bytes($("#bundle").textContent.trim());
+  const d = JSON.parse(await new Response(new Blob([bin]).stream().pipeThrough(new DecompressionStream("gzip"))).text());
+  if (!d.details) d.details = lazyDetails();
+  return d;
 }
 const ramp = kind => [0,1,2,3,4,5,6].map(i => css(`--${kind}-${i}`));
 function computeBreaks() {
@@ -653,8 +686,11 @@ function locateMe(btn) {
 }
 function retop() {
   // best improvement and the cost of every project returning >= $1, under the current evidence filter
+  const ti = "ABCDU".indexOf($("#evid").value);
   D.bgs.features.forEach(f => {
-    const p = f.properties, r = (D.details[p.id] || {}).r || [];
+    const p = f.properties;
+    if (p.tp && ti >= 0) { [p.t, p.v, p.pc] = p.tp[ti]; return; } // precomputed by the build (no details needed)
+    const r = (D.details[p.id] || {}).r || [];
     let best = null, pc = 0;
     r.forEach(a => { const c = D.catalog[a[0]]; if (c.kind !== "value" || !allowed(a[0])) return;
       if (!best || a[8] > best[8]) best = a; if (a[8] >= 1) pc += a[3]; });
@@ -1230,13 +1266,40 @@ function hoverParcel(e) {
 }
 
 // ---------------- lot lines from the County parcel map (drawn by the County server, online only)
+// Speed: 512 px tiles (4x fewer server renders per screen than 256 px). If the County service has a pre-drawn tile
+// cache in the standard web-mercator grid, cachedLotLines() is used instead: those tiles are files, not renders.
+const PARCEL_MS = "https://public.gis.lacounty.gov/public/rest/services/LACounty_Cache/LACounty_Parcel/MapServer";
 const LotLines = L.TileLayer.extend({
   getTileUrl(c) {
-    const s = this._tileSize || 256, nw = this._map.unproject([c.x * 256, c.y * 256], c.z), se = this._map.unproject([(c.x + 1) * 256, (c.y + 1) * 256], c.z);
+    const ts = this.getTileSize().x, nw = this._map.unproject([c.x * ts, c.y * ts], c.z), se = this._map.unproject([(c.x + 1) * ts, (c.y + 1) * ts], c.z);
     const a = L.CRS.EPSG3857.project(nw), b = L.CRS.EPSG3857.project(se);
-    return `https://public.gis.lacounty.gov/public/rest/services/LACounty_Cache/LACounty_Parcel/MapServer/export?bbox=${a.x},${b.y},${b.x},${a.y}&bboxSR=3857&imageSR=3857&size=256,256&format=png32&transparent=true&f=image&dpi=96`;
+    return `${PARCEL_MS}/export?bbox=${a.x},${b.y},${b.x},${a.y}&bboxSR=3857&imageSR=3857&size=${ts},${ts}&format=png32&transparent=true&f=image&dpi=96`;
   }
 });
+const LOT_OPTS = { minZoom: 17, maxZoom: 19, opacity: .9, tileSize: 512, keepBuffer: 3, attribution: "Parcels © LA County Assessor" };
+// Resolves to a tile layer when the service publishes a standard web-mercator cache down to zoom 17, else null.
+async function cachedLotLines() {
+  const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 4000);
+  try {
+    const j = await (await fetch(`${PARCEL_MS}?f=json`, { signal: ctl.signal })).json(), ti = j.tileInfo || {};
+    const wkid = (ti.spatialReference || {}).latestWkid || (ti.spatialReference || {}).wkid;
+    const lod = (ti.lods || []).find(l => l.level === 17);
+    const web = [3857, 102100].includes(wkid) && ti.origin && Math.abs(ti.origin.x + 20037508.3428) < 1 && ti.rows === 256;
+    if (!j.singleFusedMapCache || !web || !lod || Math.abs(lod.resolution / 1.194328566855 - 1) > .01) return null;
+    const maxNative = Math.max(...ti.lods.map(l => l.level));
+    return L.tileLayer(`${PARCEL_MS}/tile/{z}/{y}/{x}`, { ...LOT_OPTS, tileSize: 256, maxNativeZoom: Math.min(maxNative, 19) });
+  } catch { return null; } finally { clearTimeout(t); }
+}
+// "Loading property lines…" note: shown while lot-line tiles are loading at zoom 17+, hidden when they finish.
+function watchLots(layer) {
+  const note = $("#lots-note"); if (!note || !layer) return;
+  let shownAt = 0;
+  const hide = () => { note.hidden = true; };
+  layer.on("loading", () => { if (map.getZoom() >= 17) { note.hidden = false; shownAt = Date.now(); } });
+  layer.on("load", () => setTimeout(hide, Math.max(0, 400 - (Date.now() - shownAt)))); // no flicker on fast loads
+  layer.on("remove", hide);
+  map.on("zoomend", () => { if (map.getZoom() < 17) hide(); });
+}
 
 // ---------------- homeowner upgrades (round 6; LA-metro averages, not this house)
 function upgradeTable(m) {
@@ -1434,11 +1497,14 @@ async function init() {
     restyle();
   };
   map.on("zoomend", zoomed);
-  let lots = null;
+  let lots = null, lotCache = null;
   const syncLots = () => { const want = $("#l-lots").checked;
-    if (want && !lots) lots = new LotLines("", { minZoom: 17, maxZoom: 19, opacity: .9, attribution: "Parcels © LA County Assessor" }).addTo(map);
+    if (want && !lots) { lots = (lotCache || new LotLines("", LOT_OPTS)).addTo(map); watchLots(lots); }
     if (!want && lots) { map.removeLayer(lots); lots = null; } };
   $("#l-lots").onchange = syncLots; syncLots();
+  // Upgrade to the County's pre-drawn tiles if it has them (checked once, in the background).
+  cachedLotLines().then(c => { if (!c) return; lotCache = c; if (lots) { map.removeLayer(lots); lots = null; syncLots(); } });
+  $("#lots-hood").onclick = () => { $("#lots-note").hidden = true; selectAt(map.getCenter()); };
   map.on("moveend", drawNumbers);
   let aerial = null;
   const syncAerial = () => { const want = $("#l-aerial").checked;

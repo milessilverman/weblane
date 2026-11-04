@@ -1,3 +1,5 @@
 neighborhood-roi/.cache/
 __pycache__/
 *.pyc
+node_modules/
+everyspace/e2e-shots/
