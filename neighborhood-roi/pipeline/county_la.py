@@ -1413,9 +1413,14 @@ FACILITY_KINDS = [  # (kind, regex on LMS layer name / categories / OSM tags)
 LMS = "https://public.gis.lacounty.gov/public/rest/services/LACounty_Dynamic/LMS_Data_Public/MapServer"
 
 
+NOT_PUBLIC = r"conference|convention|banquet|wedding|event cent|hotel|country club|private"
+
+
 def _kind_of(text):
     t = str(text).lower()
-    return next((k for k, pat in FACILITY_KINDS if re.search(pat, t)), None)
+    k = next((k for k, pat in FACILITY_KINDS if re.search(pat, t)), None)
+    # conference, convention and event venues aren't public community centers
+    return None if k == "community center" and re.search(NOT_PUBLIC, t) else k
 
 
 def facilities(osm_layer):
@@ -1686,6 +1691,72 @@ def stage_projects():
         note("projects", he_sites=len(he), he_capacity=float(he.capacity.sum()))
 
 
+# ------------------------------------------------------------------ official SB 79 transit stops and zones (SCAG)
+SB79_APP = "6a2891fa768646f8a410b1e7d249d8e2"   # SCAG Regional Data Platform experience app (round-7 research, H41)
+SB79_PORTALS = ["https://rdp.scag.ca.gov/portal/sharing/rest", "https://www.arcgis.com/sharing/rest"]
+
+
+def _service_urls(obj, out):
+    """Collect every Feature/Map service URL mentioned anywhere in an item's JSON (apps -> web maps -> layers)."""
+    if isinstance(obj, dict):
+        for v in obj.values():
+            _service_urls(v, out)
+    elif isinstance(obj, list):
+        for v in obj:
+            _service_urls(v, out)
+    elif isinstance(obj, str) and re.search(r"/(FeatureServer|MapServer)(/\d+)?$", obj):
+        out.add(obj)
+
+
+def stage_sb79():
+    urls, items, seen = set(), [SB79_APP], set()
+    while items and len(seen) < 25:
+        it = items.pop()
+        if it in seen:
+            continue
+        seen.add(it)
+        for portal in SB79_PORTALS:
+            try:
+                data = get(f"{portal}/content/items/{it}/data", params={"f": "json"}, timeout=60, tries=1).json()
+            except Exception:  # noqa: BLE001
+                continue
+            _service_urls(data, urls)
+            # web maps / data sources referenced by id
+            for m in re.findall(r'"itemId"\s*:\s*"([0-9a-f]{32})"', json.dumps(data)):
+                items.append(m)
+            break
+    for u in _agol_find("SB 79 TOD stops zones tiers", ["79"])[:5]:
+        urls.add(u)
+    note("sb79", candidate_urls=sorted(urls)[:40], items_read=len(seen))
+    frames = []
+    for u in sorted(urls):
+        if not re.search(r"79|tod|transit", u, re.I):
+            continue
+        lyrs = [u] if re.search(r"/\d+$", u) else []
+        if not lyrs:
+            try:
+                meta = get(u, params={"f": "json"}, timeout=60, tries=1).json()
+                lyrs = [f"{u}/{l['id']}" for l in meta.get("layers", [])]
+            except Exception:  # noqa: BLE001
+                continue
+        for lu in lyrs:
+            try:
+                g = arcgis_all(lu, bbox=BBOX, max_rows=60000)
+                if g is None or not len(g):
+                    continue
+                g["layer_url"] = lu
+                frames.append(g)
+                note("sb79", **{f"rows_{len(frames)}": f"{lu}: {len(g)} {list(g.columns)[:25]}"})
+            except Exception as e:  # noqa: BLE001
+                note("sb79", **{f"err_{len(frames)}": f"{lu}: {e}"[:200]})
+    if not frames:
+        raise RuntimeError("official SB 79 layer not reachable")
+    g = gpd.GeoDataFrame(pd.concat(frames, ignore_index=True), geometry="geometry", crs=4326)
+    keep = [c for c in g.columns if c != "geometry" and (g[c].dtype == object or re.search(r"tier", c, re.I))][:12]
+    g[keep + ["geometry"]].to_file(OUT / "map_sb79.geojson", driver="GeoJSON", COORDINATE_PRECISION=5)
+    note("sb79", features=len(g), geometry=g.geom_type.value_counts().to_dict())
+
+
 # ------------------------------------------------------------------ research endpoint check (round 6)
 RESEARCH = Path(__file__).resolve().parent.parent / "research" / "round6"
 
@@ -1942,7 +2013,7 @@ STAGES = {"geo": stage_geo, "osm": stage_osm, "transit": stage_transit, "sales":
           "parcels": stage_parcels, "assets": stage_assets,
           "tra": stage_tra, "assessed": stage_assessed, "basemap": stage_basemap,
           "research_check": stage_research_check, "zoning": stage_zoning,
-          "underused": stage_underused, "projects": stage_projects}
+          "underused": stage_underused, "projects": stage_projects, "sb79": stage_sb79}
 
 
 def main():
