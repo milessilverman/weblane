@@ -6,7 +6,7 @@ import { createPackage, createProperty, createSpace, search } from './listings.j
 import { describeAddon } from './describe.js';
 import { addReview, canReview, effectiveStatus, messagesFor, postMessage, ratingFor, systemMessage, threadsFor } from './social.js';
 import { calendar, hostSummary } from './host.js';
-import { BEAT_PCT, CLAIM_WINDOW_HOURS, evaluateClaim, PLATFORMS, unitComparison } from './compare.js';
+import { BEAT_PCT, CLAIM_WINDOW_HOURS, evaluateClaim, PLATFORMS, RESEARCHED, STALE_DAYS, unitComparison } from './compare.js';
 import { marketFor, ownerView, updateSpace } from './owner.js';
 import { HOST_FEE, SERVICE_FEE } from './pricing.js';
 
@@ -30,16 +30,16 @@ export function handleApi(store, method, path, body = {}, params = new URLSearch
     ['GET', /^catalog$/, () => ({ terms: TERMS, groups: GROUPS, groupIcons: GROUP_ICONS, categories: CATEGORIES, modes: MODES, audiences: AUDIENCES, typical: TYPICAL })],
     ['GET', /^users$/, () => db.users],
     ['GET', /^spec$/, () => ({ html: spec ? spec() : '' })],
-    ['GET', /^search$/, () => search(db, Object.fromEntries(params))],
+    ['GET', /^search$/, () => search(db, { ...Object.fromEntries(params), now: now() })],
     ['GET', /^properties$/, () => listProperties(db, params.get('hostId'))],
-    ['GET', /^spaces\/([\w-]+)$/, ([, id]) => spaceDetail(db, id, params.get('userId'))],
+    ['GET', /^spaces\/([\w-]+)$/, ([, id]) => spaceDetail(db, id, params.get('userId'), now())],
     ['GET', /^spaces\/([\w-]+)\/calendar$/, ([, id]) => calendar(db, id, params.get('from') ?? now().slice(0, 10), Number(params.get('days') ?? 42))],
     ['POST', /^properties$/, () => mutate(() => createProperty(db, body, store.newId))],
     ['POST', /^spaces$/, () => mutate(() => createSpace(db, body, store.newId))],
     ['POST', /^packages$/, () => mutate(() => createPackage(db, body, store.newId))],
-    ['POST', /^quote$/, () => quote(db, body)],
+    ['POST', /^quote$/, () => quote(db, { ...body, now: now() })],
     ['POST', /^bookings$/, () => mutate(() => {
-      const b = createBooking(db, body, opts());
+      const b = createBooking(db, { ...body, now: now() }, opts());
       const what = listBookings(db, b.renterId, now()).find((x) => x.id === b.id).itemsLabel;
       const renter = db.users.find((u) => u.id === b.renterId)?.name;
       systemMessage(db, b.id, b.status === 'confirmed' ? `Booking confirmed: ${what}.`
@@ -65,11 +65,11 @@ export function handleApi(store, method, path, body = {}, params = new URLSearch
     }],
     ['POST', /^saves$/, () => mutate(() => toggleSave(db, body.userId, body.spaceId))],
     // Owner tools
-    ['GET', /^spaces\/([\w-]+)\/manage$/, ([, id]) => ownerView(db, id, params.get('userId'))],
+    ['GET', /^spaces\/([\w-]+)\/manage$/, ([, id]) => ownerView(db, id, params.get('userId'), now())],
     ['POST', /^spaces\/([\w-]+)\/update$/, ([, id]) => mutate(() => updateSpace(db, id, body.actorId, body.changes ?? {}, opts()))],
     ['GET', /^market$/, () => marketFor(db, params.get('category'), params.get('exclude'))],
     // Pricing transparency
-    ['GET', /^pricing$/, () => ({ serviceFee: SERVICE_FEE, hostFee: HOST_FEE, beatPct: BEAT_PCT, claimWindowHours: CLAIM_WINDOW_HOURS, platforms: PLATFORMS })],
+    ['GET', /^pricing$/, () => ({ serviceFee: SERVICE_FEE, hostFee: HOST_FEE, beatPct: BEAT_PCT, claimWindowHours: CLAIM_WINDOW_HOURS, staleDays: STALE_DAYS, researched: RESEARCHED, platforms: PLATFORMS })],
     ['POST', /^bookings\/([\w-]+)\/price-match$/, ([, id]) => mutate(() => {
       const b = db.bookings.find((x) => x.id === id);
       if (!b) throw new BookingError('Booking not found');
@@ -112,7 +112,7 @@ function toggleSave(db, userId, spaceId) {
   return { saved: i < 0 };
 }
 
-function spaceDetail(db, id, userId) {
+function spaceDetail(db, id, userId, now) {
   const s = db.spaces.find((x) => x.id === id);
   if (!s) throw new BookingError('Space not found');
   const property = db.properties.find((p) => p.id === s.propertyId);
@@ -128,7 +128,7 @@ function spaceDetail(db, id, userId) {
     rating: ratingFor(db, s.id),
     saved: !!userId && (db.saves ?? []).some((x) => x.userId === userId && x.spaceId === id),
     // Same space on other sites, one unit of each length, all-in on both sides.
-    comparisons: CATEGORIES[s.category].terms.map((t) => unitComparison(s, t)).filter(Boolean),
+    comparisons: CATEGORIES[s.category].terms.map((t) => unitComparison(s, t, now)).filter(Boolean),
     pricing: { serviceFee: SERVICE_FEE, hostFee: HOST_FEE, beatPct: BEAT_PCT },
     reviews: db.reviews.filter((r) => r.spaceId === id).sort((a, b) => (a.at < b.at ? 1 : -1))
       .map((r) => ({ ...r, author: userName(r.by) })),

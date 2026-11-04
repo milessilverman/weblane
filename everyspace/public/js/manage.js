@@ -33,9 +33,12 @@ export async function renderManage(view, [id]) {
       ${s.takeHome.length ? `<section class="block"><h2>You earn the same everywhere</h2>
         <p class="muted small">What you take home per unit after each site's owner fee (their fees are estimates). Matching your take-home here makes Everyspace the cheapest place to book you, because our fees are lower.</p>
         <div class="compare">${s.takeHome.map((r, i) => `<div class="compare-row take-row"><span><strong>${esc(r.name)} · ${term(r.term).label}</strong>
-            <span class="muted small">You get ${money(r.there)} there · ${r.here != null ? `${money(r.here)} here` : 'not offered here'} · renters pay ~${money(r.renterThere)} there</span>
-            <span class="small payout">Price here for the same take-home: ${money(r.sameRate)} → renters pay ${money(r.renterAtSame)}</span></span>
-            ${r.here == null || Math.abs(r.sameRate - (s.rates?.[r.term] ?? 0)) > 0.01 ? `<button class="btn small" data-same="${i}">Use ${money(r.sameRate)}</button>` : '<span class="badge ok">Matched</span>'}</div>`).join('')}</div></section>` : ''}
+            <span class="muted small">You get ${r.there != null ? money(r.there) : r.thereRange ? `${money(r.thereRange[0])}–${money(r.thereRange[1])}` : 'an unpublished amount'} there
+              · ${r.here != null ? `${money(r.here)} here` : 'not offered here'}${r.renterThere != null ? ` · renters pay ~${money(r.renterThere)} there` : ''}</span>
+            ${r.sameRate != null ? `<span class="small payout">Price here for the same take-home: ${money(r.sameRate)} → renters pay ${money(r.renterAtSame)}</span>`
+              : `<span class="small muted">${esc(r.name)} doesn't publish one owner fee, so we can't work out a same-take-home price.</span>`}</span>
+            ${r.sameRate == null ? '' : r.here == null || Math.abs(r.sameRate - (s.rates?.[r.term] ?? 0)) > 0.01 ? `<button class="btn small" data-same="${i}">Use ${money(r.sameRate)}</button>` : '<span class="badge ok">Matched</span>'}</div>`).join('')}</div></section>` : ''}
+      ${s.notices.length ? `<div class="notice">📄 <div><strong>Before you compare prices</strong>${s.notices.map((n) => `<div class="small">${esc(n.text)}</div>`).join('')}</div></div>` : ''}
 
       ${c.audience === 'business' ? '' : `<section class="block row-between"><div><h2>${(s.mode ?? c.mode) === 'instant' ? '⚡ Instant book' : '✋ You approve each request'}</h2>
         <div class="muted small">${(s.mode ?? c.mode) === 'instant' ? 'Renters book right away. Most bookings, least work.' : 'You get 24 hours to accept or decline. Dates are held meanwhile.'}</div></div>
@@ -113,7 +116,7 @@ export async function renderManage(view, [id]) {
     $('#ext-list').innerHTML = externals.map((e, i) => {
       const p = pricing.platforms[e.platform];
       return `<div class="list-row"><span class="pkg-icon">🔗</span><div><strong>${esc(p?.name ?? e.platform)}</strong>
-        <div class="muted small">${Object.entries(e.rates).map(([t, v]) => `${money(v)}/${term(t).unit}`).join(' · ')}${e.cleaningFee ? ` + ${money(e.cleaningFee)} fee` : ''} · checked ${e.verifiedAt ? fmtDate(e.verifiedAt) : 'pending'}${e.demo ? ' · demo link' : ''}</div></div>
+        <div class="muted small">${Object.entries(e.rates).map(([t, v]) => `${money(v)}/${term(t).unit}`).join(' · ')}${e.cleaningFee ? ` + ${money(e.cleaningFee)} fee` : ''} · your price, checked ${e.verifiedAt ? fmtDate(e.verifiedAt) : 'pending'}${e.verifiedAt && (Date.now() - Date.parse(e.verifiedAt)) / 864e5 > pricing.staleDays ? ' · <b>out of date, update it</b>' : ''}${e.demo ? ' · demo link' : ''}</div></div>
         <button class="btn small ghost" data-unlink="${i}">Remove</button></div>`;
     }).join('');
     for (const b of $$('[data-unlink]', view)) b.onclick = async () => {
@@ -132,38 +135,40 @@ export async function renderManage(view, [id]) {
 export async function renderFairPrice(view) {
   const p = await api('pricing');
   const pct = (n) => `${Math.round(n * 1000) / 10}%`;
+  const share = p.serviceFee + p.hostFee, ofTotal = share / (1 + p.serviceFee);
+  const fee = (v) => (v == null ? '<span class="muted">not published</span>' : pct(v));
   view.innerHTML = `${topbar('How pricing works')}
     <div class="page narrow plan">
       <h1 class="page-title">Honest prices, every time</h1>
-      <p class="lead">The price you see is the price you pay. Owners keep more. And if the same space is cheaper somewhere else, we beat it.</p>
+      <p class="lead">The price you see is the price you pay, including taxes we can calculate. Owners keep more here. And if the same space is cheaper somewhere else, we cut our own fees to beat it, up to everything we earn on that booking.</p>
 
       <h2>What you pay, and where it goes</h2>
       <div class="money-flow"><div style="flex:${(1 - p.hostFee) * 100}"><strong>${pct(1 - p.hostFee)}</strong><span>to the owner</span></div>
         <div style="flex:${p.hostFee * 100 + 6}"><strong>${pct(p.hostFee)}</strong><span>owner fee</span></div>
         <div style="flex:${p.serviceFee * 100 + 6}" class="fee"><strong>+${pct(p.serviceFee)}</strong><span>service fee</span></div></div>
       <ul>
-        <li><strong>All-in prices.</strong> Every price in search already includes our ${pct(p.serviceFee)} service fee. No surprise fees at checkout, no hidden cleaning fees.</li>
-        <li><strong>Owners keep ${pct(1 - p.hostFee)}.</strong> We take ${pct(p.hostFee)} from the owner's price, and the breakdown is on every receipt.</li>
-        <li><strong>Deposits are held, never charged</strong>, unless there's damage the owner documents with check-in/out photos.</li>
+        <li><strong>All-in prices.</strong> Every price includes our ${pct(p.serviceFee)} service fee. Lodging tax is added up front where we know it (for example San Diego's 11.75% transient occupancy tax on stays under a month). Where a tax isn't set up yet, checkout says so instead of showing it as $0.</li>
+        <li><strong>Owners keep ${pct(1 - p.hostFee)}</strong> of their price. In total, Everyspace keeps ${pct(ofTotal)} of what you pay (our ${pct(p.serviceFee)} + ${pct(p.hostFee)} fees). Every receipt shows the exact amount.</li>
+        <li><strong>Deposits are separate from what you're charged.</strong> Short stays: a temporary card hold, released after checkout unless the owner documents damage. Leases: a refundable deposit collected under the rental agreement.</li>
       </ul>
 
-      <h2>Price-beat guarantee</h2>
+      <h2>Price-beat guarantee: the full terms</h2>
+      <p><strong>The limit, up front:</strong> we fund the beat from our own fees on that booking (the ${pct(p.serviceFee)} service fee and the ${pct(p.hostFee)} owner fee), never from the owner's payout. If a lower price elsewhere is more than those fees can cover, we give up all of them and tell you it's still cheaper there.</p>
       <ol>
-        <li><strong>The owner earns the same everywhere.</strong> Prices differ between sites mostly because of each site's fees. Ours are lower, so the same owner price usually costs you less here.</li>
-        <li><strong>Before you book:</strong> if the owner also lists the space on another site, we show you both prices side by side. If theirs is lower, we automatically <strong>cut our own fee</strong> to beat it by ${pct(p.beatPct)} at checkout.</li>
-        <li><strong>After you book:</strong> found the same space cheaper for the same dates? Send us the link and the total within ${p.claimWindowHours} hours of booking, or any time before it starts. We refund the difference plus ${pct(p.beatPct)} of the other price.</li>
-        <li><strong>It comes out of our cut, never the owner's.</strong> We'll give up everything we earn on a booking (our ${pct(p.serviceFee)} service fee and ${pct(p.hostFee)} owner fee) to be the cheapest. If an owner charges less somewhere else than even that covers, we say so plainly and refund all of our cut.</li>
-        <li>It has to be the same space, the same dates and the full total including that site's fees.</li>
+        <li><strong>Before you book:</strong> if the owner has told us their price on another site, we show both totals side by side, before tax. If theirs is lower and we know that site's renter fees, checkout beats it by ${pct(p.beatPct)} automatically, within the limit above.</li>
+        <li><strong>After you book:</strong> send us the link and the total within ${p.claimWindowHours} hours of booking, or any time before your booking starts. Include a screenshot of their checkout total. We refund the difference plus ${pct(p.beatPct)} of their price, within the limit above.</li>
+        <li><strong>What counts:</strong> the same space, the same dates and times, the same number of guests, vehicles or units, and the full total including that site's mandatory fees. Member-only prices, coupons and different cancellation terms don't count.</li>
+        <li><strong>How we check:</strong> claims matching the owner's own current listing are approved instantly. Others are reviewed by a person within 24 hours. Refunds go back to your original payment method.</li>
+        <li><strong>Disagree with a decision?</strong> Reply in the booking's chat and a different person reviews it.</li>
       </ol>
-      <p class="muted">Every receipt shows exactly what Everyspace earned on the booking.</p>
 
       <h2>How we compare totals</h2>
-      <p class="muted">Other sites add their own fees on top of the owner's price. We include them so the comparison is fair. These are estimates and are labeled that way.</p>
-      <div class="table-wrap"><table><thead><tr><th>Site</th><th>Renter fee</th><th>Per booking</th><th>Owner keeps</th></tr></thead><tbody>
-        <tr><td><strong>Everyspace</strong></td><td><strong>${pct(p.serviceFee)}</strong></td><td>$0</td><td><strong>${pct(1 - p.hostFee)}</strong></td></tr>
-        ${Object.values(p.platforms).map((x) => `<tr><td>${esc(x.name)}${x.verified ? '' : ' <span class="muted">(estimate)</span>'}</td><td>${pct(x.guestFeePct)}</td><td>${money(x.perBookingFee)}</td><td>${pct(1 - x.hostFeePct)}</td></tr>`).join('')}
+      <p class="muted">Other sites' prices come from what owners tell us, dated, and are only used while they're under ${p.staleDays} days old. We never copy listings from other sites. Fees below were researched on ${esc(p.researched)} from each site's own help pages. Where a site doesn't publish a renter fee, we can't total its price, so those listings are shown but not compared.</p>
+      <div class="table-wrap"><table><thead><tr><th>Site</th><th>Renter fee</th><th>Owner fee</th><th>Notes</th></tr></thead><tbody>
+        <tr><td><strong>Everyspace</strong></td><td><strong>${pct(p.serviceFee)}</strong></td><td><strong>${pct(p.hostFee)}</strong></td><td>No cleaning or booking fees.</td></tr>
+        ${Object.values(p.platforms).map((x) => `<tr><td>${esc(x.name)}</td><td>${fee(x.guestFeePct)}</td><td>${x.hostFeePct != null ? pct(x.hostFeePct) : x.hostFeeRange ? `${pct(x.hostFeeRange[0])}–${pct(x.hostFeeRange[1])}` : '<span class="muted">not published</span>'}</td><td class="small muted">${esc(x.plan || '')}</td></tr>`).join('')}
       </tbody></table></div>
-      <p class="muted small">We never copy listings from other sites. Comparisons come from links owners add themselves and from links renters send us, and we re-check them regularly.</p>
+      <p class="muted small">Everyspace isn't affiliated with any of these sites. Names are used only to identify where a price came from.</p>
     </div>`;
   bindBack(view);
 }

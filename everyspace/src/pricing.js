@@ -108,12 +108,16 @@ export function totals(lines, term, start, end, pkg) {
     schedule = { dueNow: 0, recurring: money(periodicSum * (1 + SERVICE_FEE)), every: unit,
       note: 'Paid by the partner each year once the system is commissioned.' };
   } else if (periodicSum != null) {
+    // A long rental's deposit can't be a card hold (holds last days, not months): it's collected separately under
+    // the rental agreement and kept apart from rent. dueNow is rent only.
     const first = money(periodicSum * (1 + SERVICE_FEE));
-    schedule = { dueNow: money(first + deposit), recurring: first, every: unit,
-      note: 'First period plus deposit now, then autopay each period.' };
+    schedule = { dueNow: first, recurring: first, every: unit, depositKind: deposit ? 'deposit' : null,
+      note: deposit ? `First period now, then autopay each period. Refundable deposit of $${deposit} is collected separately under the rental agreement.`
+        : 'First period now, then autopay each period.' };
   } else {
-    schedule = { dueNow: money(rent + serviceFee), recurring: null, every: null,
-      note: deposit ? `Deposit of $${deposit} held, not charged.` : 'Charged in full at booking.' };
+    // Short stays: the deposit is a temporary card hold, released after checkout unless documented damage.
+    schedule = { dueNow: money(rent + serviceFee), recurring: null, every: null, depositKind: deposit ? 'card_hold' : null,
+      note: deposit ? `Temporary card hold of $${deposit} (not charged; released after checkout).` : 'Charged in full at booking.' };
   }
 
   return {

@@ -132,6 +132,10 @@ Rules:
 3. **It comes out of our cut, never the owner's.** The owner earns the same no matter where they list; prices differ between sites mostly because of each site's fees. So we compete by shrinking our own margin: the service fee (10%) plus the owner fee (3%) on that booking.
 4. **Capped at our whole cut.** We'll go down to zero margin on a booking, but never below it. If the owner charges so much less elsewhere that even our whole cut can't beat it, checkout says so plainly ("we gave up our entire cut to get as close as we can") and the owner is nudged to match.
 5. Every quote and receipt shows **what Everyspace earns** on the booking.
+
+**Taxes.** Comparisons are before tax, since the same tax applies at that address on any site. All-in totals include lodging tax where it's known (San Diego TOT 11.75% lowest zone, exempt at one calendar month or more; Phoenix 13.07%; Indianapolis 17%). Other categories say "tax not determined yet" until a CPA classifies them (`RESEARCH_RESULTS.md` §4).
+
+**Unknown competitor fees.** When a site doesn't publish its renter fee, its listing is shown but not priced or beaten automatically. Renters can still claim with that site's real checkout total.
 6. One claim per booking; same space, same dates, full total with fees.
 
 ## 1d. Owner-friendly by default

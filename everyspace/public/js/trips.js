@@ -64,6 +64,7 @@ export async function renderTrip(view, [id]) {
         ${q.packageDiscount ? `<div class="qline ok"><span>Bundle discount</span><span>−${money(q.packageDiscount)}</span></div>` : ''}
         ${q.serviceFee != null ? `<div class="qline"><span>Service fee</span><span>${money(q.serviceFee)}</span></div>` : ''}
         ${q.priceBeat ? `<div class="qline beat"><span>🛡️ Price beat vs ${esc(q.priceBeat.name)} (paid by Everyspace)</span><span>−${money(q.priceBeat.credit)}${q.schedule?.recurring ? `/${q.schedule.every}` : ''}</span></div>` : ''}
+        ${(q.tax?.items || []).map((t) => `<div class="qline"><span>${esc(t.name)}</span><span>${money(t.amount)}</span></div>`).join('')}
         <div class="qline total"><span>Total</span><span>${money(q.total)}</span></div>
         ${q.schedule?.recurring ? `<div class="qline muted"><span>Billed every ${q.schedule.every}</span><span>${money(q.schedule.recurring)}</span></div>` : ''}
         ${b.priceMatch ? `<div class="qline ${b.priceMatch.status === 'approved' ? 'beat' : 'muted'}"><span>🛡️ Price match vs ${esc(b.priceMatch.name)} ${b.priceMatch.status === 'approved' ? '(refunded)' : '(in review)'}</span><span>−${money(b.priceMatch.credit)}${b.priceMatch.perPeriod ? `/${q.schedule.every}` : ''}</span></div>` : ''}

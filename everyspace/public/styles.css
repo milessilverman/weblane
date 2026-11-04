@@ -677,3 +677,7 @@ span.block { display: block; }
 .our-cut { font-size: 13px; color: var(--muted); padding: 8px 10px; border-radius: 10px; background: var(--panel-2); }
 .take-row { align-items: center; }
 .take-row > span { gap: 2px; }
+.compare-row.unpriced strong { color: var(--muted); }
+.compare-foot { padding: 6px 14px 10px; }
+.earn-row .src { font-size: 11px; opacity: .8; }
+.quote-row { opacity: .95; }

@@ -690,6 +690,10 @@ span.block { display: block; }
 .our-cut { font-size: 13px; color: var(--muted); padding: 8px 10px; border-radius: 10px; background: var(--panel-2); }
 .take-row { align-items: center; }
 .take-row > span { gap: 2px; }
+.compare-row.unpriced strong { color: var(--muted); }
+.compare-foot { padding: 6px 14px 10px; }
+.earn-row .src { font-size: 11px; opacity: .8; }
+.quote-row { opacity: .95; }
 </style>
 </head>
 <body>
@@ -742,7 +746,7 @@ const c = (group, label, terms, measure, mode, checklist, extra = {}) => ({
 const CATEGORIES = {
   // Living
   entire_home: c('living', 'Entire home', ['daily', 'weekly', 'monthly', 'lease'], 'whole', 'request',
-    ['Short-term rental permit / registration', 'Occupancy tax account', 'Smoke & CO detectors', 'Host insurance'],
+    ['Short-term rental license and number (San Diego: STRO tier; whole homes need Tier 3/4 and a 2-night minimum)', 'Occupancy tax registration (or confirmed platform collection)', 'Smoke & CO detectors'],
     { deposit: 300 }),
   apartment_unit: c('living', 'Apartment / unit', ['daily', 'monthly', 'lease'], 'whole', 'request',
     ['Rental registration', 'Habitability inspection', 'Smoke & CO detectors'], { deposit: 500 }),
@@ -753,25 +757,25 @@ const CATEGORIES = {
 
   // Outdoor & activity
   backyard: c('outdoor', 'Backyard', ['hourly', 'daily'], 'whole', 'instant',
-    ['Noise curfew', 'Max guests', 'Restroom access plan']),
+    ['City allows paid gatherings at this address (zoning / event permit)', 'Noise curfew (San Diego: quieter limits 10 pm–7 am)', 'Max guests', 'Restroom access plan']),
   yard_campsite: c('outdoor', 'Yard campsite', ['daily', 'weekly'], 'site', 'request',
     ['Restroom access', 'Fire policy']),
   pool: c('outdoor', 'Pool', ['hourly'], 'whole', 'request',
-    ['Pool fencing / gate', 'Liability waiver', 'Insurance confirmation']),
+    ['County health classification confirmed (a paid private pool may count as a public pool)', 'Pool fencing / gate', 'Liability waiver']),
   workspace: c('outdoor', 'Workspace / studio / workshop', ['hourly', 'daily', 'monthly'], 'whole', 'instant',
     ['Tool / equipment rules']),
   film_location: c('outdoor', 'Filming / photo location', ['hourly', 'daily'], 'whole', 'request',
     ['City film permit (if required)', 'Neighbor notice']),
   kitchen: c('outdoor', 'Kitchen', ['hourly', 'daily', 'monthly'], 'whole', 'request',
-    ['Cottage food / food handler rules', 'Cleaning checklist', 'Allergen disclosure']),
+    ['Kitchen is permitted for this use (cottage food / health department)', 'Cleaning checklist', 'Allergen disclosure']),
   sport_court: c('outdoor', 'Sport court', ['hourly'], 'whole', 'instant',
     ['Lighting hours', 'Liability waiver']),
 
   // Parking
   parking_spot: c('parking', 'Parking spot', ['hourly', 'daily', 'weekly', 'monthly', 'lease'], 'spot', 'instant',
-    ['Spot photos & dimensions', 'Access instructions']),
+    ['City allows paid parking at this address', 'Spot photos & dimensions', 'Access instructions']),
   rv_parking: c('parking', 'RV / boat / trailer parking', ['weekly', 'monthly', 'lease'], 'spot', 'request',
-    ['Max length', 'HOA allows RV storage']),
+    ['Storage only: no one sleeps in the RV', 'Max length', 'HOA allows RV storage']),
   ev_charging: c('parking', 'EV charging', ['hourly', 'daily', 'monthly'], 'charger', 'instant',
     ['Charger type & kW']),
   dock_slip: c('parking', 'Boat dock / slip', ['daily', 'weekly', 'monthly', 'lease'], 'slip', 'request',
@@ -795,8 +799,8 @@ const CATEGORIES = {
 
   // Energy & infrastructure
   rooftop_solar: c('energy', 'Rooftop solar', ['infrastructure'], 'sqft', 'proposal',
-    ['Roof age & structural assessment', 'Utility interconnection path', 'Removal / re-roof clause',
-      'Recorded lease or easement', 'HOA solar rights'], { minYears: 10 }),
+    ['Usable roof area measured (most programs need 40,000+ sq ft)', 'Roof age & structural assessment', 'Utility interconnection path',
+      'Removal / re-roof clause', 'Recorded lease or easement', 'HOA solar rights'], { minYears: 10 }),
   battery_site: c('energy', 'Battery site', ['infrastructure'], 'site', 'proposal',
     ['NFPA 855 setbacks', 'Utility / VPP program', 'Electrical permit']),
   charger_site: c('energy', 'Public EV charger site', ['infrastructure'], 'site', 'proposal',
@@ -828,25 +832,57 @@ const ICONS = {
   building: '🏗️',
 };
 
-// Typical local prices: starting points for new listings and the earnings estimator.
+// Local example prices (San Diego, researched 2026-11-04, RESEARCH_RESULTS.md §8). Starting points for new listings
+// and the earnings illustration. These are EXAMPLE LISTINGS or ASSUMPTIONS, not typical income or medians:
+// TYPICAL_META says which, with the source. Unknown cells are simply absent.
 const TYPICAL = {
-  entire_home: { daily: 180, weekly: 1100, monthly: 3500, lease: 3200 }, apartment_unit: { daily: 120, monthly: 2000, lease: 1850 },
-  adu: { daily: 110, weekly: 650, monthly: 1800, lease: 1700 }, private_room: { daily: 70, weekly: 420, monthly: 1100, lease: 1000 },
-  backyard: { hourly: 30, daily: 150 }, yard_campsite: { daily: 30, weekly: 180 }, pool: { hourly: 40 },
-  workspace: { hourly: 15, daily: 80, monthly: 400 }, film_location: { hourly: 150, daily: 900 },
+  entire_home: { daily: 180, weekly: 1100, monthly: 3400, lease: 3200 }, apartment_unit: { daily: 120, monthly: 2950, lease: 2600 },
+  adu: { daily: 110, weekly: 650, monthly: 3500, lease: 3000 }, private_room: { daily: 70, weekly: 420, monthly: 1650, lease: 1500 },
+  backyard: { hourly: 145, daily: 400 }, yard_campsite: { daily: 30, weekly: 180 }, pool: { hourly: 33 },
+  workspace: { hourly: 30, daily: 33, monthly: 250 }, film_location: { hourly: 105, daily: 900 },
   kitchen: { hourly: 25, daily: 150, monthly: 900 }, sport_court: { hourly: 20 },
-  parking_spot: { hourly: 4, daily: 15, weekly: 70, monthly: 130, lease: 120 }, rv_parking: { weekly: 70, monthly: 220, lease: 200 },
-  ev_charging: { hourly: 5, daily: 25, monthly: 120 }, dock_slip: { daily: 40, weekly: 220, monthly: 350, lease: 320 },
-  garage_storage: { weekly: 25, monthly: 90, lease: 80 }, attic_storage: { monthly: 50, lease: 45 }, basement_storage: { weekly: 20, monthly: 60, lease: 55 },
-  garden_plot: { monthly: 25, lease: 20 }, beehive_site: { monthly: 15, lease: 12 }, pasture: { monthly: 120, lease: 100 },
-  rooftop_solar: { infrastructure: 1000 }, battery_site: { infrastructure: 600 }, charger_site: { infrastructure: 1500 }, telecom_site: { infrastructure: 3500 },
-  fleet_parking: { monthly: 180, lease: 160 }, signage: { lease: 400, infrastructure: 4200 }, parcel_locker: { lease: 75, infrastructure: 900 },
+  parking_spot: { hourly: 4, daily: 20, weekly: 70, monthly: 167, lease: 160 }, rv_parking: { weekly: 70, monthly: 190, lease: 180 },
+  ev_charging: { hourly: 5, daily: 25, monthly: 120 }, dock_slip: { daily: 60, weekly: 220, monthly: 350, lease: 320 },
+  garage_storage: { weekly: 25, monthly: 250, lease: 230 }, attic_storage: { monthly: 39, lease: 36 }, basement_storage: { weekly: 20, monthly: 60, lease: 55 },
+  garden_plot: { monthly: 25, lease: 16 }, beehive_site: {}, pasture: { monthly: 120, lease: 100 },
+  rooftop_solar: {}, battery_site: {}, charger_site: {}, telecom_site: {},
+  fleet_parking: { monthly: 180, lease: 160 }, signage: { lease: 406, infrastructure: 4869 }, parcel_locker: {},
+};
+// basis: "example" = a dated local listing or operator price; "assumption" = our placeholder, not researched.
+const EX = (terms, source, note = '') => ({ basis: 'example', terms, source, note });
+const TYPICAL_META = {
+  entire_home: EX(['monthly'], 'Furnished Finder San Diego listings ($3,400 2BR; $3,800 bungalow)'),
+  apartment_unit: EX(['monthly'], 'Furnished Finder San Diego 1BR example ($2,950)'),
+  adu: EX(['monthly'], 'Furnished Finder San Diego ADU listing ($3,500 base; utilities unclear)'),
+  private_room: EX(['monthly'], 'Furnished Finder San Diego private room ($1,650)'),
+  backyard: EX(['hourly'], 'Peerspace San Diego backyard venues ($140–150/hr, 2-hour minimum)', 'Event-venue backyards; a plain backyard may rent for much less.'),
+  pool: EX(['hourly'], 'Swimply Clairemont saltwater pool ($33/hr, up to 5 guests)'),
+  workspace: EX(['hourly', 'daily', 'monthly'], 'LiquidSpace San Diego (offices $30+/hr, day passes $30–35, desks $195–300/mo)'),
+  film_location: EX(['hourly'], 'Peerspace San Diego filming locations (platform-reported average $105/hr)'),
+  kitchen: EX(['hourly'], 'Park 734 commissary kitchen ($22–27/hr)', 'A licensed commercial kitchen, not a home kitchen.'),
+  parking_spot: EX(['daily', 'monthly'], 'Park It On Market garage ($20–25/24h; $200/mo) and Neighbor monthly spaces ($157–189)', 'Event days near Petco Park: $10/hr meters, $15 per 12h garage event rate.'),
+  rv_parking: EX(['monthly'], 'Neighbor San Diego RV storage ($190/mo, 10×35)'),
+  dock_slip: EX(['daily'], 'Port of San Diego guest dock ($1.51/ft/day; 40 ft = $60.40)', 'Public guest dock, not a private marina lease.'),
+  garage_storage: EX(['monthly'], 'Neighbor San Diego garages ($250/mo, 10×20)'),
+  attic_storage: EX(['monthly'], 'Neighbor Vista attic listing ($39/mo, 4×7)'),
+  garden_plot: EX(['lease'], 'Sweetwater Community Garden permit ($195/yr for 10×20 = $16.25/mo)'),
+  beehive_site: { basis: 'unknown', terms: [], source: 'Local hive-hosting programs', note: 'In some programs the homeowner pays the beekeeper, not the other way round.' },
+  rooftop_solar: { basis: 'unknown', terms: [], source: 'Solar Landscape, Nexamp', note: 'No standard rent for ordinary house roofs. Commercial programs usually want 40,000+ sq ft and paid about $0.25–0.85 per sq ft per year (Dec 2024).' },
+  battery_site: { basis: 'unknown', terms: [], source: 'Enel X, Nine Energy', note: 'Rent is negotiated; programs screen for large outdoor pads and big electrical service.' },
+  charger_site: { basis: 'unknown', terms: [], source: 'EVgo', note: 'Rent is negotiated; EVgo-owned sites need a 10-year minimum lease.' },
+  telecom_site: { basis: 'unknown', terms: [], source: 'Crown Castle', note: 'Rent is negotiated; new tower demand is currently minimal.' },
+  signage: { basis: 'benchmark', terms: ['lease', 'infrastructure'], source: 'Lamar 2025 10-K', note: 'Portfolio average ≈ $4,869 per site per year ($406/mo), calculated; not a local offer.' },
+  parcel_locker: { basis: 'unknown', terms: [], source: 'Amazon Locker via UNFI', note: 'Some programs pay retailers monthly by locker size; amounts aren\'t published.' },
+  fleet_parking: { basis: 'assumption', terms: [], source: 'Neighbor fleet program', note: 'Fleet contract rents aren\'t published.' },
 };
 
 for (const [k, cat] of Object.entries(CATEGORIES)) {
   cat.icon = ICONS[k];
   cat.audience = GROUP_AUDIENCE[cat.group] ?? 'consumer';
-  if (TYPICAL[k]) cat.typical = TYPICAL[k];
+  if (TYPICAL[k] && Object.keys(TYPICAL[k]).length) cat.typical = TYPICAL[k];
+  cat.typicalMeta = TYPICAL_META[k] ?? { basis: 'assumption', terms: [], source: 'Everyspace placeholder (not researched)' };
+  // Every rentable use needs the owner's insurance confirmed (homeowner policies often exclude rentals; NAIC).
+  if (cat.group !== 'container') cat.checklist = [...cat.checklist, 'Insurance covers this use (homeowner policies may not)'];
 }
 
 const GROUP_ICONS = { living: '🏠', outdoor: '🎉', parking: '🅿️', storage: '📦', land: '🌱', energy: '☀️', commercial: '🚚', container: '🏗️' };
@@ -857,7 +893,7 @@ function category(key) {
   return cat;
 }
 
-__m['catalog'] = { TERMS, MODES, GROUPS, AUDIENCES, CATEGORIES, TYPICAL, GROUP_ICONS, category };
+__m['catalog'] = { TERMS, MODES, GROUPS, AUDIENCES, CATEGORIES, TYPICAL, TYPICAL_META, GROUP_ICONS, category };
 })();
 // ---- src/time.js ----
 (() => {
@@ -1062,12 +1098,16 @@ function totals(lines, term, start, end, pkg) {
     schedule = { dueNow: 0, recurring: money(periodicSum * (1 + SERVICE_FEE)), every: unit,
       note: 'Paid by the partner each year once the system is commissioned.' };
   } else if (periodicSum != null) {
+    // A long rental's deposit can't be a card hold (holds last days, not months): it's collected separately under
+    // the rental agreement and kept apart from rent. dueNow is rent only.
     const first = money(periodicSum * (1 + SERVICE_FEE));
-    schedule = { dueNow: money(first + deposit), recurring: first, every: unit,
-      note: 'First period plus deposit now, then autopay each period.' };
+    schedule = { dueNow: first, recurring: first, every: unit, depositKind: deposit ? 'deposit' : null,
+      note: deposit ? `First period now, then autopay each period. Refundable deposit of $${deposit} is collected separately under the rental agreement.`
+        : 'First period now, then autopay each period.' };
   } else {
-    schedule = { dueNow: money(rent + serviceFee), recurring: null, every: null,
-      note: deposit ? `Deposit of $${deposit} held, not charged.` : 'Charged in full at booking.' };
+    // Short stays: the deposit is a temporary card hold, released after checkout unless documented damage.
+    schedule = { dueNow: money(rent + serviceFee), recurring: null, every: null, depositKind: deposit ? 'card_hold' : null,
+      note: deposit ? `Temporary card hold of $${deposit} (not charged; released after checkout).` : 'Charged in full at booking.' };
   }
 
   return {
@@ -1090,36 +1130,75 @@ __m['pricing'] = { SERVICE_FEE, HOST_FEE, priceRates, priceLine, totals };
 (() => {
 // Price transparency: compare a space with the same space listed on other sites, and the price-beat guarantee.
 //
-// Where comparison data comes from (no scraping; most sites forbid it in their terms):
-//   1. Owners link their own listings elsewhere ("cross-listings") with the price they charge there.
-//      We re-verify those links on a schedule (in production: a person or an approved data feed).
-//   2. Renters can submit a cheaper listing for the same space after booking (a price-match claim).
+// Where comparison data comes from (no scraping; the major sites' terms forbid automated collection, see
+// RESEARCH_RESULTS.md §2):
+//   1. Owners enter their own price on other sites ("cross-listings"). We store it as an owner-submitted
+//      quote with the date it was checked, and stop using it once it is older than STALE_DAYS.
+//   2. Renters can submit a cheaper total for the same space after booking (a price-match claim).
 //
-// Other sites add their own renter fees on top of the owner's price. PLATFORMS holds our best
-// estimate of each site's fee so totals compare like for like. These are ASSUMPTIONS to verify
-// before launch (see RESEARCH.md) and the UI always labels comparisons as estimates.
+// Other sites' renter fees come from PLATFORMS, researched 2026-11-04 (RESEARCH_RESULTS.md §1). A null fee means
+// UNKNOWN (variable or unpublished), never zero: a listing on such a site can't be priced here, so it's shown
+// as "fees not published" and never triggers an automatic beat or a "cheaper here" badge.
 const { priceRates, SERVICE_FEE, HOST_FEE } = __m['pricing'];
 
 // The price beat comes out of Everyspace's own cut (service fee + owner fee), never the owner's payout.
-// The owner earns the same here as anywhere else; we shrink our margin to be the cheapest. We'll cut
-// our margin all the way to zero if needed, but never below it, so the beat is capped at our cut.
-const BEAT_PCT = 0.05; // we beat a cheaper verified total by 5% of their price (up to our whole cut)
+// The owner earns the same here as anywhere else; we shrink our margin to be the cheapest, down to zero but
+// never below. So the beat is capped at our cut on that booking, and the cap is stated wherever the promise is.
+const BEAT_PCT = 0.05; // beat a cheaper comparable total by 5% of their price, up to our whole cut
 const CLAIM_WINDOW_HOURS = 48; // claims allowed within 48h of booking, or any time before start
+const STALE_DAYS = 30; // owner-submitted quotes older than this are shown as "needs recheck" and not used
+const RESEARCHED = '2026-11-04';
 
-// guestFeePct: what the site adds on top for renters. hostFeePct: what it keeps from the owner.
-// All are estimates until verified (RESEARCH.md §1.1); verified:false keeps the "estimate" label on.
+// guestFeePct: what the site adds on top for renters. hostFeePct: what it keeps from the owner. null = unknown.
+// perBookingFee: a renter's fixed fee per booking. hostFeeRange: published range when one rate isn't fixed.
+// notice: what an owner should know before cross-listing (host terms), shown in Manage listing.
 const PLATFORMS = {
-  airbnb: { name: 'Airbnb', domain: 'airbnb.com', guestFeePct: 0.142, hostFeePct: 0.03, perBookingFee: 0, verified: false },
-  vrbo: { name: 'Vrbo', domain: 'vrbo.com', guestFeePct: 0.12, hostFeePct: 0.08, perBookingFee: 0, verified: false },
-  furnished_finder: { name: 'Furnished Finder', domain: 'furnishedfinder.com', guestFeePct: 0, hostFeePct: 0, perBookingFee: 0, verified: false },
-  neighbor: { name: 'Neighbor', domain: 'neighbor.com', guestFeePct: 0.10, hostFeePct: 0.049, perBookingFee: 0, verified: false },
-  spothero: { name: 'SpotHero', domain: 'spothero.com', guestFeePct: 0, hostFeePct: 0.30, perBookingFee: 2.5, verified: false },
-  swimply: { name: 'Swimply', domain: 'swimply.com', guestFeePct: 0.10, hostFeePct: 0.15, perBookingFee: 0, verified: false },
-  peerspace: { name: 'Peerspace', domain: 'peerspace.com', guestFeePct: 0.15, hostFeePct: 0.15, perBookingFee: 0, verified: false },
-  sniffspot: { name: 'Sniffspot', domain: 'sniffspot.com', guestFeePct: 0.10, hostFeePct: 0.20, perBookingFee: 0, verified: false },
-  craigslist: { name: 'Craigslist', domain: 'craigslist.org', guestFeePct: 0, hostFeePct: 0, perBookingFee: 0, verified: true },
-  facebook: { name: 'Facebook Marketplace', domain: 'facebook.com', guestFeePct: 0, hostFeePct: 0, perBookingFee: 0, verified: true },
+  airbnb: { name: 'Airbnb', domain: 'airbnb.com', guestFeePct: 0, hostFeePct: 0.155, perBookingFee: 0, verified: true,
+    plan: 'US single-fee plan (host pays 15.5%, guest pays no service fee). Some listings still use split fees: guests ~14.1–16.5%, hosts 3%.',
+    notice: "Airbnb's terms restrict steering Airbnb guests off Airbnb. Don't invite them to book you here instead." },
+  vrbo: { name: 'Vrbo', domain: 'vrbo.com', guestFeePct: null, hostFeePct: 0.12, perBookingFee: null, verified: false,
+    plan: 'Pay-per-booking: host 12% commission. Traveler service fee varies.',
+    notice: "Vrbo can charge its commission on off-platform bookings of inquiries it introduced within 30 days." },
+  furnished_finder: { name: 'Furnished Finder', domain: 'furnishedfinder.com', guestFeePct: 0, hostFeePct: 0, perBookingFee: 0, verified: true,
+    plan: 'No booking fees; owners pay $199/year per listing.' },
+  neighbor: { name: 'Neighbor', domain: 'neighbor.com', guestFeePct: null, hostFeePct: 0.049, perBookingFee: null, verified: false,
+    plan: 'Host 4.9% plus $0.30 per monthly payout. Renter service fee varies.' },
+  spothero: { name: 'SpotHero', domain: 'spothero.com', guestFeePct: null, hostFeePct: null, perBookingFee: null, verified: false,
+    plan: 'Fees vary by operator; current rates not published.' },
+  swimply: { name: 'Swimply', domain: 'swimply.com', guestFeePct: null, hostFeePct: null, hostFeeRange: [0.15, 0.25], perBookingFee: null, verified: false,
+    plan: 'Host fee 15–25% (pools; up to 30% in some categories). Guest fee varies.' },
+  peerspace: { name: 'Peerspace', domain: 'peerspace.com', guestFeePct: null, hostFeePct: 0.20, perBookingFee: null, verified: false,
+    plan: 'Host 20% (on booking, cleaning and add-ons). Guest processing fee varies.',
+    notice: "Peerspace's host agreement has a most-favored-customer clause: your Peerspace price must be as good as anywhere else. Check with Peerspace before offering a lower price here." },
+  sniffspot: { name: 'Sniffspot', domain: 'sniffspot.com', guestFeePct: 0, hostFeePct: 0.22, perBookingFee: 0, verified: true,
+    plan: 'Membership-credit bookings: no guest fee; host 22%.' },
+  hipcamp: { name: 'Hipcamp', domain: 'hipcamp.com', guestFeePct: null, hostFeePct: 0.15, perBookingFee: null, verified: false,
+    plan: 'Private landowners 15%. Guest fee varies ($3 minimum).' },
+  giggster: { name: 'Giggster', domain: 'giggster.com', guestFeePct: null, hostFeePct: 0.19, perBookingFee: null, verified: false,
+    plan: 'Host 19%. Guest processing fee varies.' },
+  dockwa: { name: 'Dockwa', domain: 'dockwa.com', guestFeePct: 0, hostFeePct: 0.15, perBookingFee: 0, verified: true,
+    plan: 'Dockwa Network: no boater fee; marina 15%.',
+    notice: "Dockwa says marina partners agree not to charge more through Dockwa than by phone." },
+  spacer: { name: 'Spacer', domain: 'spacer.com', guestFeePct: 1 / 3, hostFeePct: 0, perBookingFee: null, verified: true,
+    plan: 'Renter pays the host price plus a third (Spacer keeps 25% of the renter total).' },
+  liquidspace: { name: 'LiquidSpace', domain: 'liquidspace.com', guestFeePct: null, hostFeePct: 0.20, perBookingFee: null, verified: false,
+    plan: 'Host 20% hourly (10% host-originated or monthly). Guest fee unknown.' },
+  booking_com: { name: 'Booking.com', domain: 'booking.com', guestFeePct: null, hostFeePct: null, perBookingFee: null, verified: false,
+    plan: 'Commission set per property contract.' },
+  parkwhiz: { name: 'ParkWhiz', domain: 'parkwhiz.com', guestFeePct: null, hostFeePct: null, perBookingFee: null, verified: false,
+    plan: 'Fees vary by operator.' },
+  craigslist: { name: 'Craigslist', domain: 'craigslist.org', guestFeePct: 0, hostFeePct: 0, perBookingFee: 0, verified: true,
+    plan: 'Classified ads, no booking fees ($5 posting fee in some categories).' },
+  facebook: { name: 'Facebook Marketplace', domain: 'facebook.com', guestFeePct: null, hostFeePct: null, perBookingFee: null, verified: false,
+    plan: 'Rental fee terms not publicly available.' },
 };
+
+const SHORT = new Set(['hourly', 'daily', 'weekly']);
+const money = (n) => Math.round(n * 100) / 100;
+// A site's renter total is computable when its % fee is known and, for short stays, its per-booking fee too.
+const known = (p, recurring = false) => !!p && p.guestFeePct != null && (recurring || p.perBookingFee != null);
+const ageDays = (iso, now) => (iso ? (Date.parse(now ?? Date.now()) - Date.parse(iso)) / 864e5 : Infinity);
+const isStale = (ext, now) => ageDays(ext.verifiedAt, now) > STALE_DAYS;
 
 // Our cut on a quote: per booking for short stays, per period for monthly/lease/infrastructure.
 function ourCut(quote, short) {
@@ -1135,16 +1214,13 @@ function beatCredit(ours, theirs, cut) {
   return { credit: money(credit), wanted, capped: wanted > cut, beaten: ours - credit < theirs, matched: ours - credit <= theirs };
 }
 
-const SHORT = new Set(['hourly', 'daily', 'weekly']);
-const money = (n) => Math.round(n * 100) / 100;
-
 function platformFor(url) {
   let host;
   try { host = new URL(url).hostname.replace(/^www\./, ''); } catch { return null; }
   return Object.entries(PLATFORMS).find(([, p]) => host === p.domain || host.endsWith(`.${p.domain}`))?.[0] ?? null;
 }
 
-// Validates and normalizes an owner's cross-listing.
+// Validates and normalizes an owner's cross-listing (an owner-submitted quote, dated).
 function normalizeExternal(input, allowedTerms) {
   const platform = platformFor(input.url);
   if (!platform) throw new Error(`Link must be a listing on ${Object.values(PLATFORMS).map((p) => p.name).join(', ')}`);
@@ -1159,22 +1235,26 @@ function normalizeExternal(input, allowedTerms) {
   if (!Object.keys(rates).length) throw new Error('Enter the price you charge on that site');
   const cleaning = Number(input.cleaningFee ?? 0);
   if (cleaning < 0) throw new Error('Fees must be positive');
-  return { platform, url: input.url, rates, cleaningFee: cleaning, verifiedAt: input.verifiedAt ?? null, demo: !!input.demo };
+  return { platform, url: input.url, rates, cleaningFee: cleaning, verifiedAt: input.verifiedAt ?? null, source: 'owner', demo: !!input.demo };
 }
 
-// What a renter would pay on the other site for the same booking (estimate), or null if that term isn't offered there.
-function externalTotal(ext, term, start, end, qty = 1) {
+// What a renter would pay on the other site for the same booking, before taxes. comparable is null when that
+// site's renter fees are unknown (the row is still shown, labeled), or when the quote is stale.
+function externalTotal(ext, term, start, end, qty = 1, now) {
   const p = PLATFORMS[ext.platform];
   if (!p || ext.rates?.[term] == null) return null;
   const { amount, rate } = priceRates({ rates: ext.rates }, term, start, end);
   const recurring = !SHORT.has(term);
   const base = recurring ? rate * qty : amount * qty + (ext.cleaningFee ?? 0);
-  const total = base * (1 + p.guestFeePct) + p.perBookingFee;
+  const stale = isStale(ext, now);
+  const total = known(p, recurring) ? base * (1 + p.guestFeePct) + (recurring ? 0 : p.perBookingFee ?? 0) : null;
   return { platform: ext.platform, name: p.name, url: ext.url, verifiedAt: ext.verifiedAt, demo: ext.demo, feePct: p.guestFeePct,
-    feeVerified: p.verified, recurring, comparable: money(total), cleaningFee: recurring ? 0 : ext.cleaningFee ?? 0 };
+    feeVerified: p.verified, feesUnknown: !known(p, recurring), stale, ownerPrice: money(base), recurring,
+    comparable: total == null || stale ? null : money(total), cleaningFee: recurring ? 0 : ext.cleaningFee ?? 0 };
 }
 
-// Compare a single-space quote with that space's cross-listings and apply the price beat if anything is cheaper.
+// Compare a single-space quote with that space's cross-listings and apply the price beat if a comparable total is
+// lower. Totals are compared before taxes (the same tax applies at the same address on any site).
 // Mutates and returns the quote. The beat comes out of our cut; the owner's payout never changes.
 function applyComparison(space, quote, cart) {
   const short = SHORT.has(cart.term);
@@ -1184,13 +1264,13 @@ function applyComparison(space, quote, cart) {
   const ours = short ? quote.total : quote.schedule.recurring;
   if (ours == null) return quote;
   const qty = cart.items?.[0]?.qty ?? 1;
-  const rows = space.externalListings.map((e) => externalTotal(e, cart.term, cart.start, cart.end, qty)).filter(Boolean)
-    .map((r) => ({ ...r, difference: money(r.comparable - ours) }));
+  const rows = space.externalListings.map((e) => externalTotal(e, cart.term, cart.start, cart.end, qty, cart.now)).filter(Boolean)
+    .map((r) => ({ ...r, difference: r.comparable == null ? null : money(r.comparable - ours) }));
   if (!rows.length) return quote;
-  rows.sort((a, b) => a.comparable - b.comparable);
-  quote.comparison = { ours: money(ours), basis: SHORT.has(cart.term) ? 'total' : `per ${quote.schedule.every}`, rows };
-  const cheapest = rows[0];
-  if (cheapest.comparable < ours) {
+  rows.sort((a, b) => (a.comparable ?? Infinity) - (b.comparable ?? Infinity));
+  quote.comparison = { ours: money(ours), basis: short ? 'total' : `per ${quote.schedule.every}`, rows, beforeTax: true };
+  const cheapest = rows.find((r) => r.comparable != null);
+  if (cheapest && cheapest.comparable < ours) {
     const cut = quote.ourCut;
     const b = beatCredit(ours, cheapest.comparable, cut);
     const credit = b.credit;
@@ -1210,25 +1290,26 @@ function applyComparison(space, quote, cart) {
   return quote;
 }
 
-// Per-unit, all-in comparison for cards and listing pages: our price for one unit of a term vs. theirs.
-function unitComparison(space, term) {
+// Per-unit comparison for cards and listing pages: our all-in price (before tax) for one unit vs. theirs.
+// Rows with unknown fees or stale quotes are listed but don't count toward "cheaper here".
+function unitComparison(space, term, now) {
   const ours = space.rates?.[term];
   if (ours == null || !space.externalListings?.length) return null;
   const oursAllIn = ours * (1 + SERVICE_FEE);
   const rows = space.externalListings
     .filter((e) => e.rates?.[term] != null && PLATFORMS[e.platform])
     .map((e) => {
-      const p = PLATFORMS[e.platform];
+      const p = PLATFORMS[e.platform], stale = isStale(e, now);
       // One unit (1 hour / 1 night / 1 week / 1 month), including their cleaning and booking fees for short stays.
-      const theirs = SHORT.has(term)
-        ? (e.rates[term] + (e.cleaningFee ?? 0)) * (1 + p.guestFeePct) + p.perBookingFee
-        : e.rates[term] * (1 + p.guestFeePct);
-      return { platform: e.platform, name: p.name, theirs: money(theirs), url: e.url, verifiedAt: e.verifiedAt, demo: e.demo,
-        cleaningFee: SHORT.has(term) ? e.cleaningFee ?? 0 : 0, feePct: p.guestFeePct };
+      const base = SHORT.has(term) ? e.rates[term] + (e.cleaningFee ?? 0) : e.rates[term];
+      const theirs = known(p, !SHORT.has(term)) && !stale ? base * (1 + p.guestFeePct) + (SHORT.has(term) ? p.perBookingFee ?? 0 : 0) : null;
+      return { platform: e.platform, name: p.name, theirs: theirs == null ? null : money(theirs), ownerPrice: money(base), url: e.url,
+        verifiedAt: e.verifiedAt, demo: e.demo, stale, feesUnknown: !known(p, !SHORT.has(term)), cleaningFee: SHORT.has(term) ? e.cleaningFee ?? 0 : 0, feePct: p.guestFeePct };
     })
-    .sort((a, b) => a.theirs - b.theirs);
+    .sort((a, b) => (a.theirs ?? Infinity) - (b.theirs ?? Infinity));
   if (!rows.length) return null;
-  return { term, ours: money(oursAllIn), rows, cheaperHere: rows.every((r) => oursAllIn <= r.theirs) };
+  const priced = rows.filter((r) => r.theirs != null);
+  return { term, ours: money(oursAllIn), rows, comparable: priced.length > 0, cheaperHere: priced.length > 0 && priced.every((r) => oursAllIn <= r.theirs) };
 }
 
 // A renter found the same space cheaper after booking.
@@ -1245,34 +1326,100 @@ function evaluateClaim(space, booking, claim, now) {
   const theirs = Number(claim.theirTotal);
   if (!(theirs > 0)) errors.push('Enter the total price shown on that site, including its fees');
   const short = SHORT.has(booking.term);
-  const ours = short ? booking.quote.total : booking.quote.schedule?.recurring;
-  if (theirs > 0 && theirs >= ours) errors.push(`That price isn't lower than what you're paying here (${ours})`);
+  const ours = short ? (booking.quote.preTax ?? booking.quote.total) : booking.quote.schedule?.recurring;
+  if (theirs > 0 && theirs >= ours) errors.push(`That price isn't lower than what you're paying here before taxes (${ours})`);
   if (errors.length) return { errors };
-  // Instant approval only when the link is the owner's own cross-listing AND the claimed total matches
-  // what that listing costs for these dates (within 3%). Anything else is checked by a person.
-  const known = (space.externalListings ?? []).find((e) => e.url === claim.url);
+  // Instant approval only when the link is the owner's own cross-listing, its quote is current, its site's fees
+  // are known, AND the claimed total matches what that listing costs for these dates (within 3%).
+  // Everything else is checked by a person.
+  const ownListing = (space.externalListings ?? []).find((e) => e.url === claim.url);
   const qty = booking.items[0]?.qty ?? 1;
-  const onFile = known && externalTotal(known, booking.term, booking.start, booking.end, qty);
-  const matches = onFile && theirs >= onFile.comparable * 0.97;
+  const onFile = ownListing && externalTotal(ownListing, booking.term, booking.start, booking.end, qty, now);
+  const matches = !!(onFile && onFile.comparable != null && theirs >= onFile.comparable * 0.97);
   // Whatever is left of our cut on this booking (after any beat at checkout) is the most we can give back.
   const cut = booking.quote.ourCut ?? ourCut(booking.quote, short);
   const b = beatCredit(ours, theirs, cut);
   const credit = b.credit;
-  const capNote = b.capped ? ` That's our entire cut on this booking; ${PLATFORMS[platform].name}'s price is below what the owner takes home here.` : '';
+  const capNote = b.capped ? ` That's all of Everyspace's fees on this booking, the most the guarantee covers; ${PLATFORMS[platform].name}'s price is below what the owner takes home here.` : '';
   return {
     claim: {
       platform, name: PLATFORMS[platform].name, url: claim.url, theirs, ours, credit, at: now, capped: b.capped, beaten: b.beaten,
       perPeriod: !short, status: matches ? 'approved' : 'in_review',
       note: matches
-        ? `Matched to the owner's linked listing. Refund issued, paid from Everyspace's cut.${capNote}`
-        : known
-          ? `That's lower than the ${PLATFORMS[platform].name} price we have on file (~${onFile ? onFile.comparable : '?'}). We'll check the listing and confirm within 24 hours.`
+        ? `Matched to the owner's linked listing. Refund issued, paid from Everyspace's fees.${capNote}`
+        : onFile && onFile.comparable != null
+          ? `That's lower than the ${PLATFORMS[platform].name} price we have on file (~${onFile.comparable}). We'll check the listing and confirm within 24 hours.`
           : 'We\'re checking it\'s the same space, dates and all-in total. Usually within 24 hours.',
     },
   };
 }
 
-__m['compare'] = { BEAT_PCT, CLAIM_WINDOW_HOURS, PLATFORMS, ourCut, beatCredit, platformFor, normalizeExternal, externalTotal, applyComparison, unitComparison, evaluateClaim };
+__m['compare'] = { BEAT_PCT, CLAIM_WINDOW_HOURS, STALE_DAYS, RESEARCHED, PLATFORMS, isStale, ourCut, beatCredit, platformFor, normalizeExternal, externalTotal, applyComparison, unitComparison, evaluateClaim };
+})();
+// ---- src/tax.js ----
+(() => {
+// Taxes in the all-in price (RESEARCH_RESULTS.md §4). Only rules the research verified are encoded; everything
+// else is reported as "not determined", never as 0%. Needs CPA / tax-counsel sign-off before real bookings.
+const { addMonths, toMs } = __m['time'];
+
+const money = (n) => Math.round(n * 100) / 100;
+const LODGING = new Set(['entire_home', 'apartment_unit', 'adu', 'private_room']);
+
+// By city. `lodging` applies to LODGING categories on stays shorter than the exemption length.
+const TAX_RULES = {
+  'San Diego': {
+    lodging: {
+      rate: 0.1175, name: 'San Diego transient occupancy tax',
+      note: 'San Diego TOT is 11.75%, 12.75% or 13.75% depending on the zone (effective May 1, 2025). The lowest zone is used until address lookup is built. Stays of one calendar month or more are exempt.',
+      exemptMonths: 1, source: 'https://www.sandiego.gov/treasurer/taxesfees/tot',
+    },
+  },
+  Phoenix: {
+    lodging: { rate: 0.1307, name: 'Phoenix transient lodging tax (city + state + county)', note: 'Combined 13.07% (Jan 1, 2026 chart) on stays of 29 days or less.', exemptDays: 30,
+      source: 'https://www.phoenix.gov/content/dam/phoenix/financesite/documents/Combined-Tax-Rate-Chart-0126.pdf' },
+  },
+  Indianapolis: {
+    lodging: { rate: 0.17, name: 'Marion County innkeeper\'s tax + Indiana sales tax', note: '10% county innkeeper\'s tax plus 7% state sales tax (17% calculated) on stays under 30 days.', exemptDays: 30,
+      source: 'https://www.in.gov/dor/resources/tax-rates-and-reports/rates-fees-and-penalties/county-innkeepers-tax/' },
+  },
+};
+
+function exempt(rule, start, end) {
+  if (rule.exemptMonths) return addMonths(toMs(start), rule.exemptMonths) <= toMs(end);
+  if (rule.exemptDays) return (toMs(end) - toMs(start)) / 864e5 >= rule.exemptDays;
+  return false;
+}
+
+// Adds tax to a quote. lines: the quote's lines, spaces: matching space objects, city: the property's city.
+// Tax base is the rent on lodging lines (whether platform fees are taxable is an open question for a CPA).
+function applyTax(quote, spaces, city, cart) {
+  const rule = TAX_RULES[city]?.lodging;
+  quote.preTax = quote.total;
+  let base = 0, lodging = false, other = false;
+  quote.lines.forEach((l, i) => {
+    const cat = spaces[i]?.category;
+    if (LODGING.has(cat)) { lodging = true; base += l.amount; } else other = true;
+  });
+  const out = { amount: 0, items: [], undetermined: [] };
+  if (lodging && rule) {
+    if (exempt(rule, cart.start, cart.end)) out.items.push({ name: rule.name, amount: 0, note: 'Exempt: stay of one month or more.', source: rule.source });
+    else {
+      // Platform-funded price beats don't lower the taxable rent in this estimate.
+      const amt = money(base * rule.rate);
+      out.amount += amt;
+      out.items.push({ name: rule.name, rate: rule.rate, amount: amt, note: rule.note, source: rule.source });
+    }
+  } else if (lodging) out.undetermined.push(`Lodging tax for ${city || 'this city'} isn't set up yet.`);
+  if (other) out.undetermined.push('Taxes on parking, storage, events and other spaces aren\'t determined yet (pending tax review).');
+  quote.tax = out;
+  if (out.amount) {
+    quote.total = money(quote.total + out.amount);
+    if (!quote.schedule.recurring) quote.schedule.dueNow = money(quote.schedule.dueNow + out.amount);
+  }
+  return quote;
+}
+
+__m['tax'] = { TAX_RULES, applyTax };
 })();
 // ---- src/availability.js ----
 (() => {
@@ -1404,6 +1551,7 @@ const { priceLine, totals } = __m['pricing'];
 const { duration, toMs } = __m['time'];
 const { withArticle } = __m['describe'];
 const { applyComparison, ourCut } = __m['compare'];
+const { applyTax } = __m['tax'];
 
 class BookingError extends Error {
   constructor(message, details = []) { super(message); this.details = details; }
@@ -1524,6 +1672,9 @@ function quote(db, cart) {
   // Same space listed elsewhere? Show the comparison and beat any cheaper verified price (single-space bookings).
   if (!ev.pkg && ev.items.length === 1) applyComparison(ev.spaces[0], q, { ...cart, items: ev.items });
   q.ourCut ??= ourCut(q, ['hourly', 'daily', 'weekly'].includes(cart.term)); // what Everyspace earns, shown on every receipt
+  // Taxes last: comparisons are before tax (same address, same tax on any site); the all-in total includes them.
+  const city = db.properties.find((p) => p.id === ev.spaces[0]?.propertyId)?.city;
+  applyTax(q, ev.spaces, city, cart);
   return q;
 }
 
@@ -1531,7 +1682,7 @@ const INITIAL = { instant: 'confirmed', request: 'pending', proposal: 'proposed'
 
 function createBooking(db, cart, { now = new Date().toISOString(), newId } = {}) {
   if (!db.users.some((u) => u.id === cart.renterId)) throw new BookingError('Unknown renter');
-  const q = quote(db, cart);
+  const q = quote(db, { ...cart, now: cart.now ?? now });
   if (!q.availability.ok) throw new BookingError('Not available', q.availability.conflicts.map((c) => c.reason));
   const { items } = resolveItems(db, cart);
   const hostIds = new Set(items.map((i) => hostOf(db, i.spaceId)));
@@ -1549,7 +1700,7 @@ function createBooking(db, cart, { now = new Date().toISOString(), newId } = {})
     mode: q.mode,
     status: INITIAL[q.mode],
     quote: { total: q.total, rent: q.rent, serviceFee: q.serviceFee, hostPayout: q.hostPayout, packageDiscount: q.packageDiscount, deposit: q.deposit,
-      schedule: q.schedule, lines: q.lines, priceBeat: q.priceBeat ?? null, hostFee: q.hostFee, ourCut: q.ourCut },
+      schedule: q.schedule, lines: q.lines, priceBeat: q.priceBeat ?? null, hostFee: q.hostFee, ourCut: q.ourCut, preTax: q.preTax, tax: q.tax },
     note: cart.note ?? '',
     history: [{ at: now, status: INITIAL[q.mode], by: cart.renterId }],
     createdAt: now,
@@ -1833,30 +1984,33 @@ function marketFor(db, categoryKey, excludeId) {
 }
 
 // Owner view of a listing: everything they can change, plus how it compares.
-function ownerView(db, spaceId, actorId) {
+function ownerView(db, spaceId, actorId, now) {
   const s = ownSpace(db, spaceId, actorId);
   const cat = category(s.category);
   const upcoming = db.bookings.filter((b) => b.items.some((i) => i.spaceId === s.id) && ['pending', 'proposed', 'site_assessment', 'contract', 'confirmed', 'active'].includes(b.status));
-  const parity = cat.terms.map((t) => unitComparison(s, t)).filter(Boolean)
-    .filter((c) => !c.cheaperHere)
-    .map((c) => ({ term: c.term, ours: c.ours, cheapest: c.rows[0] }));
-  return { ...s, categoryInfo: cat, market: marketFor(db, s.category, s.id), upcomingCount: upcoming.length, parity, takeHome: takeHome(s) };
+  const parity = cat.terms.map((t) => unitComparison(s, t, now)).filter((c) => c && c.comparable && !c.cheaperHere)
+    .map((c) => ({ term: c.term, ours: c.ours, cheapest: c.rows.find((r) => r.theirs != null) }));
+  return { ...s, categoryInfo: cat, market: marketFor(db, s.category, s.id), upcomingCount: upcoming.length, parity, takeHome: takeHome(s),
+    notices: [...new Set((s.externalListings ?? []).map((e) => e.platform))].map((k) => PLATFORMS[k]).filter((p) => p?.notice).map((p) => ({ name: p.name, text: p.notice })) };
 }
 
 // For each linked listing: what the owner takes home there vs here, per unit, and the price here that
 // pays them exactly the same. Because our fees are lower, that price is cheaper for renters too.
 function takeHome(s) {
+  // Owner fee unknown -> "there" is null (or a range when the site publishes one); never assumed to be 0.
   const r2 = (n) => Math.round(n * 100) / 100;
   const rows = [];
   for (const e of s.externalListings ?? []) {
     const p = PLATFORMS[e.platform];
     if (!p) continue;
     for (const [t, theirRate] of Object.entries(e.rates)) {
-      const there = r2(theirRate * (1 - p.hostFeePct));
-      const sameRate = r2(there / (1 - HOST_FEE));
       const here = s.rates?.[t] != null ? r2(s.rates[t] * (1 - HOST_FEE)) : null;
-      rows.push({ platform: e.platform, name: p.name, term: t, there, here, sameRate,
-        renterThere: r2(theirRate * (1 + p.guestFeePct)), renterAtSame: r2(sameRate * (1 + SERVICE_FEE)), estimated: !p.verified });
+      const range = p.hostFeePct == null && p.hostFeeRange ? p.hostFeeRange.map((f) => r2(theirRate * (1 - f))).reverse() : null;
+      const there = p.hostFeePct != null ? r2(theirRate * (1 - p.hostFeePct)) : null;
+      const sameRate = there != null ? r2(there / (1 - HOST_FEE)) : null;
+      rows.push({ platform: e.platform, name: p.name, term: t, theirRate, there, thereRange: range, here, sameRate,
+        renterThere: p.guestFeePct != null ? r2(theirRate * (1 + p.guestFeePct)) : null,
+        renterAtSame: sameRate != null ? r2(sameRate * (1 + SERVICE_FEE)) : null, estimated: !p.verified });
     }
   }
   return rows;
@@ -1889,18 +2043,18 @@ function seed() {
   ];
 
   const properties = [
-    { id: 'p_maple', hostId: 'u_maya', title: '412 Maple St', city: 'Riverside', type: 'single_family', hoa: false,
-      lat: 33.975, lng: -117.375, notes: '3 blocks from the county fairgrounds.' },
-    { id: 'p_oak', hostId: 'u_jordan', title: 'Oak Court Apartments', city: 'Riverside', type: 'multi_unit', hoa: false,
-      lat: 33.981, lng: -117.369, notes: '6-unit building with a 12-space garage and storage lockers.' },
-    { id: 'p_elm', hostId: 'u_luis', title: 'Elm Ave bungalow', city: 'Riverside', type: 'single_family', hoa: false,
-      lat: 33.969, lng: -117.381, notes: '1950s bungalow with a big backyard, pool and garden ADU.' },
-    { id: 'p_lofts', hostId: 'u_ana', title: 'Stadium Lofts #4C', city: 'Riverside', type: 'condo', hoa: true,
-      lat: 33.986, lng: -117.362, notes: 'Condo two blocks from the stadium. HOA allows rentals of owned parking.' },
-    { id: 'p_hill', hostId: 'u_luis', title: 'Hillcrest ranch', city: 'Riverside', type: 'land', hoa: false,
-      lat: 33.962, lng: -117.392, notes: '5 acres on the edge of town. Barn, hilltop, road frontage.' },
-    { id: 'p_lake', hostId: 'u_rosa', title: 'Lakeview cottage', city: 'Riverside', type: 'single_family', hoa: false,
-      lat: 33.958, lng: -117.372, notes: 'Cottage on the river with a private dock.' },
+    { id: 'p_maple', hostId: 'u_maya', title: '412 Maple St', city: 'San Diego', type: 'single_family', hoa: false,
+      lat: 32.725, lng: -117.165, notes: '3 blocks from the county fairgrounds.' },
+    { id: 'p_oak', hostId: 'u_jordan', title: 'Oak Court Apartments', city: 'San Diego', type: 'multi_unit', hoa: false,
+      lat: 32.731, lng: -117.159, notes: '6-unit building with a 12-space garage and storage lockers.' },
+    { id: 'p_elm', hostId: 'u_luis', title: 'Elm Ave bungalow', city: 'San Diego', type: 'single_family', hoa: false,
+      lat: 32.719, lng: -117.171, notes: '1950s bungalow with a big backyard, pool and garden ADU.' },
+    { id: 'p_lofts', hostId: 'u_ana', title: 'Stadium Lofts #4C', city: 'San Diego', type: 'condo', hoa: true,
+      lat: 32.736, lng: -117.152, notes: 'Condo two blocks from the stadium. HOA allows rentals of owned parking.' },
+    { id: 'p_hill', hostId: 'u_luis', title: 'Hillcrest ranch', city: 'San Diego', type: 'land', hoa: false,
+      lat: 32.712, lng: -117.182, notes: '5 acres on the edge of town. Barn, hilltop, road frontage.' },
+    { id: 'p_lake', hostId: 'u_rosa', title: 'Lakeview cottage', city: 'San Diego', type: 'single_family', hoa: false,
+      lat: 32.708, lng: -117.162, notes: 'Cottage on the river with a private dock.' },
   ];
 
   const harvest = { name: 'Harvest Festival', start: '2026-11-20', end: '2026-11-22' };
@@ -1942,11 +2096,11 @@ function seed() {
     { id: 's_maple_roof', propertyId: 'p_maple', category: 'rooftop_solar', title: 'South-facing roof (~600 sq ft)',
       quantity: 1, size: { sqft: 600 }, rates: { infrastructure: 1100 },
       description: '2019 roof. ~9 kW potential. Partner owns panels, pays annual rent.',
-      specs: { 'Usable roof': '600 sq ft', 'Est. system': '9 kW', Faces: 'South', 'Roof installed': '2019', Shading: 'None', 'Electrical service': '200 A', Utility: 'Riverside Public Utilities' },
+      specs: { 'Usable roof': '600 sq ft', 'Est. system': '9 kW', Faces: 'South', 'Roof installed': '2019', Shading: 'None', 'Electrical service': '200 A', Utility: 'SDG&E' },
       amenities: ['South-facing', '2019 roof', 'No shading'], access: 'Site visit scheduled after proposal.' },
     { id: 's_maple_battery', propertyId: 'p_maple', category: 'battery_site', title: 'Side-yard battery pad',
       quantity: 1, rates: { infrastructure: 600 }, description: '4×8 ft concrete pad, 12 ft from the house.',
-      specs: { Pad: '4×8 ft concrete', 'Distance to house': '12 ft', 'Electrical service': '200 A', 'Est. capacity': '13–27 kWh', Utility: 'Riverside Public Utilities' },
+      specs: { Pad: '4×8 ft concrete', 'Distance to house': '12 ft', 'Electrical service': '200 A', 'Est. capacity': '13–27 kWh', Utility: 'SDG&E' },
       amenities: ['Concrete pad', '200A panel'], access: 'Site visit scheduled after proposal.' },
 
     // --- Oak Court Apartments (Jordan) -------------------------------------
@@ -2021,14 +2175,14 @@ function seed() {
       access: 'Follow the yellow posts from the gate.' },
     { id: 's_hill_solar', propertyId: 'p_hill', category: 'rooftop_solar', title: 'Barn roof (~1,800 sq ft)', quantity: 1,
       size: { sqft: 1800 }, rates: { infrastructure: 2800 }, description: 'Metal roof, 2021. ~30 kW potential.',
-      specs: { 'Usable roof': '1,800 sq ft', 'Est. system': '30 kW', Faces: 'South / southwest', 'Roof installed': '2021 (metal)', 'Electrical service': '400 A', Utility: 'SCE' },
+      specs: { 'Usable roof': '1,800 sq ft', 'Est. system': '30 kW', Faces: 'South / southwest', 'Roof installed': '2021 (metal)', 'Electrical service': '400 A', Utility: 'SDG&E' },
       amenities: ['Metal roof', '400A service'], access: 'Site visit scheduled after proposal.' },
     { id: 's_hill_tower', propertyId: 'p_hill', category: 'telecom_site', title: 'Hilltop antenna / sensor site', quantity: 1,
       rates: { infrastructure: 4000 }, amenities: ['Highest point in town', 'Power nearby'],
-      specs: { Elevation: '1,240 ft', 'Line of sight': 'Downtown + I-215', Power: '200 A at barn, 300 ft', 'Road access': 'Gravel, 4WD not needed' }, access: 'Site visit scheduled after proposal.' },
+      specs: { Elevation: '1,240 ft', 'Line of sight': 'Downtown + I-15', Power: '200 A at barn, 300 ft', 'Road access': 'Gravel, 4WD not needed' }, access: 'Site visit scheduled after proposal.' },
     { id: 's_hill_charger', propertyId: 'p_hill', category: 'charger_site', title: 'Road-frontage EV charger site', quantity: 1,
       rates: { infrastructure: 1800 }, amenities: ['On a state highway', '400A service'],
-      specs: { Frontage: '180 ft on Hwy 91 frontage road', 'Daily traffic': '~22,000 vehicles', 'Electrical service': '400 A, 3-phase nearby', 'Room for': '4–6 DC fast chargers' }, access: 'Site visit scheduled after proposal.' },
+      specs: { Frontage: '180 ft on a state-route frontage road', 'Daily traffic': '~22,000 vehicles', 'Electrical service': '400 A, 3-phase nearby', 'Room for': '4–6 DC fast chargers' }, access: 'Site visit scheduled after proposal.' },
 
     // --- More everyday spaces ------------------------------------------
     { id: 's_elm_kitchen', propertyId: 'p_elm', category: 'kitchen', title: "Baker's kitchen with double oven", quantity: 1,
@@ -2051,11 +2205,11 @@ function seed() {
     { id: 's_hill_fleet', propertyId: 'p_hill', category: 'fleet_parking', title: 'Overnight van lot (8 vans)', quantity: 8,
       rates: { monthly: 180, lease: 160 }, description: 'Lit gravel lot next to the highway on-ramp. Suits delivery vans.',
       amenities: ['Lighting', 'Camera', '2 min to highway'], access: 'Gate code issued per vehicle.',
-      specs: { Spaces: '8 van-sized', Surface: 'Compacted gravel', Lighting: 'LED, dusk to dawn', 'Highway access': 'Hwy 91, 0.4 mi', 'Hours': '24/7' } },
+      specs: { Spaces: '8 van-sized', Surface: 'Compacted gravel', Lighting: 'LED, dusk to dawn', 'Highway access': '0.4 mi to the freeway', 'Hours': '24/7' } },
     { id: 's_hill_sign', propertyId: 'p_hill', category: 'signage', title: 'Highway-facing sign site', quantity: 1,
       rates: { lease: 400, infrastructure: 4200 }, description: 'Road frontage facing ~22,000 cars a day.',
       amenities: ['Permitted zone', 'Power nearby'], access: 'Site visit scheduled after proposal.',
-      specs: { 'Daily traffic': '~22,000 vehicles', Facing: 'Eastbound Hwy 91', 'Max sign': '12×24 ft (city code)', Power: 'Yes, 50 ft' } },
+      specs: { 'Daily traffic': '~22,000 vehicles', Facing: 'Eastbound state route', 'Max sign': '12×24 ft (city code)', Power: 'Yes, 50 ft' } },
     { id: 's_oak_locker_wall', propertyId: 'p_oak', category: 'parcel_locker', title: 'Lobby wall for a parcel locker', quantity: 1,
       rates: { lease: 75, infrastructure: 900 }, description: 'Covered lobby wall by the mailboxes, open 6am–11pm.',
       amenities: ['Covered', 'Outlet nearby', 'Foot traffic'], access: 'Building manager meets the installer.',
@@ -2063,21 +2217,27 @@ function seed() {
     { id: 's_oak_roof', propertyId: 'p_oak', category: 'rooftop_solar', title: 'Apartment flat roof (~2,400 sq ft)', quantity: 1,
       size: { sqft: 2400 }, rates: { infrastructure: 3600 }, description: 'Flat membrane roof, replaced 2020. Could host community solar for the tenants.',
       amenities: ['Flat roof', 'Roof hatch'], access: 'Site visit scheduled after proposal.',
-      specs: { 'Usable roof': '2,400 sq ft', 'Est. system': '38 kW', Faces: 'Flat (tilt racks)', 'Roof installed': '2020', 'Electrical service': '600 A, 3-phase', Utility: 'Riverside Public Utilities' } },
+      specs: { 'Usable roof': '2,400 sq ft', 'Est. system': '38 kW', Faces: 'Flat (tilt racks)', 'Roof installed': '2020', 'Electrical service': '600 A, 3-phase', Utility: 'SDG&E' } },
   ];
 
   // Owners' own listings of the same space on other sites (demo links, not real listings).
   // The pool is deliberately cheaper on Swimply so the price beat shows up at checkout.
-  const xl = (platform, slug, rates, cleaningFee = 0) => ({ platform, url: `https://www.${{ airbnb: 'airbnb.com', vrbo: 'vrbo.com', spothero: 'spothero.com', neighbor: 'neighbor.com', swimply: 'swimply.com', peerspace: 'peerspace.com' }[platform]}/demo/${slug}`,
-    rates, cleaningFee, verifiedAt: '2026-10-28', demo: true });
+  // Dated owner-submitted quotes (checked two days before the data is created, so the demo never shows them stale).
+  const checked = new Date(Date.now() - 2 * 864e5).toISOString().slice(0, 10);
+  const DOM = { airbnb: 'airbnb.com', vrbo: 'vrbo.com', spothero: 'spothero.com', neighbor: 'neighbor.com', swimply: 'swimply.com', peerspace: 'peerspace.com', spacer: 'spacer.com' };
+  const xl = (platform, slug, rates, cleaningFee = 0) => ({ platform, url: `https://www.${DOM[platform]}/demo/${slug}`, rates, cleaningFee, verifiedAt: checked, source: 'owner', demo: true });
+  // What each shows: the house, ADU and cottage are cheaper here than Airbnb (owner prices that keep their take-home);
+  // the guest room is cheaper on Airbnb, so checkout beats it in full; the driveway is cheaper on Spacer, beyond what our
+  // fees can fully cover; Vrbo, SpotHero, Neighbor, Swimply and Peerspace don't publish renter fees, so those rows
+  // are listed but can't be priced.
   const cross = {
     s_maple_home: [xl('airbnb', 'maple-st-house', { daily: 225, weekly: 1400 }, 75), xl('vrbo', 'maple-st-house', { daily: 230, weekly: 1450 }, 85)],
-    s_maple_driveway: [xl('spothero', 'maple-driveway', { hourly: 6, daily: 45 })],
+    s_maple_driveway: [xl('spothero', 'maple-driveway', { hourly: 6, daily: 45 }), xl('spacer', 'maple-driveway', { monthly: 100 })],
     s_maple_bay: [xl('neighbor', 'maple-garage-bay', { monthly: 99 })],
     s_elm_pool: [xl('swimply', 'elm-saltwater-pool', { hourly: 38 })],
     s_elm_adu: [xl('airbnb', 'elm-garden-adu', { daily: 125, weekly: 760 }, 50)],
     s_elm_shop: [xl('peerspace', 'elm-woodshop', { hourly: 25, daily: 140 })],
-    s_ana_room: [xl('airbnb', 'stadium-lofts-room', { daily: 89, weekly: 600 }, 20)],
+    s_ana_room: [xl('airbnb', 'stadium-lofts-room', { daily: 79, weekly: 540 }, 20)],
     s_lake_home: [xl('airbnb', 'lakeview-cottage', { daily: 170, weekly: 1050 }, 60), xl('vrbo', 'lakeview-cottage', { daily: 175 }, 70)],
   };
   for (const s of spaces) if (cross[s.id]) s.externalListings = cross[s.id];
@@ -2171,7 +2331,7 @@ const { ratingFor } = __m['social'];
 const { unitComparison } = __m['compare'];
 const { SERVICE_FEE, HOST_FEE } = __m['pricing'];
 
-function search(db, { group, category: cat, term, start, end, q, city, audience = 'consumer', userId } = {}) {
+function search(db, { group, category: cat, term, start, end, q, city, audience = 'consumer', userId, now } = {}) {
   const text = q?.toLowerCase();
   const results = [];
   for (const s of db.spaces) {
@@ -2200,11 +2360,12 @@ function search(db, { group, category: cat, term, start, end, q, city, audience 
       // All-in price (what the renter actually pays per unit) and how it compares with the same listing elsewhere.
       allIn: cheapest(s) && Math.round(cheapest(s).amount * (1 + SERVICE_FEE) * 100) / 100,
       compare: (() => {
-        const t = cheapest(s)?.term; const c = t && unitComparison(s, t);
-        if (!c) return null;
+        const t = cheapest(s)?.term; const c = t && unitComparison(s, t, now);
+        if (!c || !c.comparable) return null;
         // Can we beat them by giving up our cut (service fee + owner fee) on one unit?
         const floor = s.rates[t] * (1 + SERVICE_FEE) - s.rates[t] * (SERVICE_FEE + HOST_FEE);
-        return { cheaperHere: c.cheaperHere, beatable: floor < c.rows[0].theirs, vs: c.rows[0].name, theirs: c.rows[0].theirs, ours: c.ours };
+        const top = c.rows.find((r) => r.theirs != null);
+        return { cheaperHere: c.cheaperHere, beatable: floor < top.theirs, vs: top.name, theirs: top.theirs, ours: c.ours };
       })(),
     });
   }
@@ -2297,7 +2458,7 @@ const { createPackage, createProperty, createSpace, search } = __m['listings'];
 const { describeAddon } = __m['describe'];
 const { addReview, canReview, effectiveStatus, messagesFor, postMessage, ratingFor, systemMessage, threadsFor } = __m['social'];
 const { calendar, hostSummary } = __m['host'];
-const { BEAT_PCT, CLAIM_WINDOW_HOURS, evaluateClaim, PLATFORMS, unitComparison } = __m['compare'];
+const { BEAT_PCT, CLAIM_WINDOW_HOURS, evaluateClaim, PLATFORMS, RESEARCHED, STALE_DAYS, unitComparison } = __m['compare'];
 const { marketFor, ownerView, updateSpace } = __m['owner'];
 const { HOST_FEE, SERVICE_FEE } = __m['pricing'];
 
@@ -2321,16 +2482,16 @@ function handleApi(store, method, path, body = {}, params = new URLSearchParams(
     ['GET', /^catalog$/, () => ({ terms: TERMS, groups: GROUPS, groupIcons: GROUP_ICONS, categories: CATEGORIES, modes: MODES, audiences: AUDIENCES, typical: TYPICAL })],
     ['GET', /^users$/, () => db.users],
     ['GET', /^spec$/, () => ({ html: spec ? spec() : '' })],
-    ['GET', /^search$/, () => search(db, Object.fromEntries(params))],
+    ['GET', /^search$/, () => search(db, { ...Object.fromEntries(params), now: now() })],
     ['GET', /^properties$/, () => listProperties(db, params.get('hostId'))],
-    ['GET', /^spaces\/([\w-]+)$/, ([, id]) => spaceDetail(db, id, params.get('userId'))],
+    ['GET', /^spaces\/([\w-]+)$/, ([, id]) => spaceDetail(db, id, params.get('userId'), now())],
     ['GET', /^spaces\/([\w-]+)\/calendar$/, ([, id]) => calendar(db, id, params.get('from') ?? now().slice(0, 10), Number(params.get('days') ?? 42))],
     ['POST', /^properties$/, () => mutate(() => createProperty(db, body, store.newId))],
     ['POST', /^spaces$/, () => mutate(() => createSpace(db, body, store.newId))],
     ['POST', /^packages$/, () => mutate(() => createPackage(db, body, store.newId))],
-    ['POST', /^quote$/, () => quote(db, body)],
+    ['POST', /^quote$/, () => quote(db, { ...body, now: now() })],
     ['POST', /^bookings$/, () => mutate(() => {
-      const b = createBooking(db, body, opts());
+      const b = createBooking(db, { ...body, now: now() }, opts());
       const what = listBookings(db, b.renterId, now()).find((x) => x.id === b.id).itemsLabel;
       const renter = db.users.find((u) => u.id === b.renterId)?.name;
       systemMessage(db, b.id, b.status === 'confirmed' ? `Booking confirmed: ${what}.`
@@ -2356,11 +2517,11 @@ function handleApi(store, method, path, body = {}, params = new URLSearchParams(
     }],
     ['POST', /^saves$/, () => mutate(() => toggleSave(db, body.userId, body.spaceId))],
     // Owner tools
-    ['GET', /^spaces\/([\w-]+)\/manage$/, ([, id]) => ownerView(db, id, params.get('userId'))],
+    ['GET', /^spaces\/([\w-]+)\/manage$/, ([, id]) => ownerView(db, id, params.get('userId'), now())],
     ['POST', /^spaces\/([\w-]+)\/update$/, ([, id]) => mutate(() => updateSpace(db, id, body.actorId, body.changes ?? {}, opts()))],
     ['GET', /^market$/, () => marketFor(db, params.get('category'), params.get('exclude'))],
     // Pricing transparency
-    ['GET', /^pricing$/, () => ({ serviceFee: SERVICE_FEE, hostFee: HOST_FEE, beatPct: BEAT_PCT, claimWindowHours: CLAIM_WINDOW_HOURS, platforms: PLATFORMS })],
+    ['GET', /^pricing$/, () => ({ serviceFee: SERVICE_FEE, hostFee: HOST_FEE, beatPct: BEAT_PCT, claimWindowHours: CLAIM_WINDOW_HOURS, staleDays: STALE_DAYS, researched: RESEARCHED, platforms: PLATFORMS })],
     ['POST', /^bookings\/([\w-]+)\/price-match$/, ([, id]) => mutate(() => {
       const b = db.bookings.find((x) => x.id === id);
       if (!b) throw new BookingError('Booking not found');
@@ -2403,7 +2564,7 @@ function toggleSave(db, userId, spaceId) {
   return { saved: i < 0 };
 }
 
-function spaceDetail(db, id, userId) {
+function spaceDetail(db, id, userId, now) {
   const s = db.spaces.find((x) => x.id === id);
   if (!s) throw new BookingError('Space not found');
   const property = db.properties.find((p) => p.id === s.propertyId);
@@ -2419,7 +2580,7 @@ function spaceDetail(db, id, userId) {
     rating: ratingFor(db, s.id),
     saved: !!userId && (db.saves ?? []).some((x) => x.userId === userId && x.spaceId === id),
     // Same space on other sites, one unit of each length, all-in on both sides.
-    comparisons: CATEGORIES[s.category].terms.map((t) => unitComparison(s, t)).filter(Boolean),
+    comparisons: CATEGORIES[s.category].terms.map((t) => unitComparison(s, t, now)).filter(Boolean),
     pricing: { serviceFee: SERVICE_FEE, hostFee: HOST_FEE, beatPct: BEAT_PCT },
     reviews: db.reviews.filter((r) => r.spaceId === id).sort((a, b) => (a.at < b.at ? 1 : -1))
       .map((r) => ({ ...r, author: userName(r.by) })),
@@ -2466,8 +2627,8 @@ __m['routes'] = { NotFound, handleApi, isUserError };
 })();
 const { handleApi, isUserError, NotFound } = __m.routes;
 const { seed } = __m.seed;
-const SPEC_HTML = "<h1 id=\"everyspace-product-spec-working-name\">Everyspace: product spec (working name)<\/h1>\n<p>Everyspace is a marketplace for renting out <strong>any part of a property<\/strong> for <strong>any length of time<\/strong>. You could rent out a backyard for one night, a driveway spot for fair weekend, a garage corner for a month, a whole house like a vacation rental, a front yard for a garden, or a roof for 20 years to someone who pays for solar panels on it.<\/p>\n<p>It also handles <strong>multi-unit buildings<\/strong>. A renter can take just an apartment, or an apartment plus two parking spaces and a storage locker, under rules the owner sets.<\/p>\n<p>The app has <strong>two sides<\/strong>. The <strong>everyday app<\/strong> is for people renting from people: parking, storage, yards, rooms, homes, kitchens, docks. <strong>Everyspace for Business<\/strong> is a separate side where companies lease roofs, pads, road frontage, walls and lots on multi-year agreements. Someone scrolling for a place to park never sees a rooftop solar lease, and a solar installer doesn't wade through backyard parties (§1b).<\/p>\n<p>This document covers what can be rented and how renting works. It comes before the build. The prototype in <code>src/<\/code> implements the core rules described here.<\/p>\n<hr>\n<h2 id=\"1-what-can-be-rented\">1. What can be rented<\/h2>\n<p>Every listing is a <strong>space<\/strong>, and every space has a <strong>category<\/strong>. The category sets which rental lengths are allowed, how the space is measured and priced, the default booking mode, and the checklist a host has to complete before going live.<\/p>\n<p>Rental lengths (terms):<\/p>\n<div class=\"table-wrap\"><table><thead><tr><th>Term<\/th><th>Unit<\/th><th>Typical use<\/th><\/tr><\/thead><tbody><tr><td>Hourly<\/td><td>hour<\/td><td>Backyard party, pool, studio session, EV charging<\/td><\/tr><tr><td>Nightly / daily<\/td><td>day<\/td><td>Vacation stay, event-day parking, overnight camping<\/td><\/tr><tr><td>Weekly<\/td><td>week<\/td><td>Longer stay, temporary storage<\/td><\/tr><tr><td>Month-to-month<\/td><td>month<\/td><td>Parking, storage, garden plot, room<\/td><\/tr><tr><td>Fixed lease<\/td><td>month, 6–24 mo<\/td><td>Apartment, ADU, long-term parking<\/td><\/tr><tr><td>Infrastructure agreement<\/td><td>year, 5–25 yr<\/td><td>Rooftop solar, battery, charger, antenna<\/td><\/tr><\/tbody><\/table><\/div>\n<h3 id=\"catalog\">Catalog<\/h3>\n<p><strong>Living<\/strong><\/p>\n<div class=\"table-wrap\"><table><thead><tr><th>Category<\/th><th>Terms<\/th><th>Measured by<\/th><th>Notes<\/th><\/tr><\/thead><tbody><tr><td>Entire home<\/td><td>daily, weekly, monthly, lease<\/td><td>whole<\/td><td>Works like Airbnb. Needs a short-term-rental permit and occupancy tax where the city requires them.<\/td><\/tr><tr><td>Apartment / unit<\/td><td>daily, monthly, lease<\/td><td>whole<\/td><td>A unit in a multi-unit building. It can anchor add-ons (§3).<\/td><\/tr><tr><td>ADU / guest house<\/td><td>daily, weekly, monthly, lease<\/td><td>whole<\/td><td><\/td><\/tr><tr><td>Private room<\/td><td>daily, weekly, monthly, lease<\/td><td>whole<\/td><td>Shared common areas are listed in the house rules.<\/td><\/tr><\/tbody><\/table><\/div>\n<p><strong>Outdoor and activity<\/strong><\/p>\n<div class=\"table-wrap\"><table><thead><tr><th>Category<\/th><th>Terms<\/th><th>Measured by<\/th><th>Notes<\/th><\/tr><\/thead><tbody><tr><td>Backyard<\/td><td>hourly, daily<\/td><td>whole<\/td><td>Parties, gatherings, dog play, photo shoots. Noise curfew and guest cap are required.<\/td><\/tr><tr><td>Yard campsite<\/td><td>daily, weekly<\/td><td>site<\/td><td>Tent or small RV overnight. Requires restroom access.<\/td><\/tr><tr><td>Pool<\/td><td>hourly<\/td><td>whole<\/td><td>Lifeguard and waiver rules. Host must confirm insurance.<\/td><\/tr><tr><td>Workspace / studio / workshop<\/td><td>hourly, daily, monthly<\/td><td>whole<\/td><td>Home office, music room, wood shop.<\/td><\/tr><tr><td>Filming / photo location<\/td><td>hourly, daily<\/td><td>whole<\/td><td>Always request-to-book. City film permit may be needed.<\/td><\/tr><tr><td>Kitchen<\/td><td>hourly, daily, monthly<\/td><td>whole<\/td><td>Cottage-food bakers, meal prep, cooking classes. Food-handler rules and allergen disclosure.<\/td><\/tr><tr><td>Sport court<\/td><td>hourly<\/td><td>whole<\/td><td>Pickleball, tennis, basketball. Lighting hours and waiver.<\/td><\/tr><\/tbody><\/table><\/div>\n<p><strong>Parking<\/strong><\/p>\n<div class=\"table-wrap\"><table><thead><tr><th>Category<\/th><th>Terms<\/th><th>Measured by<\/th><th>Notes<\/th><\/tr><\/thead><tbody><tr><td>Parking spot<\/td><td>hourly, daily, weekly, monthly, lease<\/td><td>spot (quantity)<\/td><td>Driveway, garage, or carport. <strong>Event pricing<\/strong> covers fair, stadium, and parade days.<\/td><\/tr><tr><td>RV / boat / trailer parking<\/td><td>weekly, monthly, lease<\/td><td>spot<\/td><td>Length limit and HOA check.<\/td><\/tr><tr><td>EV charging<\/td><td>hourly, daily, monthly<\/td><td>charger<\/td><td>Host's own charger. Price covers time and electricity.<\/td><\/tr><tr><td>Boat dock / slip<\/td><td>daily, weekly, monthly, lease<\/td><td>slip<\/td><td>Max boat length and draft, dock condition and insurance.<\/td><\/tr><\/tbody><\/table><\/div>\n<p><strong>Storage<\/strong><\/p>\n<div class=\"table-wrap\"><table><thead><tr><th>Category<\/th><th>Terms<\/th><th>Measured by<\/th><th>Notes<\/th><\/tr><\/thead><tbody><tr><td>Garage storage<\/td><td>weekly, monthly, lease<\/td><td>sq ft (quantity of bays)<\/td><td>Hazardous materials are not allowed. Host sets access hours.<\/td><\/tr><tr><td>Attic storage<\/td><td>monthly, lease<\/td><td>sq ft<\/td><td>Weight limit and ladder access must be disclosed.<\/td><\/tr><tr><td>Basement / closet / shed<\/td><td>weekly, monthly, lease<\/td><td>sq ft<\/td><td><\/td><\/tr><\/tbody><\/table><\/div>\n<p><strong>Land and growing<\/strong><\/p>\n<div class=\"table-wrap\"><table><thead><tr><th>Category<\/th><th>Terms<\/th><th>Measured by<\/th><th>Notes<\/th><\/tr><\/thead><tbody><tr><td>Garden plot<\/td><td>monthly, lease<\/td><td>sq ft (quantity of plots)<\/td><td>Front or back yard. Water access, HOA front-yard rules, and chemical policy.<\/td><\/tr><tr><td>Beehive / small-ag site<\/td><td>monthly, lease<\/td><td>site<\/td><td>Local apiary rules apply.<\/td><\/tr><tr><td>Pasture / paddock<\/td><td>monthly, lease<\/td><td>acre<\/td><td>Horses, goats, grazing. Fencing, water and livestock zoning.<\/td><\/tr><\/tbody><\/table><\/div>\n<h3 id=\"business-side-leased-to-companies-only\">Business side (leased to companies only)<\/h3>\n<p>These never appear in the everyday app. They're listed on <strong>Everyspace for Business<\/strong>, and only verified business accounts can send proposals on them (§1b).<\/p>\n<p><strong>Energy and infrastructure.<\/strong><\/p>\n<div class=\"table-wrap\"><table><thead><tr><th>Category<\/th><th>Terms<\/th><th>Measured by<\/th><th>Notes<\/th><\/tr><\/thead><tbody><tr><td>Rooftop solar<\/td><td>infrastructure, 10–25 yr<\/td><td>sq ft of roof<\/td><td>A third party pays for, owns, and maintains the panels and pays the owner rent or a share of the power. Requires a roof-age and structural check, utility interconnection (net metering, community solar, or virtual net metering), a removal and re-roof clause, and a recorded lease or easement.<\/td><\/tr><tr><td>Battery site<\/td><td>infrastructure, 5–20 yr<\/td><td>site<\/td><td>Garage wall, side yard, or pad. Requires fire code setbacks (NFPA 855), a utility or virtual-power-plant program, and permits.<\/td><\/tr><tr><td>Public EV charger site<\/td><td>infrastructure, 5–15 yr<\/td><td>site<\/td><td>A third party installs a charger in a driveway or curb cut.<\/td><\/tr><tr><td>Telecom / sensor site<\/td><td>infrastructure, 5–25 yr<\/td><td>site<\/td><td>Small-cell antenna, mesh node, or weather station.<\/td><\/tr><\/tbody><\/table><\/div>\n<p><strong>Commercial and fleet.<\/strong><\/p>\n<div class=\"table-wrap\"><table><thead><tr><th>Category<\/th><th>Terms<\/th><th>Measured by<\/th><th>Notes<\/th><\/tr><\/thead><tbody><tr><td>Fleet &amp; van parking<\/td><td>monthly, lease<\/td><td>spot<\/td><td>Overnight lots for delivery and service fleets. Zoning must allow commercial vehicles; lighting and neighbor notice.<\/td><\/tr><tr><td>Sign / billboard site<\/td><td>lease, 5–25 yr<\/td><td>site<\/td><td>Road frontage. Local sign ordinance permit, structural/wind review, illumination hours.<\/td><\/tr><tr><td>Parcel locker host<\/td><td>lease, 5–25 yr<\/td><td>site<\/td><td>A lobby or exterior wall with power for a carrier's locker bank.<\/td><\/tr><\/tbody><\/table><\/div>\n<p><strong>Later:<\/strong> laundry time, music/practice rooms by the hour, farmland leases, drone landing pads, cell-on-wheels event sites.<\/p>\n<p><strong>Not allowed:<\/strong> public streets and curbs, shared HOA common areas the host doesn't control, and any space whose required permit the host can't show.<\/p>\n<hr>\n<h2 id=\"1b-two-sides-everyday-and-business\">1b. Two sides: everyday and business<\/h2>\n<p>Each category has an <strong>audience<\/strong>:<\/p>\n<div class=\"table-wrap\"><table><thead><tr><th><\/th><th>Everyday app<\/th><th>Everyspace for Business<\/th><\/tr><\/thead><tbody><tr><td>Who rents<\/td><td>People<\/td><td>Verified companies (solar installers, charging networks, telecoms, parcel-locker networks, fleets, sign companies)<\/td><\/tr><tr><td>What's listed<\/td><td>Stays, activities, parking and docks, storage, land<\/td><td>Energy &amp; infrastructure, commercial &amp; fleet<\/td><\/tr><tr><td>Typical length<\/td><td>An hour to two years<\/td><td>Monthly fleet leases to 25-year agreements<\/td><\/tr><tr><td>How it's booked<\/td><td>Instant or request to book<\/td><td>Proposal → site assessment → contract → installation<\/td><\/tr><tr><td>What renters see<\/td><td>Photos, reviews, availability calendar<\/td><td>Site facts: roof size and age, electrical service, traffic counts, access<\/td><\/tr><\/tbody><\/table><\/div>\n<p>Rules:<\/p>\n<ul><li>Everyday search never returns business categories. Business search returns only business categories, and bundles don't apply there.<\/li><li>Only accounts verified as businesses can quote or propose on business sites. People see a landing page explaining the business side instead.<\/li><li>Owners list both kinds from the same hosting mode. The listing flow asks first: <strong>Rent to people<\/strong> or <strong>Lease to companies<\/strong>. Business listings skip the add-on step and ask for site facts.<\/li><li>Business accounts get their own tabs: <strong>Sites<\/strong> (list or map, filtered by site type) and <strong>Pipeline<\/strong> (proposals by stage, with active rent per year).<\/li><\/ul>\n<h2 id=\"1c-transparent-prices-and-the-price-beat-guarantee\">1c. Transparent prices and the price-beat guarantee<\/h2>\n<p><strong>All-in, always.<\/strong> Every price a renter sees, from search cards to the listing page to checkout, already includes the 10% service fee. Listing pages split it out: the owner's price, the service fee, and a \"where your money goes\" bar (owner 97%, owner fee 3%, service fee +10%). There are no cleaning fees or surprise fees at checkout.<\/p>\n<p><strong>Same space elsewhere.<\/strong> If the owner also lists the space on another site, the listing shows a <strong>Price check<\/strong>: our all-in price next to each other site's estimated all-in price for one unit (their price plus their renter fee and any cleaning or booking fee), with the date we last checked it.<\/p>\n<ul><li>Where the data comes from: links <strong>owners add themselves<\/strong> in Manage listing, and links <strong>renters send<\/strong> in price-match claims. We don't scrape other sites (their terms usually forbid it). We re-verify linked listings on a schedule.<\/li><li>Other sites' fees come from one table of estimates, labeled \"estimate\" until verified (RESEARCH.md §1).<\/li><\/ul>\n<p><strong>Price-beat guarantee.<\/strong><\/p>\n<ol><li><em>Before booking:<\/em> if a linked listing is cheaper for the same booking, checkout automatically beats it by 5% of their price. The receipt shows a \"Price beat vs X\" line.<\/li><li><em>After booking:<\/em> within 48 hours of booking, or any time before it starts, a renter can send a link and the other site's total. If the link is the owner's own cross-listing and the price matches what we have on file (within 3%), the refund (difference + 5%) is instant. Otherwise a person checks it within 24 hours.<\/li><li><strong>It comes out of our cut, never the owner's.<\/strong> The owner earns the same no matter where they list; prices differ between sites mostly because of each site's fees. So we compete by shrinking our own margin: the service fee (10%) plus the owner fee (3%) on that booking.<\/li><li><strong>Capped at our whole cut.<\/strong> We'll go down to zero margin on a booking, but never below it. If the owner charges so much less elsewhere that even our whole cut can't beat it, checkout says so plainly (\"we gave up our entire cut to get as close as we can\") and the owner is nudged to match.<\/li><li>Every quote and receipt shows <strong>what Everyspace earns<\/strong> on the booking.<\/li><li>One claim per booking; same space, same dates, full total with fees.<\/li><\/ol>\n<h2 id=\"1d-owner-friendly-by-default\">1d. Owner-friendly by default<\/h2>\n<ul><li><strong>Keep 97%.<\/strong> One flat 3% owner fee, shown on every booking as \"you get $X\".<\/li><li><strong>Manage listing<\/strong> for every space:<ul><li>Go live or pause with one switch. A paused listing leaves search immediately; existing bookings stay.<\/li><li>Edit prices with <strong>nearby price ranges<\/strong> (min–max and median of similar listings) and a live \"renter pays $X · you get $Y\" line.<\/li><li>Block dates on a calendar, with a reason (using it yourself, booked elsewhere).<\/li><li>Link the same listing on other sites. If it's cheaper elsewhere, the owner sees a friendly warning: we're covering the difference, but matching wins more bookings.<\/li><\/ul><\/li><li><strong>You earn the same everywhere.<\/strong> For each linked listing, Manage listing shows the owner's take-home per unit there (after that site's owner fee) and here. It suggests the price here that pays them exactly the same; because our fees are lower, renters then pay less here. One tap applies it.<\/li><li><strong>Instant book or approve each request<\/strong>, chosen per listing.<\/li><li><strong>Earnings spreadsheet:<\/strong> download every booking with what the renter paid, what Everyspace earned and the owner's payout.<\/li><li><strong>Quick replies in chat<\/strong> for common answers.<\/li><li><strong>Pricing help when listing:<\/strong> typical local prices plus the live range of similar listings, and the payout shown as they type.<\/li><li><strong>No surprises:<\/strong> access details are only shared after confirmation, a deposit is held for higher-risk spaces, and conversations are tied to each booking.<\/li><\/ul>\n<h2 id=\"1e-growth-features\">1e. Growth features<\/h2>\n<ul><li><strong>Earnings estimator.<\/strong> Anyone can tap \"Earn from your place\" and say what they have: driveway spots, garage bays, backyard hours, spare-room nights, roof area, a wall or frontage. It shows estimated monthly and yearly income, split into money from people and money from companies, using typical local prices and realistic occupancy. One tap starts a listing for any of those things.<\/li><li><strong>Saved.<\/strong> A heart on every card saves it to a Saved tab.<\/li><li><strong>Guest favorites.<\/strong> Spaces rated 4.8 or higher with at least two reviews get a badge and their own row in Explore.<\/li><li><strong>Ideas.<\/strong> One-tap starting points in Explore, like \"Park for the game\", \"Throw a party\", \"Store your stuff\", \"Dock your boat\".<\/li><\/ul>\n<hr>\n<h2 id=\"2-how-it-works\">2. How it works<\/h2>\n<h3 id=\"properties-and-spaces\">Properties and spaces<\/h3>\n<pre><code>Host ─┬─ Property (address, type, rules, HOA y/n, insurance)\n      └─ Space (category, quantity, rates per term, availability, parent?)\n            └─ Space (child) ...<\/code><\/pre>\n<ul><li><strong>Quantity.<\/strong> One listing can stand for several identical units, such as 4 driveway spots, 3 garage bays, or 8 storage lockers. Bookings use up quantity, and the listing stays available until all units are taken.<\/li><li><strong>Hierarchy (parent/child).<\/strong> A space can sit inside another one. For example, a garage bay is inside the garage, a room is inside the house, and an apartment is inside the building.<ul><li>Booking a parent blocks all of its children. If the whole house is booked, its rooms and backyard are not.<\/li><li>Booking any child blocks the parent as a whole. Rooms 1 and 2 can be rented separately, but then the whole house can't be.<\/li><li>Structural containers such as a building or a garage can be marked <strong>not rentable<\/strong>. They organize the listing and never block anything.<\/li><\/ul><\/li><li><strong>Explicit conflicts.<\/strong> Some spaces overlap without one sitting inside the other, such as \"driveway parking\" and \"RV parking\" in the same driveway. A host can mark them as conflicting.<\/li><li><strong>Independent spaces.<\/strong> A roof leased for solar does not conflict with the house being rented nightly. It isn't a child of the house, so the two never block each other.<\/li><\/ul>\n<h3 id=\"pricing\">Pricing<\/h3>\n<ul><li>There is one rate per allowed term, such as $12/hour, $45/day, or $180/month. Weekly stays use the weekly rate plus extra days at the daily rate. Partial months are prorated at the monthly rate divided by 30.<\/li><li><strong>Event pricing.<\/strong> Hosts can set date-range overrides, for example \"County Fair, Aug 14–17, $40/day\" for a driveway spot. When a booking covers those dates, the override replaces the daily rate for those days.<\/li><li><strong>Add-on price.<\/strong> A space can cost less when it is attached to an anchor rental (§3).<\/li><li><strong>Packages<\/strong> have their own price, either a fixed amount per period or a % discount (§3).<\/li><li><strong>Fees (prototype values).<\/strong> Renters pay a 10% service fee, and hosts pay 3%. Long and infrastructure agreements are charged per period rather than all at once.<\/li><li><strong>Deposits<\/strong> are set by category, such as a whole home or storage, and are held, not charged.<\/li><\/ul>\n<h3 id=\"booking-modes\">Booking modes<\/h3>\n<div class=\"table-wrap\"><table><thead><tr><th>Mode<\/th><th>When<\/th><th>Flow<\/th><\/tr><\/thead><tbody><tr><td>Instant<\/td><td>Short, low-risk rentals: parking, storage, hourly yard<\/td><td>Pay, then <strong>confirmed<\/strong><\/td><\/tr><tr><td>Request<\/td><td>Whole homes, filming, leases, anything the host flags<\/td><td><strong>pending<\/strong> (dates held 24h), then host approves (<strong>confirmed<\/strong>) or declines<\/td><\/tr><tr><td>Proposal<\/td><td>Infrastructure agreements<\/td><td><strong>proposed<\/strong>, then <strong>site assessment<\/strong>, then <strong>contract<\/strong>, then <strong>confirmed<\/strong>. Rent starts when the system is commissioned.<\/td><\/tr><\/tbody><\/table><\/div>\n<p>A cart with several items uses its strictest mode. For example, instant parking plus a request-to-book apartment becomes a request.<\/p>\n<p>States: <code>pending | proposed | site_assessment | contract | confirmed | active | completed | declined | cancelled<\/code>. Pending and proposal-stage bookings hold the space, so nobody can double-book while the host decides.<\/p>\n<h3 id=\"payments-schedule\">Payments schedule<\/h3>\n<ul><li><strong>Hourly, daily, or weekly:<\/strong> the full amount is charged at booking. The host is paid out 24h after check-in.<\/li><li><strong>Month-to-month or lease:<\/strong> the first period plus the deposit is charged at booking, then autopay each period. Month-to-month ends with 30 days' notice.<\/li><li><strong>Infrastructure:<\/strong> annual (or monthly) rent paid by the company. The platform takes its fee on each payment.<\/li><\/ul>\n<h3 id=\"access-and-handoff\">Access and handoff<\/h3>\n<p>Each space has access instructions that are revealed after confirmation, such as a gate code, a lockbox, or a smart-lock code generated per booking. It also has access hours (storage 7am–9pm, for example) and a check-in/out photo log, which is used for disputes about storage contents and yard condition.<\/p>\n<hr>\n<h2 id=\"3-multi-unit-buildings-add-ons-and-packages\">3. Multi-unit buildings, add-ons, and packages<\/h2>\n<p>The owner of an apartment building lists the <strong>building<\/strong> as a non-rentable container. Inside it go the <strong>units<\/strong>, a <strong>parking pool<\/strong> (for example 12 spots), a <strong>storage locker pool<\/strong>, and maybe EV chargers. The owner then decides how each one can be rented:<\/p>\n<div class=\"table-wrap\"><table><thead><tr><th>Rental policy<\/th><th>Meaning<\/th><th>Example<\/th><\/tr><\/thead><tbody><tr><td><code>standalone<\/code><\/td><td>Anyone can rent it alone<\/td><td>Apartment 2A, EV charger by the hour<\/td><\/tr><tr><td><code>addon<\/code><\/td><td>Can be rented only with an anchor<\/td><td>Garage parking only for building tenants<\/td><\/tr><tr><td><code>both<\/code><\/td><td>Rentable alone, with a lower price as an add-on<\/td><td>Storage locker: $90/mo alone or $60/mo with a unit<\/td><\/tr><\/tbody><\/table><\/div>\n<p><strong>Add-on rules<\/strong> are set on the add-on space:<\/p>\n<ul><li><code>anchors<\/code>: which spaces can carry this add-on, such as \"any unit in this building\" (by category) or specific unit IDs.<\/li><li><code>maxPerAnchor<\/code>: the most of this add-on one anchor can carry, such as 2 parking spaces per apartment.<\/li><li>The anchor can be in the <strong>same cart<\/strong> or be an <strong>existing booking<\/strong> of the same renter that covers the whole add-on period. A tenant who signed a lease in March can add a second parking spot in June.<\/li><li>The add-on can't outlast the anchor. If the lease ends, the add-on has to end with it.<\/li><\/ul>\n<p><strong>Packages<\/strong> are bundles defined by the host, like \"Unit 1A + 2 parking\" at $2,650/mo fixed or \"Any unit + locker\" at 10% off. A package is listed as one item in search results. When booked, it becomes the underlying spaces, so availability and conflicts are still checked for each space.<\/p>\n<p>That gives a renter these choices:<\/p>\n<ol><li>Apartment only.<\/li><li>Apartment plus 1 or 2 parking spaces (add-ons, capped at 2).<\/li><li>A package, such as Apartment 1A plus 2 parking at a fixed price.<\/li><li>Later, add a locker to their existing lease.<\/li><li>A non-tenant can rent a locker alone at the standalone price, but cannot rent parking, which is add-on only.<\/li><\/ol>\n<p>The same model works for a single house. For example, an owner can rent the ADU and offer the driveway spot only to whoever rents the ADU.<\/p>\n<hr>\n<h2 id=\"4-trust-safety-and-legal\">4. Trust, safety, and legal<\/h2>\n<ul><li><strong>Host checklist per category<\/strong> must be complete before a listing goes live: permits, HOA approval, insurance, and safety items such as smoke/CO detectors, pool fencing, NFPA 855, and roof assessment.<\/li><li><strong>Identity verification<\/strong> is required for both sides. Leases and infrastructure agreements also need a business or credit check.<\/li><li><strong>Agreements.<\/strong> Short rentals use platform terms of service. Leases use a state-specific lease template. Infrastructure uses a recorded lease or easement with removal, insurance, and indemnity clauses.<\/li><li><strong>Insurance.<\/strong> A host protection policy for short rentals. Infrastructure partners must name the owner as additional insured.<\/li><li><strong>Reviews<\/strong> in both directions, plus disputes backed by the check-in/out photos.<\/li><li><strong>Local rules engine (later).<\/strong> Look up the address to see short-term-rental caps, parking ordinances, and garden and front-yard rules, then turn off terms that aren't allowed.<\/li><\/ul>\n<hr>\n<h2 id=\"5-build-plan\">5. Build plan<\/h2>\n<div class=\"table-wrap\"><table><thead><tr><th>Phase<\/th><th>Scope<\/th><\/tr><\/thead><tbody><tr><td><strong>0: rules prototype (done)<\/strong><\/td><td>Catalog, data model, availability with quantity, hierarchy, and conflicts, add-on and package rules, pricing with event rates, booking modes and states, JSON API, tests<\/td><\/tr><tr><td><strong>0.5: app prototype (done)<\/strong><\/td><td>Installable mobile-first app. Renters: explore with map, events and bundles, listing pages with availability calendar and reviews, checkout for every rental length, trips with access details, messaging, reviews. Hosts: today dashboard, approve or decline in chat, listings tree, earnings by month, step-by-step listing wizard with the required checklist. Works offline as a single HTML file.<\/td><\/tr><tr><td><strong>0.75: two sides + polish (done)<\/strong><\/td><td>Everyspace for Business (Sites, Pipeline, landing page, business-only rule), new categories (kitchen, sport court, boat dock, pasture, fleet parking, signage, parcel lockers), earnings estimator, Saved, guest favorites, ideas row, desktop listing layout with a booking card and gallery, refreshed visual design.<\/td><\/tr><tr><td><strong>0.9: transparency + owner tools (done)<\/strong><\/td><td>All-in prices everywhere, money breakdown, price check against owners' cross-listings, automatic price beat at checkout, price-match claims with fraud checks, How pricing works page; Manage listing (pause, prices with nearby ranges and payout preview, block dates, cross-listings, \"cheaper elsewhere\" warning). Open research in RESEARCH.md.<\/td><\/tr><tr><td><strong>0.95: beat from our cut (done)<\/strong><\/td><td>Price beat and claims funded from Everyspace's cut and capped at it; \"Everyspace earns\" on every quote and receipt; owner take-home comparison with one-tap \"same take-home\" price; instant-book toggle; earnings CSV; chat quick replies.<\/td><\/tr><tr><td>1: MVP<\/td><td>Real auth, Postgres, Stripe Connect payouts, photo uploads, map search, messaging, notifications<\/td><\/tr><tr><td>2: Trust<\/td><td>ID verification, reviews, check-in/out photo log, disputes, insurance partner<\/td><\/tr><tr><td>3: Long-term<\/td><td>Lease templates and e-sign, autopay, move-in/out, maintenance requests<\/td><\/tr><tr><td>4: Infrastructure marketplace<\/td><td>Solar, battery, and charger partner portal, roof and site assessment scheduling, rent from commissioning, revenue share<\/td><\/tr><tr><td>5: Local rules engine<\/td><td>Permit and ordinance lookup by address, automatic term limits<\/td><\/tr><\/tbody><\/table><\/div>";
-const KEY = 'everyspace-demo-v4';
+const SPEC_HTML = "<h1 id=\"everyspace-product-spec-working-name\">Everyspace: product spec (working name)<\/h1>\n<p>Everyspace is a marketplace for renting out <strong>any part of a property<\/strong> for <strong>any length of time<\/strong>. You could rent out a backyard for one night, a driveway spot for fair weekend, a garage corner for a month, a whole house like a vacation rental, a front yard for a garden, or a roof for 20 years to someone who pays for solar panels on it.<\/p>\n<p>It also handles <strong>multi-unit buildings<\/strong>. A renter can take just an apartment, or an apartment plus two parking spaces and a storage locker, under rules the owner sets.<\/p>\n<p>The app has <strong>two sides<\/strong>. The <strong>everyday app<\/strong> is for people renting from people: parking, storage, yards, rooms, homes, kitchens, docks. <strong>Everyspace for Business<\/strong> is a separate side where companies lease roofs, pads, road frontage, walls and lots on multi-year agreements. Someone scrolling for a place to park never sees a rooftop solar lease, and a solar installer doesn't wade through backyard parties (§1b).<\/p>\n<p>This document covers what can be rented and how renting works. It comes before the build. The prototype in <code>src/<\/code> implements the core rules described here.<\/p>\n<hr>\n<h2 id=\"1-what-can-be-rented\">1. What can be rented<\/h2>\n<p>Every listing is a <strong>space<\/strong>, and every space has a <strong>category<\/strong>. The category sets which rental lengths are allowed, how the space is measured and priced, the default booking mode, and the checklist a host has to complete before going live.<\/p>\n<p>Rental lengths (terms):<\/p>\n<div class=\"table-wrap\"><table><thead><tr><th>Term<\/th><th>Unit<\/th><th>Typical use<\/th><\/tr><\/thead><tbody><tr><td>Hourly<\/td><td>hour<\/td><td>Backyard party, pool, studio session, EV charging<\/td><\/tr><tr><td>Nightly / daily<\/td><td>day<\/td><td>Vacation stay, event-day parking, overnight camping<\/td><\/tr><tr><td>Weekly<\/td><td>week<\/td><td>Longer stay, temporary storage<\/td><\/tr><tr><td>Month-to-month<\/td><td>month<\/td><td>Parking, storage, garden plot, room<\/td><\/tr><tr><td>Fixed lease<\/td><td>month, 6–24 mo<\/td><td>Apartment, ADU, long-term parking<\/td><\/tr><tr><td>Infrastructure agreement<\/td><td>year, 5–25 yr<\/td><td>Rooftop solar, battery, charger, antenna<\/td><\/tr><\/tbody><\/table><\/div>\n<h3 id=\"catalog\">Catalog<\/h3>\n<p><strong>Living<\/strong><\/p>\n<div class=\"table-wrap\"><table><thead><tr><th>Category<\/th><th>Terms<\/th><th>Measured by<\/th><th>Notes<\/th><\/tr><\/thead><tbody><tr><td>Entire home<\/td><td>daily, weekly, monthly, lease<\/td><td>whole<\/td><td>Works like Airbnb. Needs a short-term-rental permit and occupancy tax where the city requires them.<\/td><\/tr><tr><td>Apartment / unit<\/td><td>daily, monthly, lease<\/td><td>whole<\/td><td>A unit in a multi-unit building. It can anchor add-ons (§3).<\/td><\/tr><tr><td>ADU / guest house<\/td><td>daily, weekly, monthly, lease<\/td><td>whole<\/td><td><\/td><\/tr><tr><td>Private room<\/td><td>daily, weekly, monthly, lease<\/td><td>whole<\/td><td>Shared common areas are listed in the house rules.<\/td><\/tr><\/tbody><\/table><\/div>\n<p><strong>Outdoor and activity<\/strong><\/p>\n<div class=\"table-wrap\"><table><thead><tr><th>Category<\/th><th>Terms<\/th><th>Measured by<\/th><th>Notes<\/th><\/tr><\/thead><tbody><tr><td>Backyard<\/td><td>hourly, daily<\/td><td>whole<\/td><td>Parties, gatherings, dog play, photo shoots. Noise curfew and guest cap are required.<\/td><\/tr><tr><td>Yard campsite<\/td><td>daily, weekly<\/td><td>site<\/td><td>Tent or small RV overnight. Requires restroom access.<\/td><\/tr><tr><td>Pool<\/td><td>hourly<\/td><td>whole<\/td><td>Lifeguard and waiver rules. Host must confirm insurance.<\/td><\/tr><tr><td>Workspace / studio / workshop<\/td><td>hourly, daily, monthly<\/td><td>whole<\/td><td>Home office, music room, wood shop.<\/td><\/tr><tr><td>Filming / photo location<\/td><td>hourly, daily<\/td><td>whole<\/td><td>Always request-to-book. City film permit may be needed.<\/td><\/tr><tr><td>Kitchen<\/td><td>hourly, daily, monthly<\/td><td>whole<\/td><td>Cottage-food bakers, meal prep, cooking classes. Food-handler rules and allergen disclosure.<\/td><\/tr><tr><td>Sport court<\/td><td>hourly<\/td><td>whole<\/td><td>Pickleball, tennis, basketball. Lighting hours and waiver.<\/td><\/tr><\/tbody><\/table><\/div>\n<p><strong>Parking<\/strong><\/p>\n<div class=\"table-wrap\"><table><thead><tr><th>Category<\/th><th>Terms<\/th><th>Measured by<\/th><th>Notes<\/th><\/tr><\/thead><tbody><tr><td>Parking spot<\/td><td>hourly, daily, weekly, monthly, lease<\/td><td>spot (quantity)<\/td><td>Driveway, garage, or carport. <strong>Event pricing<\/strong> covers fair, stadium, and parade days.<\/td><\/tr><tr><td>RV / boat / trailer parking<\/td><td>weekly, monthly, lease<\/td><td>spot<\/td><td>Length limit and HOA check.<\/td><\/tr><tr><td>EV charging<\/td><td>hourly, daily, monthly<\/td><td>charger<\/td><td>Host's own charger. Price covers time and electricity.<\/td><\/tr><tr><td>Boat dock / slip<\/td><td>daily, weekly, monthly, lease<\/td><td>slip<\/td><td>Max boat length and draft, dock condition and insurance.<\/td><\/tr><\/tbody><\/table><\/div>\n<p><strong>Storage<\/strong><\/p>\n<div class=\"table-wrap\"><table><thead><tr><th>Category<\/th><th>Terms<\/th><th>Measured by<\/th><th>Notes<\/th><\/tr><\/thead><tbody><tr><td>Garage storage<\/td><td>weekly, monthly, lease<\/td><td>sq ft (quantity of bays)<\/td><td>Hazardous materials are not allowed. Host sets access hours.<\/td><\/tr><tr><td>Attic storage<\/td><td>monthly, lease<\/td><td>sq ft<\/td><td>Weight limit and ladder access must be disclosed.<\/td><\/tr><tr><td>Basement / closet / shed<\/td><td>weekly, monthly, lease<\/td><td>sq ft<\/td><td><\/td><\/tr><\/tbody><\/table><\/div>\n<p><strong>Land and growing<\/strong><\/p>\n<div class=\"table-wrap\"><table><thead><tr><th>Category<\/th><th>Terms<\/th><th>Measured by<\/th><th>Notes<\/th><\/tr><\/thead><tbody><tr><td>Garden plot<\/td><td>monthly, lease<\/td><td>sq ft (quantity of plots)<\/td><td>Front or back yard. Water access, HOA front-yard rules, and chemical policy.<\/td><\/tr><tr><td>Beehive / small-ag site<\/td><td>monthly, lease<\/td><td>site<\/td><td>Local apiary rules apply.<\/td><\/tr><tr><td>Pasture / paddock<\/td><td>monthly, lease<\/td><td>acre<\/td><td>Horses, goats, grazing. Fencing, water and livestock zoning.<\/td><\/tr><\/tbody><\/table><\/div>\n<h3 id=\"business-side-leased-to-companies-only\">Business side (leased to companies only)<\/h3>\n<p>These never appear in the everyday app. They're listed on <strong>Everyspace for Business<\/strong>, and only verified business accounts can send proposals on them (§1b).<\/p>\n<p><strong>Energy and infrastructure.<\/strong><\/p>\n<div class=\"table-wrap\"><table><thead><tr><th>Category<\/th><th>Terms<\/th><th>Measured by<\/th><th>Notes<\/th><\/tr><\/thead><tbody><tr><td>Rooftop solar<\/td><td>infrastructure, 10–25 yr<\/td><td>sq ft of roof<\/td><td>A third party pays for, owns, and maintains the panels and pays the owner rent or a share of the power. Requires a roof-age and structural check, utility interconnection (net metering, community solar, or virtual net metering), a removal and re-roof clause, and a recorded lease or easement.<\/td><\/tr><tr><td>Battery site<\/td><td>infrastructure, 5–20 yr<\/td><td>site<\/td><td>Garage wall, side yard, or pad. Requires fire code setbacks (NFPA 855), a utility or virtual-power-plant program, and permits.<\/td><\/tr><tr><td>Public EV charger site<\/td><td>infrastructure, 5–15 yr<\/td><td>site<\/td><td>A third party installs a charger in a driveway or curb cut.<\/td><\/tr><tr><td>Telecom / sensor site<\/td><td>infrastructure, 5–25 yr<\/td><td>site<\/td><td>Small-cell antenna, mesh node, or weather station.<\/td><\/tr><\/tbody><\/table><\/div>\n<p><strong>Commercial and fleet.<\/strong><\/p>\n<div class=\"table-wrap\"><table><thead><tr><th>Category<\/th><th>Terms<\/th><th>Measured by<\/th><th>Notes<\/th><\/tr><\/thead><tbody><tr><td>Fleet &amp; van parking<\/td><td>monthly, lease<\/td><td>spot<\/td><td>Overnight lots for delivery and service fleets. Zoning must allow commercial vehicles; lighting and neighbor notice.<\/td><\/tr><tr><td>Sign / billboard site<\/td><td>lease, 5–25 yr<\/td><td>site<\/td><td>Road frontage. Local sign ordinance permit, structural/wind review, illumination hours.<\/td><\/tr><tr><td>Parcel locker host<\/td><td>lease, 5–25 yr<\/td><td>site<\/td><td>A lobby or exterior wall with power for a carrier's locker bank.<\/td><\/tr><\/tbody><\/table><\/div>\n<p><strong>Later:<\/strong> laundry time, music/practice rooms by the hour, farmland leases, drone landing pads, cell-on-wheels event sites.<\/p>\n<p><strong>Not allowed:<\/strong> public streets and curbs, shared HOA common areas the host doesn't control, and any space whose required permit the host can't show.<\/p>\n<hr>\n<h2 id=\"1b-two-sides-everyday-and-business\">1b. Two sides: everyday and business<\/h2>\n<p>Each category has an <strong>audience<\/strong>:<\/p>\n<div class=\"table-wrap\"><table><thead><tr><th><\/th><th>Everyday app<\/th><th>Everyspace for Business<\/th><\/tr><\/thead><tbody><tr><td>Who rents<\/td><td>People<\/td><td>Verified companies (solar installers, charging networks, telecoms, parcel-locker networks, fleets, sign companies)<\/td><\/tr><tr><td>What's listed<\/td><td>Stays, activities, parking and docks, storage, land<\/td><td>Energy &amp; infrastructure, commercial &amp; fleet<\/td><\/tr><tr><td>Typical length<\/td><td>An hour to two years<\/td><td>Monthly fleet leases to 25-year agreements<\/td><\/tr><tr><td>How it's booked<\/td><td>Instant or request to book<\/td><td>Proposal → site assessment → contract → installation<\/td><\/tr><tr><td>What renters see<\/td><td>Photos, reviews, availability calendar<\/td><td>Site facts: roof size and age, electrical service, traffic counts, access<\/td><\/tr><\/tbody><\/table><\/div>\n<p>Rules:<\/p>\n<ul><li>Everyday search never returns business categories. Business search returns only business categories, and bundles don't apply there.<\/li><li>Only accounts verified as businesses can quote or propose on business sites. People see a landing page explaining the business side instead.<\/li><li>Owners list both kinds from the same hosting mode. The listing flow asks first: <strong>Rent to people<\/strong> or <strong>Lease to companies<\/strong>. Business listings skip the add-on step and ask for site facts.<\/li><li>Business accounts get their own tabs: <strong>Sites<\/strong> (list or map, filtered by site type) and <strong>Pipeline<\/strong> (proposals by stage, with active rent per year).<\/li><\/ul>\n<h2 id=\"1c-transparent-prices-and-the-price-beat-guarantee\">1c. Transparent prices and the price-beat guarantee<\/h2>\n<p><strong>All-in, always.<\/strong> Every price a renter sees, from search cards to the listing page to checkout, already includes the 10% service fee. Listing pages split it out: the owner's price, the service fee, and a \"where your money goes\" bar (owner 97%, owner fee 3%, service fee +10%). There are no cleaning fees or surprise fees at checkout.<\/p>\n<p><strong>Same space elsewhere.<\/strong> If the owner also lists the space on another site, the listing shows a <strong>Price check<\/strong>: our all-in price next to each other site's estimated all-in price for one unit (their price plus their renter fee and any cleaning or booking fee), with the date we last checked it.<\/p>\n<ul><li>Where the data comes from: links <strong>owners add themselves<\/strong> in Manage listing, and links <strong>renters send<\/strong> in price-match claims. We don't scrape other sites (their terms usually forbid it). We re-verify linked listings on a schedule.<\/li><li>Other sites' fees come from one table of estimates, labeled \"estimate\" until verified (RESEARCH.md §1).<\/li><\/ul>\n<p><strong>Price-beat guarantee.<\/strong><\/p>\n<ol><li><em>Before booking:<\/em> if a linked listing is cheaper for the same booking, checkout automatically beats it by 5% of their price. The receipt shows a \"Price beat vs X\" line.<\/li><li><em>After booking:<\/em> within 48 hours of booking, or any time before it starts, a renter can send a link and the other site's total. If the link is the owner's own cross-listing and the price matches what we have on file (within 3%), the refund (difference + 5%) is instant. Otherwise a person checks it within 24 hours.<\/li><li><strong>It comes out of our cut, never the owner's.<\/strong> The owner earns the same no matter where they list; prices differ between sites mostly because of each site's fees. So we compete by shrinking our own margin: the service fee (10%) plus the owner fee (3%) on that booking.<\/li><li><strong>Capped at our whole cut.<\/strong> We'll go down to zero margin on a booking, but never below it. If the owner charges so much less elsewhere that even our whole cut can't beat it, checkout says so plainly (\"we gave up our entire cut to get as close as we can\") and the owner is nudged to match.<\/li><li>Every quote and receipt shows <strong>what Everyspace earns<\/strong> on the booking.<\/li><\/ol>\n<p><strong>Taxes.<\/strong> Comparisons are before tax, since the same tax applies at that address on any site. All-in totals include lodging tax where it's known (San Diego TOT 11.75% lowest zone, exempt at one calendar month or more; Phoenix 13.07%; Indianapolis 17%). Other categories say \"tax not determined yet\" until a CPA classifies them (<code>RESEARCH_RESULTS.md<\/code> §4).<\/p>\n<p><strong>Unknown competitor fees.<\/strong> When a site doesn't publish its renter fee, its listing is shown but not priced or beaten automatically. Renters can still claim with that site's real checkout total.<\/p>\n<ol><li>One claim per booking; same space, same dates, full total with fees.<\/li><\/ol>\n<h2 id=\"1d-owner-friendly-by-default\">1d. Owner-friendly by default<\/h2>\n<ul><li><strong>Keep 97%.<\/strong> One flat 3% owner fee, shown on every booking as \"you get $X\".<\/li><li><strong>Manage listing<\/strong> for every space:<ul><li>Go live or pause with one switch. A paused listing leaves search immediately; existing bookings stay.<\/li><li>Edit prices with <strong>nearby price ranges<\/strong> (min–max and median of similar listings) and a live \"renter pays $X · you get $Y\" line.<\/li><li>Block dates on a calendar, with a reason (using it yourself, booked elsewhere).<\/li><li>Link the same listing on other sites. If it's cheaper elsewhere, the owner sees a friendly warning: we're covering the difference, but matching wins more bookings.<\/li><\/ul><\/li><li><strong>You earn the same everywhere.<\/strong> For each linked listing, Manage listing shows the owner's take-home per unit there (after that site's owner fee) and here. It suggests the price here that pays them exactly the same; because our fees are lower, renters then pay less here. One tap applies it.<\/li><li><strong>Instant book or approve each request<\/strong>, chosen per listing.<\/li><li><strong>Earnings spreadsheet:<\/strong> download every booking with what the renter paid, what Everyspace earned and the owner's payout.<\/li><li><strong>Quick replies in chat<\/strong> for common answers.<\/li><li><strong>Pricing help when listing:<\/strong> typical local prices plus the live range of similar listings, and the payout shown as they type.<\/li><li><strong>No surprises:<\/strong> access details are only shared after confirmation, a deposit is held for higher-risk spaces, and conversations are tied to each booking.<\/li><\/ul>\n<h2 id=\"1e-growth-features\">1e. Growth features<\/h2>\n<ul><li><strong>Earnings estimator.<\/strong> Anyone can tap \"Earn from your place\" and say what they have: driveway spots, garage bays, backyard hours, spare-room nights, roof area, a wall or frontage. It shows estimated monthly and yearly income, split into money from people and money from companies, using typical local prices and realistic occupancy. One tap starts a listing for any of those things.<\/li><li><strong>Saved.<\/strong> A heart on every card saves it to a Saved tab.<\/li><li><strong>Guest favorites.<\/strong> Spaces rated 4.8 or higher with at least two reviews get a badge and their own row in Explore.<\/li><li><strong>Ideas.<\/strong> One-tap starting points in Explore, like \"Park for the game\", \"Throw a party\", \"Store your stuff\", \"Dock your boat\".<\/li><\/ul>\n<hr>\n<h2 id=\"2-how-it-works\">2. How it works<\/h2>\n<h3 id=\"properties-and-spaces\">Properties and spaces<\/h3>\n<pre><code>Host ─┬─ Property (address, type, rules, HOA y/n, insurance)\n      └─ Space (category, quantity, rates per term, availability, parent?)\n            └─ Space (child) ...<\/code><\/pre>\n<ul><li><strong>Quantity.<\/strong> One listing can stand for several identical units, such as 4 driveway spots, 3 garage bays, or 8 storage lockers. Bookings use up quantity, and the listing stays available until all units are taken.<\/li><li><strong>Hierarchy (parent/child).<\/strong> A space can sit inside another one. For example, a garage bay is inside the garage, a room is inside the house, and an apartment is inside the building.<ul><li>Booking a parent blocks all of its children. If the whole house is booked, its rooms and backyard are not.<\/li><li>Booking any child blocks the parent as a whole. Rooms 1 and 2 can be rented separately, but then the whole house can't be.<\/li><li>Structural containers such as a building or a garage can be marked <strong>not rentable<\/strong>. They organize the listing and never block anything.<\/li><\/ul><\/li><li><strong>Explicit conflicts.<\/strong> Some spaces overlap without one sitting inside the other, such as \"driveway parking\" and \"RV parking\" in the same driveway. A host can mark them as conflicting.<\/li><li><strong>Independent spaces.<\/strong> A roof leased for solar does not conflict with the house being rented nightly. It isn't a child of the house, so the two never block each other.<\/li><\/ul>\n<h3 id=\"pricing\">Pricing<\/h3>\n<ul><li>There is one rate per allowed term, such as $12/hour, $45/day, or $180/month. Weekly stays use the weekly rate plus extra days at the daily rate. Partial months are prorated at the monthly rate divided by 30.<\/li><li><strong>Event pricing.<\/strong> Hosts can set date-range overrides, for example \"County Fair, Aug 14–17, $40/day\" for a driveway spot. When a booking covers those dates, the override replaces the daily rate for those days.<\/li><li><strong>Add-on price.<\/strong> A space can cost less when it is attached to an anchor rental (§3).<\/li><li><strong>Packages<\/strong> have their own price, either a fixed amount per period or a % discount (§3).<\/li><li><strong>Fees (prototype values).<\/strong> Renters pay a 10% service fee, and hosts pay 3%. Long and infrastructure agreements are charged per period rather than all at once.<\/li><li><strong>Deposits<\/strong> are set by category, such as a whole home or storage, and are held, not charged.<\/li><\/ul>\n<h3 id=\"booking-modes\">Booking modes<\/h3>\n<div class=\"table-wrap\"><table><thead><tr><th>Mode<\/th><th>When<\/th><th>Flow<\/th><\/tr><\/thead><tbody><tr><td>Instant<\/td><td>Short, low-risk rentals: parking, storage, hourly yard<\/td><td>Pay, then <strong>confirmed<\/strong><\/td><\/tr><tr><td>Request<\/td><td>Whole homes, filming, leases, anything the host flags<\/td><td><strong>pending<\/strong> (dates held 24h), then host approves (<strong>confirmed<\/strong>) or declines<\/td><\/tr><tr><td>Proposal<\/td><td>Infrastructure agreements<\/td><td><strong>proposed<\/strong>, then <strong>site assessment<\/strong>, then <strong>contract<\/strong>, then <strong>confirmed<\/strong>. Rent starts when the system is commissioned.<\/td><\/tr><\/tbody><\/table><\/div>\n<p>A cart with several items uses its strictest mode. For example, instant parking plus a request-to-book apartment becomes a request.<\/p>\n<p>States: <code>pending | proposed | site_assessment | contract | confirmed | active | completed | declined | cancelled<\/code>. Pending and proposal-stage bookings hold the space, so nobody can double-book while the host decides.<\/p>\n<h3 id=\"payments-schedule\">Payments schedule<\/h3>\n<ul><li><strong>Hourly, daily, or weekly:<\/strong> the full amount is charged at booking. The host is paid out 24h after check-in.<\/li><li><strong>Month-to-month or lease:<\/strong> the first period plus the deposit is charged at booking, then autopay each period. Month-to-month ends with 30 days' notice.<\/li><li><strong>Infrastructure:<\/strong> annual (or monthly) rent paid by the company. The platform takes its fee on each payment.<\/li><\/ul>\n<h3 id=\"access-and-handoff\">Access and handoff<\/h3>\n<p>Each space has access instructions that are revealed after confirmation, such as a gate code, a lockbox, or a smart-lock code generated per booking. It also has access hours (storage 7am–9pm, for example) and a check-in/out photo log, which is used for disputes about storage contents and yard condition.<\/p>\n<hr>\n<h2 id=\"3-multi-unit-buildings-add-ons-and-packages\">3. Multi-unit buildings, add-ons, and packages<\/h2>\n<p>The owner of an apartment building lists the <strong>building<\/strong> as a non-rentable container. Inside it go the <strong>units<\/strong>, a <strong>parking pool<\/strong> (for example 12 spots), a <strong>storage locker pool<\/strong>, and maybe EV chargers. The owner then decides how each one can be rented:<\/p>\n<div class=\"table-wrap\"><table><thead><tr><th>Rental policy<\/th><th>Meaning<\/th><th>Example<\/th><\/tr><\/thead><tbody><tr><td><code>standalone<\/code><\/td><td>Anyone can rent it alone<\/td><td>Apartment 2A, EV charger by the hour<\/td><\/tr><tr><td><code>addon<\/code><\/td><td>Can be rented only with an anchor<\/td><td>Garage parking only for building tenants<\/td><\/tr><tr><td><code>both<\/code><\/td><td>Rentable alone, with a lower price as an add-on<\/td><td>Storage locker: $90/mo alone or $60/mo with a unit<\/td><\/tr><\/tbody><\/table><\/div>\n<p><strong>Add-on rules<\/strong> are set on the add-on space:<\/p>\n<ul><li><code>anchors<\/code>: which spaces can carry this add-on, such as \"any unit in this building\" (by category) or specific unit IDs.<\/li><li><code>maxPerAnchor<\/code>: the most of this add-on one anchor can carry, such as 2 parking spaces per apartment.<\/li><li>The anchor can be in the <strong>same cart<\/strong> or be an <strong>existing booking<\/strong> of the same renter that covers the whole add-on period. A tenant who signed a lease in March can add a second parking spot in June.<\/li><li>The add-on can't outlast the anchor. If the lease ends, the add-on has to end with it.<\/li><\/ul>\n<p><strong>Packages<\/strong> are bundles defined by the host, like \"Unit 1A + 2 parking\" at $2,650/mo fixed or \"Any unit + locker\" at 10% off. A package is listed as one item in search results. When booked, it becomes the underlying spaces, so availability and conflicts are still checked for each space.<\/p>\n<p>That gives a renter these choices:<\/p>\n<ol><li>Apartment only.<\/li><li>Apartment plus 1 or 2 parking spaces (add-ons, capped at 2).<\/li><li>A package, such as Apartment 1A plus 2 parking at a fixed price.<\/li><li>Later, add a locker to their existing lease.<\/li><li>A non-tenant can rent a locker alone at the standalone price, but cannot rent parking, which is add-on only.<\/li><\/ol>\n<p>The same model works for a single house. For example, an owner can rent the ADU and offer the driveway spot only to whoever rents the ADU.<\/p>\n<hr>\n<h2 id=\"4-trust-safety-and-legal\">4. Trust, safety, and legal<\/h2>\n<ul><li><strong>Host checklist per category<\/strong> must be complete before a listing goes live: permits, HOA approval, insurance, and safety items such as smoke/CO detectors, pool fencing, NFPA 855, and roof assessment.<\/li><li><strong>Identity verification<\/strong> is required for both sides. Leases and infrastructure agreements also need a business or credit check.<\/li><li><strong>Agreements.<\/strong> Short rentals use platform terms of service. Leases use a state-specific lease template. Infrastructure uses a recorded lease or easement with removal, insurance, and indemnity clauses.<\/li><li><strong>Insurance.<\/strong> A host protection policy for short rentals. Infrastructure partners must name the owner as additional insured.<\/li><li><strong>Reviews<\/strong> in both directions, plus disputes backed by the check-in/out photos.<\/li><li><strong>Local rules engine (later).<\/strong> Look up the address to see short-term-rental caps, parking ordinances, and garden and front-yard rules, then turn off terms that aren't allowed.<\/li><\/ul>\n<hr>\n<h2 id=\"5-build-plan\">5. Build plan<\/h2>\n<div class=\"table-wrap\"><table><thead><tr><th>Phase<\/th><th>Scope<\/th><\/tr><\/thead><tbody><tr><td><strong>0: rules prototype (done)<\/strong><\/td><td>Catalog, data model, availability with quantity, hierarchy, and conflicts, add-on and package rules, pricing with event rates, booking modes and states, JSON API, tests<\/td><\/tr><tr><td><strong>0.5: app prototype (done)<\/strong><\/td><td>Installable mobile-first app. Renters: explore with map, events and bundles, listing pages with availability calendar and reviews, checkout for every rental length, trips with access details, messaging, reviews. Hosts: today dashboard, approve or decline in chat, listings tree, earnings by month, step-by-step listing wizard with the required checklist. Works offline as a single HTML file.<\/td><\/tr><tr><td><strong>0.75: two sides + polish (done)<\/strong><\/td><td>Everyspace for Business (Sites, Pipeline, landing page, business-only rule), new categories (kitchen, sport court, boat dock, pasture, fleet parking, signage, parcel lockers), earnings estimator, Saved, guest favorites, ideas row, desktop listing layout with a booking card and gallery, refreshed visual design.<\/td><\/tr><tr><td><strong>0.9: transparency + owner tools (done)<\/strong><\/td><td>All-in prices everywhere, money breakdown, price check against owners' cross-listings, automatic price beat at checkout, price-match claims with fraud checks, How pricing works page; Manage listing (pause, prices with nearby ranges and payout preview, block dates, cross-listings, \"cheaper elsewhere\" warning). Open research in RESEARCH.md.<\/td><\/tr><tr><td><strong>0.95: beat from our cut (done)<\/strong><\/td><td>Price beat and claims funded from Everyspace's cut and capped at it; \"Everyspace earns\" on every quote and receipt; owner take-home comparison with one-tap \"same take-home\" price; instant-book toggle; earnings CSV; chat quick replies.<\/td><\/tr><tr><td>1: MVP<\/td><td>Real auth, Postgres, Stripe Connect payouts, photo uploads, map search, messaging, notifications<\/td><\/tr><tr><td>2: Trust<\/td><td>ID verification, reviews, check-in/out photo log, disputes, insurance partner<\/td><\/tr><tr><td>3: Long-term<\/td><td>Lease templates and e-sign, autopay, move-in/out, maintenance requests<\/td><\/tr><tr><td>4: Infrastructure marketplace<\/td><td>Solar, battery, and charger partner portal, roof and site assessment scheduling, rent from commissioning, revenue share<\/td><\/tr><tr><td>5: Local rules engine<\/td><td>Permit and ordinance lookup by address, automatic term limits<\/td><\/tr><\/tbody><\/table><\/div>";
+const KEY = 'everyspace-demo-v5';
 let db;
 try { db = JSON.parse(localStorage.getItem(KEY)); } catch {}
 if (!db) db = seed();
@@ -3180,23 +3341,30 @@ function priceCheck(s) {
       <div style="flex:${hostFee * 100 + 8}"><strong>${money(base * hostFee)}</strong><span>owner fee</span></div>
       <div style="flex:${fee * 100 + 8}" class="fee"><strong>${money(base * fee)}</strong><span>service fee</span></div></div>
       <div class="muted small">Per ${unit}: you pay ${money(base * (1 + fee))}. The owner keeps ${Math.round((1 - hostFee) * 100)}% of their price. No other fees.</div>` : '';
+  const priced = cmp ? cmp.rows.filter((r) => r.theirs != null) : [];
+  const rowNote = (r) => r.stale ? 'owner-submitted price is out of date; not compared'
+    : r.feesUnknown ? `owner charges ${money(r.ownerPrice)}; ${esc(r.name)}'s renter fees aren't published, so we can't total it`
+      : `owner-submitted price${r.feePct ? ` + ~${Math.round(r.feePct * 100)}% their fee` : ''}${r.cleaningFee ? ` + ${money(r.cleaningFee)} cleaning` : ''} · checked ${r.verifiedAt ? fmtDate(r.verifiedAt) : '—'}${r.demo ? ' · demo' : ''}`;
+  const verdict = !cmp ? '' : !priced.length
+    ? `<div class="compare-verdict">Also listed on ${cmp.rows.map((r) => esc(r.name)).join(' and ')}, but we can't compare totals. Found it cheaper there after booking? Send it to us for a price match.</div>`
+    : cmp.cheaperHere
+      ? `<div class="compare-verdict ok">✓ Cheapest here. You save ${money(Math.min(...priced.map((r) => r.theirs)) - cmp.ours)} per ${unit} vs ${esc(priced[0].name)}. The owner earns the same either way; our fees are just lower.</div>`
+      : (() => {
+        const cut = s.rates[cmp.term] * (fee + hostFee);
+        return `<div class="compare-verdict beat">${cmp.ours - cut < priced[0].theirs
+          ? `${esc(priced[0].name)} is lower, so at checkout we <strong>cut our own fees to beat it by ${Math.round(s.pricing.beatPct * 100)}%</strong>. The owner gets the same either way.`
+          : `${esc(priced[0].name)} is lower because the owner charges less there. At checkout we give up <strong>all of our fees (${money(cut)})</strong> to get as close as we can, but it stays a little cheaper there.`}</div>`;
+      })();
   const compareRows = cmp ? `<div class="compare">
-      <div class="compare-row ours"><span><strong>Everyspace</strong><span class="muted small">all-in, 1 ${unit}</span></span><strong>${money(cmp.ours)}</strong></div>
-      ${cmp.rows.map((r) => `<div class="compare-row ${r.theirs < cmp.ours ? 'lower' : ''}"><span><strong>${esc(r.name)}</strong>
-        <span class="muted small">incl. ~${Math.round(r.feePct * 100)}% fee${r.cleaningFee ? ` + ${money(r.cleaningFee)} cleaning` : ''} · checked ${r.verifiedAt ? fmtDate(r.verifiedAt) : '—'}${r.demo ? ' · demo' : ''}</span></span>
-        <strong>${money(r.theirs)}</strong></div>`).join('')}
-      <div class="compare-verdict ${cmp.cheaperHere ? 'ok' : 'beat'}">${cmp.cheaperHere
-        ? `✓ Cheapest here. You save ${money(Math.min(...cmp.rows.map((r) => r.theirs)) - cmp.ours)} per ${unit} vs ${esc(cmp.rows[0].name)}. The owner earns the same either way; our fees are just lower.`
-        : (() => {
-          const cut = s.rates[cmp.term] * (fee + hostFee);
-          return cmp.ours - cut < cmp.rows[0].theirs
-            ? `${esc(cmp.rows[0].name)} is lower, so at checkout we <strong>cut our own fee to beat it by ${Math.round(s.pricing.beatPct * 100)}%</strong>. The owner gets the same either way.`
-            : `${esc(cmp.rows[0].name)} is lower because the owner charges less there. At checkout we give up <strong>our entire cut (${money(cut)})</strong> to get as close as we can.`;
-        })()}</div></div>` : '';
+      <div class="compare-row ours"><span><strong>Everyspace</strong><span class="muted small">all-in before tax, 1 ${unit}</span></span><strong>${money(cmp.ours)}</strong></div>
+      ${cmp.rows.map((r) => `<div class="compare-row ${r.theirs != null && r.theirs < cmp.ours ? 'lower' : ''} ${r.theirs == null ? 'unpriced' : ''}"><span><strong>${esc(r.name)}</strong>
+        <span class="muted small">${rowNote(r)}</span></span><strong>${r.theirs != null ? money(r.theirs) : '—'}</strong></div>`).join('')}
+      ${verdict}
+      <div class="muted small compare-foot">Everyspace isn't affiliated with these sites. Prices come from the owner and are rechecked; taxes are the same at this address on any site.</div></div>` : '';
   return `<h2 class="section-title">Price check</h2>
     ${compareRows || '<div class="muted small">Not listed on other sites that we know of.</div>'}
     ${flow}
-    <a class="guarantee" href="#/fair-price"><span>🛡️</span><div><strong>Price-beat guarantee</strong><span>Find this space cheaper elsewhere for the same dates and we cut our own fee to refund the difference plus ${Math.round(s.pricing.beatPct * 100)}%, up to everything we earn on the booking.</span></div>${icon.chevron}</a>`;
+    <a class="guarantee" href="#/fair-price"><span>🛡️</span><div><strong>Price-beat guarantee</strong><span>Same space, same dates, cheaper total elsewhere? We cut our own fees to beat it by ${Math.round(s.pricing.beatPct * 100)}%, <b>up to all the fees we earn on that booking</b>. Conditions apply; tap for the full terms.</span></div>${icon.chevron}</a>`;
 }
 
 async function renderSpace(view, [id]) {
@@ -3270,7 +3438,7 @@ async function renderSpace(view, [id]) {
         <div class="facts">
           <div><strong>${MODE_TEXT[mode][0]}</strong><span>${MODE_TEXT[mode][1]}</span></div>
           ${business ? '<div><strong>How it works</strong><span>Proposal → site assessment → contract → installation. The owner is never responsible for your equipment, insurance or removal.</span></div>' : ''}
-          ${c.deposit ? `<div><strong>Deposit</strong><span>${money(c.deposit)} held, not charged, released after checkout.</span></div>` : ''}
+          ${c.deposit ? `<div><strong>Deposit</strong><span>Short stays: a temporary card hold of ${money(c.deposit)}, not charged and released after checkout. Monthly rentals and leases: a refundable deposit collected separately under the rental agreement.</span></div>` : ''}
           <div><strong>Cancellation</strong><span>${rates.some((t) => ['lease', 'infrastructure'].includes(t)) || business ? 'Leases and agreements follow their contract terms.' : 'Free cancellation until 24 hours before start.'}</span></div>
           <div><strong>Owner confirmed</strong><span>${c.checklist.map(esc).join(' · ')}</span></div>
           ${s.minDuration ? `<div><strong>Minimum</strong><span>${Object.entries(s.minDuration).map(([t, n]) => `${n} ${term(t).unit}s ${term(t).label.toLowerCase()}`).join(', ')}</span></div>` : ''}
@@ -3467,16 +3635,19 @@ async function renderBook(view, params) {
         ${q.packageDiscount ? `<div class="qline ok"><span>Bundle discount</span><span>−${money(q.packageDiscount)}</span></div>` : ''}
         <div class="qline"><span>Service fee</span><span>${money(q.serviceFee)}</span></div>
         ${q.priceBeat ? `<div class="qline beat"><div>🛡️ Price beat vs ${esc(q.priceBeat.name)}<div class="muted small">${q.priceBeat.capped
-          ? `They'd charge ~${money(q.priceBeat.theirs)}${q.schedule.recurring ? `/${q.schedule.every}` : ''}. We gave up our entire cut to get as close as we can; the owner charges less there, so it's still a little cheaper on ${esc(q.priceBeat.name)}.`
-          : `They'd charge ~${money(q.priceBeat.theirs)}${q.schedule.recurring ? `/${q.schedule.every}` : ''}; we cut our own fee to beat it by 5%.`} The owner gets the same either way.</div></div><span>−${money(q.priceBeat.credit)}${q.schedule.recurring ? `/${q.schedule.every}` : ''}</span></div>` : ''}
-        <div class="qline total"><span>Total</span><span>${money(q.total)}</span></div>
-        <div class="qline muted"><span>Due today${q.schedule.recurring ? `, then ${money(q.schedule.recurring)}/${q.schedule.every}` : ''}</span><span>${money(q.schedule.dueNow)}</span></div>
-        ${q.deposit ? `<div class="qline muted"><span>Refundable deposit (held)</span><span>${money(q.deposit)}</span></div>` : ''}
+          ? `They'd charge ~${money(q.priceBeat.theirs)}${q.schedule.recurring ? `/${q.schedule.every}` : ''}. We gave up all of our fees on this booking, the most the guarantee covers. The owner charges less there, so it's still a little cheaper on ${esc(q.priceBeat.name)}.`
+          : `They'd charge ~${money(q.priceBeat.theirs)}${q.schedule.recurring ? `/${q.schedule.every}` : ''}; we cut our own fees to beat it by 5% (the guarantee covers up to all our fees on a booking).`} The owner gets the same either way.</div></div><span>−${money(q.priceBeat.credit)}${q.schedule.recurring ? `/${q.schedule.every}` : ''}</span></div>` : ''}
+        ${(q.tax?.items || []).map((t) => `<div class="qline"><div>${esc(t.name)}${t.rate ? ` (${(t.rate * 100).toFixed(2).replace(/\.?0+$/, '')}%)` : ''}<div class="muted small">${esc(t.note)}</div></div><span>${money(t.amount)}</span></div>`).join('')}
+        <div class="qline total"><span>Total${q.tax?.undetermined?.length ? ' before any taxes' : ''}</span><span>${money(q.total)}</span></div>
+        ${(q.tax?.undetermined || []).map((u) => `<div class="muted small">⚠️ ${esc(u)}</div>`).join('')}
+        <div class="qline muted"><span>Charged today${q.schedule.recurring ? `, then ${money(q.schedule.recurring)}/${q.schedule.every}` : ''}</span><span>${money(q.schedule.dueNow)}</span></div>
+        ${q.deposit ? `<div class="qline muted"><span>${q.schedule.depositKind === 'card_hold' ? 'Temporary card hold (not charged)' : 'Refundable deposit, collected separately'}</span><span>${money(q.deposit)}</span></div>` : ''}
         <div class="muted small">${esc(q.schedule.note)}</div>
         <div class="our-cut">Everyspace earns <strong>${money(q.ourCut)}</strong>${q.schedule.recurring ? `/${q.schedule.every}` : ''} on this booking · the owner gets ${money(q.hostPayout)}${q.schedule.recurring ? ' in total' : ''}</div>
-        ${q.comparison ? `<div class="compare mini"><div class="muted small">Same space elsewhere, same ${q.comparison.basis === 'total' ? 'dates, total' : q.comparison.basis.replace('per ', 'price per ')} incl. their fees (estimate):</div>
-          ${q.comparison.rows.map((r) => `<div class="compare-row ${r.comparable < q.comparison.ours ? 'lower' : ''}"><span>${esc(r.name)}</span><strong>${money(r.comparable)}</strong></div>`).join('')}
-          <div class="compare-row ours"><span><strong>You pay here</strong></span><strong>${money(q.schedule.recurring && q.comparison.basis !== 'total' ? q.schedule.recurring : q.total)}</strong></div></div>` : ''}
+        ${q.comparison ? `<div class="compare mini"><div class="muted small">Same space elsewhere, same ${q.comparison.basis === 'total' ? 'dates, total' : q.comparison.basis.replace('per ', 'price per ')} before tax (owner-submitted prices plus each site's published fees):</div>
+          ${q.comparison.rows.map((r) => `<div class="compare-row ${r.comparable != null && r.comparable < q.comparison.ours ? 'lower' : ''}"><span>${esc(r.name)}${r.comparable == null ? ` <span class="muted small">${r.stale ? 'price out of date' : 'renter fees not published'}</span>` : ''}</span><strong>${r.comparable != null ? money(r.comparable) : '—'}</strong></div>`).join('')}
+          <div class="compare-row ours"><span><strong>You pay here, before tax</strong></span><strong>${money(q.schedule.recurring && q.comparison.basis !== 'total' ? q.schedule.recurring : q.preTax)}</strong></div>
+          <div class="muted small" style="padding:4px 12px 8px">Not affiliated with these sites.</div></div>` : ''}
         ${q.availability.ok ? '<div class="avail ok">✓ Available</div>' : `<div class="error">Not available for these dates<ul>${q.availability.conflicts.map((c) => `<li>${esc(c.reason)}</li>`).join('')}</ul></div>`}`;
       $('#bar-total').innerHTML = `<div class="price">${money(q.schedule.recurring ?? q.total)}${q.schedule.recurring ? `<span>/${q.schedule.every}</span>` : ''}</div><div class="muted small">${q.schedule.recurring ? `${money(q.total)} total` : 'Total'}</div>`;
       btn.disabled = !q.availability.ok;
@@ -3586,6 +3757,7 @@ async function renderTrip(view, [id]) {
         ${q.packageDiscount ? `<div class="qline ok"><span>Bundle discount</span><span>−${money(q.packageDiscount)}</span></div>` : ''}
         ${q.serviceFee != null ? `<div class="qline"><span>Service fee</span><span>${money(q.serviceFee)}</span></div>` : ''}
         ${q.priceBeat ? `<div class="qline beat"><span>🛡️ Price beat vs ${esc(q.priceBeat.name)} (paid by Everyspace)</span><span>−${money(q.priceBeat.credit)}${q.schedule?.recurring ? `/${q.schedule.every}` : ''}</span></div>` : ''}
+        ${(q.tax?.items || []).map((t) => `<div class="qline"><span>${esc(t.name)}</span><span>${money(t.amount)}</span></div>`).join('')}
         <div class="qline total"><span>Total</span><span>${money(q.total)}</span></div>
         ${q.schedule?.recurring ? `<div class="qline muted"><span>Billed every ${q.schedule.every}</span><span>${money(q.schedule.recurring)}</span></div>` : ''}
         ${b.priceMatch ? `<div class="qline ${b.priceMatch.status === 'approved' ? 'beat' : 'muted'}"><span>🛡️ Price match vs ${esc(b.priceMatch.name)} ${b.priceMatch.status === 'approved' ? '(refunded)' : '(in review)'}</span><span>−${money(b.priceMatch.credit)}${b.priceMatch.perPeriod ? `/${q.schedule.every}` : ''}</span></div>` : ''}
@@ -3804,7 +3976,7 @@ async function renderHostEarnings(view) {
       ${e.perSpace.length ? e.perSpace.map((p) => `<a class="list-row link" href="#/space/${p.spaceId}"><div><strong>${esc(p.title)}</strong></div><strong>${money(p.amount)}</strong></a>`).join('')
         : '<div class="muted-block">No bookings yet. Earnings show up as soon as someone books.</div>'}
       <button class="btn ghost wide" id="csv">⬇️ Download earnings (spreadsheet)</button>
-      <p class="muted small">Every booking with what the renter paid, what Everyspace earned and what you got. Handy at tax time.</p>
+      <p class="muted small">Every booking with what the renter paid, what Everyspace earned and what you got. This is a summary, not a tax form: payment platforms send Form 1099-K only above $20,000 and 200 payments a year (IRS, 2025), and rental income can be taxable either way.</p>
       <h2 class="section-title">Payout method</h2>
       <div class="list-row"><span class="pay-icon">🏦</span><div><strong>Checking •••• 6789</strong><div class="muted small">Paid 24h after check-in, or monthly for leases (demo)</div></div></div>
     </div>`;
@@ -3838,7 +4010,7 @@ const ANCHOR_CATS = ['apartment_unit', 'adu', 'entire_home', 'private_room'];
 const STEPS = ['What', 'Where', 'Details', 'Prices', 'Who', 'Checklist', 'Review'];
 
 let draft = null;
-const fresh = (propertyId) => ({ step: 0, category: '', propertyId: propertyId ?? '', newProp: { title: '', city: 'Riverside', type: 'single_family' },
+const fresh = (propertyId) => ({ step: 0, category: '', propertyId: propertyId ?? '', newProp: { title: '', city: 'San Diego', type: 'single_family' },
   title: '', description: '', quantity: 1, sqft: '', parentId: '', amenities: '', rates: {}, on: {},
   event: { name: '', start: '', end: '', daily: '', hourly: '' }, policy: 'standalone', anchorCats: [], anchorIds: [], maxPerAnchor: 1, addonMonthly: '',
   checklist: [], access: '' });
@@ -3913,10 +4085,10 @@ function draw(view, props) {
     const near = (t) => { const m = d.market.data[t]; return m?.count ? ` · Nearby ${money(m.min)}–${money(m.max)}` : ''; };
     for (const t of c.terms) { if (d.rates[t] == null) d.rates[t] = sug[t] ?? ''; if (d.on[t] == null) d.on[t] = true; }
     const eventy = ['parking', 'outdoor'].includes(c.group) && c.terms.some((t) => t === 'daily' || t === 'hourly');
-    body = `<h1 class="page-title">Set your prices</h1><p class="muted">Starting points are typical for your area. Turn off any length you don't want.</p>
+    body = `<h1 class="page-title">Set your prices</h1><p class="muted">"Local example" prices come from dated listings nearby; "starting point" prices are our placeholders. ${esc(c.typicalMeta.note || '')} Turn off any length you don't want.</p>
       <div class="price-list">${c.terms.map((t) => `<div class="price-item ${d.on[t] ? '' : 'off'}">
         <label class="switch"><input type="checkbox" data-on="${t}" ${d.on[t] ? 'checked' : ''}><span></span></label>
-        <div><strong>${term(t).label}</strong><div class="muted small">${sug[t] ? `Typical: ${money(sug[t])}/${term(t).unit}` : ''}${near(t)}</div>
+        <div><strong>${term(t).label}</strong><div class="muted small">${sug[t] ? `${(c.typicalMeta.terms || []).includes(t) ? 'Local example' : 'Starting point'}: ${money(sug[t])}/${term(t).unit}` : ''}${near(t)}</div>
           ${d.on[t] && Number(d.rates[t]) > 0 ? `<div class="small payout">You get ${money(d.rates[t] * 0.97)} · renter pays ${money(d.rates[t] * 1.1)}</div>` : ''}</div>
         <label class="money-input">$<input type="number" min="0" step="1" data-rate="${t}" value="${esc(d.rates[t])}" ${d.on[t] ? '' : 'disabled'}><span>/${term(t).unit}</span></label></div>`).join('')}</div>
       ${eventy ? `<div class="card pad"><strong>🎟️ Event pricing (optional)</strong><p class="muted small">Charge more on fair, game or parade days.</p>
@@ -4264,49 +4436,64 @@ __m['biz'] = { renderBizHome, siteCard, renderPipeline };
 const { $, $$, api, esc, state, cat, term, money, topbar, bindBack, bindSteppers, stepper } = __m['core'];
 const { spaceCard } = __m['explore'];
 
-// Each row: what you have, how much of it, and how it turns into monthly income at typical local prices.
+// Each row: what you have, how much of it, and how it turns into monthly income at local EXAMPLE prices
+// (TYPICAL + TYPICAL_META in src/catalog.js; San Diego examples researched 2026-11-04). This is an illustration,
+// not typical income: the research found no city medians for most of these. Company leases with no published
+// rent are "ask for a quote" rows with no dollar figure (research §9: avoid income promises for ordinary roofs).
 const ROWS = [
   { key: 'parking', category: 'parking_spot', label: 'Driveway or garage parking spots', unit: 'spots', max: 6, def: 2, monthly: (n, t) => n * t.monthly * 0.75 },
-  { key: 'garage', category: 'garage_storage', label: 'Garage storage bays (~100 sq ft)', unit: 'bays', max: 6, def: 1, monthly: (n, t) => n * t.monthly * 0.8 },
-  { key: 'attic', category: 'attic_storage', label: 'Attic or basement storage', unit: 'areas', max: 2, def: 0, monthly: (n, t) => n * t.monthly * 0.75 },
-  { key: 'yard', category: 'backyard', label: 'Backyard rentals', unit: 'hours / month', max: 60, def: 8, step: 4, monthly: (n, t) => n * t.hourly },
-  { key: 'room', category: 'private_room', label: 'Spare room', unit: 'nights / month', max: 30, def: 0, step: 2, monthly: (n, t) => n * t.daily },
+  { key: 'garage', category: 'garage_storage', label: 'Garage storage space (10×20)', unit: 'spaces', max: 4, def: 1, monthly: (n, t) => n * t.monthly * 0.8 },
+  { key: 'attic', category: 'attic_storage', label: 'Attic storage', unit: 'areas', max: 2, def: 0, monthly: (n, t) => n * t.monthly * 0.75 },
+  { key: 'yard', category: 'backyard', label: 'Backyard for gatherings', unit: 'hours / month', max: 60, def: 4, step: 2, monthly: (n, t) => n * t.hourly },
+  { key: 'room', category: 'private_room', label: 'Spare room, rented monthly', unit: 'rooms', max: 3, def: 0, monthly: (n, t) => n * t.monthly },
   { key: 'pool', category: 'pool', label: 'Pool', unit: 'hours / month', max: 60, def: 0, step: 4, monthly: (n, t) => n * t.hourly },
-  { key: 'garden', category: 'garden_plot', label: 'Garden plots', unit: 'plots', max: 8, def: 0, monthly: (n, t) => n * t.monthly * 0.9 },
-  { key: 'roof', category: 'rooftop_solar', label: 'Sunny roof area', unit: 'sq ft', max: 3000, def: 0, step: 100, business: true, monthly: (n, t) => (n / 600) * t.infrastructure / 12 },
-  { key: 'battery', category: 'battery_site', label: 'Pad or wall for a battery', unit: 'sites', max: 1, def: 0, business: true, monthly: (n, t) => n * t.infrastructure / 12 },
-  { key: 'frontage', category: 'charger_site', label: 'Road frontage for EV chargers', unit: 'sites', max: 1, def: 0, business: true, monthly: (n, t) => n * t.infrastructure / 12 },
-  { key: 'locker', category: 'parcel_locker', label: 'Wall for a parcel locker', unit: 'sites', max: 1, def: 0, business: true, monthly: (n, t) => n * t.infrastructure / 12 },
+  { key: 'garden', category: 'garden_plot', label: 'Garden plots', unit: 'plots', max: 8, def: 0, monthly: (n, t) => n * t.lease },
+  { key: 'sign', category: 'signage', label: 'Road frontage for a billboard', unit: 'site', max: 1, def: 0, business: true, monthly: (n, t) => n * t.lease },
+  { key: 'roof', category: 'rooftop_solar', label: 'Large roof for solar', business: true, quote: true },
+  { key: 'battery', category: 'battery_site', label: 'Pad for a battery', business: true, quote: true },
+  { key: 'frontage', category: 'charger_site', label: 'Lot for EV fast chargers', business: true, quote: true },
+  { key: 'locker', category: 'parcel_locker', label: 'Wall for a parcel locker', business: true, quote: true },
 ];
 
+const basisLabel = (meta) => ({ example: 'example listing', benchmark: 'benchmark', assumption: 'our assumption', unknown: 'no published rent' })[meta.basis] || meta.basis;
+
 function renderEarn(view) {
-  const have = state.earn ??= Object.fromEntries(ROWS.map((r) => [r.key, r.def]));
-  const row = (r) => `<div class="earn-row" data-row="${r.key}"><span class="earn-icon">${cat(r.category).icon}</span>
-      <div><strong>${esc(r.label)}</strong><div class="muted small" data-amount="${r.key}"></div></div>
+  const have = state.earn2 ??= Object.fromEntries(ROWS.filter((r) => !r.quote).map((r) => [r.key, r.def]));
+  const row = (r) => {
+    const meta = cat(r.category).typicalMeta;
+    if (r.quote) return `<div class="earn-row quote-row"><span class="earn-icon">${cat(r.category).icon}</span>
+      <div><strong>${esc(r.label)}</strong><div class="muted small">${esc(meta.note || 'Rent is negotiated with each company.')}</div></div>
+      <a class="btn small ghost" href="#/host/new?fresh=1&category=${r.category}">Ask for quotes</a></div>`;
+    return `<div class="earn-row" data-row="${r.key}"><span class="earn-icon">${cat(r.category).icon}</span>
+      <div><strong>${esc(r.label)}</strong><div class="muted small" data-amount="${r.key}"></div>
+        <div class="muted small src">${esc(basisLabel(meta))}: ${esc(meta.source)}</div></div>
       ${stepper(r.key, have[r.key], { min: 0, max: r.max, inc: r.step ?? 1 })}</div>`;
+  };
   view.innerHTML = `${topbar('What could you earn?')}
     <div class="page narrow">
-      <div class="earn-total"><span>Estimated income</span><strong id="total-month">$0</strong><em id="total-year"></em>
+      <div class="earn-total"><span>Illustration, at local example prices</span><strong id="total-month">$0</strong><em id="total-year"></em>
         <div class="earn-split"><div><i class="dot consumer"></i>Everyday renters <b id="t-consumer"></b></div><div><i class="dot business"></i>From companies <b id="t-business"></b></div></div>
         <div class="split-bar"><i id="bar-consumer"></i><i id="bar-business"></i></div></div>
+      <p class="muted small">This isn't typical income. It multiplies what you have by dated example listings in San Diego (each source is shown), with about 75% occupancy for parking and storage. Your price, demand and local rules decide the real number. Everyspace keeps 3% of your price.</p>
       <h2 class="section-title">Spaces you could rent to people</h2>
       <div class="earn-list">${ROWS.filter((r) => !r.business).map(row).join('')}</div>
-      <h2 class="section-title">Spaces companies lease <span class="muted small">multi-year, paid yearly</span></h2>
+      <h2 class="section-title">Spaces companies lease <span class="muted small">multi-year, negotiated</span></h2>
       <div class="earn-list">${ROWS.filter((r) => r.business).map(row).join('')}</div>
-      <p class="muted small">Estimates use typical prices near you and realistic occupancy (about 75% for parking and storage). Actual earnings depend on demand, season and your prices. Everyspace keeps 3%.</p>
+      <p class="muted small">Most companies don't publish what they pay. Ordinary house roofs have no standard rent: solar programs mostly lease roofs over 40,000 sq ft. List the site and companies send proposals.</p>
       <div id="earn-cta" class="earn-cta"></div>
     </div>`;
   bindBack(view);
 
   const update = () => {
     let consumer = 0, business = 0;
-    for (const r of ROWS) {
-      const n = have[r.key];
-      const m = r.monthly(n, cat(r.category).typical);
+    for (const r of ROWS.filter((x) => !x.quote)) {
+      const n = have[r.key], t = cat(r.category).typical || {};
+      const m = r.monthly(n, t) || 0;
       if (r.business) business += m; else consumer += m;
+      const first = Object.entries(t)[0];
       $(`[data-amount="${r.key}"]`, view).innerHTML = n
         ? `${n.toLocaleString()} ${esc(r.unit)} · <strong>≈ ${money(Math.round(m))}/mo</strong>`
-        : (([t, v]) => `${esc(r.unit)} · typical ${money(v)}/${term(t).unit}`)(Object.entries(cat(r.category).typical)[0]);
+        : first ? `${esc(r.unit)} · example ${money(first[1])}/${term(first[0]).unit}` : esc(r.unit);
     }
     const total = consumer + business;
     $('#total-month').textContent = `${money(Math.round(total))}/mo`;
@@ -4315,7 +4502,7 @@ function renderEarn(view) {
     $('#t-business').textContent = money(Math.round(business));
     $('#bar-consumer').style.width = `${total ? (consumer / total) * 100 : 50}%`;
     $('#bar-business').style.width = `${total ? (business / total) * 100 : 50}%`;
-    const picked = ROWS.filter((r) => have[r.key] > 0);
+    const picked = ROWS.filter((r) => !r.quote && have[r.key] > 0);
     $('#earn-cta').innerHTML = picked.length
       ? `<h2 class="section-title">Start with one</h2><div class="chips wrap">${picked.map((r) => `<a class="chip" href="#/host/new?fresh=1&category=${r.category}">${cat(r.category).icon} List ${esc(cat(r.category).label.toLowerCase())}</a>`).join('')}</div>`
       : '';
@@ -4372,9 +4559,12 @@ async function renderManage(view, [id]) {
       ${s.takeHome.length ? `<section class="block"><h2>You earn the same everywhere</h2>
         <p class="muted small">What you take home per unit after each site's owner fee (their fees are estimates). Matching your take-home here makes Everyspace the cheapest place to book you, because our fees are lower.</p>
         <div class="compare">${s.takeHome.map((r, i) => `<div class="compare-row take-row"><span><strong>${esc(r.name)} · ${term(r.term).label}</strong>
-            <span class="muted small">You get ${money(r.there)} there · ${r.here != null ? `${money(r.here)} here` : 'not offered here'} · renters pay ~${money(r.renterThere)} there</span>
-            <span class="small payout">Price here for the same take-home: ${money(r.sameRate)} → renters pay ${money(r.renterAtSame)}</span></span>
-            ${r.here == null || Math.abs(r.sameRate - (s.rates?.[r.term] ?? 0)) > 0.01 ? `<button class="btn small" data-same="${i}">Use ${money(r.sameRate)}</button>` : '<span class="badge ok">Matched</span>'}</div>`).join('')}</div></section>` : ''}
+            <span class="muted small">You get ${r.there != null ? money(r.there) : r.thereRange ? `${money(r.thereRange[0])}–${money(r.thereRange[1])}` : 'an unpublished amount'} there
+              · ${r.here != null ? `${money(r.here)} here` : 'not offered here'}${r.renterThere != null ? ` · renters pay ~${money(r.renterThere)} there` : ''}</span>
+            ${r.sameRate != null ? `<span class="small payout">Price here for the same take-home: ${money(r.sameRate)} → renters pay ${money(r.renterAtSame)}</span>`
+              : `<span class="small muted">${esc(r.name)} doesn't publish one owner fee, so we can't work out a same-take-home price.</span>`}</span>
+            ${r.sameRate == null ? '' : r.here == null || Math.abs(r.sameRate - (s.rates?.[r.term] ?? 0)) > 0.01 ? `<button class="btn small" data-same="${i}">Use ${money(r.sameRate)}</button>` : '<span class="badge ok">Matched</span>'}</div>`).join('')}</div></section>` : ''}
+      ${s.notices.length ? `<div class="notice">📄 <div><strong>Before you compare prices</strong>${s.notices.map((n) => `<div class="small">${esc(n.text)}</div>`).join('')}</div></div>` : ''}
 
       ${c.audience === 'business' ? '' : `<section class="block row-between"><div><h2>${(s.mode ?? c.mode) === 'instant' ? '⚡ Instant book' : '✋ You approve each request'}</h2>
         <div class="muted small">${(s.mode ?? c.mode) === 'instant' ? 'Renters book right away. Most bookings, least work.' : 'You get 24 hours to accept or decline. Dates are held meanwhile.'}</div></div>
@@ -4452,7 +4642,7 @@ async function renderManage(view, [id]) {
     $('#ext-list').innerHTML = externals.map((e, i) => {
       const p = pricing.platforms[e.platform];
       return `<div class="list-row"><span class="pkg-icon">🔗</span><div><strong>${esc(p?.name ?? e.platform)}</strong>
-        <div class="muted small">${Object.entries(e.rates).map(([t, v]) => `${money(v)}/${term(t).unit}`).join(' · ')}${e.cleaningFee ? ` + ${money(e.cleaningFee)} fee` : ''} · checked ${e.verifiedAt ? fmtDate(e.verifiedAt) : 'pending'}${e.demo ? ' · demo link' : ''}</div></div>
+        <div class="muted small">${Object.entries(e.rates).map(([t, v]) => `${money(v)}/${term(t).unit}`).join(' · ')}${e.cleaningFee ? ` + ${money(e.cleaningFee)} fee` : ''} · your price, checked ${e.verifiedAt ? fmtDate(e.verifiedAt) : 'pending'}${e.verifiedAt && (Date.now() - Date.parse(e.verifiedAt)) / 864e5 > pricing.staleDays ? ' · <b>out of date, update it</b>' : ''}${e.demo ? ' · demo link' : ''}</div></div>
         <button class="btn small ghost" data-unlink="${i}">Remove</button></div>`;
     }).join('');
     for (const b of $$('[data-unlink]', view)) b.onclick = async () => {
@@ -4471,38 +4661,40 @@ async function renderManage(view, [id]) {
 async function renderFairPrice(view) {
   const p = await api('pricing');
   const pct = (n) => `${Math.round(n * 1000) / 10}%`;
+  const share = p.serviceFee + p.hostFee, ofTotal = share / (1 + p.serviceFee);
+  const fee = (v) => (v == null ? '<span class="muted">not published</span>' : pct(v));
   view.innerHTML = `${topbar('How pricing works')}
     <div class="page narrow plan">
       <h1 class="page-title">Honest prices, every time</h1>
-      <p class="lead">The price you see is the price you pay. Owners keep more. And if the same space is cheaper somewhere else, we beat it.</p>
+      <p class="lead">The price you see is the price you pay, including taxes we can calculate. Owners keep more here. And if the same space is cheaper somewhere else, we cut our own fees to beat it, up to everything we earn on that booking.</p>
 
       <h2>What you pay, and where it goes</h2>
       <div class="money-flow"><div style="flex:${(1 - p.hostFee) * 100}"><strong>${pct(1 - p.hostFee)}</strong><span>to the owner</span></div>
         <div style="flex:${p.hostFee * 100 + 6}"><strong>${pct(p.hostFee)}</strong><span>owner fee</span></div>
         <div style="flex:${p.serviceFee * 100 + 6}" class="fee"><strong>+${pct(p.serviceFee)}</strong><span>service fee</span></div></div>
       <ul>
-        <li><strong>All-in prices.</strong> Every price in search already includes our ${pct(p.serviceFee)} service fee. No surprise fees at checkout, no hidden cleaning fees.</li>
-        <li><strong>Owners keep ${pct(1 - p.hostFee)}.</strong> We take ${pct(p.hostFee)} from the owner's price, and the breakdown is on every receipt.</li>
-        <li><strong>Deposits are held, never charged</strong>, unless there's damage the owner documents with check-in/out photos.</li>
+        <li><strong>All-in prices.</strong> Every price includes our ${pct(p.serviceFee)} service fee. Lodging tax is added up front where we know it (for example San Diego's 11.75% transient occupancy tax on stays under a month). Where a tax isn't set up yet, checkout says so instead of showing it as $0.</li>
+        <li><strong>Owners keep ${pct(1 - p.hostFee)}</strong> of their price. In total, Everyspace keeps ${pct(ofTotal)} of what you pay (our ${pct(p.serviceFee)} + ${pct(p.hostFee)} fees). Every receipt shows the exact amount.</li>
+        <li><strong>Deposits are separate from what you're charged.</strong> Short stays: a temporary card hold, released after checkout unless the owner documents damage. Leases: a refundable deposit collected under the rental agreement.</li>
       </ul>
 
-      <h2>Price-beat guarantee</h2>
+      <h2>Price-beat guarantee: the full terms</h2>
+      <p><strong>The limit, up front:</strong> we fund the beat from our own fees on that booking (the ${pct(p.serviceFee)} service fee and the ${pct(p.hostFee)} owner fee), never from the owner's payout. If a lower price elsewhere is more than those fees can cover, we give up all of them and tell you it's still cheaper there.</p>
       <ol>
-        <li><strong>The owner earns the same everywhere.</strong> Prices differ between sites mostly because of each site's fees. Ours are lower, so the same owner price usually costs you less here.</li>
-        <li><strong>Before you book:</strong> if the owner also lists the space on another site, we show you both prices side by side. If theirs is lower, we automatically <strong>cut our own fee</strong> to beat it by ${pct(p.beatPct)} at checkout.</li>
-        <li><strong>After you book:</strong> found the same space cheaper for the same dates? Send us the link and the total within ${p.claimWindowHours} hours of booking, or any time before it starts. We refund the difference plus ${pct(p.beatPct)} of the other price.</li>
-        <li><strong>It comes out of our cut, never the owner's.</strong> We'll give up everything we earn on a booking (our ${pct(p.serviceFee)} service fee and ${pct(p.hostFee)} owner fee) to be the cheapest. If an owner charges less somewhere else than even that covers, we say so plainly and refund all of our cut.</li>
-        <li>It has to be the same space, the same dates and the full total including that site's fees.</li>
+        <li><strong>Before you book:</strong> if the owner has told us their price on another site, we show both totals side by side, before tax. If theirs is lower and we know that site's renter fees, checkout beats it by ${pct(p.beatPct)} automatically, within the limit above.</li>
+        <li><strong>After you book:</strong> send us the link and the total within ${p.claimWindowHours} hours of booking, or any time before your booking starts. Include a screenshot of their checkout total. We refund the difference plus ${pct(p.beatPct)} of their price, within the limit above.</li>
+        <li><strong>What counts:</strong> the same space, the same dates and times, the same number of guests, vehicles or units, and the full total including that site's mandatory fees. Member-only prices, coupons and different cancellation terms don't count.</li>
+        <li><strong>How we check:</strong> claims matching the owner's own current listing are approved instantly. Others are reviewed by a person within 24 hours. Refunds go back to your original payment method.</li>
+        <li><strong>Disagree with a decision?</strong> Reply in the booking's chat and a different person reviews it.</li>
       </ol>
-      <p class="muted">Every receipt shows exactly what Everyspace earned on the booking.</p>
 
       <h2>How we compare totals</h2>
-      <p class="muted">Other sites add their own fees on top of the owner's price. We include them so the comparison is fair. These are estimates and are labeled that way.</p>
-      <div class="table-wrap"><table><thead><tr><th>Site</th><th>Renter fee</th><th>Per booking</th><th>Owner keeps</th></tr></thead><tbody>
-        <tr><td><strong>Everyspace</strong></td><td><strong>${pct(p.serviceFee)}</strong></td><td>$0</td><td><strong>${pct(1 - p.hostFee)}</strong></td></tr>
-        ${Object.values(p.platforms).map((x) => `<tr><td>${esc(x.name)}${x.verified ? '' : ' <span class="muted">(estimate)</span>'}</td><td>${pct(x.guestFeePct)}</td><td>${money(x.perBookingFee)}</td><td>${pct(1 - x.hostFeePct)}</td></tr>`).join('')}
+      <p class="muted">Other sites' prices come from what owners tell us, dated, and are only used while they're under ${p.staleDays} days old. We never copy listings from other sites. Fees below were researched on ${esc(p.researched)} from each site's own help pages. Where a site doesn't publish a renter fee, we can't total its price, so those listings are shown but not compared.</p>
+      <div class="table-wrap"><table><thead><tr><th>Site</th><th>Renter fee</th><th>Owner fee</th><th>Notes</th></tr></thead><tbody>
+        <tr><td><strong>Everyspace</strong></td><td><strong>${pct(p.serviceFee)}</strong></td><td><strong>${pct(p.hostFee)}</strong></td><td>No cleaning or booking fees.</td></tr>
+        ${Object.values(p.platforms).map((x) => `<tr><td>${esc(x.name)}</td><td>${fee(x.guestFeePct)}</td><td>${x.hostFeePct != null ? pct(x.hostFeePct) : x.hostFeeRange ? `${pct(x.hostFeeRange[0])}–${pct(x.hostFeeRange[1])}` : '<span class="muted">not published</span>'}</td><td class="small muted">${esc(x.plan || '')}</td></tr>`).join('')}
       </tbody></table></div>
-      <p class="muted small">We never copy listings from other sites. Comparisons come from links owners add themselves and from links renters send us, and we re-check them regularly.</p>
+      <p class="muted small">Everyspace isn't affiliated with any of these sites. Names are used only to identify where a price came from.</p>
     </div>`;
   bindBack(view);
 }

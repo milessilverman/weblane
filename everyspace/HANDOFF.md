@@ -31,11 +31,14 @@ GitHub Actions (`.github/workflows/checks.yml`) runs all of this on every push t
 
 | Research | Table / setting |
 |---|---|
-| Competitor renter and owner fees | `PLATFORMS` in `src/compare.js` (set `verified: true` to drop the "estimate" labels) |
+| Competitor renter and owner fees | `PLATFORMS` in `src/compare.js`, researched 2026-11-04 (`RESEARCH_RESULTS.md` §1). **null = unknown, never 0** |
 | Price-beat percentage, claim window | `BEAT_PCT`, `CLAIM_WINDOW_HOURS` in `src/compare.js` |
 | Typical local prices | `TYPICAL` in `src/catalog.js` (the listing wizard, estimator and Manage listing use it) |
 | Local rules and permits | `checklist` per category in `src/catalog.js` |
 | Fees | `SERVICE_FEE`, `HOST_FEE` in `src/pricing.js` |
+| Taxes by city | `TAX_RULES` in `src/tax.js` (San Diego, Phoenix, Indianapolis lodging; other categories "not determined") |
+| How long an owner-submitted price stays usable | `STALE_DAYS` in `src/compare.js` |
+| Where each typical price came from | `TYPICAL_META` in `src/catalog.js` |
 
 ## Known gaps (on purpose, for later)
 

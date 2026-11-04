@@ -26,7 +26,7 @@ function bundle(dir, names) {
   }).join('\n');
 }
 
-const DOMAIN = ['catalog', 'time', 'describe', 'pricing', 'compare', 'availability', 'booking', 'social', 'host', 'owner', 'seed', 'listings', 'routes'];
+const DOMAIN = ['catalog', 'time', 'describe', 'pricing', 'compare', 'tax', 'availability', 'booking', 'social', 'host', 'owner', 'seed', 'listings', 'routes'];
 const UI = ['core', 'art', 'calendar', 'explore', 'space', 'book', 'trips', 'inbox', 'host', 'wizard', 'profile', 'biz', 'earn', 'manage', 'main'];
 
 const specHtml = markdownToHtml(read('SPEC.md'));
@@ -37,7 +37,7 @@ ${bundle('src', DOMAIN)}
 const { handleApi, isUserError, NotFound } = __m.routes;
 const { seed } = __m.seed;
 const SPEC_HTML = ${JSON.stringify(specHtml).replace(/<\//g, '<\\/')};
-const KEY = 'everyspace-demo-v4';
+const KEY = 'everyspace-demo-v5';
 let db;
 try { db = JSON.parse(localStorage.getItem(KEY)); } catch {}
 if (!db) db = seed();

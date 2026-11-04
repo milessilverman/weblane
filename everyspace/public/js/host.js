@@ -84,7 +84,7 @@ export async function renderHostEarnings(view) {
       ${e.perSpace.length ? e.perSpace.map((p) => `<a class="list-row link" href="#/space/${p.spaceId}"><div><strong>${esc(p.title)}</strong></div><strong>${money(p.amount)}</strong></a>`).join('')
         : '<div class="muted-block">No bookings yet. Earnings show up as soon as someone books.</div>'}
       <button class="btn ghost wide" id="csv">⬇️ Download earnings (spreadsheet)</button>
-      <p class="muted small">Every booking with what the renter paid, what Everyspace earned and what you got. Handy at tax time.</p>
+      <p class="muted small">Every booking with what the renter paid, what Everyspace earned and what you got. This is a summary, not a tax form: payment platforms send Form 1099-K only above $20,000 and 200 payments a year (IRS, 2025), and rental income can be taxable either way.</p>
       <h2 class="section-title">Payout method</h2>
       <div class="list-row"><span class="pay-icon">🏦</span><div><strong>Checking •••• 6789</strong><div class="muted small">Paid 24h after check-in, or monthly for leases (demo)</div></div></div>
     </div>`;

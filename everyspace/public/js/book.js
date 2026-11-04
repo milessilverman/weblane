@@ -161,16 +161,19 @@ export async function renderBook(view, params) {
         ${q.packageDiscount ? `<div class="qline ok"><span>Bundle discount</span><span>−${money(q.packageDiscount)}</span></div>` : ''}
         <div class="qline"><span>Service fee</span><span>${money(q.serviceFee)}</span></div>
         ${q.priceBeat ? `<div class="qline beat"><div>🛡️ Price beat vs ${esc(q.priceBeat.name)}<div class="muted small">${q.priceBeat.capped
-          ? `They'd charge ~${money(q.priceBeat.theirs)}${q.schedule.recurring ? `/${q.schedule.every}` : ''}. We gave up our entire cut to get as close as we can; the owner charges less there, so it's still a little cheaper on ${esc(q.priceBeat.name)}.`
-          : `They'd charge ~${money(q.priceBeat.theirs)}${q.schedule.recurring ? `/${q.schedule.every}` : ''}; we cut our own fee to beat it by 5%.`} The owner gets the same either way.</div></div><span>−${money(q.priceBeat.credit)}${q.schedule.recurring ? `/${q.schedule.every}` : ''}</span></div>` : ''}
-        <div class="qline total"><span>Total</span><span>${money(q.total)}</span></div>
-        <div class="qline muted"><span>Due today${q.schedule.recurring ? `, then ${money(q.schedule.recurring)}/${q.schedule.every}` : ''}</span><span>${money(q.schedule.dueNow)}</span></div>
-        ${q.deposit ? `<div class="qline muted"><span>Refundable deposit (held)</span><span>${money(q.deposit)}</span></div>` : ''}
+          ? `They'd charge ~${money(q.priceBeat.theirs)}${q.schedule.recurring ? `/${q.schedule.every}` : ''}. We gave up all of our fees on this booking, the most the guarantee covers. The owner charges less there, so it's still a little cheaper on ${esc(q.priceBeat.name)}.`
+          : `They'd charge ~${money(q.priceBeat.theirs)}${q.schedule.recurring ? `/${q.schedule.every}` : ''}; we cut our own fees to beat it by 5% (the guarantee covers up to all our fees on a booking).`} The owner gets the same either way.</div></div><span>−${money(q.priceBeat.credit)}${q.schedule.recurring ? `/${q.schedule.every}` : ''}</span></div>` : ''}
+        ${(q.tax?.items || []).map((t) => `<div class="qline"><div>${esc(t.name)}${t.rate ? ` (${(t.rate * 100).toFixed(2).replace(/\.?0+$/, '')}%)` : ''}<div class="muted small">${esc(t.note)}</div></div><span>${money(t.amount)}</span></div>`).join('')}
+        <div class="qline total"><span>Total${q.tax?.undetermined?.length ? ' before any taxes' : ''}</span><span>${money(q.total)}</span></div>
+        ${(q.tax?.undetermined || []).map((u) => `<div class="muted small">⚠️ ${esc(u)}</div>`).join('')}
+        <div class="qline muted"><span>Charged today${q.schedule.recurring ? `, then ${money(q.schedule.recurring)}/${q.schedule.every}` : ''}</span><span>${money(q.schedule.dueNow)}</span></div>
+        ${q.deposit ? `<div class="qline muted"><span>${q.schedule.depositKind === 'card_hold' ? 'Temporary card hold (not charged)' : 'Refundable deposit, collected separately'}</span><span>${money(q.deposit)}</span></div>` : ''}
         <div class="muted small">${esc(q.schedule.note)}</div>
         <div class="our-cut">Everyspace earns <strong>${money(q.ourCut)}</strong>${q.schedule.recurring ? `/${q.schedule.every}` : ''} on this booking · the owner gets ${money(q.hostPayout)}${q.schedule.recurring ? ' in total' : ''}</div>
-        ${q.comparison ? `<div class="compare mini"><div class="muted small">Same space elsewhere, same ${q.comparison.basis === 'total' ? 'dates, total' : q.comparison.basis.replace('per ', 'price per ')} incl. their fees (estimate):</div>
-          ${q.comparison.rows.map((r) => `<div class="compare-row ${r.comparable < q.comparison.ours ? 'lower' : ''}"><span>${esc(r.name)}</span><strong>${money(r.comparable)}</strong></div>`).join('')}
-          <div class="compare-row ours"><span><strong>You pay here</strong></span><strong>${money(q.schedule.recurring && q.comparison.basis !== 'total' ? q.schedule.recurring : q.total)}</strong></div></div>` : ''}
+        ${q.comparison ? `<div class="compare mini"><div class="muted small">Same space elsewhere, same ${q.comparison.basis === 'total' ? 'dates, total' : q.comparison.basis.replace('per ', 'price per ')} before tax (owner-submitted prices plus each site's published fees):</div>
+          ${q.comparison.rows.map((r) => `<div class="compare-row ${r.comparable != null && r.comparable < q.comparison.ours ? 'lower' : ''}"><span>${esc(r.name)}${r.comparable == null ? ` <span class="muted small">${r.stale ? 'price out of date' : 'renter fees not published'}</span>` : ''}</span><strong>${r.comparable != null ? money(r.comparable) : '—'}</strong></div>`).join('')}
+          <div class="compare-row ours"><span><strong>You pay here, before tax</strong></span><strong>${money(q.schedule.recurring && q.comparison.basis !== 'total' ? q.schedule.recurring : q.preTax)}</strong></div>
+          <div class="muted small" style="padding:4px 12px 8px">Not affiliated with these sites.</div></div>` : ''}
         ${q.availability.ok ? '<div class="avail ok">✓ Available</div>' : `<div class="error">Not available for these dates<ul>${q.availability.conflicts.map((c) => `<li>${esc(c.reason)}</li>`).join('')}</ul></div>`}`;
       $('#bar-total').innerHTML = `<div class="price">${money(q.schedule.recurring ?? q.total)}${q.schedule.recurring ? `<span>/${q.schedule.every}</span>` : ''}</div><div class="muted small">${q.schedule.recurring ? `${money(q.total)} total` : 'Total'}</div>`;
       btn.disabled = !q.availability.ok;

@@ -5,6 +5,7 @@ import { priceLine, totals } from './pricing.js';
 import { duration, toMs } from './time.js';
 import { withArticle } from './describe.js';
 import { applyComparison, ourCut } from './compare.js';
+import { applyTax } from './tax.js';
 
 export class BookingError extends Error {
   constructor(message, details = []) { super(message); this.details = details; }
@@ -125,6 +126,9 @@ export function quote(db, cart) {
   // Same space listed elsewhere? Show the comparison and beat any cheaper verified price (single-space bookings).
   if (!ev.pkg && ev.items.length === 1) applyComparison(ev.spaces[0], q, { ...cart, items: ev.items });
   q.ourCut ??= ourCut(q, ['hourly', 'daily', 'weekly'].includes(cart.term)); // what Everyspace earns, shown on every receipt
+  // Taxes last: comparisons are before tax (same address, same tax on any site); the all-in total includes them.
+  const city = db.properties.find((p) => p.id === ev.spaces[0]?.propertyId)?.city;
+  applyTax(q, ev.spaces, city, cart);
   return q;
 }
 
@@ -132,7 +136,7 @@ const INITIAL = { instant: 'confirmed', request: 'pending', proposal: 'proposed'
 
 export function createBooking(db, cart, { now = new Date().toISOString(), newId } = {}) {
   if (!db.users.some((u) => u.id === cart.renterId)) throw new BookingError('Unknown renter');
-  const q = quote(db, cart);
+  const q = quote(db, { ...cart, now: cart.now ?? now });
   if (!q.availability.ok) throw new BookingError('Not available', q.availability.conflicts.map((c) => c.reason));
   const { items } = resolveItems(db, cart);
   const hostIds = new Set(items.map((i) => hostOf(db, i.spaceId)));
@@ -150,7 +154,7 @@ export function createBooking(db, cart, { now = new Date().toISOString(), newId 
     mode: q.mode,
     status: INITIAL[q.mode],
     quote: { total: q.total, rent: q.rent, serviceFee: q.serviceFee, hostPayout: q.hostPayout, packageDiscount: q.packageDiscount, deposit: q.deposit,
-      schedule: q.schedule, lines: q.lines, priceBeat: q.priceBeat ?? null, hostFee: q.hostFee, ourCut: q.ourCut },
+      schedule: q.schedule, lines: q.lines, priceBeat: q.priceBeat ?? null, hostFee: q.hostFee, ourCut: q.ourCut, preTax: q.preTax, tax: q.tax },
     note: cart.note ?? '',
     history: [{ at: now, status: INITIAL[q.mode], by: cart.renterId }],
     createdAt: now,

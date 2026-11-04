@@ -50,7 +50,7 @@ fs.mkdirSync(outDir, { recursive: true });
   await step('earnings estimator', async () => {
     await go('#/earn'); await p.waitForSelector('#total-month');
     const before = await p.textContent('#total-month');
-    await p.click('[data-stepper="roof"] [data-step="1"]'); await p.click('[data-stepper="roof"] [data-step="1"]'); await p.waitForTimeout(100);
+    await p.click('[data-stepper="yard"] [data-step="1"]'); await p.click('[data-stepper="sign"] [data-step="1"]'); await p.waitForTimeout(100);
     if ((await p.textContent('#total-month')) === before) throw new Error('total did not change');
     await shot('01c-earn'); await overflow('earn');
   });
@@ -91,8 +91,9 @@ fs.mkdirSync(outDir, { recursive: true });
     await shot('08c-price-check'); await overflow('price check');
   });
   await step('checkout beats a cheaper price elsewhere', async () => {
-    await go('#/book/s_elm_pool'); await p.waitForSelector('#quote .qline'); await p.waitForTimeout(400);
-    if (!(await p.$('#quote .qline.beat'))) throw new Error('no price beat line for the pool');
+    await go('#/book/s_ana_room'); await p.waitForSelector('#quote .qline'); await p.waitForTimeout(400);
+    if (!(await p.$('#quote .qline.beat'))) throw new Error('no price beat line for the guest room (cheaper on Airbnb)');
+    if (!/occupancy tax/i.test(await p.textContent('#quote'))) throw new Error('no lodging tax line');
     await shot('08d-price-beat');
   });
   await step('how pricing works page', async () => { await go('#/fair-price'); await p.waitForSelector('.money-flow'); await overflow('fair price'); await shot('08e-fair-price'); });
@@ -154,10 +155,10 @@ fs.mkdirSync(outDir, { recursive: true });
     await p.fill('#ext-url', 'https://www.neighbor.com/l/attic-123'); await p.fill('#ext-price', '65'); await p.click('#add-ext'); await p.waitForTimeout(500);
     if (!/Neighbor/.test(await p.textContent('#ext-list'))) throw new Error('cross-listing not added');
   });
-  await step('Luis sees the "cheaper elsewhere" warning on his pool', async () => {
-    await go('#/profile'); await p.click('[data-user="u_luis"]'); await p.waitForSelector('.greeting');
-    await go('#/host/space/s_elm_pool'); await p.waitForSelector('.notice.warn'); await shot('21c-parity');
-    await p.click('[data-same]'); await p.waitForTimeout(600);
+  await step('Ana sees the "cheaper elsewhere" warning and matches her take-home', async () => {
+    await go('#/profile'); await p.click('[data-user="u_ana"]'); await p.waitForSelector('.greeting');
+    await go('#/host/space/s_ana_room'); await p.waitForSelector('.notice.warn'); await shot('21c-parity');
+    for (let i = 0; i < 4 && (await p.$('[data-same]')); i++) { await p.click('[data-same]'); await p.waitForTimeout(500); } // match every length
     if (await p.$('.notice.warn')) throw new Error('still cheaper elsewhere after matching take-home');
     if (!(await p.$('#instant'))) throw new Error('no instant-book switch');
     await shot('21d-matched');

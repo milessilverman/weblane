@@ -21,18 +21,18 @@ export function seed() {
   ];
 
   const properties = [
-    { id: 'p_maple', hostId: 'u_maya', title: '412 Maple St', city: 'Riverside', type: 'single_family', hoa: false,
-      lat: 33.975, lng: -117.375, notes: '3 blocks from the county fairgrounds.' },
-    { id: 'p_oak', hostId: 'u_jordan', title: 'Oak Court Apartments', city: 'Riverside', type: 'multi_unit', hoa: false,
-      lat: 33.981, lng: -117.369, notes: '6-unit building with a 12-space garage and storage lockers.' },
-    { id: 'p_elm', hostId: 'u_luis', title: 'Elm Ave bungalow', city: 'Riverside', type: 'single_family', hoa: false,
-      lat: 33.969, lng: -117.381, notes: '1950s bungalow with a big backyard, pool and garden ADU.' },
-    { id: 'p_lofts', hostId: 'u_ana', title: 'Stadium Lofts #4C', city: 'Riverside', type: 'condo', hoa: true,
-      lat: 33.986, lng: -117.362, notes: 'Condo two blocks from the stadium. HOA allows rentals of owned parking.' },
-    { id: 'p_hill', hostId: 'u_luis', title: 'Hillcrest ranch', city: 'Riverside', type: 'land', hoa: false,
-      lat: 33.962, lng: -117.392, notes: '5 acres on the edge of town. Barn, hilltop, road frontage.' },
-    { id: 'p_lake', hostId: 'u_rosa', title: 'Lakeview cottage', city: 'Riverside', type: 'single_family', hoa: false,
-      lat: 33.958, lng: -117.372, notes: 'Cottage on the river with a private dock.' },
+    { id: 'p_maple', hostId: 'u_maya', title: '412 Maple St', city: 'San Diego', type: 'single_family', hoa: false,
+      lat: 32.725, lng: -117.165, notes: '3 blocks from the county fairgrounds.' },
+    { id: 'p_oak', hostId: 'u_jordan', title: 'Oak Court Apartments', city: 'San Diego', type: 'multi_unit', hoa: false,
+      lat: 32.731, lng: -117.159, notes: '6-unit building with a 12-space garage and storage lockers.' },
+    { id: 'p_elm', hostId: 'u_luis', title: 'Elm Ave bungalow', city: 'San Diego', type: 'single_family', hoa: false,
+      lat: 32.719, lng: -117.171, notes: '1950s bungalow with a big backyard, pool and garden ADU.' },
+    { id: 'p_lofts', hostId: 'u_ana', title: 'Stadium Lofts #4C', city: 'San Diego', type: 'condo', hoa: true,
+      lat: 32.736, lng: -117.152, notes: 'Condo two blocks from the stadium. HOA allows rentals of owned parking.' },
+    { id: 'p_hill', hostId: 'u_luis', title: 'Hillcrest ranch', city: 'San Diego', type: 'land', hoa: false,
+      lat: 32.712, lng: -117.182, notes: '5 acres on the edge of town. Barn, hilltop, road frontage.' },
+    { id: 'p_lake', hostId: 'u_rosa', title: 'Lakeview cottage', city: 'San Diego', type: 'single_family', hoa: false,
+      lat: 32.708, lng: -117.162, notes: 'Cottage on the river with a private dock.' },
   ];
 
   const harvest = { name: 'Harvest Festival', start: '2026-11-20', end: '2026-11-22' };
@@ -74,11 +74,11 @@ export function seed() {
     { id: 's_maple_roof', propertyId: 'p_maple', category: 'rooftop_solar', title: 'South-facing roof (~600 sq ft)',
       quantity: 1, size: { sqft: 600 }, rates: { infrastructure: 1100 },
       description: '2019 roof. ~9 kW potential. Partner owns panels, pays annual rent.',
-      specs: { 'Usable roof': '600 sq ft', 'Est. system': '9 kW', Faces: 'South', 'Roof installed': '2019', Shading: 'None', 'Electrical service': '200 A', Utility: 'Riverside Public Utilities' },
+      specs: { 'Usable roof': '600 sq ft', 'Est. system': '9 kW', Faces: 'South', 'Roof installed': '2019', Shading: 'None', 'Electrical service': '200 A', Utility: 'SDG&E' },
       amenities: ['South-facing', '2019 roof', 'No shading'], access: 'Site visit scheduled after proposal.' },
     { id: 's_maple_battery', propertyId: 'p_maple', category: 'battery_site', title: 'Side-yard battery pad',
       quantity: 1, rates: { infrastructure: 600 }, description: '4×8 ft concrete pad, 12 ft from the house.',
-      specs: { Pad: '4×8 ft concrete', 'Distance to house': '12 ft', 'Electrical service': '200 A', 'Est. capacity': '13–27 kWh', Utility: 'Riverside Public Utilities' },
+      specs: { Pad: '4×8 ft concrete', 'Distance to house': '12 ft', 'Electrical service': '200 A', 'Est. capacity': '13–27 kWh', Utility: 'SDG&E' },
       amenities: ['Concrete pad', '200A panel'], access: 'Site visit scheduled after proposal.' },
 
     // --- Oak Court Apartments (Jordan) -------------------------------------
@@ -153,14 +153,14 @@ export function seed() {
       access: 'Follow the yellow posts from the gate.' },
     { id: 's_hill_solar', propertyId: 'p_hill', category: 'rooftop_solar', title: 'Barn roof (~1,800 sq ft)', quantity: 1,
       size: { sqft: 1800 }, rates: { infrastructure: 2800 }, description: 'Metal roof, 2021. ~30 kW potential.',
-      specs: { 'Usable roof': '1,800 sq ft', 'Est. system': '30 kW', Faces: 'South / southwest', 'Roof installed': '2021 (metal)', 'Electrical service': '400 A', Utility: 'SCE' },
+      specs: { 'Usable roof': '1,800 sq ft', 'Est. system': '30 kW', Faces: 'South / southwest', 'Roof installed': '2021 (metal)', 'Electrical service': '400 A', Utility: 'SDG&E' },
       amenities: ['Metal roof', '400A service'], access: 'Site visit scheduled after proposal.' },
     { id: 's_hill_tower', propertyId: 'p_hill', category: 'telecom_site', title: 'Hilltop antenna / sensor site', quantity: 1,
       rates: { infrastructure: 4000 }, amenities: ['Highest point in town', 'Power nearby'],
-      specs: { Elevation: '1,240 ft', 'Line of sight': 'Downtown + I-215', Power: '200 A at barn, 300 ft', 'Road access': 'Gravel, 4WD not needed' }, access: 'Site visit scheduled after proposal.' },
+      specs: { Elevation: '1,240 ft', 'Line of sight': 'Downtown + I-15', Power: '200 A at barn, 300 ft', 'Road access': 'Gravel, 4WD not needed' }, access: 'Site visit scheduled after proposal.' },
     { id: 's_hill_charger', propertyId: 'p_hill', category: 'charger_site', title: 'Road-frontage EV charger site', quantity: 1,
       rates: { infrastructure: 1800 }, amenities: ['On a state highway', '400A service'],
-      specs: { Frontage: '180 ft on Hwy 91 frontage road', 'Daily traffic': '~22,000 vehicles', 'Electrical service': '400 A, 3-phase nearby', 'Room for': '4–6 DC fast chargers' }, access: 'Site visit scheduled after proposal.' },
+      specs: { Frontage: '180 ft on a state-route frontage road', 'Daily traffic': '~22,000 vehicles', 'Electrical service': '400 A, 3-phase nearby', 'Room for': '4–6 DC fast chargers' }, access: 'Site visit scheduled after proposal.' },
 
     // --- More everyday spaces ------------------------------------------
     { id: 's_elm_kitchen', propertyId: 'p_elm', category: 'kitchen', title: "Baker's kitchen with double oven", quantity: 1,
@@ -183,11 +183,11 @@ export function seed() {
     { id: 's_hill_fleet', propertyId: 'p_hill', category: 'fleet_parking', title: 'Overnight van lot (8 vans)', quantity: 8,
       rates: { monthly: 180, lease: 160 }, description: 'Lit gravel lot next to the highway on-ramp. Suits delivery vans.',
       amenities: ['Lighting', 'Camera', '2 min to highway'], access: 'Gate code issued per vehicle.',
-      specs: { Spaces: '8 van-sized', Surface: 'Compacted gravel', Lighting: 'LED, dusk to dawn', 'Highway access': 'Hwy 91, 0.4 mi', 'Hours': '24/7' } },
+      specs: { Spaces: '8 van-sized', Surface: 'Compacted gravel', Lighting: 'LED, dusk to dawn', 'Highway access': '0.4 mi to the freeway', 'Hours': '24/7' } },
     { id: 's_hill_sign', propertyId: 'p_hill', category: 'signage', title: 'Highway-facing sign site', quantity: 1,
       rates: { lease: 400, infrastructure: 4200 }, description: 'Road frontage facing ~22,000 cars a day.',
       amenities: ['Permitted zone', 'Power nearby'], access: 'Site visit scheduled after proposal.',
-      specs: { 'Daily traffic': '~22,000 vehicles', Facing: 'Eastbound Hwy 91', 'Max sign': '12×24 ft (city code)', Power: 'Yes, 50 ft' } },
+      specs: { 'Daily traffic': '~22,000 vehicles', Facing: 'Eastbound state route', 'Max sign': '12×24 ft (city code)', Power: 'Yes, 50 ft' } },
     { id: 's_oak_locker_wall', propertyId: 'p_oak', category: 'parcel_locker', title: 'Lobby wall for a parcel locker', quantity: 1,
       rates: { lease: 75, infrastructure: 900 }, description: 'Covered lobby wall by the mailboxes, open 6am–11pm.',
       amenities: ['Covered', 'Outlet nearby', 'Foot traffic'], access: 'Building manager meets the installer.',
@@ -195,21 +195,27 @@ export function seed() {
     { id: 's_oak_roof', propertyId: 'p_oak', category: 'rooftop_solar', title: 'Apartment flat roof (~2,400 sq ft)', quantity: 1,
       size: { sqft: 2400 }, rates: { infrastructure: 3600 }, description: 'Flat membrane roof, replaced 2020. Could host community solar for the tenants.',
       amenities: ['Flat roof', 'Roof hatch'], access: 'Site visit scheduled after proposal.',
-      specs: { 'Usable roof': '2,400 sq ft', 'Est. system': '38 kW', Faces: 'Flat (tilt racks)', 'Roof installed': '2020', 'Electrical service': '600 A, 3-phase', Utility: 'Riverside Public Utilities' } },
+      specs: { 'Usable roof': '2,400 sq ft', 'Est. system': '38 kW', Faces: 'Flat (tilt racks)', 'Roof installed': '2020', 'Electrical service': '600 A, 3-phase', Utility: 'SDG&E' } },
   ];
 
   // Owners' own listings of the same space on other sites (demo links, not real listings).
   // The pool is deliberately cheaper on Swimply so the price beat shows up at checkout.
-  const xl = (platform, slug, rates, cleaningFee = 0) => ({ platform, url: `https://www.${{ airbnb: 'airbnb.com', vrbo: 'vrbo.com', spothero: 'spothero.com', neighbor: 'neighbor.com', swimply: 'swimply.com', peerspace: 'peerspace.com' }[platform]}/demo/${slug}`,
-    rates, cleaningFee, verifiedAt: '2026-10-28', demo: true });
+  // Dated owner-submitted quotes (checked two days before the data is created, so the demo never shows them stale).
+  const checked = new Date(Date.now() - 2 * 864e5).toISOString().slice(0, 10);
+  const DOM = { airbnb: 'airbnb.com', vrbo: 'vrbo.com', spothero: 'spothero.com', neighbor: 'neighbor.com', swimply: 'swimply.com', peerspace: 'peerspace.com', spacer: 'spacer.com' };
+  const xl = (platform, slug, rates, cleaningFee = 0) => ({ platform, url: `https://www.${DOM[platform]}/demo/${slug}`, rates, cleaningFee, verifiedAt: checked, source: 'owner', demo: true });
+  // What each shows: the house, ADU and cottage are cheaper here than Airbnb (owner prices that keep their take-home);
+  // the guest room is cheaper on Airbnb, so checkout beats it in full; the driveway is cheaper on Spacer, beyond what our
+  // fees can fully cover; Vrbo, SpotHero, Neighbor, Swimply and Peerspace don't publish renter fees, so those rows
+  // are listed but can't be priced.
   const cross = {
     s_maple_home: [xl('airbnb', 'maple-st-house', { daily: 225, weekly: 1400 }, 75), xl('vrbo', 'maple-st-house', { daily: 230, weekly: 1450 }, 85)],
-    s_maple_driveway: [xl('spothero', 'maple-driveway', { hourly: 6, daily: 45 })],
+    s_maple_driveway: [xl('spothero', 'maple-driveway', { hourly: 6, daily: 45 }), xl('spacer', 'maple-driveway', { monthly: 100 })],
     s_maple_bay: [xl('neighbor', 'maple-garage-bay', { monthly: 99 })],
     s_elm_pool: [xl('swimply', 'elm-saltwater-pool', { hourly: 38 })],
     s_elm_adu: [xl('airbnb', 'elm-garden-adu', { daily: 125, weekly: 760 }, 50)],
     s_elm_shop: [xl('peerspace', 'elm-woodshop', { hourly: 25, daily: 140 })],
-    s_ana_room: [xl('airbnb', 'stadium-lofts-room', { daily: 89, weekly: 600 }, 20)],
+    s_ana_room: [xl('airbnb', 'stadium-lofts-room', { daily: 79, weekly: 540 }, 20)],
     s_lake_home: [xl('airbnb', 'lakeview-cottage', { daily: 170, weekly: 1050 }, 60), xl('vrbo', 'lakeview-cottage', { daily: 175 }, 70)],
   };
   for (const s of spaces) if (cross[s.id]) s.externalListings = cross[s.id];

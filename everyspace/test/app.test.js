@@ -73,7 +73,7 @@ test('calendar shows free units per day', () => {
 test('publishing a listing requires the category checklist', () => {
   const a = app();
   const base = { propertyId: 'p_maple', category: 'pool', title: 'Kiddie pool', rates: { hourly: 10 } };
-  assert.throws(() => a.post('spaces', base), /Confirm before publishing: Pool fencing/);
+  assert.throws(() => a.post('spaces', base), /Confirm before publishing: County health classification/);
   const s = a.post('spaces', { ...base, checklist: CATEGORIES.pool.checklist });
   assert.equal(a.get(`spaces/${s.id}`).title, 'Kiddie pool');
 });

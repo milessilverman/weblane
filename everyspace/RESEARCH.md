@@ -1,5 +1,29 @@
 # Research to do before launch
 
+## Status after round 1 (results received Nov 4, 2026; full report in `RESEARCH_RESULTS.md`)
+
+**Built into the app from the results:**
+
+| Finding | What changed |
+|---|---|
+| Competitor fees (§1). Many renter fees are variable or unpublished; Airbnb's US single-fee plan is 0% guest / 15.5% host | `PLATFORMS` in `src/compare.js` now holds 17 researched sites. **null = unknown, never 0.** A listing on a site with unknown renter fees is shown ("fees not published") but never priced, badged or auto-beaten. Owner-fee ranges are shown where published (Swimply 15–25%). |
+| Scraping is prohibited by every major site; Peerspace has a most-favored-customer clause; Airbnb/Vrbo restrict off-platform steering (§2) | Comparisons use owner-submitted prices only, dated, unused after 30 days (`STALE_DAYS`). Manage listing shows each linked site's host-terms notice. Plain-text names only, no logos, and a "not affiliated" line wherever prices are compared. |
+| The 5% beat can't always be funded from 13% fees; guarantees need their caps stated next to the promise (§3b) | The cap ("up to all the fees we earn on that booking") is stated on the listing, at checkout, on receipts and on the full terms page, with conditions, proof, timing, refund method and appeal. When the cap is hit, checkout says it's still cheaper elsewhere. |
+| All-in pricing includes calculable taxes; San Diego TOT 11.75–13.75% by zone, exempt at one calendar month (§3–4) | New `src/tax.js`. San Diego, Phoenix and Indianapolis lodging taxes are in; the lowest San Diego zone is used until address lookup exists. Comparisons are before tax; totals include tax. Other categories say "tax not determined yet" instead of $0. |
+| Card holds last ~7 days; Stripe isn't escrow (§5) | Short stays show a "temporary card hold"; monthly rentals and leases show "refundable deposit collected separately", and it's no longer added to the amount charged today. |
+| Typical prices aren't medians; don't present examples as typical income; no standard rent for house roofs (§8–9) | `TYPICAL` uses dated San Diego examples where found, and `TYPICAL_META` labels each as example, benchmark, assumption or unknown, with its source. The estimator is labeled an illustration and shows sources. Roof, battery, charger and locker rows are "ask for quotes", with no dollar figure. |
+| Lodging/parking/pool uses each need their own approvals; homeowner insurance may not cover rentals (§6–7) | Checklists updated (San Diego STRO tier, paid-parking permission, pool health classification, permitted kitchen, RV storage-only, roof size) and an insurance confirmation on every category. |
+| 1099-K threshold is $20,000 and 200 transactions (§4c) | Earnings download says it's a summary, not a tax form. |
+| Demo city | Moved from Riverside to **San Diego**, where the price and tax research applies. |
+
+**Decisions for you:**
+1. **Name.** "EVERYSPACE" is a registered US mark (Get Turnout, Inc., reg. 7110194), and a Seattle workspace-leasing company uses EverySpace and everyspace.com. The research recommends choosing a different brand before spending on it. Its five untested candidates: Sparevio, Sparequay, Parcelyra, Nookavero, Lotseren. The app keeps "everyspace" as a working name until you choose.
+2. **Launch city.** The research shortlists Phoenix (owner supply), San Diego (prices and parking demand) and Indianapolis (events). The demo uses San Diego.
+
+**Still open (needs professionals or more research):** legal sign-off on the guarantee wording and on naming competitors; tax classification for parking, storage and event space and our fees; payments counsel on fund flows and deposits; insurance quotes per category; parcel-level permission for paid driveways, pools, events and fleet lots; full trademark clearance; real comparable price data. The advisor questions are in `RESEARCH_RESULTS.md` → "Questions for professional advisers".
+
+---
+
 These are the questions only you can answer, or that need a lawyer, an insurance broker, an accountant, or conversations with real owners and companies. They're in priority order. Each one says why it matters to the app and what to bring back so it can be built in.
 
 Anything below marked *(verify)* is my current understanding and must be checked against the official source. Laws and competitor fees change often.

@@ -21,23 +21,30 @@ function priceCheck(s) {
       <div style="flex:${hostFee * 100 + 8}"><strong>${money(base * hostFee)}</strong><span>owner fee</span></div>
       <div style="flex:${fee * 100 + 8}" class="fee"><strong>${money(base * fee)}</strong><span>service fee</span></div></div>
       <div class="muted small">Per ${unit}: you pay ${money(base * (1 + fee))}. The owner keeps ${Math.round((1 - hostFee) * 100)}% of their price. No other fees.</div>` : '';
+  const priced = cmp ? cmp.rows.filter((r) => r.theirs != null) : [];
+  const rowNote = (r) => r.stale ? 'owner-submitted price is out of date; not compared'
+    : r.feesUnknown ? `owner charges ${money(r.ownerPrice)}; ${esc(r.name)}'s renter fees aren't published, so we can't total it`
+      : `owner-submitted price${r.feePct ? ` + ~${Math.round(r.feePct * 100)}% their fee` : ''}${r.cleaningFee ? ` + ${money(r.cleaningFee)} cleaning` : ''} · checked ${r.verifiedAt ? fmtDate(r.verifiedAt) : '—'}${r.demo ? ' · demo' : ''}`;
+  const verdict = !cmp ? '' : !priced.length
+    ? `<div class="compare-verdict">Also listed on ${cmp.rows.map((r) => esc(r.name)).join(' and ')}, but we can't compare totals. Found it cheaper there after booking? Send it to us for a price match.</div>`
+    : cmp.cheaperHere
+      ? `<div class="compare-verdict ok">✓ Cheapest here. You save ${money(Math.min(...priced.map((r) => r.theirs)) - cmp.ours)} per ${unit} vs ${esc(priced[0].name)}. The owner earns the same either way; our fees are just lower.</div>`
+      : (() => {
+        const cut = s.rates[cmp.term] * (fee + hostFee);
+        return `<div class="compare-verdict beat">${cmp.ours - cut < priced[0].theirs
+          ? `${esc(priced[0].name)} is lower, so at checkout we <strong>cut our own fees to beat it by ${Math.round(s.pricing.beatPct * 100)}%</strong>. The owner gets the same either way.`
+          : `${esc(priced[0].name)} is lower because the owner charges less there. At checkout we give up <strong>all of our fees (${money(cut)})</strong> to get as close as we can, but it stays a little cheaper there.`}</div>`;
+      })();
   const compareRows = cmp ? `<div class="compare">
-      <div class="compare-row ours"><span><strong>Everyspace</strong><span class="muted small">all-in, 1 ${unit}</span></span><strong>${money(cmp.ours)}</strong></div>
-      ${cmp.rows.map((r) => `<div class="compare-row ${r.theirs < cmp.ours ? 'lower' : ''}"><span><strong>${esc(r.name)}</strong>
-        <span class="muted small">incl. ~${Math.round(r.feePct * 100)}% fee${r.cleaningFee ? ` + ${money(r.cleaningFee)} cleaning` : ''} · checked ${r.verifiedAt ? fmtDate(r.verifiedAt) : '—'}${r.demo ? ' · demo' : ''}</span></span>
-        <strong>${money(r.theirs)}</strong></div>`).join('')}
-      <div class="compare-verdict ${cmp.cheaperHere ? 'ok' : 'beat'}">${cmp.cheaperHere
-        ? `✓ Cheapest here. You save ${money(Math.min(...cmp.rows.map((r) => r.theirs)) - cmp.ours)} per ${unit} vs ${esc(cmp.rows[0].name)}. The owner earns the same either way; our fees are just lower.`
-        : (() => {
-          const cut = s.rates[cmp.term] * (fee + hostFee);
-          return cmp.ours - cut < cmp.rows[0].theirs
-            ? `${esc(cmp.rows[0].name)} is lower, so at checkout we <strong>cut our own fee to beat it by ${Math.round(s.pricing.beatPct * 100)}%</strong>. The owner gets the same either way.`
-            : `${esc(cmp.rows[0].name)} is lower because the owner charges less there. At checkout we give up <strong>our entire cut (${money(cut)})</strong> to get as close as we can.`;
-        })()}</div></div>` : '';
+      <div class="compare-row ours"><span><strong>Everyspace</strong><span class="muted small">all-in before tax, 1 ${unit}</span></span><strong>${money(cmp.ours)}</strong></div>
+      ${cmp.rows.map((r) => `<div class="compare-row ${r.theirs != null && r.theirs < cmp.ours ? 'lower' : ''} ${r.theirs == null ? 'unpriced' : ''}"><span><strong>${esc(r.name)}</strong>
+        <span class="muted small">${rowNote(r)}</span></span><strong>${r.theirs != null ? money(r.theirs) : '—'}</strong></div>`).join('')}
+      ${verdict}
+      <div class="muted small compare-foot">Everyspace isn't affiliated with these sites. Prices come from the owner and are rechecked; taxes are the same at this address on any site.</div></div>` : '';
   return `<h2 class="section-title">Price check</h2>
     ${compareRows || '<div class="muted small">Not listed on other sites that we know of.</div>'}
     ${flow}
-    <a class="guarantee" href="#/fair-price"><span>🛡️</span><div><strong>Price-beat guarantee</strong><span>Find this space cheaper elsewhere for the same dates and we cut our own fee to refund the difference plus ${Math.round(s.pricing.beatPct * 100)}%, up to everything we earn on the booking.</span></div>${icon.chevron}</a>`;
+    <a class="guarantee" href="#/fair-price"><span>🛡️</span><div><strong>Price-beat guarantee</strong><span>Same space, same dates, cheaper total elsewhere? We cut our own fees to beat it by ${Math.round(s.pricing.beatPct * 100)}%, <b>up to all the fees we earn on that booking</b>. Conditions apply; tap for the full terms.</span></div>${icon.chevron}</a>`;
 }
 
 export async function renderSpace(view, [id]) {
@@ -111,7 +118,7 @@ export async function renderSpace(view, [id]) {
         <div class="facts">
           <div><strong>${MODE_TEXT[mode][0]}</strong><span>${MODE_TEXT[mode][1]}</span></div>
           ${business ? '<div><strong>How it works</strong><span>Proposal → site assessment → contract → installation. The owner is never responsible for your equipment, insurance or removal.</span></div>' : ''}
-          ${c.deposit ? `<div><strong>Deposit</strong><span>${money(c.deposit)} held, not charged, released after checkout.</span></div>` : ''}
+          ${c.deposit ? `<div><strong>Deposit</strong><span>Short stays: a temporary card hold of ${money(c.deposit)}, not charged and released after checkout. Monthly rentals and leases: a refundable deposit collected separately under the rental agreement.</span></div>` : ''}
           <div><strong>Cancellation</strong><span>${rates.some((t) => ['lease', 'infrastructure'].includes(t)) || business ? 'Leases and agreements follow their contract terms.' : 'Free cancellation until 24 hours before start.'}</span></div>
           <div><strong>Owner confirmed</strong><span>${c.checklist.map(esc).join(' · ')}</span></div>
           ${s.minDuration ? `<div><strong>Minimum</strong><span>${Object.entries(s.minDuration).map(([t, n]) => `${n} ${term(t).unit}s ${term(t).label.toLowerCase()}`).join(', ')}</span></div>` : ''}

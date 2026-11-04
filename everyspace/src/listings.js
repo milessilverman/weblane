@@ -6,7 +6,7 @@ import { ratingFor } from './social.js';
 import { unitComparison } from './compare.js';
 import { SERVICE_FEE, HOST_FEE } from './pricing.js';
 
-export function search(db, { group, category: cat, term, start, end, q, city, audience = 'consumer', userId } = {}) {
+export function search(db, { group, category: cat, term, start, end, q, city, audience = 'consumer', userId, now } = {}) {
   const text = q?.toLowerCase();
   const results = [];
   for (const s of db.spaces) {
@@ -35,11 +35,12 @@ export function search(db, { group, category: cat, term, start, end, q, city, au
       // All-in price (what the renter actually pays per unit) and how it compares with the same listing elsewhere.
       allIn: cheapest(s) && Math.round(cheapest(s).amount * (1 + SERVICE_FEE) * 100) / 100,
       compare: (() => {
-        const t = cheapest(s)?.term; const c = t && unitComparison(s, t);
-        if (!c) return null;
+        const t = cheapest(s)?.term; const c = t && unitComparison(s, t, now);
+        if (!c || !c.comparable) return null;
         // Can we beat them by giving up our cut (service fee + owner fee) on one unit?
         const floor = s.rates[t] * (1 + SERVICE_FEE) - s.rates[t] * (SERVICE_FEE + HOST_FEE);
-        return { cheaperHere: c.cheaperHere, beatable: floor < c.rows[0].theirs, vs: c.rows[0].name, theirs: c.rows[0].theirs, ours: c.ours };
+        const top = c.rows.find((r) => r.theirs != null);
+        return { cheaperHere: c.cheaperHere, beatable: floor < top.theirs, vs: top.name, theirs: top.theirs, ours: c.ours };
       })(),
     });
   }

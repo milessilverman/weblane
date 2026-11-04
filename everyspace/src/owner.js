@@ -71,30 +71,33 @@ export function marketFor(db, categoryKey, excludeId) {
 }
 
 // Owner view of a listing: everything they can change, plus how it compares.
-export function ownerView(db, spaceId, actorId) {
+export function ownerView(db, spaceId, actorId, now) {
   const s = ownSpace(db, spaceId, actorId);
   const cat = category(s.category);
   const upcoming = db.bookings.filter((b) => b.items.some((i) => i.spaceId === s.id) && ['pending', 'proposed', 'site_assessment', 'contract', 'confirmed', 'active'].includes(b.status));
-  const parity = cat.terms.map((t) => unitComparison(s, t)).filter(Boolean)
-    .filter((c) => !c.cheaperHere)
-    .map((c) => ({ term: c.term, ours: c.ours, cheapest: c.rows[0] }));
-  return { ...s, categoryInfo: cat, market: marketFor(db, s.category, s.id), upcomingCount: upcoming.length, parity, takeHome: takeHome(s) };
+  const parity = cat.terms.map((t) => unitComparison(s, t, now)).filter((c) => c && c.comparable && !c.cheaperHere)
+    .map((c) => ({ term: c.term, ours: c.ours, cheapest: c.rows.find((r) => r.theirs != null) }));
+  return { ...s, categoryInfo: cat, market: marketFor(db, s.category, s.id), upcomingCount: upcoming.length, parity, takeHome: takeHome(s),
+    notices: [...new Set((s.externalListings ?? []).map((e) => e.platform))].map((k) => PLATFORMS[k]).filter((p) => p?.notice).map((p) => ({ name: p.name, text: p.notice })) };
 }
 
 // For each linked listing: what the owner takes home there vs here, per unit, and the price here that
 // pays them exactly the same. Because our fees are lower, that price is cheaper for renters too.
 export function takeHome(s) {
+  // Owner fee unknown -> "there" is null (or a range when the site publishes one); never assumed to be 0.
   const r2 = (n) => Math.round(n * 100) / 100;
   const rows = [];
   for (const e of s.externalListings ?? []) {
     const p = PLATFORMS[e.platform];
     if (!p) continue;
     for (const [t, theirRate] of Object.entries(e.rates)) {
-      const there = r2(theirRate * (1 - p.hostFeePct));
-      const sameRate = r2(there / (1 - HOST_FEE));
       const here = s.rates?.[t] != null ? r2(s.rates[t] * (1 - HOST_FEE)) : null;
-      rows.push({ platform: e.platform, name: p.name, term: t, there, here, sameRate,
-        renterThere: r2(theirRate * (1 + p.guestFeePct)), renterAtSame: r2(sameRate * (1 + SERVICE_FEE)), estimated: !p.verified });
+      const range = p.hostFeePct == null && p.hostFeeRange ? p.hostFeeRange.map((f) => r2(theirRate * (1 - f))).reverse() : null;
+      const there = p.hostFeePct != null ? r2(theirRate * (1 - p.hostFeePct)) : null;
+      const sameRate = there != null ? r2(there / (1 - HOST_FEE)) : null;
+      rows.push({ platform: e.platform, name: p.name, term: t, theirRate, there, thereRange: range, here, sameRate,
+        renterThere: p.guestFeePct != null ? r2(theirRate * (1 + p.guestFeePct)) : null,
+        renterAtSame: sameRate != null ? r2(sameRate * (1 + SERVICE_FEE)) : null, estimated: !p.verified });
     }
   }
   return rows;
