@@ -1358,6 +1358,24 @@ def stage_basemap():
                 "nwr/office=government")
     facilities(fac)
     facility_footprints(fac)
+    # existing bikeways: off-street paths and on-street lanes (OSM), to say what a street already has
+    try:
+        bw = layer("bikeways", "w/highway=cycleway", "w/cycleway", "w/cycleway:left", "w/cycleway:right", "w/cycleway:both")
+        bw = bw[bw.geom_type.isin(["LineString", "MultiLineString"])].copy()
+        tags = pd.DataFrame({c: bw.get(c, pd.Series(index=bw.index, dtype=object)).fillna("").astype(str)
+                             for c in ("highway", "cycleway", "cycleway:left", "cycleway:right", "cycleway:both")})
+        allc = tags[["cycleway", "cycleway:left", "cycleway:right", "cycleway:both"]].agg(" ".join, axis=1)
+        bw["cls"] = np.where(tags.highway.eq("cycleway"), "bike path (Class I)",
+                    np.where(allc.str.contains("track|separate"), "protected lane (Class IV)",
+                    np.where(allc.str.contains("lane|buffered"), "painted lane (Class II)",
+                    np.where(allc.str.contains("shared_lane|share_busway"), "sharrows (Class III)", None))))
+        bw = bw[bw.cls.notna()].to_crs(M)
+        bw = bw[bw.intersects(county)]
+        bw["geometry"] = bw.geometry.simplify(3)
+        _write_gz(bw.assign(name=bw.get("name"))[["name", "cls", "geometry"]].to_crs(4326), "map_bikeways.geojson.gz")
+        note("basemap", bikeways=len(bw), bikeways_by_class={k: int(v) for k, v in bw.cls.value_counts().items()})
+    except Exception as e:  # noqa: BLE001
+        note("basemap", bikeways_error=str(e)[:200])
     # surface parking lots of an acre or more (malls, stores, offices): underused-land candidates
     try:
         pl = layer("parking", "wr/amenity=parking")
