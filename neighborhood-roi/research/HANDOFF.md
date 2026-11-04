@@ -132,6 +132,32 @@ Current deliverable: `reports/city-pretty-la-county.html` (V2.3: real EIFD input
 - Round 9 research prompt (`research/round9_research_prompt.md`) asks for Assessor code tables (stories?), LARIAC
   heights, roof shape, pools, permits, restrictions per parcel and address points; replace OSM-based guesses when it lands.
 
+## Round 9: house search, per-house payback, live parcel checks (done in V2.13)
+- Research in `research/round9/` (Assessor code tables, permits, sales, restrictions, address points, imagery).
+- Address search: the search box queries the Assessor parcel layer (`SitusFullAddress LIKE 'X%'`, 450 ms debounce,
+  dropdown `#addr-results`; Enter jumps to the first hit), zooms to the lot and opens its house analysis.
+- House numbers on every lot at zoom 18+ from County CAMS address points (`LACounty_Dynamic/CAMS/MapServer/1`).
+- "Aerial photo (USGS, online)" toggle: USGS USGSImageryOnly tiles (public domain), block-group fill fades over it.
+- Assessor decoding (`decodeAssessor`): UseCode 0101/0103 pool, 0106 ADU, 0107 JADU, 0108 guest house, 010G Mills
+  Act; DesignType 01xx 3rd digit heating/cooling, 4th digit pool/spa. DesignType/QualityClass do NOT encode stories.
+- Live per-parcel checks at click time (`lotChecks`, each fails soft to "couldn't check"): LADBS permits
+  (pi9x-tg5x ADU/JADU/solar/pool since 2020; d9aa-v8bm `of_stories` used for stories when OSM has no levels/height),
+  PAIS last sale, HPOZ, Historic-Cultural Monuments, County historic resources, LA hillside area, CGS landslide /
+  liquefaction / fault zones, CAL FIRE SRA + LRA fire zones. Historic/fire flags block SB 9.
+- "Best bet for this home" verdict plus tiles for this one house: upgrades that pay back (>= $1 per $1, either/or
+  choices such as second story vs. room addition counted once), their total cost and value added.
+- Not tested against live services from the build sandbox (its proxy blocks these hosts); Playwright tests mock them.
+
+## Future: imagery to fill missing house facts (not built)
+- Satellite/aerial: USGS NAIP (60 cm, public domain, 2-3 yr cycle) or the USGS imagery tiles, run a roof/pool
+  segmentation model (as done for tree canopy) in GitHub Actions per parcel where OSM has no outline: building
+  footprint, lot coverage, pool, yard area, roof shape (flat vs pitched from shadows is weak; LiDAR is better).
+  LARIAC 2023 imagery and LiDAR building heights would be ideal but are members-only (round 9).
+- Street-level for stories: Mapillary (CC BY-SA, free token, API allows downloads) image near each parcel's
+  frontage + a vision model counting floors. Google Street View terms forbid automated analysis and storing
+  derived data, so don't use it for this. Coverage on residential streets is patchy; keep "estimate" labels.
+- Store results as a per-AIN table (stories, footprint, pool, roof) and prefer it over the living-area ratio.
+
 ## Next steps
 1. (done) EIFD tax-rate-area data.
 2. Add corridor right-of-way layers (abandoned rail, transmission, flood channels, Class I paths)
@@ -139,6 +165,6 @@ Current deliverable: `reports/city-pretty-la-county.html` (V2.3: real EIFD input
 3. Add FCC broadband data so fiber/5G is only suggested where service is poor.
 4. Replace "unverified" costs with the sourced figures from round 5's Part 4.
 5. Map orientation: remaining items are mini-map, breadcrumb, hover outline, shareable link.
-6. Per-house: add HPOZ/historic and very-high-fire checks per parcel (live queries), and a sales-based value estimate.
+6. (done V2.13) Per-house historic/fire checks. Still to do: a sales-based value estimate per house; imagery facts (above).
 7. Verify round-6 effect sizes against their cited studies before promoting any U item to D or better.
 8. Official SB 79 stop/tier layer (SCAG) and CPAD access types; FCC broadband (the BDC download page returned 403).
