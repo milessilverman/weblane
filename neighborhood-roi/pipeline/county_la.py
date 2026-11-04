@@ -1752,7 +1752,7 @@ def stage_sb79():
     if not frames:
         raise RuntimeError("official SB 79 layer not reachable")
     g = gpd.GeoDataFrame(pd.concat(frames, ignore_index=True), geometry="geometry", crs=4326)
-    keep = [c for c in g.columns if c != "geometry" and (g[c].dtype == object or re.search(r"tier", c, re.I))][:12]
+    keep = [c for c in ("CITY", "STOP_NAME", "TRN_MODE", "TRN_LINE", "SB79_TIER", "TIER", "BUFFER", "NAME", "layer_url") if c in g.columns]
     g[keep + ["geometry"]].to_file(OUT / "map_sb79.geojson", driver="GeoJSON", COORDINATE_PRECISION=5)
     note("sb79", features=len(g), geometry=g.geom_type.value_counts().to_dict())
 

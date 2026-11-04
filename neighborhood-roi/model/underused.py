@@ -38,18 +38,27 @@ CAP_RATE = 0.059                                    # I23: LA multifamily cap ra
 NEW_UNIT_SHARE = 0.6                                # for-sale houses: new house worth ~60% of the area's typical home ...
 UNIT_PRICE_RANGE = (350_000, 1_200_000)  # ... within this range
 ACTIVE_USE = r"manufactur|mineral|motion picture|nurser|greenhouse|oil|petroleum|refin|quarr|landfill|utilit|cemeter|warehous|lumber|rail"
-GOLF_HOUSING_SHARE = 0.10              # golf courses: only the edge (10%) considered for housing, rest kept as open space
+GOLF_HOUSING_SHARE = 0.10
+BIG_LOT_SHARE = 0.5                    # lots of 10+ acres: half counted for housing              # golf courses: only the edge (10%) considered for housing, rest kept as open space
 ASSUMPTIONS = {
     "density_homes_per_acre": DENSITY, "sb79_homes_per_acre_by_distance_m": SB79,
     "hard_cost_psf_2023 (round 7, I16-I19 avg)": HARD_COST_PSF_2023, "escalation_2023_2026": round(ESCALATE_2023_2026, 3),
     "soft_and_finance_share": SOFT_AND_FINANCE, "fees_per_unit": FEES_PER_UNIT, "unit_sqft": UNIT_SQFT,
     "rents_2026q3 (round 7, I20-I22)": RENT_2026Q3, "new_rent_premium": NEW_RENT_PREMIUM, "opex_share": OPEX_SHARE,
-    "cap_rate (round 7, I23)": CAP_RATE, "house_value_share_of_typical_home": NEW_UNIT_SHARE, "house_value_range": UNIT_PRICE_RANGE, "golf_course_share_for_housing": GOLF_HOUSING_SHARE,
+    "cap_rate (round 7, I23)": CAP_RATE, "house_value_share_of_typical_home": NEW_UNIT_SHARE, "house_value_range": UNIT_PRICE_RANGE, "golf_course_share_for_housing": GOLF_HOUSING_SHARE, "big_lot_share_for_housing": BIG_LOT_SHARE, "local_rent_factor_range": [0.7, 1.6],
     "market_land": "block-group land value per sq ft: 60% of typical home value over its share of land (or the "
                    "Assessor's vacant-land roll value if higher), clipped to $15-$600/sq ft"}
 
 
 RENT_MED = None
+OFFICIAL_SB79 = [False]
+# approximate SB 79 densities (homes/acre) by official stop tier and distance; check the statute for exact standards
+SB79_TIERS = [("T1", 402, 120), ("T1", 805, 100), ("T2", 402, 100), ("T2", 805, 80)]
+
+
+def sb79_density(t1_m, t2_m):
+    dist = {"T1": t1_m if t1_m == t1_m else 1e9, "T2": t2_m if t2_m == t2_m else 1e9}
+    return max((v for t, d_, v in SB79_TIERS if dist[t] <= d_), default=None)
 
 
 def unit_economics(b, houses):
@@ -59,7 +68,7 @@ def unit_economics(b, houses):
         price = float(np.clip(float(b.home_value) * NEW_UNIT_SHARE, *UNIT_PRICE_RANGE)) if b.home_value == b.home_value else np.nan
         sqft = UNIT_SQFT["house"]
     else:
-        local = float(np.clip((b.median_gross_rent / RENT_MED) if b.median_gross_rent == b.median_gross_rent else 1.0, 0.7, 2.0))
+        local = float(np.clip((b.median_gross_rent / RENT_MED) if b.median_gross_rent == b.median_gross_rent else 1.0, 0.7, 1.6))
         rent = (RENT_2026Q3["1br"] + RENT_2026Q3["2br"]) / 2 * NEW_RENT_PREMIUM * local
         price = rent * 12 * (1 - OPEX_SHARE) / CAP_RATE
         sqft = UNIT_SQFT["apartment"]
@@ -163,6 +172,18 @@ def main():
             pts["he_any"] = hj.groupby(level=0).index_right.count().reindex(pts.index).fillna(0) > 0
         else:
             pts["he_any"] = False
+        # official SB 79 stops and tiers (SCAG): distance from each site to the nearest Tier 1 and Tier 2 stop
+        pts["t1_m"], pts["t2_m"] = np.nan, np.nan
+        sbp = SRC / "map_sb79.geojson"
+        if sbp.exists():
+            sb = gpd.read_file(sbp)
+            sb = sb[sb.geom_type.eq("Point") & sb.get("SB79_TIER", pd.Series(index=sb.index, dtype=object)).notna()].to_crs(M)
+            for tier, col in (("T1", "t1_m"), ("T2", "t2_m")):
+                sub = sb[sb.SB79_TIER.astype(str).str.upper().eq(tier)]
+                if len(sub):
+                    j = gpd.sjoin_nearest(pts[["geometry"]], sub[["geometry"]], how="left", distance_col="d")
+                    pts[col] = j[~j.index.duplicated()].d
+            OFFICIAL_SB79[0] = bool(len(sb))
         lpsf = {gid: land_psf(r) for gid, r in dd.iterrows()}
         for i, r in pts.iterrows():
             gid = r.GEOID
@@ -190,14 +211,19 @@ def main():
             cat = r.zcat if isinstance(r.zcat, str) else "other"
             dens = DENSITY.get(cat, 20)
             rail = r.rail_m if r.rail_m == r.rail_m else 1e9
-            sb79 = next((v for dist, v in SB79 if rail <= dist), None) if cat in ("single-family", "multifamily", "commercial / mixed use", "parking", "other") else None
+            eligible = cat in ("single-family", "multifamily", "commercial / mixed use", "parking", "other")
+            if OFFICIAL_SB79[0]:
+                sb79 = sb79_density(r.t1_m, r.t2_m) if eligible else None
+            else:
+                sb79 = next((v for dist, v in SB79 if rail <= dist), None) if eligible else None
             if sb79:
                 dens = max(dens, sb79)
-            usable = ac * (GOLF_HOUSING_SHARE if r.kind == "golf course" else 1.0)
+            # golf: only an edge; big lots (10+ acres, e.g. mall parking): half, since the main use keeps some parking
+            usable = ac * (GOLF_HOUSING_SHARE if r.kind == "golf course" else BIG_LOT_SHARE if ac >= 10 else 1.0)
             homes = int(round(usable * dens))
             houses = cat == "single-family" and not sb79
             price, cost = unit_economics(b, houses)
-            land_used = mkt * (GOLF_HOUSING_SHARE if r.kind == "golf course" else 1.0) if mkt == mkt else 0
+            land_used = mkt * (usable / ac) if mkt == mkt and ac > 0 else 0
             margin = homes * (price - cost) - land_used if homes and price == price else np.nan
             if r.kind == "golf course":
                 idea = (f"Keep as open space and open it to the public; a {GOLF_HOUSING_SHARE:.0%} edge (~{usable:.0f} acres) could hold ~{homes:,} homes"
@@ -209,7 +235,8 @@ def main():
             elif sb79:
                 idea = f"Apartments near rail (~{homes:,} homes; SB 79 and AB 2097 apply within ½ mile of {r.station or 'the station'})"
             elif r.kind == "parking lot":
-                idea = f"Housing over or in place of the lot (~{homes:,} homes); a pocket park or plaza on part of it"
+                idea = (f"Housing on half the lot (~{homes:,} homes), keeping parking for the store or mall; a plaza or park on part of it" if ac >= 10
+                        else f"Housing over or in place of the lot (~{homes:,} homes); a pocket park or plaza on part of it")
             elif r.kind == "vacant":
                 idea = f"Infill housing (~{homes:,} homes) or a pocket park / community garden if the neighborhood lacks parks"
             else:
@@ -240,7 +267,7 @@ def main():
     d["hk"] = d.hood.fillna(d.city) + "|" + d.city
     d["net_proj"] = (d.pkg_value.fillna(0) - d.pkg_cost.fillna(0)).clip(lower=0)
     d["land_margin"] = d.GEOID.map(lambda x: bg_sum.get(x, {}).get("margin", 0))
-    d["homes_value"] = d.homes.fillna(0) * d.home_value.fillna(0)
+    d["homes_value"] = d.homes.fillna(0) * d.home_value.fillna(d.home_value.median())  # missing values: county median
     rail_soon = set()
     if (SRC / "map_stations_construction.geojson").exists():
         sc = gpd.read_file(SRC / "map_stations_construction.geojson").to_crs(M)
@@ -276,14 +303,16 @@ def main():
                 c_ = uw.setdefault(k, [0, 0])
                 c_[0] += n_
                 c_[1] += u_
-        prof[hk] = {"proj": round(a), "land": round(l_), "total": round(a + l_), "pct": round((a + l_) / hv, 4),
+        prof[hk] = {"proj": round(a), "land": round(l_), "total": round(a + l_),
+                    # a share of home value only means something where there are enough homes to share it
+                    "pct": round((a + l_) / hv, 4) if grp.homes.sum() >= 500 else None,
                     "per_home": round((a + l_) / max(float(grp.homes.sum()), 1)), "homes": int(grp.homes.sum()),
                     "sites": int(sum(bg_sum.get(g_, {}).get("n", 0) for g_ in grp.GEOID)),
                     "site_homes": int(sum(bg_sum.get(g_, {}).get("homes", 0) for g_ in grp.GEOID)), "soon": st_names, "way": uw}
     bgp_ = {gid: round(float((r.net_proj + r.land_margin) / r.homes_value), 4) for gid, r in d.set_index("GEOID").iterrows()
-            if r.homes_value > 0}
+            if r.homes_value > 0 and r.homes >= 150}
     (MOD / "underused.json").write_text(json.dumps({"sites": out_sites, "bg": bg_sum, "profit": prof, "bg_pct": bgp_,
-                                                     "soon": soon, "way": way, "assumptions": ASSUMPTIONS}, separators=(",", ":"), default=float))
+                                                     "soon": soon, "way": way, "assumptions": {**ASSUMPTIONS, "sb79_source": "SCAG official SB 79 stops and tiers; densities approximate" if OFFICIAL_SB79[0] else "distance to rail stations (official layer not found)"}}, separators=(",", ":"), default=float))
     ks = pd.Series([s["k"] for s in out_sites]).value_counts().to_dict() if out_sites else {}
     print(f"{len(out_sites):,} underused sites {ks}; {sum(s['homes'] for s in out_sites):,} homes possible; "
           f"{len(prof):,} neighborhoods ranked; {len(soon):,} block groups within 1.2 km of a station under construction")

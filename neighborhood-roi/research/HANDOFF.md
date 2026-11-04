@@ -5,7 +5,7 @@ Current deliverable: `reports/city-pretty-la-county.html` (V2.3: real EIFD input
 
 ## How it's built
 - Data: `.github/workflows/neighborhood-data.yml` runs `pipeline/county_la.py` stages in GitHub Actions
-  (geo, osm, transit, sales, crime, requests311, crashes, trees, parcels, assets, tra, assessed, basemap, research_check, zoning, underused, projects) and commits
+  (geo, osm, transit, sales, crime, requests311, crashes, trees, parcels, assets, tra, assessed, basemap, research_check, zoning, underused, projects, sb79) and commits
   `data/derived/county_la/`. Dispatch with input `county_only=true` to skip the slow tract/Westside jobs, and
   `county_stages=tra,assessed` (comma list) to run only some county stages; the rest keep their last data.
   This sandbox can't reach County/ArcGIS hosts, so data pulls must run in Actions.
@@ -85,6 +85,18 @@ Current deliverable: `reports/city-pretty-la-county.html` (V2.3: real EIFD input
   sites flagged when in a Housing Element inventory; neighborhood "already under way" counts.
 - Still missing: market land sale prices, current fee schedules, official SB 79 layer, Metro project geometry.
 
+## Per-house analysis and loose ends (done in V2.9)
+- Per house: at zoom 17+ a click on a block group also queries the Assessor parcel layer live from the page
+  (fetch, JSONP fallback; needs internet) → parcel outline, lot area from the outline, building, year, beds/baths,
+  zone from the embedded zoning, eligibility (detached ADU / JADU / SB 9 / pool / solar / seismic / repiping /
+  bathroom / fire hardening) and upgrades ranked by net value for that house (area home value and rents).
+  Code: `houseAt`, `houseChecks`, `houseUpgrades` in `web/county.src.html`. Map max zoom raised to 19.
+- `sb79` stage: discovers SCAG's official SB 79 service (maps.scag.ca.gov/scaggis/rest/services/SB79/SB79/MapServer:
+  0 = stops with SB79_TIER T1/T2, 1 = tier buffers) → `map_sb79.geojson`. Underused sites and panels use distance to
+  the nearest Tier 1/Tier 2 stop; densities per tier/band are approximations (`SB79_TIERS` in model/underused.py).
+- Event venues (conference/convention) no longer count as community centers; profit share only for 500+ homes and
+  missing home values filled with the county median; lots of 10+ acres count half for housing; rent factor <= 1.6.
+
 ## Next steps
 1. (done) EIFD tax-rate-area data.
 2. Add corridor right-of-way layers (abandoned rail, transmission, flood channels, Class I paths)
@@ -92,7 +104,6 @@ Current deliverable: `reports/city-pretty-la-county.html` (V2.3: real EIFD input
 3. Add FCC broadband data so fiber/5G is only suggested where service is poor.
 4. Replace "unverified" costs with the sourced figures from round 5's Part 4.
 5. Map orientation: remaining items are mini-map, breadcrumb, hover outline, shareable link.
-6. Per-house analysis: click a parcel → its zone, lot size, building, year built; ADU/SB 9/pool/solar eligibility
-   (needs parcel polygons on demand at zoom 17: query the Assessor layer live or pre-tile by cell).
+6. Per-house: add HPOZ/historic and very-high-fire checks per parcel (live queries), and a sales-based value estimate.
 7. Verify round-6 effect sizes against their cited studies before promoting any U item to D or better.
 8. Official SB 79 stop/tier layer (SCAG) and CPAD access types; FCC broadband (the BDC download page returned 403).

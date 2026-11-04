@@ -279,6 +279,19 @@ def main():
     det = {}
     dd = d.set_index("GEOID")
     gp = json.loads((MOD / "gaps.json").read_text()) if (MOD / "gaps.json").exists() else {"bg": {}, "plans": {}}
+    sb_d = {}
+    sbp = SRC / "map_sb79.geojson"
+    if sbp.exists():
+        sbg = gpd.read_file(sbp)
+        sbg = sbg[sbg.geom_type.eq("Point") & sbg.SB79_TIER.notna()].to_crs(M) if "SB79_TIER" in sbg else sbg.iloc[:0]
+        bpt = gpd.read_file(SRC / "map_block_groups.geojson")[["GEOID", "geometry"]].to_crs(M)
+        bpt["geometry"] = bpt.geometry.representative_point()
+        for tier in ("T1", "T2"):
+            sub = sbg[sbg.SB79_TIER.astype(str).str.upper().eq(tier)]
+            if len(sub):
+                j = gpd.sjoin_nearest(bpt, sub[["geometry"]], how="left", distance_col="d").drop_duplicates("GEOID")
+                for gid_, dd_ in zip(j.GEOID, j.d):
+                    sb_d.setdefault(gid_, [None, None])[0 if tier == "T1" else 1] = round(float(dd_))
     ef = MOD / "eifd.json"
     eifd = json.loads(ef.read_text()) if ef.exists() else {"meta": {}, "bg": {}}
     for gid, x in details.items():
@@ -293,7 +306,7 @@ def main():
              "pa": g_("park_acres_half_mile"), "pn": g_("park_nearest_m", 0), "bt": g_("bus_max_tph_400m", 0),
              "rm": num(min(r.get("rail_stop_nearest_m", np.nan) if r.get("rail_stop_nearest_m") == r.get("rail_stop_nearest_m") else 1e9,
                            r.get("rail_station_nearest_m", np.nan) if r.get("rail_station_nearest_m") == r.get("rail_station_nearest_m") else 1e9), 0),
-             "pop": g_("population", 0), "inc": g_("median_household_income", 0), "rent": g_("median_gross_rent", 0), "yb": g_("median_year_built", 0),
+             "pop": g_("population", 0), "inc": g_("median_household_income", 0), "rent": g_("median_gross_rent", 0), "fire": g_("fire_vh_share", 2), "yb": g_("median_year_built", 0),
              "sf": num(100 * r.sf_share, 0) if r.get("sf_share") == r.get("sf_share") else None, "nocar": num(100 * r.no_car_share, 0) if r.get("no_car_share") == r.get("no_car_share") else None,
              "st": g_("street_trees", 0), "ts": g_("vacant_tree_sites", 0), "tg": g_("tc_gap", 0),
              "pcr": g_("property_crimes", 0) if r.get("crime_covered") else None, "ksi": g_("crashes_ksi", 0), "dump": g_("illegal_dumping", 0) if r.get("in_311") else None,
@@ -316,6 +329,8 @@ def main():
             m["z"] = {"j": r.get("zone_juris"), "top": r.get("zone_top"), "cov": num(r.get("zone_coverage"), 2),
                       "sh": {c: num(r.get("zshare_" + re.sub(r"\W+", "_", c).strip("_")), 3) for c in ZCATS
                              if (r.get("zshare_" + re.sub(r"\W+", "_", c).strip("_")) or 0) > 0}}
+        if gid in sb_d:
+            m["sb"] = sb_d[gid]
         m["tr"] = [num(r.get("rail_station_nearest_m"), 0), num(r.get("rail_stop_nearest_m"), 0), num(r.get("bus_max_tph_400m"), 0), num(r.get("bus_max_tph_800m"), 0)]
         det[gid] = {"r": [[num(rec[k], 3) if isinstance(rec[k], float) else rec[k] for k in keys] for rec in x["recs"]], "m": m}
 
@@ -430,7 +445,7 @@ def main():
         src_rows.append([f"EIFD calculator: Auditor-Controller {em.get('factor_year')} Modified ATI ratios (AF49)", '<span class="pill ok">loaded</span>',
                          f"{em.get('tras_with_factors', 0):,} tax-rate areas; {em.get('rows', 0):,} agency shares; report dated {em.get('prepared')}"])
     pr = sorted((und.get("profit") or {}).items(), key=lambda kv: -kv[1]["total"])[:30]
-    profit_rows = [[k.split("|")[0], k.split("|")[1], f"${v['total'] / 1e6:,.1f}M", f"{v['pct']:.1%}", f"${v['per_home']:,.0f}",
+    profit_rows = [[k.split("|")[0], k.split("|")[1], f"${v['total'] / 1e6:,.1f}M", f"{v['pct']:.1%}" if v.get("pct") is not None else "few homes", f"${v['per_home']:,.0f}",
                     f"${v['proj'] / 1e6:,.1f}M", f"${v['land'] / 1e6:,.1f}M", ", ".join(v.get("soon") or []) or "–"] for k, v in pr]
     bg_hood = dict(zip(d.GEOID, d.hood.fillna(d.city) + ", " + d.city))
     site_rows = [[s_["k"] + (f" ({s_['nm']})" if s_.get("nm") else ""), (s_.get("ad") or bg_hood.get(s_["gid"], "")), f"{s_['ac']:,.1f}",
@@ -497,7 +512,7 @@ def main():
             pts = cent.loc[idx]
             c = pts.union_all().centroid if hasattr(pts, "union_all") else pts.unary_union.centroid
             search[nm] = bg.GEOID.loc[pts.distance(c).idxmin()]
-    bundle = {"meta": {"built": date.today().isoformat(), "default_bg": default, "search": search}, "bgs": bgs, "details": det, "catalog": lib, "funding": meta.get("funding", {}), "eifd": eifd["meta"], "upgrades": meta.get("owner_upgrades", []), "plans": gp["plans"], "gap_labels": {r_[0]: r_[1] for v in gp["bg"].values() for r_ in v["g"] + v["s"]},
+    bundle = {"meta": {"built": date.today().isoformat(), "default_bg": default, "search": search, "rent_med": float(d.median_gross_rent.median())}, "bgs": bgs, "details": det, "catalog": lib, "funding": meta.get("funding", {}), "eifd": eifd["meta"], "upgrades": meta.get("owner_upgrades", []), "plans": gp["plans"], "gap_labels": {r_[0]: r_[1] for v in gp["bg"].values() for r_ in v["g"] + v["s"]},
               "under": {"sites": und.get("sites", []), "profit": und.get("profit", {}), "soon": und.get("soon", {}), "assumptions": und.get("assumptions", {})},
               "zone_rules": pd.read_csv(ROOT / "model" / "round6" / "zone_rules.csv").to_dict("records"),
               "layers": L, "hoods": hoods_js, "hood_labels": labels(bgn, "hood"), "cities": city_js,
