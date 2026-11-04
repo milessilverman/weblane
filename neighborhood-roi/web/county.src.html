@@ -36,6 +36,9 @@
 .fac { font: 700 9px/14px var(--mono); width: 14px; height: 14px; border-radius: 50%; color: #fff; text-align: center; border: 1.5px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.35); }
 .lbl-zone { font: 600 10px/1 var(--mono); color: var(--ink-2); white-space: nowrap; pointer-events: none; text-shadow: 0 0 2px var(--sheet), 0 0 3px var(--sheet); }
 .zkey { display: inline-flex; align-items: center; gap: 4px; margin-right: 10px; } .zkey i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.sticky-head thead th { position: sticky; top: 0; z-index: 2; background: var(--sheet); box-shadow: 0 -24px 0 var(--sheet), 0 1px 0 var(--rule-strong); padding-top: 4px; padding-bottom: 4px; }
+table.facts { width: 100%; border-collapse: collapse; } table.facts td { padding: 3px 6px 3px 0; border-top: 1px solid var(--rule); vertical-align: top; } table.facts td:first-child { color: var(--ink-2); width: 34%; }
+.house-tag { font: 700 12px/1 var(--body); color: #fff; background: #e8590c; padding: 4px 7px; border-radius: 6px; white-space: nowrap; box-shadow: 0 1px 4px rgba(0,0,0,.35); pointer-events: none; }
 .you { width: 14px; height: 14px; border-radius: 50%; background: #2b7de9; border: 3px solid #fff; box-shadow: 0 0 0 2px #2b7de9; }
 </style>
 </head>
@@ -73,6 +76,7 @@
     <label><input type="checkbox" id="l-under" checked> Underused land (parking, golf, vacant)</label>
     <label><input type="checkbox" id="l-proj" checked> Housing &amp; projects under way</label>
     <label><input type="checkbox" id="l-zone"> Zoning (zoom in)</label>
+    <label><input type="checkbox" id="l-lots" checked> Lot lines (zoom 17+, online)</label>
     <label><input type="checkbox" id="l-amen"> Courts, pools, dog parks</label>
     <label><input type="checkbox" id="l-hoods" checked> Neighborhood lines</label>
     <label><input type="checkbox" id="l-tiles"> Street map underlay (online)</label>
@@ -128,7 +132,8 @@ function colorFor(p) {
   return ramp(METRICS[k].ramp)[i];
 }
 const zoningOn = () => typeof map !== "undefined" && map && map._loaded && $("#l-zone").checked && map.getZoom() >= 14;
-const styleBg = f => ({ fillColor: colorFor(f.properties), fillOpacity: zoningOn() ? 0.12 : tiles ? 0.45 : 0.75, color: css("--block-line"), weight: 0.4 });
+const streetLevel = () => typeof map !== "undefined" && map && map._loaded && map.getZoom() >= 17;
+const styleBg = f => ({ fillColor: colorFor(f.properties), fillOpacity: zoningOn() ? 0.12 : streetLevel() ? 0.22 : tiles ? 0.45 : 0.75, color: css("--block-line"), weight: 0.4 });
 function legend() {
   const k = $("#metric").value, el = $("#legend");
   if (k === "top") {
@@ -194,7 +199,7 @@ function zoomed() {
   toggle(layers.art, z >= 12); toggle(layers.walls, z >= 14); toggle(layers.stops, z >= 13); toggle(layers.amen, z >= 13);
   toggle(layers.hoods, z >= 12); toggle(layers.hoodLabels, z >= 13 && z < 15); toggle(layers.cityLabels, z >= 10 && z < 13);
   drawStreets(); drawLabels(); drawZoning(); drawFacilities(); drawUnder(); drawProjects();
-  const zon = zoningOn(); if (bgs && zon !== zoomed._last) { zoomed._last = zon; bgs.setStyle(styleBg); }
+  const zon = zoningOn() + "|" + streetLevel(); if (bgs && zon !== zoomed._last) { zoomed._last = zon; bgs.setStyle(styleBg); }
 }
 
 // ---------------- streets, names, shields and park labels (drawn only for what's on screen)
@@ -601,7 +606,10 @@ function gapSection(p, m) {
 
 // ---------------- per-house analysis: the clicked parcel, fetched live from the County Assessor's public parcel service
 const PARCEL_URL = "https://public.gis.lacounty.gov/public/rest/services/LACounty_Cache/LACounty_Parcel/MapServer/0/query";
-const PARCEL_FIELDS = "AIN,SitusFullAddress,UseCode,UseType,UseDescription,YearBuilt1,EffectiveYear1,Units1,Bedrooms1,Bathrooms1,SQFTmain1,Roll_LandValue,Roll_ImpValue,Roll_LandBaseYear,Roll_ImpBaseYear,Roll_HomeOwnersExemp";
+const PARCEL_FIELDS = ["AIN", "SitusFullAddress", "SitusHouseNo", "SitusStreet", "UseCode", "UseType", "UseDescription", "Roll_LandValue", "Roll_ImpValue",
+  "Roll_LandBaseYear", "Roll_ImpBaseYear", "Roll_HomeOwnersExemp",
+  ...[1, 2, 3, 4, 5].flatMap(i => [`DesignType${i}`, `QualityClass${i}`, `YearBuilt${i}`, `EffectiveYear${i}`, `Units${i}`, `Bedrooms${i}`, `Bathrooms${i}`, `SQFTmain${i}`])].join(",");
+const OVERPASS = ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter"];
 let parcelLayer = null;
 function houseHint() {
   const el = $("#house"); if (el) el.remove();
@@ -636,15 +644,70 @@ function zoneAt(ll) {
   }
   return null;
 }
-function houseChecks(a, lot, m, z, hMax) {
+// building outlines (and pools) on this lot from OpenStreetMap; in LA most outlines come from the County's building
+// data import, often with a height. Returns null when OSM can't be reached.
+async function fetchOsmLot(rings) {
+  const ring = rings[0] || [];
+  const step = Math.max(1, Math.ceil(ring.length / 40));
+  const poly = ring.filter((_, i) => i % step === 0).map(([x, y]) => `${y.toFixed(6)} ${x.toFixed(6)}`).join(" ");
+  const q = `[out:json][timeout:12];(way["building"](poly:"${poly}");way["leisure"="swimming_pool"](poly:"${poly}"););out tags geom;`;
+  for (const url of OVERPASS) {
+    try {
+      const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 12000);
+      const r = await fetch(url, { method: "POST", body: "data=" + encodeURIComponent(q), signal: ctl.signal,
+        headers: { "Content-Type": "application/x-www-form-urlencoded" } });
+      clearTimeout(t);
+      if (!r.ok) continue;
+      const d = await r.json();
+      const ways = (d.elements || []).filter(e => e.type === "way" && e.geometry && e.geometry.length > 2);
+      const toRing = e => e.geometry.map(g => [g.lon, g.lat]);
+      const bl = ways.filter(e => e.tags && e.tags.building).map(e => {
+        const r_ = toRing(e), t_ = e.tags; const hm = parseFloat(String(t_.height || "").replace(/[^0-9.]/g, ""));
+        return { ring: r_, sqft: Math.round(ringAreaM2(r_) * 10.7639), levels: parseInt(t_["building:levels"]) || null,
+                 height: isFinite(hm) && hm > 0 ? hm : null, type: t_.building, roof: t_["roof:shape"] || null };
+      }).sort((a, b) => b.sqft - a.sqft);
+      const pools = ways.filter(e => e.tags && e.tags.leisure === "swimming_pool").length;
+      return { bl, pools };
+    } catch (e) { /* try the next mirror */ }
+  }
+  return null;
+}
+function houseFacts(a, lot, osm) {
+  // the Assessor lists up to five buildings per parcel; slot 1 is the main building
+  const slots = [1, 2, 3, 4, 5].map(i => ({ i, sqft: +a[`SQFTmain${i}`] || 0, units: +a[`Units${i}`] || 0, beds: +a[`Bedrooms${i}`] || 0,
+    baths: +a[`Bathrooms${i}`] || 0, yb: +a[`YearBuilt${i}`] || 0, eff: +a[`EffectiveYear${i}`] || 0, design: a[`DesignType${i}`] || "", qc: a[`QualityClass${i}`] || "" }))
+    .filter(x => x.sqft > 0 || x.units > 0);
+  const main = slots[0] || { sqft: 0, units: 0, beds: 0, baths: 0, yb: 0, eff: 0, design: "", qc: "" };
+  const F = { slots, main, bldg: main.sqft, beds: main.beds, baths: main.baths, units: slots.reduce((t, x) => t + x.units, 0) || main.units,
+    living: slots.reduce((t, x) => t + x.sqft, 0), yb: main.yb || main.eff, eff: main.eff, qc: main.qc, design: main.design, src: {} };
+  const B = osm && osm.bl ? osm.bl.filter(b => b.sqft >= 80) : [];
+  const big = B[0];
+  if (big) {
+    F.foot = big.sqft; F.footAll = B.reduce((t, b) => t + b.sqft, 0); F.outlines = B.map(b => b.ring); F.others = B.length - 1;
+    F.src.foot = "building outline (OpenStreetMap, from the County's building data)";
+    if (big.levels) { F.stories = big.levels; F.src.stories = `OpenStreetMap levels tag (${big.levels})`; F.conf = "recorded"; }
+    else if (big.height) { F.stories = Math.max(1, Math.round((big.height - 1) / 3.2)); F.src.stories = `building height ${big.height.toFixed(1)} m (County LiDAR via OpenStreetMap)`; F.conf = "measured"; }
+    else if (F.bldg) { const r = F.bldg / big.sqft; F.stories = r >= 1.55 ? 2 : 1; F.src.stories = `living area ÷ footprint = ${r.toFixed(2)}`; F.conf = "estimated"; }
+    F.roof = big.roof;
+  } else {
+    F.foot = Math.min(F.bldg || lot * 0.3, lot * 0.6); F.footAll = F.foot + (slots.slice(1).reduce((t, x) => t + x.sqft, 0));
+    F.src.foot = osm ? "no building outline mapped here: estimated from living area" : "building outlines unavailable offline: estimated from living area";
+    F.stories = null; F.src.stories = "unknown (no building outline)"; F.conf = "unknown";
+  }
+  F.pool = osm ? osm.pools > 0 : null;
+  F.yard = Math.max(lot - F.footAll - lot * 0.2, 0);   // about 20% of the lot goes to front/side setbacks and the driveway
+  F.second = slots.length > 1 || (F.others || 0) > 0;
+  return F;
+}
+function houseChecks(a, lot, m, z, hMax, F) {
   const res = /^0/.test(String(a.UseCode || "")) || /resid/i.test(a.UseType || "");
-  const bldg = +a.SQFTmain1 || 0, units = +a.Units1 || 0, beds = +a.Bedrooms1 || 0, baths = +a.Bathrooms1 || 0;
-  const yb = +a.YearBuilt1 || +a.EffectiveYear1 || 0;
-  const foot = Math.min(bldg || lot * 0.3, lot * 0.6), yard = Math.max(lot * 0.75 - foot, 0);  // ~25% of the lot goes to setbacks
+  const { bldg, beds, baths, units, yb, foot, yard } = F;
   const cat = z ? z.cat : null, sf = cat === "single-family" || (!cat && res && units <= 1), fire = (m.fire || 0) >= 0.5;
   const C = [], add = (name, v, why) => C.push({ name, v, why });
-  if (!res) { add("Home upgrades", "no", `This parcel is ${esc(a.UseDescription || "not residential")}, so the homeowner checks don't apply.`); return { C, yard, foot, sf, yb, beds, baths, bldg, units, res }; }
-  if (yard >= 800) add("Detached ADU (backyard home)", "yes", `About ${fmtN(yard)} sq ft of yard outside the setbacks; an 800 sq ft ADU needs roughly that plus 4 ft side and rear setbacks.`);
+  const out = () => ({ C, yard, foot, sf, yb, beds, baths, bldg, units, res, lot, stories: F.stories, pool: F.pool });
+  if (!res) { add("Home upgrades", "no", `This parcel is ${esc(a.UseDescription || "not residential")}, so the homeowner checks don't apply.`); return out(); }
+  if (F.second) add("Second building on the lot", "note", F.slots.length > 1 ? `The Assessor lists ${F.slots.length} buildings (${F.slots.map(x => fmtN(x.sqft) + " sq ft").join(", ")}): a garage conversion, guest house or ADU may already exist.` : "There's a second structure on the lot (garage or shed) in the building outlines.");
+  if (yard >= 800) add("Detached ADU (backyard home)", "yes", `About ${fmtN(yard)} sq ft of open yard after the buildings and setbacks; an 800 sq ft ADU needs roughly that plus 4 ft side and rear setbacks.`);
   else if (yard >= 400) add("Detached ADU", "maybe", `Only ~${fmtN(yard)} sq ft of open yard: a small ADU, or converting the garage, is more likely.`);
   else add("Detached ADU", "no", `Little open yard (~${fmtN(yard)} sq ft); a garage conversion or junior ADU is the realistic option.`);
   if (sf && bldg >= 1000) add("Junior ADU (inside the house, up to 500 sq ft)", "yes", `${fmtN(bldg)} sq ft home on a single-family lot.`);
@@ -652,18 +715,22 @@ function houseChecks(a, lot, m, z, hMax) {
   if (sf && lot >= 2400 && !fire) add("SB 9 lot split / second home", "yes", `${fmtN(lot)} sq ft single-family lot: SB 9 allows two homes and a split into two lots of at least 1,200 sq ft (40% each). Not allowed in historic districts; a split needs an owner-occupancy affidavit.`);
   else if (sf && lot >= 2400 && fire) add("SB 9 lot split", "no", "Most of this area is a very-high fire hazard zone, where SB 9 doesn't apply.");
   else if (sf) add("SB 9 lot split", "no", `Lot is ${fmtN(lot)} sq ft; a split needs room for two lots of at least 1,200 sq ft.`);
-  if (yard >= 1200) add("Swimming pool", "yes", `~${fmtN(yard)} sq ft of open yard.`);
-  const oneStory = bldg && bldg <= foot * 1.1 && bldg < lot * 0.6;
-  if (oneStory) add("Second story", hMax == null || hMax >= 28 ? "maybe" : "no", hMax == null ? "Likely a one-story house; this zone's height limit isn't loaded, so check the zone and any hillside or mansionization rules." :
-    hMax >= 28 ? `Likely one story, and this zone allows up to ${hMax} ft. Check floor-area limits (mansionization rules) and whether the foundation can carry a second floor.` : `This zone's ${hMax} ft limit leaves little room for a second floor.`);
-  add("Rooftop deck", "maybe", "Needs a flat roof (or a flat garage roof) strong enough to carry it; roof type isn't in the parcel data.");
+  if (F.pool) add("Swimming pool", "note", "There's already a pool on this lot (OpenStreetMap).");
+  else if (yard >= 1200) add("Swimming pool", "yes", `~${fmtN(yard)} sq ft of open yard${F.pool === false ? "; no pool mapped here now" : ""}.`);
+  if (F.stories === 1 || F.stories == null) {
+    const one = F.stories === 1, why0 = one ? `One story (${F.src.stories})` : "Number of stories unknown";
+    add("Second story", hMax != null && hMax < 28 ? "no" : one && F.conf !== "estimated" ? "yes" : "maybe",
+      hMax != null && hMax < 28 ? `${why0}, but this zone's ${hMax} ft limit leaves little room for a second floor.` :
+      `${why0}${hMax ? `, and this zone allows up to ${hMax} ft` : ""}. Check floor-area limits (mansionization rules) and whether the foundation can carry a second floor.`);
+  } else add("Second story", "note", `Already ${F.stories} stories (${F.src.stories}).`);
+  add("Rooftop deck", F.roof === "flat" ? "yes" : F.roof ? "no" : "maybe", F.roof === "flat" ? "Flat roof recorded for this building: a deck needs a structural check and waterproofing." : F.roof ? `Roof is ${esc(F.roof)}: a rooftop deck would need a flat section or the garage roof.` : "Needs a flat roof (or a flat garage roof); roof shape isn't recorded for this building.");
   if (yard >= 400) add("Garden, deck or patio", "yes", `~${fmtN(yard)} sq ft of open yard for a vegetable or native garden, deck, pergola or outdoor kitchen.`);
-  if (foot >= 350) add("Rooftop solar", "yes", `About ${fmtN(foot)} sq ft of roof; check orientation and tree shade.`);
+  if (foot >= 350) add("Rooftop solar", "yes", `About ${fmtN(foot)} sq ft of roof footprint; check orientation and tree shade.`);
   if (yb && yb < 1980 && sf) add("Seismic bolting and bracing", "yes", `Built in ${yb}: raised-foundation homes from before 1980 qualify for Earthquake Brace + Bolt grants (up to $3,000), and the work isn't reassessed.`);
   if (yb && yb < 1975) add("Whole-house repiping", "maybe", `Built in ${yb}: galvanized pipes are common in homes this age.`);
   if (beds >= 3 && baths && baths < beds - 1) add("Add a bathroom", "yes", `${beds} bedrooms but ${baths} bathroom${baths > 1 ? "s" : ""}: an extra bathroom usually adds more than it costs.`);
   if (fire) add("Wildfire hardening (Zone 0)", "yes", "Very-high fire hazard zone: ember-resistant vents and a clear 5-ft zone are required for new work and help insurance.");
-  return { C, yard, foot, sf, yb, beds, baths, bldg, units, res, lot };
+  return out();
 }
 function houseUpgrades(h, m) {
   // every upgrade that fits this parcel, with costs and values sized to the house where size drives them
@@ -671,8 +738,8 @@ function houseUpgrades(h, m) {
   const vpsf = Math.min(Math.max(hv / 1800, 250), 1400);   // this area's value per sq ft (typical home ~1,800 sq ft)
   const loc = Math.min(Math.max((m.rent || D.meta.rent_med) / D.meta.rent_med, 0.7), 1.6), rent1 = 2102 * loc;
   const check = n => (h.C.find(c => c.name.startsWith(n)) || {}).v;
-  const fits = { onestory: !!check("Second story") && check("Second story") !== "no", yard800: h.yard >= 800, yard400: h.yard >= 400,
-    yard1200: h.yard >= 1200, flatroof: true, roof350: h.foot >= 350, pre1980: !!h.yb && h.yb < 1980, pre1975: !!h.yb && h.yb < 1975,
+  const fits = { onestory: ["yes", "maybe"].includes(check("Second story")), yard800: h.yard >= 800, yard400: h.yard >= 400,
+    yard1200: h.yard >= 1200 && !h.pool, flatroof: true, roof350: h.foot >= 350, pre1980: !!h.yb && h.yb < 1980, pre1975: !!h.yb && h.yb < 1975,
     fire: (m.fire || 0) >= 0.5 };
   const rows = [];
   for (const u of D.upgrades || []) {
@@ -695,7 +762,23 @@ function houseUpgrades(h, m) {
   }
   return rows.sort((a, b) => b.net - a.net);
 }
+let houseLabel = null, houseBldgs = null;
+function showParcel(a, rings) {
+  if (parcelLayer) map.removeLayer(parcelLayer);
+  if (houseLabel) map.removeLayer(houseLabel);
+  if (!rings.length) return;
+  const ll = rings.map(r => r.map(([x, y]) => [y, x]));
+  parcelLayer = L.polygon(ll, { interactive: false, color: "#e8590c", weight: 4, fillColor: "#e8590c", fillOpacity: .14 }).addTo(map);
+  const c = parcelLayer.getBounds().getCenter(), label = a.SitusHouseNo ? `${a.SitusHouseNo} ${String(a.SitusStreet || "").replace(/\s+/g, " ").trim()}` : (a.SitusFullAddress || "").split(/\s{2,}| CA /)[0];
+  houseLabel = L.marker(c, { interactive: false, keyboard: false, icon: L.divIcon({ className: "", iconSize: null,
+    html: `<div class="house-tag" style="transform:translate(-50%,-140%)">${esc(label || "Parcel " + a.AIN)}</div>` }) }).addTo(map);
+}
+function showOutlines(F) {
+  if (houseBldgs) map.removeLayer(houseBldgs);
+  houseBldgs = F.outlines ? L.layerGroup(F.outlines.map((r, i) => L.polygon(r.map(([x, y]) => [y, x]), { interactive: false, color: "#111", weight: i ? 1 : 1.6, fillColor: "#111", fillOpacity: i ? .12 : .22 }))).addTo(map) : null;
+}
 async function houseAt(ll) {
+  clearTimeout(hoverTimer); if (hoverLayer) { map.removeLayer(hoverLayer); hoverLayer = null; }
   const el0 = $("#house"); if (el0) el0.remove();
   const box = document.createElement("div"); box.id = "house"; box.className = "section";
   box.innerHTML = `<h3>This home</h3><p class="small muted">Looking up the parcel with the County Assessor…</p>`;
@@ -705,24 +788,71 @@ async function houseAt(ll) {
     box.innerHTML = `<h3>This home</h3><p class="small">Couldn't reach the County's parcel service (${esc(e.message)}). Per-house checks need an internet connection; the rest of the map works offline.</p>`; return; }
   if (!f) { box.innerHTML = `<h3>This home</h3><p class="small muted">No parcel at that spot (street or public land). Click on a lot.</p>`; return; }
   const a = f.attributes, rings = (f.geometry && f.geometry.rings) || [];
-  if (parcelLayer) map.removeLayer(parcelLayer);
-  if (rings.length) parcelLayer = L.polygon(rings.map(r => r.map(([x, y]) => [y, x])), { interactive: false, color: "#111", weight: 2.5, fill: false, dashArray: "4 3" }).addTo(map);
+  showParcel(a, rings);
+  box.innerHTML = `<h3>This home</h3><p class="small muted">Found ${esc(a.SitusFullAddress || "the parcel")}. Checking the building outline and height…</p>`;
+  const osm = rings.length ? await fetchOsmLot(rings) : null;
   const lot = rings.length ? Math.round(ringAreaM2(rings[0]) * 10.7639) : 0;
+  const F = houseFacts(a, lot, osm);
+  showOutlines(F);
   const p = byId.get(selected).properties, m = (D.details[selected] || {}).m || {}, z = zoneAt(ll);
   const rule = z ? zoneRules(z.zone, (m.z || {}).j || p.c) : null;
   const hMax = rule && +rule.max_height_ft ? +rule.max_height_ft : null;
-  const h = houseChecks(a, lot, m, z, hMax), ups = h.res ? houseUpgrades(h, m) : [];
+  const h = houseChecks(a, lot, m, z, hMax, F), ups = h.res ? houseUpgrades(h, m) : [];
   const tag = { yes: "✓", maybe: "?", no: "✗", note: "•" }, col = { yes: "var(--ok-ink, #15803d)", maybe: "var(--warn-ink)", no: "var(--ink-3)", note: "var(--ink-2)" };
+  const fact = (k, v, src) => v == null || v === "" ? "" : `<tr><td>${k}</td><td><b>${v}</b>${src ? `<br><span class="muted">${esc(src)}</span>` : ""}</td></tr>`;
+  const slotTxt = F.slots.length > 1 ? F.slots.map((x, i) => `${i ? "building " + (i + 1) : "main"}: ${fmtN(x.sqft)} sq ft${x.units ? `, ${x.units} unit${x.units > 1 ? "s" : ""}` : ""}${x.yb ? `, ${x.yb}` : ""}`).join("; ") : null;
   box.innerHTML = `<h3>This home</h3>
-    <p class="small"><b>${esc(a.SitusFullAddress || "Parcel " + a.AIN)}</b> · AIN ${esc(a.AIN)}<br>${esc(a.UseDescription || "")}${h.bldg ? ` · ${fmtN(h.bldg)} sq ft` : ""}${h.beds ? ` · ${h.beds} bd / ${h.baths} ba` : ""}${h.yb ? ` · built ${h.yb}` : ""} · lot ~${fmtN(lot)} sq ft
-    <br>Zone: <b>${esc(z ? z.zone : "not mapped here")}</b>${z ? " (" + esc(z.cat) + ")" : ""}${rule ? ` · up to ${esc(rule.max_height_ft)} ft, setbacks ${esc(rule.front_ft)}/${esc(rule.side_ft)}/${esc(rule.rear_ft)} ft` : ""}
-    <br>Assessed: land ${fmt$(+a.Roll_LandValue || 0)} + buildings ${fmt$(+a.Roll_ImpValue || 0)}${a.Roll_LandBaseYear ? ` (Prop 13 base ${esc(a.Roll_LandBaseYear)})` : ""}${+a.Roll_HomeOwnersExemp > 0 ? " · owner-occupied" : ""}. Typical home here: ${fmt$(m.hv || 0)}.</p>
-    <ul class="small" style="margin:4px 0 0 0;padding:0;list-style:none">${h.C.map(c => `<li style="margin:3px 0"><b style="color:${col[c.v]}">${tag[c.v]} ${esc(c.name)}</b> — ${c.why}</li>`).join("")}</ul>
-    ${ups.length ? `<div style="overflow-x:auto;margin-top:6px"><table class="small" style="width:100%;border-collapse:collapse"><thead><tr style="text-align:left"><th>Upgrades for this house (best net first)</th><th style="text-align:right">Cost</th><th style="text-align:right">Adds</th><th style="text-align:right">Per $1</th><th style="text-align:right">Net</th></tr></thead><tbody>
-      ${ups.slice(0, 14).map(u => `<tr style="border-top:1px solid var(--rule)"><td>${esc(u.n)}${u.note ? `<br><span class="muted">${esc(u.note)}</span>` : ""}${u.sav > 0 ? `<br><span class="muted">${/ADU/.test(u.n) ? "rent" : "saves"} ~${fmt$(u.sav)}/yr</span>` : ""}</td><td style="text-align:right">${fmt$(u.c)}</td><td style="text-align:right">${fmt$(u.v)}</td><td style="text-align:right">${fvpd(u.per)}</td><td style="text-align:right;font-weight:600">${u.net >= 0 ? "+" + fmt$(u.net) : "−" + fmt$(-u.net)}</td></tr>`).join("")}</tbody></table></div>
+    <p class="small"><b>${esc(a.SitusFullAddress || "Parcel " + a.AIN)}</b> · AIN ${esc(a.AIN)} · ${esc(a.UseDescription || "")}</p>
+    <table class="small facts"><tbody>
+      ${fact("Stories", F.stories ? `${F.stories}${F.conf === "estimated" ? " (estimate)" : ""}` : "unknown", F.src.stories)}
+      ${fact("Living area", F.bldg ? `${fmtN(F.bldg)} sq ft${F.living > F.bldg ? ` (${fmtN(F.living)} across all buildings)` : ""}` : null, "County Assessor")}
+      ${fact("Bedrooms / baths", F.beds ? `${F.beds} / ${F.baths}` : null, "County Assessor")}
+      ${fact("Units", F.units || null, "County Assessor")}
+      ${fact("Built", F.yb ? `${F.yb}${F.eff && F.eff !== F.yb ? ` (effective year ${F.eff}, after updates)` : ""}` : null, "County Assessor")}
+      ${fact("Buildings on the lot", slotTxt || (F.others ? `${F.others + 1} structures` : null), slotTxt ? "County Assessor" : "building outlines")}
+      ${fact("Building footprint", F.foot ? `${fmtN(Math.round(F.foot))} sq ft${F.footAll > F.foot ? ` (${fmtN(Math.round(F.footAll))} with other buildings)` : ""}` : null, F.src.foot)}
+      ${fact("Lot", lot ? `${fmtN(lot)} sq ft` : null, "parcel outline (County Assessor)")}
+      ${fact("Open yard (est.)", `${fmtN(Math.round(F.yard))} sq ft`, "lot minus buildings, less ~20% for setbacks and driveway")}
+      ${fact("Pool", F.pool == null ? null : F.pool ? "yes" : "none mapped", "OpenStreetMap")}
+      ${fact("Roof", F.roof || null, "OpenStreetMap")}
+      ${fact("Quality class", F.qc || null, "County Assessor building class code")}
+      ${fact("Zone", z ? `${esc(z.zone)} (${esc(z.cat)})${rule ? `, up to ${esc(rule.max_height_ft)} ft, setbacks ${esc(rule.front_ft)}/${esc(rule.side_ft)}/${esc(rule.rear_ft)} ft` : ""}` : "not mapped here", z ? "city or County zoning map" : "")}
+      ${fact("Assessed value", `land ${fmt$(+a.Roll_LandValue || 0)} + buildings ${fmt$(+a.Roll_ImpValue || 0)}${a.Roll_LandBaseYear ? ` (Prop 13 base ${esc(a.Roll_LandBaseYear)})` : ""}${+a.Roll_HomeOwnersExemp > 0 ? " · owner-occupied" : ""}`, "County Assessor 2026 roll")}
+      ${fact("Typical home here", fmt$(m.hv || 0), "recorded sales in this area")}
+    </tbody></table>
+    <ul class="small" style="margin:8px 0 0 0;padding:0;list-style:none">${h.C.map(c => `<li style="margin:3px 0"><b style="color:${col[c.v]}">${tag[c.v]} ${esc(c.name)}</b> — ${c.why}</li>`).join("")}</ul>
+    ${ups.length ? `<table class="small sticky-head" style="width:100%;border-collapse:collapse;margin-top:6px"><thead><tr style="text-align:left"><th>Upgrades for this house (best net first)</th><th style="text-align:right">Cost</th><th style="text-align:right">Adds</th><th style="text-align:right">Per $1</th><th style="text-align:right">Net</th></tr></thead><tbody>
+      ${ups.slice(0, 14).map(u => `<tr style="border-top:1px solid var(--rule)"><td>${esc(u.n)}${u.note ? `<br><span class="muted">${esc(u.note)}</span>` : ""}${u.sav > 0 ? `<br><span class="muted">${/ADU/.test(u.n) ? "rent" : "saves"} ~${fmt$(u.sav)}/yr</span>` : ""}</td><td style="text-align:right">${fmt$(u.c)}</td><td style="text-align:right">${fmt$(u.v)}</td><td style="text-align:right">${fvpd(u.per)}</td><td style="text-align:right;font-weight:600">${u.net >= 0 ? "+" + fmt$(u.net) : "−" + fmt$(-u.net)}</td></tr>`).join("")}</tbody></table>
       ${ups.length > 14 ? `<p class="small muted">${ups.length - 14} more fit this lot but return less.</p>` : ""}` : ""}
-    <p class="small muted">Screening only: lot size comes from the parcel outline, and yard space is estimated (lot minus the building, less ~25% for setbacks). Check setbacks, easements, historic status and permits with the city. Values use this area's typical home price per sq ft and LA rents; costs are 2025 LA estimates (second stories ~$600/sq ft all-in), being checked in round-8 research.</p>`;
+    <p class="small muted">Facts come from the County Assessor and the building outline mapped for this lot; each one says where it came from. Check setbacks, easements, historic status and permits with the city. Values use this area's typical home price per sq ft and LA rents; costs are 2025 LA estimates (second stories ~$600/sq ft all-in).</p>`;
 }
+
+// ---------------- hover preview at street level: outline the lot under the mouse and show its address
+let hoverTimer = null, hoverLayer = null, hoverKey = "";
+const hoverCache = new Map();
+function hoverParcel(e) {
+  clearTimeout(hoverTimer);
+  if (map.getZoom() < 17) { if (hoverLayer) { map.removeLayer(hoverLayer); hoverLayer = null; } return; }
+  hoverTimer = setTimeout(async () => {
+    const key = `${e.latlng.lat.toFixed(5)},${e.latlng.lng.toFixed(5)}`; if (key === hoverKey) return; hoverKey = key;
+    let f = hoverCache.get(key);
+    if (f === undefined) { try { f = await fetchParcel(e.latlng); } catch (er) { f = null; } hoverCache.set(key, f); }
+    if (hoverLayer) { map.removeLayer(hoverLayer); hoverLayer = null; }
+    if (!f || !f.geometry) return;
+    const a = f.attributes;
+    hoverLayer = L.polygon(f.geometry.rings.map(r => r.map(([x, y]) => [y, x])), { interactive: false, color: css("--ink", "#111"), weight: 2, fill: false, dashArray: "3 3" })
+      .bindTooltip(`<b>${esc(a.SitusFullAddress || "Parcel " + a.AIN)}</b><br><span class="muted">click to analyze this home</span>`, { permanent: true, direction: "top", className: "" }).addTo(map);
+  }, 450);
+}
+
+// ---------------- lot lines from the County parcel map (drawn by the County server, online only)
+const LotLines = L.TileLayer.extend({
+  getTileUrl(c) {
+    const s = this._tileSize || 256, nw = this._map.unproject([c.x * 256, c.y * 256], c.z), se = this._map.unproject([(c.x + 1) * 256, (c.y + 1) * 256], c.z);
+    const a = L.CRS.EPSG3857.project(nw), b = L.CRS.EPSG3857.project(se);
+    return `https://public.gis.lacounty.gov/public/rest/services/LACounty_Cache/LACounty_Parcel/MapServer/export?bbox=${a.x},${b.y},${b.x},${a.y}&bboxSR=3857&imageSR=3857&size=256,256&format=png32&transparent=true&f=image&dpi=96`;
+  }
+});
 
 // ---------------- homeowner upgrades (round 6; LA-metro averages, not this house)
 function upgradeTable(m) {
@@ -731,7 +861,7 @@ function upgradeTable(m) {
   if (!U.length) return "";
   const rows = U.map(u => ({ ...u, net: u.resale_value_added - u.cost_2025, per: u.resale_value_added / Math.max(u.cost_2025, 1) })).sort((a, b) => b.per - a.per);
   return `<details class="more"><summary>${rows.length} home upgrades: cost, value added and return per $1</summary>
-    <div style="overflow-x:auto"><table class="small" style="width:100%;border-collapse:collapse;margin-top:6px">
+    <div><table class="small sticky-head" style="width:100%;border-collapse:collapse;margin-top:6px">
       <thead><tr style="text-align:left"><th>Upgrade</th><th style="text-align:right">Cost</th><th style="text-align:right">Adds to resale</th><th style="text-align:right">Per $1</th><th style="text-align:right">Saves / yr</th><th>Rebates (Nov 2026)</th><th>Property tax</th><th>Permits</th></tr></thead>
       <tbody>${rows.map(u => `<tr style="border-top:1px solid var(--rule)"><td>${esc(u.name)}</td><td style="text-align:right">${fmt$(u.cost_2025)}</td><td style="text-align:right">${fmt$(u.resale_value_added)}</td><td style="text-align:right;font-weight:600">${fvpd(u.per)}</td><td style="text-align:right">${u.annual_savings > 0 ? fmt$(u.annual_savings) : u.annual_savings < 0 ? "−" + fmt$(-u.annual_savings) + " cost" : "–"}</td><td>${esc(u.rebates_nov_2026)}</td><td>${esc(u.property_tax)}</td><td>${esc(u.permits)}</td></tr>`).join("")}</tbody></table></div>
     <p class="small muted">Typical 2025 LA costs and resale values (City Pretty estimates; second stories and additions run about $450–$700 per sq ft all-in). They're being checked against round-8 research. These are LA-wide averages: zoom in and click a home for numbers sized to that house and its yard. Federal 25C and 25D credits ended for work after 2025.</p></details>`;
@@ -910,6 +1040,15 @@ async function init() {
     restyle();
   };
   map.on("zoomend", zoomed);
+  let lots = null;
+  const syncLots = () => { const want = $("#l-lots").checked;
+    if (want && !lots) lots = new LotLines("", { minZoom: 17, maxZoom: 19, opacity: .9, attribution: "Parcels © LA County Assessor" }).addTo(map);
+    if (!want && lots) { map.removeLayer(lots); lots = null; } };
+  $("#l-lots").onchange = syncLots; syncLots();
+  map.on("mousemove", hoverParcel);
+  // at street level the address preview replaces the area tooltip
+  map.on("zoomend", () => { const hi = map.getZoom() >= 17; bgs.eachLayer(l => { const t = l.getTooltip(); if (t) { t.options.opacity = hi ? 0 : 0.9; if (hi) l.closeTooltip(); } }); });
+  map.on("mouseout", () => { clearTimeout(hoverTimer); });
   map.on("moveend", () => { drawStreets(); drawLabels(); drawZoning(); drawFacilities(); drawUnder(); drawProjects(); });
   L.control.scale({ imperial: true, metric: false, maxWidth: 140, position: "bottomleft" }).addTo(map);
   const Loc = L.Control.extend({ options: { position: "topleft" }, onAdd() { const b = L.DomUtil.create("button", "locate"); b.type = "button"; b.textContent = "📍 Find me";

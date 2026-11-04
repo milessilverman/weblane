@@ -121,6 +121,17 @@ Current deliverable: `reports/city-pretty-la-county.html` (V2.3: real EIFD input
   known-site notes, easements (not buildable) and already-redeveloped lots (excluded); named corridors list Metro
   projects and City capital projects on the street.
 
+## House identity and facts (done in V2.12)
+- Click a home (zoom 17+): orange lot outline + address tag; building outlines on the lot; hover (450 ms pause) outlines
+  the lot under the mouse with its address; "Lot lines" layer draws County parcel boundaries via MapServer/export tiles.
+- Facts: all five Assessor building slots (sqft, units, beds/baths, year, effective year, quality class) plus a live
+  Overpass query for OSM buildings and pools inside the parcel polygon: footprint, other structures, stories from
+  building:levels, else height (County LiDAR import) / 3.2 m, else living area ÷ footprint (>= 1.55 → 2). Each fact shows
+  its source. Checks and upgrades use the real footprint, yard (lot − buildings − 20%), stories and pool.
+- Upgrade tables keep their headers pinned while scrolling (`.sticky-head`; no overflow wrapper).
+- Round 9 research prompt (`research/round9_research_prompt.md`) asks for Assessor code tables (stories?), LARIAC
+  heights, roof shape, pools, permits, restrictions per parcel and address points; replace OSM-based guesses when it lands.
+
 ## Next steps
 1. (done) EIFD tax-rate-area data.
 2. Add corridor right-of-way layers (abandoned rail, transmission, flood channels, Class I paths)
