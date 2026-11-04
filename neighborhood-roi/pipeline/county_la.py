@@ -1577,7 +1577,7 @@ def stage_underused():
     g = g[g.sqft >= g.kind.map(minsq)]
     g = g[~((g.kind == "lightly built commercial") & (g.imp_av > 0.2 * g.land_av))]
     addr = g.get("SitusFullAddress", g.get("SitusAddress"))
-    out = gpd.GeoDataFrame({"kind": g.kind, "ain": g.AIN.astype(str), "use": g.get("UseDescription"), "addr": addr,
+    out = gpd.GeoDataFrame({"kind": g.kind, "ain": g.AIN.astype(str), "use": g.get("UseDescription"), "code": g.get("UseCode"), "addr": addr,
                             "sqft": g.sqft.round(0), "land_av": g.land_av, "imp_av": g.imp_av,
                             "base_year": pd.to_numeric(g.get("Roll_LandBaseYear"), errors="coerce"), "src": "LA County Assessor"},
                            geometry=g.geometry.simplify(1.5), crs=M).to_crs(4326)
@@ -1588,10 +1588,95 @@ def stage_underused():
         note("underused", osm_cover_lots=int((out.bldg_sqft > 0).sum()), osm_constr_lots=int(out.constr.sum()))
     except Exception as ex:  # noqa: BLE001
         note("underused", osm_cover_error=str(ex)[:200])
+    # round 10: LA City certificates of occupancy, County flood-control right-of-way, public ownership
+    for fn in (_cofo_join, _flood_share, _public_owner):
+        try:
+            fn(out)
+        except Exception as ex:  # noqa: BLE001
+            note("underused", **{f"{fn.__name__}_error": str(ex)[:200]})
     note("underused", sites=len(out), by_kind={k: int(v) for k, v in out.kind.value_counts().items()},
          acres_by_kind={k: round(float(v) / 43560) for k, v in out.groupby("kind").sqft.sum().items()})
     out.to_file(OUT / "map_underused.geojson", driver="GeoJSON", COORDINATE_PRECISION=5)
     log(f"  wrote map_underused.geojson ({len(out)})")
+
+
+LADBS_COFO = ("data.lacity.org", "3f9m-afei")
+FLOOD_ROW = "https://dpw.gis.lacounty.gov/dpw/rest/services/FloodROWViewer/MapServer/0"
+PUBLIC_OWN = "https://public.gis.lacounty.gov/arcgis/rest/services/LACounty_Dynamic/Infrastructure/MapServer/4"
+
+
+def _cofo_join(out):
+    """Newest LADBS certificate of occupancy since 2016 on each site (by Assessor book/page/parcel, else by location)."""
+    df = socrata_rows(*LADBS_COFO, "cofo_issue_date >= '2016-01-01T00:00:00'", limit=50000, max_rows=600000)
+    note("underused", cofo_rows=len(df), cofo_fields=list(df.columns)[:40])
+    if not len(df):
+        return
+    du = pd.to_numeric(df.get("of_residential_dwelling_units"), errors="coerce").fillna(0)
+    wd = df.get("work_description", pd.Series("", index=df.index)).astype(str).str.upper()
+    big = df[(du >= 5) | wd.str.contains(r"NEW (?:\d+[- ]STORY )?(?:MIXED|APARTMENT|COMMERCIAL|OFFICE|HOTEL|RETAIL|BUILDING)|NEW \d+[- ]STORY")].copy()
+    big["du"] = du[big.index]
+    ain = (big.get("assessor_book", "").astype(str).str.zfill(4) + big.get("assessor_page", "").astype(str).str.zfill(3)
+           + big.get("assessor_parcel", "").astype(str).str.zfill(3))
+    big["ain"] = ain.where(ain.str.fullmatch(r"\d{10}"))
+    big["date"] = big.get("cofo_issue_date", "").astype(str).str[:10]
+    out["cofo_date"], out["cofo_units"] = None, np.nan
+    by = big.dropna(subset=["ain"]).sort_values("date").groupby("ain").agg(date=("date", "last"), du=("du", "max"))
+    hit = out.ain.map(by.date)
+    out.loc[hit.notna(), "cofo_date"] = hit[hit.notna()]
+    out.loc[hit.notna(), "cofo_units"] = out.ain.map(by.du)[hit.notna()]
+    # by location for new AINs (lots merged or split after redevelopment)
+    ll = big.get("latitude_longitude")
+    if ll is not None:
+        lat = pd.to_numeric(ll.map(lambda v: (v or {}).get("latitude") if isinstance(v, dict) else None), errors="coerce")
+        lon = pd.to_numeric(ll.map(lambda v: (v or {}).get("longitude") if isinstance(v, dict) else None), errors="coerce")
+        pts = gpd.GeoDataFrame(big[["date", "du"]], geometry=gpd.points_from_xy(lon, lat), crs=4326).dropna(subset=["date"])
+        pts = pts[pts.geometry.x.notna() & (pts.geometry.x != 0)]
+        if len(pts):
+            j = gpd.sjoin(pts.to_crs(M), out[["geometry"]].to_crs(M), predicate="within", how="inner")
+            for i, grp in j.groupby("index_right"):
+                if out.at[i, "cofo_date"] is None:
+                    out.at[i, "cofo_date"], out.at[i, "cofo_units"] = grp.date.max(), grp.du.max()
+    note("underused", cofo_sites=int(out.cofo_date.notna().sum()))
+
+
+def _flood_share(out):
+    """Share of each site inside a County Flood Control District right-of-way parcel (fee or easement)."""
+    w, s_, e, n = BBOX
+    xs, ys = np.linspace(w, e, 5), np.linspace(s_, n, 5)
+    parts = [arcgis_all(FLOOD_ROW, fields="Estate,Facility", bbox=(xs[i], ys[j], xs[i + 1], ys[j + 1]), max_rows=400000)
+             for i in range(4) for j in range(4)]
+    parts = [x for x in parts if x is not None and len(x)]
+    if not parts:
+        note("underused", flood_rows=0)
+        return
+    fl = gpd.GeoDataFrame(pd.concat(parts, ignore_index=True), crs=4326).to_crs(M)
+    fl = fl[fl.geom_type.isin(["Polygon", "MultiPolygon"])]
+    note("underused", flood_rows=len(fl))
+    sm = out.to_crs(M)
+    inter = gpd.overlay(sm[["geometry"]].assign(i=range(len(sm))), fl[["geometry"]], how="intersection", keep_geom_type=True)
+    a = inter.area.groupby(inter.i).sum()
+    share = np.zeros(len(sm))
+    share[a.index.values] = a.values / np.maximum(sm.area.values[a.index.values], 1)
+    out["flood"] = np.clip(share, 0, 1).round(3)
+    note("underused", flood_sites=int((out.flood > 0.3).sum()))
+
+
+def _public_owner(out):
+    """Public agency that owns the parcel (County public-agency parcels), for sites that could be screened."""
+    cand = out[(out.kind != "vacant") | ((out.sqft <= 25 * 43560) & ~out.use.astype(str).str.contains("Desert", na=False))]
+    ains = sorted(set(cand.ain.astype(str)))
+    own = {}
+    for k in range(0, len(ains), 250):
+        chunk = ains[k:k + 250]
+        try:
+            g = arcgis_all(PUBLIC_OWN, where="AIN IN (" + ",".join(f"'{a}'" for a in chunk) + ")", fields="AIN,AgencyName,AgencyType", geom=False)
+        except Exception:  # noqa: BLE001
+            continue
+        if g is not None:
+            for a, nm, t in zip(g.AIN.astype(str), g.get("AgencyName"), g.get("AgencyType")):
+                own[a] = f"{nm}" + (f" ({t})" if isinstance(t, str) and t else "")
+    out["owner"] = out.ain.astype(str).map(own)
+    note("underused", public_owner_sites=int(out.owner.notna().sum()), owner_lookups=len(ains))
 
 
 def _osm_cover(sites):
@@ -1775,6 +1860,9 @@ def stage_projects():
     # known sites from the research (golf, LAUSD, surplus land, redevelopments): Census geocoder or parcel number
     try:
         ks = pd.read_csv(RESEARCH.parent / "round7b" / "known_sites.csv", dtype=str).fillna("")
+        k10 = RESEARCH.parent / "round10" / "known_sites_r10.csv"
+        if k10.exists():
+            ks = pd.concat([ks, pd.read_csv(k10, dtype=str).fillna("")], ignore_index=True)
         pts = []
         for _, r in ks.iterrows():
             lat = lon = None

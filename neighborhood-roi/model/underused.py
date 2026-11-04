@@ -194,7 +194,7 @@ def main():
         ksp = SRC / "map_known_sites.geojson"
         if ksp.exists():
             ks = gpd.read_file(ksp).to_crs(M)
-            for kind_, rad in (("golf course", 700), ("public land", 120), ("redevelopment", 250)):
+            for kind_, rad in (("golf course", 700), ("public land", 120), ("redevelopment", 120)):
                 sub = ks[ks.kind == kind_]
                 if not len(sub):
                     continue
@@ -256,6 +256,22 @@ def main():
                     yr = str(x.year.dropna().astype(str).max() if x.year.notna().any() else "")[:4]
                     ad = next((a for a in x.addr if isinstance(a, str) and a), "")
                     flag([i], st, (f"{n:,} homes {word}" if n else f"a new building {word}") + (f" in {yr}" if yr else "") + (f" at {ad}" if ad else "") + f" ({x.src.iloc[0]})")
+        # (a2) research test set and earlier known redevelopments (round 7b, round 10 Part S)
+        kn = pd.Series([x if isinstance(x, str) else "" for x in pts.known], index=pts.index)
+        for pat, st in ((r"completed|redeveloped", "built"), (r"under construction", "building")):
+            ix = pts.index[kn.str.contains(pat, case=False).values]
+            flag(ix, st, {i: "research: " + str(kn.loc[i]) for i in ix})
+        # (a3) LA City certificate of occupancy since 2016 on the lot (round 10: LADBS 3f9m-afei)
+        if "cofo_date" in g.columns:
+            cd = g.cofo_date.reindex(pts.index)
+            cu = pd.to_numeric(g.get("cofo_units"), errors="coerce").reindex(pts.index)
+            m_ = cd.notna() & g.kind.reindex(pts.index).isin(["parking lot", "vacant", "lightly built commercial"])
+            flag(pts.index[m_], "built", {i: f"LA City certificate of occupancy issued {cd[i]}" + (f" ({int(cu[i]):,} homes)" if cu[i] == cu[i] and cu[i] > 0 else "") for i in pts.index[m_]})
+        # (a4) parking structures are not surface lots (Assessor use code 27x2 / 27x3)
+        if "code" in g.columns:
+            cc = g.code.astype(str).reindex(pts.index)
+            m_ = g.kind.reindex(pts.index).eq("parking lot") & cc.str.match(r"^27\d[23]")
+            flag(pts.index[m_], "built", "a parking structure (garage), not a surface lot (Assessor use code 27x2/27x3)")
         # (b) the Assessor already values a sizable building here
         kindv = g.kind.reindex(pts.index)
         imp, land = pts.imp_av.astype(float), pts.land_av.astype(float)
@@ -302,6 +318,12 @@ def main():
             if r.kind == "vacant" and (not (b.density >= 0.0015) or not (0.5 <= ac <= 25) or cat0 in ("open space / public", "agricultural")):
                 continue
             # not buildable: roads, channels, utilities, cemeteries; thin strips; land mapped as water or park
+            code_ = str(r.get("code") or "")
+            fl_ = float(r.get("flood") or 0) if r.get("flood") == r.get("flood") else 0.0
+            if fl_ >= 0.5 or (r.kind == "vacant" and fl_ >= 0.3):
+                continue   # County Flood Control District right-of-way
+            if r.kind == "vacant" and re.match(r"^(881[0-4]|8899|8[1457]\d\d)", code_):
+                continue   # roads, future streets, power lines, utilities, pipelines, rivers (round-10 use-code table)
             if r.kind == "vacant" and (re.search(NOT_BUILDABLE, use, re.I) or r.pp < 0.12 or r.green >= 0.4
                                        or (re.search(r"government", use, re.I) and r.pp < 0.3)):
                 continue
@@ -362,7 +384,8 @@ def main():
                     "sts": r.st_status if isinstance(r.st_status, str) else None, "homes": homes,
                     "margin": None if margin != margin else round(margin), "idea": idea, "gid": gid, "i": int(i),
                     "he": (round(float(r.he_cap)) if r.he_cap == r.he_cap else 0) if bool(r.get("he_any", False)) else None,
-                    "known": r.known if isinstance(r.get("known"), str) else None, "ease": bool(r.get("easement", False)) or None, "bs": bst}
+                    "known": r.known if isinstance(r.get("known"), str) else None, "ease": bool(r.get("easement", False)) or None, "bs": bst,
+                    "own": r.owner if isinstance(r.get("owner"), str) else None}
             out_sites.append(site)
             if bst:
                 continue
