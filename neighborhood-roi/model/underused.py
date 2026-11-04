@@ -39,6 +39,10 @@ CAP_RATE = 0.059                                    # I23: LA multifamily cap ra
 NEW_UNIT_SHARE = 0.6                                # for-sale houses: new house worth ~60% of the area's typical home ...
 UNIT_PRICE_RANGE = (350_000, 1_200_000)  # ... within this range
 ACTIVE_USE = r"manufactur|mineral|motion picture|nurser|greenhouse|oil|petroleum|refin|quarr|landfill|utilit|cemeter|warehous|lumber|rail"
+# vacant-roll uses that are not buildable land (roads, channels, utilities, cemeteries, water, mining)
+NOT_BUILDABLE = r"right.?s? of way|pipeline|canal|river|lake|water right|utilit|pumping|cemeter|mausole|waste|petroleum|mineral|reservoir|flood"
+DONE_STAGES = {"completed", "cofo issued", "permit finaled", "cofo corrected", "in-service", "permit closed"}
+GOING_STAGES = {"permitted", "issued", "cofo in progress", "construction", "bid & award"}
 GOLF_HOUSING_SHARE = 0.10
 BIG_LOT_SHARE = 0.5                    # lots of 10+ acres: half counted for housing              # golf courses: only the edge (10%) considered for housing, rest kept as open space
 ASSUMPTIONS = {
@@ -207,6 +211,78 @@ def main():
             if len(es):
                 ej = gpd.sjoin(pts[["geometry"]], es[["geometry"]], predicate="within", how="inner")
                 pts.loc[ej.index.unique(), "easement"] = True
+        # ---- round 10: is it still underused? The Assessor's use code can lag construction by years.
+        pts["bst"], pts["bnote"] = None, None
+        poly = gpd.GeoDataFrame(geometry=gm.geometry, crs=M)
+        pts["pp"] = (4 * np.pi * gm.area / gm.length.clip(lower=1) ** 2).reindex(pts.index)   # 1 = circle, near 0 = thin strip
+        def flag(idx, st, txt):
+            rank = {"built": 3, "building": 2, "planned": 1}
+            for i in idx:
+                cur = pts.at[i, "bst"]
+                if cur is None or rank[st] > rank[cur]:
+                    pts.at[i, "bst"], pts.at[i, "bnote"] = st, txt if isinstance(txt, str) else txt[i]
+        # (a) housing reports, LA permits and LAHD projects located on the parcel
+        pjp = SRC / "map_projects.geojson.gz"
+        if pjp.exists():
+            pj = gpd.read_file(f"/vsigzip/{pjp}").to_crs(M)
+            un = pd.to_numeric(pj.units, errors="coerce").fillna(0)
+            pj = pj[((un >= 5) | pj.kind.isin(["new apartments", "new building", "affordable housing"])) & ~pj.kind.eq("city capital project")]
+            jj = gpd.sjoin(pj[["stage", "units", "year", "addr", "src", "geometry"]], poly.assign(geometry=poly.buffer(15)), predicate="within", how="inner")
+            # also match by street address (house number + street name), since report geocodes can miss the parcel
+            def akey(x):
+                t = re.sub(r"[^A-Z0-9 ]", " ", str(x).upper().split(",")[0])
+                t = re.sub(r"\b(N|S|E|W|NORTH|SOUTH|EAST|WEST)\b", " ", t).split()
+                return " ".join(t[:3]) if len(t) >= 2 and t[0].isdigit() else None
+            sk = pts.addr.map(akey) if "addr" in pts else pd.Series(dtype=object)
+            pk = pj.addr.map(akey)
+            amap = {}
+            for i, k in sk.dropna().items():
+                amap.setdefault(k, []).append(i)
+            extra = [(j, i) for j, k in pk.dropna().items() for i in amap.get(k, [])]
+            if extra:
+                ex = pj.loc[[j for j, _ in extra], ["stage", "units", "year", "addr", "src", "geometry"]].copy()
+                ex["index_right"] = [i for _, i in extra]
+                jj = pd.concat([jj, ex[~ex.set_index("index_right", append=True).index.isin(jj.set_index("index_right", append=True).index)]])
+            for i, grp in jj.groupby("index_right"):
+                if i not in pts.index:
+                    continue
+                stg = grp.stage.astype(str).str.lower()
+                for st, mask, word in (("built", stg.isin(DONE_STAGES), "completed"), ("building", stg.isin(GOING_STAGES), "permitted / under construction"),
+                                       ("planned", stg.eq("approved"), "approved")):
+                    x = grp[mask]
+                    if not len(x):
+                        continue
+                    n = int(pd.to_numeric(x.units, errors="coerce").fillna(0).groupby(x.addr.fillna("")).max().sum())
+                    yr = str(x.year.dropna().astype(str).max() if x.year.notna().any() else "")[:4]
+                    ad = next((a for a in x.addr if isinstance(a, str) and a), "")
+                    flag([i], st, (f"{n:,} homes {word}" if n else f"a new building {word}") + (f" in {yr}" if yr else "") + (f" at {ad}" if ad else "") + f" ({x.src.iloc[0]})")
+        # (b) the Assessor already values a sizable building here
+        kindv = g.kind.reindex(pts.index)
+        imp, land = pts.imp_av.astype(float), pts.land_av.astype(float)
+        heavy = kindv.isin(["parking lot", "vacant"]) & (imp >= 1_000_000) & (imp >= 0.5 * land)
+        flag(pts.index[heavy], "built", {i: f"the Assessor values the buildings here at ${imp[i] / 1e6:,.1f}M (land ${land[i] / 1e6:,.1f}M), so something large is "
+                                            "already built (a new building or a parking garage)" for i in pts.index[heavy]})
+        # (c) building outlines and construction sites mapped on the lot (OpenStreetMap; added by the underused stage)
+        if "bldg_sqft" in g.columns:
+            cov = pd.to_numeric(g.bldg_sqft, errors="coerce").reindex(pts.index).fillna(0) / (pts.acres * 43560).clip(lower=1)
+            m_ = kindv.isin(["parking lot", "vacant"]) & (cov >= 0.3)
+            flag(pts.index[m_], "built", {i: f"building outlines cover {cov[i]:.0%} of the lot (OpenStreetMap)" for i in pts.index[m_]})
+        if "constr" in g.columns:
+            m_ = g.constr.reindex(pts.index).fillna(False).astype(bool)
+            flag(pts.index[m_], "building", "mapped as a construction site (OpenStreetMap)")
+        # water, parks and open space mapped over a "vacant" parcel: not buildable
+        pts["green"] = 0.0
+        for f_ in ("map_water.geojson", "map_parks_all.geojson"):
+            if (SRC / f_).exists():
+                w_ = gpd.read_file(SRC / f_).to_crs(M)
+                w_ = w_[w_.geom_type.isin(["Polygon", "MultiPolygon"])]
+                vac = poly.loc[kindv.index[kindv.eq("vacant")]]
+                if len(w_) and len(vac):
+                    inter = gpd.overlay(vac.assign(i=vac.index), w_[["geometry"]], how="intersection", keep_geom_type=True)
+                    share = (inter.area.groupby(inter.i).sum() / vac.area).reindex(pts.index).fillna(0)
+                    pts["green"] = np.maximum(pts.green, share.values)
+        note_counts = pts.bst.value_counts().to_dict()
+        print("already built / under way:", note_counts)
         lpsf = {gid: land_psf(r) for gid, r in dd.iterrows()}
         for i, r in pts.iterrows():
             gid = r.GEOID
@@ -224,6 +300,10 @@ def main():
                 continue
             # vacant land counts only inside built-up areas, at an infill scale, and not on open-space/farm zoning
             if r.kind == "vacant" and (not (b.density >= 0.0015) or not (0.5 <= ac <= 25) or cat0 in ("open space / public", "agricultural")):
+                continue
+            # not buildable: roads, channels, utilities, cemeteries; thin strips; land mapped as water or park
+            if r.kind == "vacant" and (re.search(NOT_BUILDABLE, use, re.I) or r.pp < 0.12 or r.green >= 0.4
+                                       or (re.search(r"government", use, re.I) and r.pp < 0.3)):
                 continue
             sqft = ac * 43560
             psf = lpsf.get(gid, np.nan)
@@ -249,7 +329,11 @@ def main():
             land_used = mkt * (usable / ac) if mkt == mkt and ac > 0 else 0
             margin = homes * (price - cost) - land_used if homes and price == price else np.nan
             known_ = r.get("known") if isinstance(r.get("known"), str) else ""
-            if re.search(r"completed|redeveloped", known_, re.I):
+            bst = r.bst if isinstance(r.bst, str) else None
+            if bst:
+                homes, margin = 0, np.nan
+                idea = {"built": "Already built: ", "building": "Under construction: ", "planned": "Already approved: "}[bst] + str(r.bnote) + "; not counted as underused"
+            elif re.search(r"completed|redeveloped", known_, re.I):
                 homes, margin, idea = 0, np.nan, "Already redeveloped (see the known-site note); not counted as underused"
             elif bool(r.get("easement", False)):
                 homes, margin, idea = 0, np.nan, "Protected by a conservation easement: generally can't be built on; keep as open space"
@@ -278,8 +362,10 @@ def main():
                     "sts": r.st_status if isinstance(r.st_status, str) else None, "homes": homes,
                     "margin": None if margin != margin else round(margin), "idea": idea, "gid": gid, "i": int(i),
                     "he": (round(float(r.he_cap)) if r.he_cap == r.he_cap else 0) if bool(r.get("he_any", False)) else None,
-                    "known": r.known if isinstance(r.get("known"), str) else None, "ease": bool(r.get("easement", False)) or None}
+                    "known": r.known if isinstance(r.get("known"), str) else None, "ease": bool(r.get("easement", False)) or None, "bs": bst}
             out_sites.append(site)
+            if bst:
+                continue
             s_ = bg_sum.setdefault(gid, {"n": 0, "ac": 0.0, "homes": 0, "margin": 0.0, "mkt": 0.0})
             s_["n"] += 1
             s_["ac"] += ac

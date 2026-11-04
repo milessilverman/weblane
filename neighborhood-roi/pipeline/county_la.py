@@ -1581,10 +1581,62 @@ def stage_underused():
                             "sqft": g.sqft.round(0), "land_av": g.land_av, "imp_av": g.imp_av,
                             "base_year": pd.to_numeric(g.get("Roll_LandBaseYear"), errors="coerce"), "src": "LA County Assessor"},
                            geometry=g.geometry.simplify(1.5), crs=M).to_crs(4326)
+    # round 10: building outlines and construction sites mapped on each lot (the Assessor's use code lags construction)
+    try:
+        cov = _osm_cover(out)
+        out["bldg_sqft"], out["constr"] = cov.bldg_sqft.values, cov.constr.values
+        note("underused", osm_cover_lots=int((out.bldg_sqft > 0).sum()), osm_constr_lots=int(out.constr.sum()))
+    except Exception as ex:  # noqa: BLE001
+        note("underused", osm_cover_error=str(ex)[:200])
     note("underused", sites=len(out), by_kind={k: int(v) for k, v in out.kind.value_counts().items()},
          acres_by_kind={k: round(float(v) / 43560) for k, v in out.groupby("kind").sqft.sum().items()})
     out.to_file(OUT / "map_underused.geojson", driver="GeoJSON", COORDINATE_PRECISION=5)
     log(f"  wrote map_underused.geojson ({len(out)})")
+
+
+def _osm_cover(sites):
+    """Square feet of OSM building outlines on each site, and whether a construction site is mapped there."""
+    import json as _json
+    from shapely.geometry import shape
+    from shapely.strtree import STRtree
+    w, s_, e, n = BBOX
+    pbf = cached_download("https://download.geofabrik.de/north-america/us/california/socal-latest.osm.pbf", "geofabrik_socal.osm.pbf", 25)
+    cut = CACHE / "lacounty.pbf"
+    if not cut.exists():
+        bd._sh("osmium", "extract", "-b", f"{w},{s_},{e},{n}", str(pbf), "-o", str(cut), "--overwrite", "-s", "complete_ways")
+    f, gj = CACHE / "uu_bldg.pbf", CACHE / "uu_bldg.geojsonseq"
+    bd._sh("osmium", "tags-filter", str(cut), "a/building", "a/landuse=construction", "-o", str(f), "--overwrite")
+    bd._sh("osmium", "export", str(f), "-o", str(gj), "--overwrite", "-f", "geojsonseq", "-x", "print_record_separator=false")
+    sm = sites.to_crs(M).geometry.reset_index(drop=True)
+    tree = STRtree(list(sm))
+    bsq, con = np.zeros(len(sm)), np.zeros(len(sm), dtype=bool)
+    import pyproj
+    tf = pyproj.Transformer.from_crs(4326, M, always_xy=True).transform
+    from shapely.ops import transform as _tr
+    nb = 0
+    with open(gj) as fh:
+        for line in fh:
+            try:
+                ft = _json.loads(line.strip().lstrip("\x1e"))
+                geom = shape(ft["geometry"])
+            except Exception:  # noqa: BLE001
+                continue
+            if geom.geom_type not in ("Polygon", "MultiPolygon"):
+                continue
+            gm = _tr(tf, geom)
+            idx = tree.query(gm, predicate="intersects")
+            if not len(idx):
+                continue
+            pr = ft.get("properties", {})
+            for i in idx:
+                if pr.get("landuse") == "construction" or pr.get("building") == "construction":
+                    if sm[i].intersection(gm).area > 0.25 * min(gm.area, sm[i].area):
+                        con[i] = True
+                if pr.get("building") and pr.get("building") not in ("construction", "roof", "carport"):
+                    bsq[i] += sm[i].intersection(gm).area * 10.7639
+            nb += 1
+    note("underused", osm_features_on_sites=nb)
+    return pd.DataFrame({"bldg_sqft": bsq.round(0), "constr": con})
 
 
 # ------------------------------------------------------------------ what is already being done (round 7)
