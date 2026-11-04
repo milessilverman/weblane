@@ -148,6 +148,27 @@ Current deliverable: `reports/city-pretty-la-county.html` (V2.3: real EIFD input
   choices such as second story vs. room addition counted once), their total cost and value added.
 - Not tested against live services from the build sandbox (its proxy blocks these hosts); Playwright tests mock them.
 
+## Round 10 prep: built-land truth, plain zoning, who pays, fast house (done in V2.14, before round-10 research)
+- Research prompt: `research/round10_research_prompt.md` (Parts S land truth, T plain zoning, U funding, V speed).
+- House panel renders at once from the Assessor record (reused from the hover lookup); the OSM outline and the 12
+  live checks fill in as they answer (`renderHouse`, `houseCache` per AIN, 8 s cap per check, Overpass mirrors
+  hedged 2.5 s apart). A "Still loading…" banner points to the neighborhood summary meanwhile.
+- Underused land (`model/underused.py`): a site is marked already built / under construction / approved (and left
+  out of counts and profit) when (a) an HCD APR, LADBS or LAHD project with 5+ homes or a new building sits on it
+  (within 15 m or same street address), (b) the Assessor's building value is >= $1M and >= 50% of land value, or
+  (c) OSM building outlines cover >= 30% (`bldg_sqft`, `constr` added by the underused pipeline stage via osmium).
+  Vacant parcels are dropped for road/channel/utility/cemetery/water uses, thin strips (Polsby-Popper < 0.12),
+  government strips, or >= 40% covered by mapped water/park. Example fixed: La Cienega/Jefferson (AIN 4205033038,
+  300 homes completed 2022). Map draws these grey and dotted with the reason.
+- Zoning in plain words (`explainZone`, `zoneSentence`): LA City base zones, height districts, [Q]/(T)/D and
+  overlays; County Title 22 zones with lot-size suffixes; Santa Clarita UDC. Shown in a "Zones in view" key on the
+  map, a hover tooltip at zoom 14-16, the panel and the house facts. Summaries written from general knowledge;
+  replace with round-10 Part T rows.
+- Who pays (`fundPlan`, `fundHtml`, `fundSummary`): per project, EIFD bonds from that project's own value gain
+  (gain reassessed as homes resell, 6%/yr; city 100% and County 50% pledges of their AF49 shares; 5.25% 30-yr,
+  1.35x, 20% County housing hold), what the city and County put in, and the rest by the catalog's funding sources.
+  Neighborhood tiles total it. Replace assumptions and add real amounts per city from round-10 Part U.
+
 ## Future: imagery to fill missing house facts (not built)
 - Satellite/aerial: USGS NAIP (60 cm, public domain, 2-3 yr cycle) or the USGS imagery tiles, run a roof/pool
   segmentation model (as done for tree canopy) in GitHub Actions per parcel where OSM has no outline: building

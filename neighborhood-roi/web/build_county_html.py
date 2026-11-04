@@ -154,20 +154,23 @@ def zoning_bundle():
     g = gpd.read_file(f"/vsigzip/{p}")
     g = g[g.geometry.notna() & ~g.geometry.is_empty]
     g["geometry"] = g.to_crs(M).geometry.simplify(8).to_crs(4326)
-    zones, zi, cells = [], {}, {}
+    zones, zi, cells, jur, zj = [], {}, {}, [], []
     for z, cat, juris, geom in zip(g.zone.astype(str), g.cat, g.juris, g.geometry):
         if geom is None or geom.is_empty:
             continue
         if z not in zi:
             zi[z] = len(zones)
             zones.append(z)
+            if juris not in jur:
+                jur.append(juris)
+            zj.append(jur.index(juris))
         ci = ZCATS.index(cat) if cat in ZCATS else len(ZCATS) - 1
         pt = geom.representative_point()
         key = f"{int((pt.x + 180) // CELL)},{int((pt.y + 90) // CELL)}"
         for poly in (geom.geoms if geom.geom_type == "MultiPolygon" else [geom]):
             rings = [encode_line(list(poly.exterior.coords))] + [encode_line(list(r.coords)) for r in poly.interiors]
             cells.setdefault(key, []).append([ci, zi[z], rings])
-    return {"cell": CELL, "zones": zones, "cats": ZCATS, "cells": cells}
+    return {"cell": CELL, "zones": zones, "cats": ZCATS, "cells": cells, "jur": jur, "zj": zj}
 
 
 def polys_in_cells(g, attrs, tol=2, cell=None):
