@@ -514,6 +514,27 @@ function highlight() {
 const tile = (k, v, s) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div>${s ? `<div class="s">${s}</div>` : ""}</div>`;
 const REC_KEYS = ["id", "project", "homes", "cost", "capex", "land", "om", "value", "vpd", "pct", "why", "qol"];
 
+// where a transit, bike or street-safety project should go: the named street and segment, and what's there already
+const CORRIDOR_ROLE = { bus_lane: "bus", brt: "bus", transit_priority: "bus", transit_shade: "bus", bus_shelters: "bus", rail_station: "bus",
+  protected_bike: "bike", road_diet: "bike", speed_cameras: "art", slow_streets: "local", traffic_calming: "local" };
+function whereLine(id) {
+  const role = CORRIDOR_ROLE[id], co = role && ((D.details[selected] || {}).m || {}).co, c = co && co[role];
+  if (!c) return "";
+  const [st, fr, to, mi, tph, bike, bus, n79, t79, rc, station] = c;
+  const seg = `<b>${esc(st)}</b>${fr && to && fr !== to ? ` from ${esc(fr)} to ${esc(to)}` : fr ? ` near ${esc(fr)}` : ""} (~${mi} mi)`;
+  const lead = id === "rail_station" ? `Corridor: along ${seg}, the busiest bus street here${tph ? ` (${tph} buses/hr)` : ""}${station && station[0] ? `, linking to ${esc(station[0])} station (${station[1]} mi)` : ""}`
+    : role === "local" ? `Where: ${seg}, the main local street through this area`
+    : role === "bike" ? `Where: ${seg}`
+    : role === "bus" ? `Where: ${seg}${tph ? `, where the busiest stop gets ${tph} buses an hour` : ""}`
+    : `Where: ${seg}, the main arterial here`;
+  const notes = [];
+  if (bike) notes.push("already there: " + bike);
+  if (bus) notes.push("already there: a bus-only lane on part of it (LA City)");
+  if (n79) notes.push(`${n79} official SB 79 transit stop${n79 > 1 ? "s" : ""} on this stretch (${t79}), so state law already allows more homes here`);
+  if (rc) notes.push("rail under construction nearby" + (rc !== "-" ? ` (${rc})` : ""));
+  return `<p class="small" style="margin:4px 0 2px">${lead}.${notes.length ? " " + notes.map(esc).join("; ") + "." : ""} <span class="muted">City and Metro plan status for this street isn't loaded yet.</span></p>`;
+}
+
 function recCard(r, i, mode) {
   const c = D.catalog[r.id], ev = String(c.evidence);
   const head = mode === "value" ? `<span class="vpd">${fvpd(r.vpd)} / $1</span>` : mode === "owner" ? `<span class="vpd">${fvpd(r.vpd)} / $1</span>` : `<span class="vpd none">${mode === "qol" ? "need: " + (r.qol >= .8 ? "high" : r.qol >= .5 ? "medium" : "low") : "policy"}</span>`;
@@ -522,6 +543,7 @@ function recCard(r, i, mode) {
     <div class="cat">${esc(c.category)}</div>
     <div class="row1"><span class="nm">${esc(c.name)}</span>${head}</div>
     <div class="meta">${esc(r.project)} · <b>total ~${fmt$(r.cost)}</b>${r.value > 0 ? (c.kind === "owner" ? ` · adds ~${fmt$(r.value)} to that home's value` : ` · adds ~${fmt$(r.value)} across ~${fmtN(r.homes)} homes`) : ""}${c.grade !== "none" ? `<span class="chip${c.grade === "A" || c.grade === "B" ? " strong" : c.grade === "D" || c.grade === "U" ? " reg" : ""}" title="${esc(GRADE_TXT[c.grade])}">evidence ${c.grade}</span>` : `<span class="chip">${esc(ev.split(" (")[0])}</span>`}${c.kind === "regional" ? '<span class="chip reg">regional project</span>' : ""}</div>
+    ${whereLine(r.id)}
     <details><summary>Why here, cost and sources</summary>
       <p class="small"><b>Why:</b> ${esc(r.why)}</p>
       <div class="costline">total = ${costs}${r.om ? " (10 yrs, present value)" : ""}</div>
@@ -534,6 +556,10 @@ function recCard(r, i, mode) {
 }
 
 // ---------------- what this place is missing (vs. its 50 most similar block groups) and the neighborhood's plan
+function stepWhere(st) {
+  const role = CORRIDOR_ROLE[st.fix], co = role && st.bg && ((D.details[st.bg] || {}).m || {}).co, c = co && co[role];
+  return c ? ` on <b>${esc(c[0])}</b>${c[1] && c[2] && c[1] !== c[2] ? ` from ${esc(c[1])} to ${esc(c[2])}` : ""}` : "";
+}
 function gapSection(p, m) {
   const G = m.gp || { g: [], s: [] }, plan = (D.plans || {})[p.n + "|" + p.c];
   const fixName = id => D.catalog[id] ? D.catalog[id].name : id;
@@ -546,7 +572,7 @@ function gapSection(p, m) {
   if (plan) {
     const steps = plan.steps || [];
     h += `<div class="pkg" style="display:block;margin-top:10px"><div class="small" style="font-weight:600;margin-bottom:6px">A plan for ${esc(p.n)} (${plan.bgs} block group${plan.bgs > 1 ? "s" : ""}, ${fmtN(plan.homes)} homes)</div>`;
-    if (steps.length) h += `<ol class="small" style="margin:0 0 0 18px;padding:0">${steps.map((st, i) => `<li style="margin-bottom:6px"><b>${i === 0 && steps.length > 1 ? "Quick win: " : ""}${esc(st.name)}</b>${st.project ? ` (${esc(st.project)}${st.near ? ", " + esc(st.near) : ""})` : ""}. ${esc(st.why)} This gap shows up in ${st.parts} of ${plan.bgs} parts of the neighborhood.${st.cost ? ` About ${fmt$(st.cost)}` : " Not costed here yet"}${st.vpd ? `, returning ${fvpd(st.vpd)} of home value per $1` : ""}${st.funding && D.funding[st.funding] ? `; could be paid for by ${esc(D.funding[st.funding][0])}` : ""}.</li>`).join("")}</ol>`;
+    if (steps.length) h += `<ol class="small" style="margin:0 0 0 18px;padding:0">${steps.map((st, i) => `<li style="margin-bottom:6px"><b>${i === 0 && steps.length > 1 ? "Quick win: " : ""}${esc(st.name)}</b>${st.project ? ` (${esc(st.project)}${st.near ? ", " + esc(st.near) : ""})` : ""}${stepWhere(st)}. ${esc(st.why)} This gap shows up in ${st.parts} of ${plan.bgs} parts of the neighborhood.${st.cost ? ` About ${fmt$(st.cost)}` : " Not costed here yet"}${st.vpd ? `, returning ${fvpd(st.vpd)} of home value per $1` : ""}${st.funding && D.funding[st.funding] ? `; could be paid for by ${esc(D.funding[st.funding][0])}` : ""}.</li>`).join("")}</ol>`;
     else h += `<p class="small">No neighborhood-wide gaps compared with similar areas. The best value-per-dollar projects are ranked below.</p>`;
     const pf = (D.under.profit || {})[p.n + "|" + p.c];
     if (pf && pf.total > 0) {
@@ -606,7 +632,7 @@ function zoneAt(ll) {
   }
   return null;
 }
-function houseChecks(a, lot, m, z) {
+function houseChecks(a, lot, m, z, hMax) {
   const res = /^0/.test(String(a.UseCode || "")) || /resid/i.test(a.UseType || "");
   const bldg = +a.SQFTmain1 || 0, units = +a.Units1 || 0, beds = +a.Bedrooms1 || 0, baths = +a.Bathrooms1 || 0;
   const yb = +a.YearBuilt1 || +a.EffectiveYear1 || 0;
@@ -623,6 +649,11 @@ function houseChecks(a, lot, m, z) {
   else if (sf && lot >= 2400 && fire) add("SB 9 lot split", "no", "Most of this area is a very-high fire hazard zone, where SB 9 doesn't apply.");
   else if (sf) add("SB 9 lot split", "no", `Lot is ${fmtN(lot)} sq ft; a split needs room for two lots of at least 1,200 sq ft.`);
   if (yard >= 1200) add("Swimming pool", "yes", `~${fmtN(yard)} sq ft of open yard.`);
+  const oneStory = bldg && bldg <= foot * 1.1 && bldg < lot * 0.6;
+  if (oneStory) add("Second story", hMax == null || hMax >= 28 ? "maybe" : "no", hMax == null ? "Likely a one-story house; this zone's height limit isn't loaded, so check the zone and any hillside or mansionization rules." :
+    hMax >= 28 ? `Likely one story, and this zone allows up to ${hMax} ft. Check floor-area limits (mansionization rules) and whether the foundation can carry a second floor.` : `This zone's ${hMax} ft limit leaves little room for a second floor.`);
+  add("Rooftop deck", "maybe", "Needs a flat roof (or a flat garage roof) strong enough to carry it; roof type isn't in the parcel data.");
+  if (yard >= 400) add("Garden, deck or patio", "yes", `~${fmtN(yard)} sq ft of open yard for a vegetable or native garden, deck, pergola or outdoor kitchen.`);
   if (foot >= 350) add("Rooftop solar", "yes", `About ${fmtN(foot)} sq ft of roof; check orientation and tree shade.`);
   if (yb && yb < 1980 && sf) add("Seismic bolting and bracing", "yes", `Built in ${yb}: raised-foundation homes from before 1980 qualify for Earthquake Brace + Bolt grants (up to $3,000), and the work isn't reassessed.`);
   if (yb && yb < 1975) add("Whole-house repiping", "maybe", `Built in ${yb}: galvanized pipes are common in homes this age.`);
@@ -631,20 +662,34 @@ function houseChecks(a, lot, m, z) {
   return { C, yard, foot, sf, yb, beds, baths, bldg, units, res, lot };
 }
 function houseUpgrades(h, m) {
-  // ranked: value added minus cost, using this area's typical home value where an effect scales with price
-  const hv = m.hv || 0, rows = [];
-  const loc = Math.min(Math.max((m.rent || D.meta.rent_med) / D.meta.rent_med, 0.7), 2), aduRent = 2102 * loc;
-  const yes = n => h.C.some(c => c.name.startsWith(n) && c.v === "yes");
-  if (yes("Detached ADU")) rows.push(["Detached ADU (800 sq ft)", 245000, Math.max(hv * 0.092, aduRent * 12 * 0.65 / 0.059), `~$${fmtN(Math.round(aduRent))}/mo rent; LA studies find ADUs raise a lot's value ~9%`]);
-  if (yes("Junior ADU")) rows.push(["Junior ADU (500 sq ft inside)", 60000, aduRent * 0.7 * 12 * 0.65 / 0.059 * 0.6, "lower cost; rent ~70% of a 1-bedroom"]);
-  if (yes("SB 9")) rows.push(["SB 9 split: sell or build on the new lot", 40000, hv * 0.25 * Math.min(1, h.lot / 6000), "surveys, map and permits ~$40k; a buildable lot is worth roughly a quarter of a typical home here, less on small lots (rough)"]);
-  if (yes("Add a bathroom")) rows.push(["Add a full bathroom", 28000, hv * 0.06, "LA sales: an extra bath adds ~6% (round-6 research)"]);
-  if (h.beds && h.bldg / h.beds > 600) rows.push(["Convert a den or attic to a bedroom", 15000, hv * 0.07, "LA sales: an extra bedroom adds ~7%"]);
-  if (yes("Swimming pool")) rows.push(["In-ground pool", 75000, (m.ht || 0) > 0 ? 65000 : 15000, (m.ht || 0) > 0 ? "warmer area: pools add more (~$65k in the Valley)" : "cooler area: pools add little (~$15k near the coast)"]);
-  if (yes("Rooftop solar")) rows.push(["Solar (6 kW) + battery", 24500, 26000, "saves ~$1,950/yr; federal credit ended for systems after 2025"]);
-  if (yes("Seismic")) rows.push(["Seismic bolting and bracing", 6500 - 3000, 9000, "after the $3,000 Brace + Bolt grant"]);
-  rows.push(["Front-yard curb-appeal landscaping", 8500, 12000, ""], ["Exterior repainting", 11500, 12500, ""]);
-  return rows.map(([n, c, v, note]) => ({ n, c, v: Math.round(v), net: Math.round(v - c), note })).sort((a, b) => b.net - a.net);
+  // every upgrade that fits this parcel, with costs and values sized to the house where size drives them
+  const hv = m.hv || 0, scale = Math.sqrt(Math.min(Math.max(hv / 900000, 0.6), 2));
+  const vpsf = Math.min(Math.max(hv / 1800, 250), 1400);   // this area's value per sq ft (typical home ~1,800 sq ft)
+  const loc = Math.min(Math.max((m.rent || D.meta.rent_med) / D.meta.rent_med, 0.7), 1.6), rent1 = 2102 * loc;
+  const check = n => (h.C.find(c => c.name.startsWith(n)) || {}).v;
+  const fits = { onestory: !!check("Second story") && check("Second story") !== "no", yard800: h.yard >= 800, yard400: h.yard >= 400,
+    yard1200: h.yard >= 1200, flatroof: true, roof350: h.foot >= 350, pre1980: !!h.yb && h.yb < 1980, pre1975: !!h.yb && h.yb < 1975,
+    fire: (m.fire || 0) >= 0.5 };
+  const rows = [];
+  for (const u of D.upgrades || []) {
+    if (u.applies_if && fits[u.applies_if] === false) continue;
+    let c = u.cost_2025, v = u.resale_value_added * scale, note = "";
+    if (/^Full second story/.test(u.name)) { const sq = Math.min(Math.max(h.foot, 600), 1500); c = sq * 600 + 40000; v = sq * vpsf * 0.8;
+      note = `${fmtN(sq)} sq ft at ~$600/sq ft all-in, plus ~$40k to live elsewhere during the work; new space valued at ~${fmt$(vpsf * 0.8)}/sq ft here`; }
+    else if (/^Partial second story/.test(u.name)) { c = 400 * 650 + 20000; v = 400 * vpsf * 0.8; note = `400 sq ft; new space valued at ~${fmt$(vpsf * 0.8)}/sq ft here`; }
+    else if (/^Ground-floor room addition/.test(u.name)) { c = 400 * 500; v = 400 * vpsf * 0.8; note = `400 sq ft at ~$500/sq ft; new space valued at ~${fmt$(vpsf * 0.8)}/sq ft here`; }
+    else if (/^Detached ADU/.test(u.name)) { v = Math.max(hv * 0.092, rent1 * 1.05 * 12 * 0.65 / 0.059); note = `~$${fmtN(Math.round(rent1 * 1.05))}/mo rent; LA studies find ADUs raise a lot's value ~9%`; }
+    else if (/^Junior ADU/.test(u.name)) { if (!(h.sf && h.bldg >= 1000)) continue; v = rent1 * 0.7 * 12 * 0.65 / 0.059 * 0.6; note = "rent ~70% of a 1-bedroom"; }
+    else if (/^Add a full bathroom/.test(u.name)) { if (!(h.beds >= 2 && h.baths < h.beds)) continue; v = hv * 0.06; note = "LA sales: an extra bath adds ~6%"; }
+    else if (/^Convert a den/.test(u.name)) { if (!(h.beds && h.bldg / h.beds > 550)) continue; v = hv * 0.07; note = "LA sales: an extra bedroom adds ~7%"; }
+    else if (/^In-ground pool/.test(u.name)) { v = (m.ht || 0) > 0 ? 65000 : 15000; note = (m.ht || 0) > 0 ? "warmer area: pools add more" : "cooler area: pools add little"; }
+    else if (/^Rooftop deck/.test(u.name)) { v = Math.min(hv * 0.03, 150000); note = "only on a flat roof or garage roof; worth more with a view"; }
+    else if (/^Garage to living space/.test(u.name)) { v = 300 * vpsf * 0.6; note = "~300 sq ft; loses the garage"; }
+    else if (/^Seismic/.test(u.name)) { c = c - 3000; note = "after the $3,000 Brace + Bolt grant"; }
+    else if (/^Legalize|^Staging|^Kitchen|^Bathroom remodel|^Home gym|^Kids/.test(u.name)) continue;  // not specific to this parcel
+    rows.push({ n: u.name, c: Math.round(c), v: Math.round(v), net: Math.round(v - c), per: v / Math.max(c, 1), note, sav: u.annual_savings });
+  }
+  return rows.sort((a, b) => b.net - a.net);
 }
 async function houseAt(ll) {
   const el0 = $("#house"); if (el0) el0.remove();
@@ -660,29 +705,32 @@ async function houseAt(ll) {
   if (rings.length) parcelLayer = L.polygon(rings.map(r => r.map(([x, y]) => [y, x])), { interactive: false, color: "#111", weight: 2.5, fill: false, dashArray: "4 3" }).addTo(map);
   const lot = rings.length ? Math.round(ringAreaM2(rings[0]) * 10.7639) : 0;
   const p = byId.get(selected).properties, m = (D.details[selected] || {}).m || {}, z = zoneAt(ll);
-  const h = houseChecks(a, lot, m, z), ups = h.res ? houseUpgrades(h, m) : [];
   const rule = z ? zoneRules(z.zone, (m.z || {}).j || p.c) : null;
+  const hMax = rule && +rule.max_height_ft ? +rule.max_height_ft : null;
+  const h = houseChecks(a, lot, m, z, hMax), ups = h.res ? houseUpgrades(h, m) : [];
   const tag = { yes: "✓", maybe: "?", no: "✗", note: "•" }, col = { yes: "var(--ok-ink, #15803d)", maybe: "var(--warn-ink)", no: "var(--ink-3)", note: "var(--ink-2)" };
   box.innerHTML = `<h3>This home</h3>
     <p class="small"><b>${esc(a.SitusFullAddress || "Parcel " + a.AIN)}</b> · AIN ${esc(a.AIN)}<br>${esc(a.UseDescription || "")}${h.bldg ? ` · ${fmtN(h.bldg)} sq ft` : ""}${h.beds ? ` · ${h.beds} bd / ${h.baths} ba` : ""}${h.yb ? ` · built ${h.yb}` : ""} · lot ~${fmtN(lot)} sq ft
     <br>Zone: <b>${esc(z ? z.zone : "not mapped here")}</b>${z ? " (" + esc(z.cat) + ")" : ""}${rule ? ` · up to ${esc(rule.max_height_ft)} ft, setbacks ${esc(rule.front_ft)}/${esc(rule.side_ft)}/${esc(rule.rear_ft)} ft` : ""}
     <br>Assessed: land ${fmt$(+a.Roll_LandValue || 0)} + buildings ${fmt$(+a.Roll_ImpValue || 0)}${a.Roll_LandBaseYear ? ` (Prop 13 base ${esc(a.Roll_LandBaseYear)})` : ""}${+a.Roll_HomeOwnersExemp > 0 ? " · owner-occupied" : ""}. Typical home here: ${fmt$(m.hv || 0)}.</p>
     <ul class="small" style="margin:4px 0 0 0;padding:0;list-style:none">${h.C.map(c => `<li style="margin:3px 0"><b style="color:${col[c.v]}">${tag[c.v]} ${esc(c.name)}</b> — ${c.why}</li>`).join("")}</ul>
-    ${ups.length ? `<div style="overflow-x:auto;margin-top:6px"><table class="small" style="width:100%;border-collapse:collapse"><thead><tr style="text-align:left"><th>Best upgrades for this house</th><th style="text-align:right">Cost</th><th style="text-align:right">Adds</th><th style="text-align:right">Net</th></tr></thead><tbody>
-      ${ups.map(u => `<tr style="border-top:1px solid var(--rule)"><td>${esc(u.n)}${u.note ? `<br><span class="muted">${esc(u.note)}</span>` : ""}</td><td style="text-align:right">${fmt$(u.c)}</td><td style="text-align:right">${fmt$(u.v)}</td><td style="text-align:right;font-weight:600">${u.net >= 0 ? "+" + fmt$(u.net) : "−" + fmt$(-u.net)}</td></tr>`).join("")}</tbody></table></div>` : ""}
-    <p class="small muted">Screening only: lot size comes from the parcel outline, and yard space is estimated (lot minus the building, less ~25% for setbacks). Check setbacks, easements, historic status and permits with the city. Values use this area's typical home price and LA rents; costs are 2025 LA averages.</p>`;
+    ${ups.length ? `<div style="overflow-x:auto;margin-top:6px"><table class="small" style="width:100%;border-collapse:collapse"><thead><tr style="text-align:left"><th>Upgrades for this house (best net first)</th><th style="text-align:right">Cost</th><th style="text-align:right">Adds</th><th style="text-align:right">Per $1</th><th style="text-align:right">Net</th></tr></thead><tbody>
+      ${ups.slice(0, 14).map(u => `<tr style="border-top:1px solid var(--rule)"><td>${esc(u.n)}${u.note ? `<br><span class="muted">${esc(u.note)}</span>` : ""}${u.sav > 0 ? `<br><span class="muted">${/ADU/.test(u.n) ? "rent" : "saves"} ~${fmt$(u.sav)}/yr</span>` : ""}</td><td style="text-align:right">${fmt$(u.c)}</td><td style="text-align:right">${fmt$(u.v)}</td><td style="text-align:right">${fvpd(u.per)}</td><td style="text-align:right;font-weight:600">${u.net >= 0 ? "+" + fmt$(u.net) : "−" + fmt$(-u.net)}</td></tr>`).join("")}</tbody></table></div>
+      ${ups.length > 14 ? `<p class="small muted">${ups.length - 14} more fit this lot but return less.</p>` : ""}` : ""}
+    <p class="small muted">Screening only: lot size comes from the parcel outline, and yard space is estimated (lot minus the building, less ~25% for setbacks). Check setbacks, easements, historic status and permits with the city. Values use this area's typical home price per sq ft and LA rents; costs are 2025 LA estimates (second stories ~$600/sq ft all-in), being checked in round-8 research.</p>`;
 }
 
 // ---------------- homeowner upgrades (round 6; LA-metro averages, not this house)
 function upgradeTable(m) {
-  const U = (D.upgrades || []).filter(u => !(u.applies_if === "pre1975" && m.yb >= 1975) && !(u.applies_if === "pre1980" && m.yb >= 1980));
+  const fire = (m.fire || 0) >= 0.5;
+  const U = (D.upgrades || []).filter(u => !(u.applies_if === "pre1975" && m.yb >= 1975) && !(u.applies_if === "pre1980" && m.yb >= 1980) && !(u.applies_if === "fire" && !fire));
   if (!U.length) return "";
-  const rows = U.map(u => ({ ...u, net: u.resale_value_added - u.cost_2025 })).sort((a, b) => b.net - a.net);
-  return `<details class="more"><summary>${rows.length} more home upgrades: cost vs. resale value</summary>
+  const rows = U.map(u => ({ ...u, net: u.resale_value_added - u.cost_2025, per: u.resale_value_added / Math.max(u.cost_2025, 1) })).sort((a, b) => b.per - a.per);
+  return `<details class="more"><summary>${rows.length} home upgrades: cost, value added and return per $1</summary>
     <div style="overflow-x:auto"><table class="small" style="width:100%;border-collapse:collapse;margin-top:6px">
-      <thead><tr style="text-align:left"><th>Upgrade</th><th style="text-align:right">Cost</th><th style="text-align:right">Adds to resale</th><th style="text-align:right">Saves / yr</th><th>Rebates (Nov 2026)</th><th>Property tax</th><th>Permits</th></tr></thead>
-      <tbody>${rows.map(u => `<tr style="border-top:1px solid var(--rule)"><td>${esc(u.name)}</td><td style="text-align:right">${fmt$(u.cost_2025)}</td><td style="text-align:right;${u.net >= 0 ? "font-weight:600" : ""}">${fmt$(u.resale_value_added)}</td><td style="text-align:right">${u.annual_savings ? fmt$(u.annual_savings) : "–"}</td><td>${esc(u.rebates_nov_2026)}</td><td>${esc(u.property_tax)}</td><td>${esc(u.permits)}</td></tr>`).join("")}</tbody></table></div>
-    <p class="small muted">LA-metro averages from the round-6 research (Cost vs. Value and other sources, 2025 dollars), not an estimate for this house. Rebate notes are corrected where the research was out of date: federal 25C and 25D credits ended for work after 2025. ${m.yb ? `Repiping and seismic bracing are listed only because homes here date from about ${Math.round(m.yb)}.` : ""} Per-house checks (lot size, setbacks, fire zone, existing ADU) are coming next.</p></details>`;
+      <thead><tr style="text-align:left"><th>Upgrade</th><th style="text-align:right">Cost</th><th style="text-align:right">Adds to resale</th><th style="text-align:right">Per $1</th><th style="text-align:right">Saves / yr</th><th>Rebates (Nov 2026)</th><th>Property tax</th><th>Permits</th></tr></thead>
+      <tbody>${rows.map(u => `<tr style="border-top:1px solid var(--rule)"><td>${esc(u.name)}</td><td style="text-align:right">${fmt$(u.cost_2025)}</td><td style="text-align:right">${fmt$(u.resale_value_added)}</td><td style="text-align:right;font-weight:600">${fvpd(u.per)}</td><td style="text-align:right">${u.annual_savings > 0 ? fmt$(u.annual_savings) : u.annual_savings < 0 ? "−" + fmt$(-u.annual_savings) + " cost" : "–"}</td><td>${esc(u.rebates_nov_2026)}</td><td>${esc(u.property_tax)}</td><td>${esc(u.permits)}</td></tr>`).join("")}</tbody></table></div>
+    <p class="small muted">Typical 2025 LA costs and resale values (City Pretty estimates; second stories and additions run about $450–$700 per sq ft all-in). They're being checked against round-8 research. These are LA-wide averages: zoom in and click a home for numbers sized to that house and its yard. Federal 25C and 25D credits ended for work after 2025.</p></details>`;
 }
 
 // ---------------- EIFD calculator (Gov. Code 53398.50 et seq.)

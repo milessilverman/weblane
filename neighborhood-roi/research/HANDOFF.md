@@ -9,8 +9,8 @@ Current deliverable: `reports/city-pretty-la-county.html` (V2.3: real EIFD input
   `data/derived/county_la/`. Dispatch with input `county_only=true` to skip the slow tract/Westside jobs, and
   `county_stages=tra,assessed` (comma list) to run only some county stages; the rest keep their last data.
   This sandbox can't reach County/ArcGIS hosts, so data pulls must run in Actions.
-- Model: `python3 model/score_county.py`, `python3 model/eifd_tra.py`, `python3 model/gaps.py`, then
-  `python3 model/underused.py` → `web/county_data/`.
+- Model: `python3 model/score_county.py`, `python3 model/eifd_tra.py`, `python3 model/gaps.py`,
+  `python3 model/underused.py`, then `python3 model/corridors.py` → `web/county_data/`.
 - Page: `python3 web/build_county_html.py` → `reports/city-pretty-la-county.html`.
 
 ## Research in this folder
@@ -96,6 +96,19 @@ Current deliverable: `reports/city-pretty-la-county.html` (V2.3: real EIFD input
   the nearest Tier 1/Tier 2 stop; densities per tier/band are approximations (`SB79_TIERS` in model/underused.py).
 - Event venues (conference/convention) no longer count as community centers; profit share only for 500+ homes and
   missing home values filled with the county median; lots of 10+ acres count half for housing; rent factor <= 1.6.
+
+## Upgrades and named corridors (done in V2.10)
+- `model/round6/owner_upgrades.csv` rewritten: 46 upgrades with 2025 LA estimates (second stories ~$600/sq ft all-in,
+  additions ~$500/sq ft, bathroom $60k, ADU $300k, solar+battery without federal credit) plus rooftop deck, decks,
+  pergola, outdoor kitchen, spa, sport court, native/vegetable gardens, fruit trees, lighting, office, gym. Marked
+  "est" until round-8 research (`research/round8_research_prompt.md`) confirms. Tables show value per $1.
+  Per house (`houseUpgrades`): space additions valued at area value/sq ft (home value / 1,800) x 0.8; second story
+  sized to the footprint, only for likely one-story houses where the zone height allows.
+- `basemap` adds OSM bikeways by class (`map_bikeways.geojson.gz`). `model/corridors.py` names the street and
+  segment (cross streets) for bus/BRT/signal priority/shade (arterial at the busiest stop), bike/road diet (longest
+  collector, else arterial, skipping streets with protected lanes or paths), speed cameras (arterial), slow streets
+  and calming (local), rail (busiest bus corridor + nearest station); notes existing bikeways, LA bus lanes, SB 79
+  stops and rail under construction. City/Metro plan layers to be joined when round 8 returns.
 
 ## Next steps
 1. (done) EIFD tax-rate-area data.

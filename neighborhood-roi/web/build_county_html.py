@@ -244,6 +244,31 @@ def projects_bundle():
     return out
 
 
+
+def compact_corridor(v):
+    """[street, from, to, miles, buses/hr, existing-bike text, bus lane 0/1, SB 79 stops, SB 79 tiers, rail names, station]"""
+    import re as _re
+    bike = next((h for h in v.get("have", []) if "lane" in h or "path" in h or "sharrows" in h), None)
+    bus = int(any("bus-only" in h for h in v.get("have", [])))
+    s79 = next((p for p in v.get("plan", []) if "SB 79" in p), None)
+    n79 = int(_re.match(r"(\d+)", s79).group(1)) if s79 else 0
+    t79 = (_re.search(r"\(([^)]*)\)", s79).group(1) if s79 else "")
+    rc = next((p for p in v.get("plan", []) if p.startswith("rail under construction")), None)
+    rcn = (_re.search(r"\((.*)\)", rc).group(1) if rc and "(" in rc else ("" if not rc else "-"))
+    return [v.get("st"), v.get("fr"), v.get("to"), v.get("mi"), v.get("tph"), bike, bus, n79, t79, rcn, v.get("station")]
+
+
+MONEY = {"cost", "capex", "land", "om", "value"}
+
+
+def sig3(v):
+    """Round dollar figures to 3 significant figures: the same on screen, and it compresses far better."""
+    if not isinstance(v, (int, float)) or v != v or v == 0:
+        return v
+    from math import floor, log10
+    d = 3 - int(floor(log10(abs(v)))) - 1
+    return int(round(v, d)) if d <= 0 else round(v, d)
+
 def labels(g, col):
     g = g[g[col].notna()].copy()
     g["a"] = g.to_crs(M).area
@@ -292,6 +317,7 @@ def main():
                 j = gpd.sjoin_nearest(bpt, sub[["geometry"]], how="left", distance_col="d").drop_duplicates("GEOID")
                 for gid_, dd_ in zip(j.GEOID, j.d):
                     sb_d.setdefault(gid_, [None, None])[0 if tier == "T1" else 1] = round(float(dd_))
+    corr = json.loads((MOD / "corridors.json").read_text()) if (MOD / "corridors.json").exists() else {}
     ef = MOD / "eifd.json"
     eifd = json.loads(ef.read_text()) if ef.exists() else {"meta": {}, "bg": {}}
     for gid, x in details.items():
@@ -317,7 +343,12 @@ def main():
             m["rm"] = None
         m = {k: v for k, v in m.items() if v is not None and not (isinstance(v, float) and np.isnan(v))}
         if gid in eifd["bg"]:
-            m["e"] = eifd["bg"][gid]
+            e_ = dict(eifd["bg"][gid])
+            e_["t"] = [[t_, sig3(v_)] for t_, v_ in e_.get("t", [])]
+            for k_ in ("av", "avr", "avc"):
+                if k_ in e_:
+                    e_[k_] = sig3(e_[k_])
+            m["e"] = e_
         if gid in gp["bg"]:
             gg = gp["bg"][gid]
             m["gp"] = {"g": [[r_[0]] + r_[2:8] for r_ in gg["g"]], "s": [[r_[0]] + r_[2:] for r_ in gg["s"]]}
@@ -329,10 +360,12 @@ def main():
             m["z"] = {"j": r.get("zone_juris"), "top": r.get("zone_top"), "cov": num(r.get("zone_coverage"), 2),
                       "sh": {c: num(r.get("zshare_" + re.sub(r"\W+", "_", c).strip("_")), 3) for c in ZCATS
                              if (r.get("zshare_" + re.sub(r"\W+", "_", c).strip("_")) or 0) > 0}}
+        if gid in corr:
+            m["co"] = {k: compact_corridor(v) for k, v in corr[gid].items()}
         if gid in sb_d:
             m["sb"] = sb_d[gid]
         m["tr"] = [num(r.get("rail_station_nearest_m"), 0), num(r.get("rail_stop_nearest_m"), 0), num(r.get("bus_max_tph_400m"), 0), num(r.get("bus_max_tph_800m"), 0)]
-        det[gid] = {"r": [[num(rec[k], 3) if isinstance(rec[k], float) else rec[k] for k in keys] for rec in x["recs"]], "m": m}
+        det[gid] = {"r": [[sig3(rec[k]) if k in MONEY else (num(rec[k], 3) if isinstance(rec[k], float) else rec[k]) for k in keys] for rec in x["recs"]], "m": m}
 
     L = {"freeways": layer("freeways", 40, ["name"], {"name": "n"}, prec=4), "arterials": merged_lines("arterials", 25),
          "parks": layer("parks", 20, ["name", "acres"], {"name": "n", "acres": "a"}, min_area_ac=2, prec=5), "water": layer("water", 40, [], prec=4),
