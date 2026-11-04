@@ -5,12 +5,12 @@ Current deliverable: `reports/city-pretty-la-county.html` (V2.3: real EIFD input
 
 ## How it's built
 - Data: `.github/workflows/neighborhood-data.yml` runs `pipeline/county_la.py` stages in GitHub Actions
-  (geo, osm, transit, sales, crime, requests311, crashes, trees, parcels, assets, tra, assessed, basemap, research_check, zoning, underused, projects) and commits
+  (geo, osm, transit, sales, crime, requests311, crashes, trees, parcels, assets, tra, assessed, basemap, research_check, zoning, underused, projects, sb79) and commits
   `data/derived/county_la/`. Dispatch with input `county_only=true` to skip the slow tract/Westside jobs, and
   `county_stages=tra,assessed` (comma list) to run only some county stages; the rest keep their last data.
   This sandbox can't reach County/ArcGIS hosts, so data pulls must run in Actions.
-- Model: `python3 model/score_county.py`, `python3 model/eifd_tra.py`, `python3 model/gaps.py`, then
-  `python3 model/underused.py` → `web/county_data/`.
+- Model: `python3 model/score_county.py`, `python3 model/eifd_tra.py`, `python3 model/gaps.py`,
+  `python3 model/underused.py`, then `python3 model/corridors.py` → `web/county_data/`.
 - Page: `python3 web/build_county_html.py` → `reports/city-pretty-la-county.html`.
 
 ## Research in this folder
@@ -85,6 +85,124 @@ Current deliverable: `reports/city-pretty-la-county.html` (V2.3: real EIFD input
   sites flagged when in a Housing Element inventory; neighborhood "already under way" counts.
 - Still missing: market land sale prices, current fee schedules, official SB 79 layer, Metro project geometry.
 
+## Per-house analysis and loose ends (done in V2.9)
+- Per house: at zoom 17+ a click on a block group also queries the Assessor parcel layer live from the page
+  (fetch, JSONP fallback; needs internet) → parcel outline, lot area from the outline, building, year, beds/baths,
+  zone from the embedded zoning, eligibility (detached ADU / JADU / SB 9 / pool / solar / seismic / repiping /
+  bathroom / fire hardening) and upgrades ranked by net value for that house (area home value and rents).
+  Code: `houseAt`, `houseChecks`, `houseUpgrades` in `web/county.src.html`. Map max zoom raised to 19.
+- `sb79` stage: discovers SCAG's official SB 79 service (maps.scag.ca.gov/scaggis/rest/services/SB79/SB79/MapServer:
+  0 = stops with SB79_TIER T1/T2, 1 = tier buffers) → `map_sb79.geojson`. Underused sites and panels use distance to
+  the nearest Tier 1/Tier 2 stop; densities per tier/band are approximations (`SB79_TIERS` in model/underused.py).
+- Event venues (conference/convention) no longer count as community centers; profit share only for 500+ homes and
+  missing home values filled with the county median; lots of 10+ acres count half for housing; rent factor <= 1.6.
+
+## Upgrades and named corridors (done in V2.10)
+- `model/round6/owner_upgrades.csv` rewritten: 46 upgrades with 2025 LA estimates (second stories ~$600/sq ft all-in,
+  additions ~$500/sq ft, bathroom $60k, ADU $300k, solar+battery without federal credit) plus rooftop deck, decks,
+  pergola, outdoor kitchen, spa, sport court, native/vegetable gardens, fruit trees, lighting, office, gym. Marked
+  "est" until round-8 research (`research/round8_research_prompt.md`) confirms. Tables show value per $1.
+  Per house (`houseUpgrades`): space additions valued at area value/sq ft (home value / 1,800) x 0.8; second story
+  sized to the footprint, only for likely one-story houses where the zone height allows.
+- `basemap` adds OSM bikeways by class (`map_bikeways.geojson.gz`). `model/corridors.py` names the street and
+  segment (cross streets) for bus/BRT/signal priority/shade (arterial at the busiest stop), bike/road diet (longest
+  collector, else arterial, skipping streets with protected lanes or paths), speed cameras (arterial), slow streets
+  and calming (local), rail (busiest bus corridor + nearest station); notes existing bikeways, LA bus lanes, SB 79
+  stops and rail under construction. City/Metro plan layers to be joined when round 8 returns.
+
+## Round 7b (done in V2.11)
+- Research: `research/round7b/` (second H-K pack; honest about NR). Added: `known_sites.csv` (18 County golf
+  courses, Royal Vista, Victoria, Bella Verde, 4 LAUSD housing sites, Caltrans/City/LACDA surplus parcels, Panorama
+  Mall, NOHO West, LA Plaza Village) and `metro_projects.csv` (status/years from the research; streets and areas are
+  City Pretty approximations).
+- `projects` stage adds LA City BOE capital projects (NavigateLA/MapServer/10, 1,182 active), CCED conservation
+  easements (`map_easements.geojson.gz`), and geocodes known sites (Census geocoder or AIN) → `map_known_sites.geojson`.
+- Model: affordable housing at LAHD's $782k/unit; new-building rent premium 1.25; underused sites flagged with
+  known-site notes, easements (not buildable) and already-redeveloped lots (excluded); named corridors list Metro
+  projects and City capital projects on the street.
+
+## House identity and facts (done in V2.12)
+- Click a home (zoom 17+): orange lot outline + address tag; building outlines on the lot; hover (450 ms pause) outlines
+  the lot under the mouse with its address; "Lot lines" layer draws County parcel boundaries via MapServer/export tiles.
+- Facts: all five Assessor building slots (sqft, units, beds/baths, year, effective year, quality class) plus a live
+  Overpass query for OSM buildings and pools inside the parcel polygon: footprint, other structures, stories from
+  building:levels, else height (County LiDAR import) / 3.2 m, else living area ÷ footprint (>= 1.55 → 2). Each fact shows
+  its source. Checks and upgrades use the real footprint, yard (lot − buildings − 20%), stories and pool.
+- Upgrade tables keep their headers pinned while scrolling (`.sticky-head`; no overflow wrapper).
+- Round 9 research prompt (`research/round9_research_prompt.md`) asks for Assessor code tables (stories?), LARIAC
+  heights, roof shape, pools, permits, restrictions per parcel and address points; replace OSM-based guesses when it lands.
+
+## Round 9: house search, per-house payback, live parcel checks (done in V2.13)
+- Research in `research/round9/` (Assessor code tables, permits, sales, restrictions, address points, imagery).
+- Address search: the search box queries the Assessor parcel layer (`SitusFullAddress LIKE 'X%'`, 450 ms debounce,
+  dropdown `#addr-results`; Enter jumps to the first hit), zooms to the lot and opens its house analysis.
+- House numbers on every lot at zoom 18+ from County CAMS address points (`LACounty_Dynamic/CAMS/MapServer/1`).
+- "Aerial photo (USGS, online)" toggle: USGS USGSImageryOnly tiles (public domain), block-group fill fades over it.
+- Assessor decoding (`decodeAssessor`): UseCode 0101/0103 pool, 0106 ADU, 0107 JADU, 0108 guest house, 010G Mills
+  Act; DesignType 01xx 3rd digit heating/cooling, 4th digit pool/spa. DesignType/QualityClass do NOT encode stories.
+- Live per-parcel checks at click time (`lotChecks`, each fails soft to "couldn't check"): LADBS permits
+  (pi9x-tg5x ADU/JADU/solar/pool since 2020; d9aa-v8bm `of_stories` used for stories when OSM has no levels/height),
+  PAIS last sale, HPOZ, Historic-Cultural Monuments, County historic resources, LA hillside area, CGS landslide /
+  liquefaction / fault zones, CAL FIRE SRA + LRA fire zones. Historic/fire flags block SB 9.
+- "Best bet for this home" verdict plus tiles for this one house: upgrades that pay back (>= $1 per $1, either/or
+  choices such as second story vs. room addition counted once), their total cost and value added.
+- Not tested against live services from the build sandbox (its proxy blocks these hosts); Playwright tests mock them.
+
+## Round 10 prep: built-land truth, plain zoning, who pays, fast house (done in V2.14, before round-10 research)
+- Research prompt: `research/round10_research_prompt.md` (Parts S land truth, T plain zoning, U funding, V speed).
+- House panel renders at once from the Assessor record (reused from the hover lookup); the OSM outline and the 12
+  live checks fill in as they answer (`renderHouse`, `houseCache` per AIN, 8 s cap per check, Overpass mirrors
+  hedged 2.5 s apart). A "Still loading…" banner points to the neighborhood summary meanwhile.
+- Underused land (`model/underused.py`): a site is marked already built / under construction / approved (and left
+  out of counts and profit) when (a) an HCD APR, LADBS or LAHD project with 5+ homes or a new building sits on it
+  (within 15 m or same street address), (b) the Assessor's building value is >= $1M and >= 50% of land value, or
+  (c) OSM building outlines cover >= 30% (`bldg_sqft`, `constr` added by the underused pipeline stage via osmium).
+  Vacant parcels are dropped for road/channel/utility/cemetery/water uses, thin strips (Polsby-Popper < 0.12),
+  government strips, or >= 40% covered by mapped water/park. Example fixed: La Cienega/Jefferson (AIN 4205033038,
+  300 homes completed 2022). Map draws these grey and dotted with the reason.
+- Zoning in plain words (`explainZone`, `zoneSentence`): LA City base zones, height districts, [Q]/(T)/D and
+  overlays; County Title 22 zones with lot-size suffixes; Santa Clarita UDC. Shown in a "Zones in view" key on the
+  map, a hover tooltip at zoom 14-16, the panel and the house facts. Summaries written from general knowledge;
+  replace with round-10 Part T rows.
+- Who pays (`fundPlan`, `fundHtml`, `fundSummary`): per project, EIFD bonds from that project's own value gain
+  (gain reassessed as homes resell, 6%/yr; city 100% and County 50% pledges of their AF49 shares; 5.25% 30-yr,
+  1.35x, 20% County housing hold), what the city and County put in, and the rest by the catalog's funding sources.
+  Neighborhood tiles total it. Replace assumptions and add real amounts per city from round-10 Part U.
+
+## Round 10 (done in V2.15)
+- Research in `research/round10/` (Parts S-W). Test sites -> `research/round10/known_sites_r10.csv` (41 rows: 31
+  redeveloped, 10 reported still underused), geocoded by the projects stage; `model/validate_land.py` scores the
+  screen against them and writes `research/round10/validation_results.csv`.
+- Underused stage adds: Assessor `code` (UseCode), LADBS certificates of occupancy since 2016 (Socrata 3f9m-afei,
+  by book/page/parcel or location; 5+ homes or new building) -> `cofo_date`/`cofo_units`; County Flood Control
+  right-of-way share (`FloodROWViewer/MapServer/0`) -> `flood`; public agency owner by AIN (`Infrastructure/
+  MapServer/4`) -> `owner`. Model: CofO marks built; use code 27x2/27x3 = parking structure (not a surface lot);
+  vacant 8810-8814/8899/81xx/84xx/85xx/87xx dropped (ROW, utilities, pipelines, rivers); flood >= 50% (30% vacant)
+  dropped; known research sites within 120 m marked built / under construction.
+- Zoning: `D.r10.zp` (240 rows) adds verified numbers to the plain sentences (R1 0.45 house-size ratio, R1V/F/R
+  ratio schedules and heights, height-district limits, County -P/-U suffixes); County SB 79 note (not yet in force in
+  unincorporated areas).
+- Funding: EIFD pledges now 75% city / 49% County (Artesia 2026; County range 11-50%), calculator defaults too;
+  per-city FY2026-27 Metro local return (Prop A/C, Measure R/M) and Measure W municipal amounts (`D.r10.city`,
+  19 cities); real funding stacks per project type (`D.r10.stacks`); register of 19 real/proposed districts under
+  the EIFD calculator. Still open: city roll-growth panel, resale rates, SB 1 by city, ULA availability.
+- Validation (first run): all 27 geocoded redeveloped test sites are kept off the underused list (12 were never
+  listed; 10 caught by housing reports / Assessor value; 5 only by the research note itself). Only 1 of 9 geocoded
+  "still underused" sites is listed: the other 8 aren't coded as parking/vacant by the Assessor and are under the
+  1-acre OSM parking minimum. Next: add OSM surface parking down to 0.25 acre and Assessor commercial lots with
+  little building value. Flood-control ROW query failed in Actions (FloodROWViewer; try f=json instead of
+  geojson) and the public-owner lookup returned 0 matches (check the layer's AIN field format); both fail soft.
+
+## Future: imagery to fill missing house facts (not built)
+- Satellite/aerial: USGS NAIP (60 cm, public domain, 2-3 yr cycle) or the USGS imagery tiles, run a roof/pool
+  segmentation model (as done for tree canopy) in GitHub Actions per parcel where OSM has no outline: building
+  footprint, lot coverage, pool, yard area, roof shape (flat vs pitched from shadows is weak; LiDAR is better).
+  LARIAC 2023 imagery and LiDAR building heights would be ideal but are members-only (round 9).
+- Street-level for stories: Mapillary (CC BY-SA, free token, API allows downloads) image near each parcel's
+  frontage + a vision model counting floors. Google Street View terms forbid automated analysis and storing
+  derived data, so don't use it for this. Coverage on residential streets is patchy; keep "estimate" labels.
+- Store results as a per-AIN table (stories, footprint, pool, roof) and prefer it over the living-area ratio.
+
 ## Next steps
 1. (done) EIFD tax-rate-area data.
 2. Add corridor right-of-way layers (abandoned rail, transmission, flood channels, Class I paths)
@@ -92,7 +210,6 @@ Current deliverable: `reports/city-pretty-la-county.html` (V2.3: real EIFD input
 3. Add FCC broadband data so fiber/5G is only suggested where service is poor.
 4. Replace "unverified" costs with the sourced figures from round 5's Part 4.
 5. Map orientation: remaining items are mini-map, breadcrumb, hover outline, shareable link.
-6. Per-house analysis: click a parcel → its zone, lot size, building, year built; ADU/SB 9/pool/solar eligibility
-   (needs parcel polygons on demand at zoom 17: query the Assessor layer live or pre-tile by cell).
+6. (done V2.13) Per-house historic/fire checks. Still to do: a sales-based value estimate per house; imagery facts (above).
 7. Verify round-6 effect sizes against their cited studies before promoting any U item to D or better.
 8. Official SB 79 stop/tier layer (SCAG) and CPAD access types; FCC broadband (the BDC download page returned 403).

@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-02T19:25:34.037955+00:00",
+ "generated_at": "2026-11-03T17:09:14.852186+00:00",
  "sources": {
   "zoning": {
    "sources": {
@@ -74,7 +74,7 @@
     "agricultural": 8
    },
    "ok": true,
-   "seconds": 2135.1
+   "seconds": 1957.8
   }
  }
 }

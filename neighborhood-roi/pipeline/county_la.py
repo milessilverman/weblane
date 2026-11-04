@@ -1358,6 +1358,24 @@ def stage_basemap():
                 "nwr/office=government")
     facilities(fac)
     facility_footprints(fac)
+    # existing bikeways: off-street paths and on-street lanes (OSM), to say what a street already has
+    try:
+        bw = layer("bikeways", "w/highway=cycleway", "w/cycleway", "w/cycleway:left", "w/cycleway:right", "w/cycleway:both")
+        bw = bw[bw.geom_type.isin(["LineString", "MultiLineString"])].copy()
+        tags = pd.DataFrame({c: bw.get(c, pd.Series(index=bw.index, dtype=object)).fillna("").astype(str)
+                             for c in ("highway", "cycleway", "cycleway:left", "cycleway:right", "cycleway:both")})
+        allc = tags[["cycleway", "cycleway:left", "cycleway:right", "cycleway:both"]].agg(" ".join, axis=1)
+        bw["cls"] = np.where(tags.highway.eq("cycleway"), "bike path (Class I)",
+                    np.where(allc.str.contains("track|separate"), "protected lane (Class IV)",
+                    np.where(allc.str.contains("lane|buffered"), "painted lane (Class II)",
+                    np.where(allc.str.contains("shared_lane|share_busway"), "sharrows (Class III)", None))))
+        bw = bw[bw.cls.notna()].to_crs(M)
+        bw = bw[bw.intersects(county)]
+        bw["geometry"] = bw.geometry.simplify(3)
+        _write_gz(bw.assign(name=bw.get("name"))[["name", "cls", "geometry"]].to_crs(4326), "map_bikeways.geojson.gz")
+        note("basemap", bikeways=len(bw), bikeways_by_class={k: int(v) for k, v in bw.cls.value_counts().items()})
+    except Exception as e:  # noqa: BLE001
+        note("basemap", bikeways_error=str(e)[:200])
     # surface parking lots of an acre or more (malls, stores, offices): underused-land candidates
     try:
         pl = layer("parking", "wr/amenity=parking")
@@ -1413,9 +1431,14 @@ FACILITY_KINDS = [  # (kind, regex on LMS layer name / categories / OSM tags)
 LMS = "https://public.gis.lacounty.gov/public/rest/services/LACounty_Dynamic/LMS_Data_Public/MapServer"
 
 
+NOT_PUBLIC = r"conference|convention|banquet|wedding|event cent|hotel|country club|private"
+
+
 def _kind_of(text):
     t = str(text).lower()
-    return next((k for k, pat in FACILITY_KINDS if re.search(pat, t)), None)
+    k = next((k for k, pat in FACILITY_KINDS if re.search(pat, t)), None)
+    # conference, convention and event venues aren't public community centers
+    return None if k == "community center" and re.search(NOT_PUBLIC, t) else k
 
 
 def facilities(osm_layer):
@@ -1554,14 +1577,151 @@ def stage_underused():
     g = g[g.sqft >= g.kind.map(minsq)]
     g = g[~((g.kind == "lightly built commercial") & (g.imp_av > 0.2 * g.land_av))]
     addr = g.get("SitusFullAddress", g.get("SitusAddress"))
-    out = gpd.GeoDataFrame({"kind": g.kind, "ain": g.AIN.astype(str), "use": g.get("UseDescription"), "addr": addr,
+    out = gpd.GeoDataFrame({"kind": g.kind, "ain": g.AIN.astype(str), "use": g.get("UseDescription"), "code": g.get("UseCode"), "addr": addr,
                             "sqft": g.sqft.round(0), "land_av": g.land_av, "imp_av": g.imp_av,
                             "base_year": pd.to_numeric(g.get("Roll_LandBaseYear"), errors="coerce"), "src": "LA County Assessor"},
                            geometry=g.geometry.simplify(1.5), crs=M).to_crs(4326)
+    # round 10: building outlines and construction sites mapped on each lot (the Assessor's use code lags construction)
+    try:
+        cov = _osm_cover(out)
+        out["bldg_sqft"], out["constr"] = cov.bldg_sqft.values, cov.constr.values
+        note("underused", osm_cover_lots=int((out.bldg_sqft > 0).sum()), osm_constr_lots=int(out.constr.sum()))
+    except Exception as ex:  # noqa: BLE001
+        note("underused", osm_cover_error=str(ex)[:200])
+    # round 10: LA City certificates of occupancy, County flood-control right-of-way, public ownership
+    for fn in (_cofo_join, _flood_share, _public_owner):
+        try:
+            fn(out)
+        except Exception as ex:  # noqa: BLE001
+            note("underused", **{f"{fn.__name__}_error": str(ex)[:200]})
     note("underused", sites=len(out), by_kind={k: int(v) for k, v in out.kind.value_counts().items()},
          acres_by_kind={k: round(float(v) / 43560) for k, v in out.groupby("kind").sqft.sum().items()})
     out.to_file(OUT / "map_underused.geojson", driver="GeoJSON", COORDINATE_PRECISION=5)
     log(f"  wrote map_underused.geojson ({len(out)})")
+
+
+LADBS_COFO = ("data.lacity.org", "3f9m-afei")
+FLOOD_ROW = "https://dpw.gis.lacounty.gov/dpw/rest/services/FloodROWViewer/MapServer/0"
+PUBLIC_OWN = "https://public.gis.lacounty.gov/arcgis/rest/services/LACounty_Dynamic/Infrastructure/MapServer/4"
+
+
+def _cofo_join(out):
+    """Newest LADBS certificate of occupancy since 2016 on each site (by Assessor book/page/parcel, else by location)."""
+    df = socrata_rows(*LADBS_COFO, "cofo_issue_date >= '2016-01-01T00:00:00'", limit=50000, max_rows=600000)
+    note("underused", cofo_rows=len(df), cofo_fields=list(df.columns)[:40])
+    if not len(df):
+        return
+    du = pd.to_numeric(df.get("of_residential_dwelling_units"), errors="coerce").fillna(0)
+    wd = df.get("work_description", pd.Series("", index=df.index)).astype(str).str.upper()
+    big = df[(du >= 5) | wd.str.contains(r"NEW (?:\d+[- ]STORY )?(?:MIXED|APARTMENT|COMMERCIAL|OFFICE|HOTEL|RETAIL|BUILDING)|NEW \d+[- ]STORY")].copy()
+    big["du"] = du[big.index]
+    ain = (big.get("assessor_book", "").astype(str).str.zfill(4) + big.get("assessor_page", "").astype(str).str.zfill(3)
+           + big.get("assessor_parcel", "").astype(str).str.zfill(3))
+    big["ain"] = ain.where(ain.str.fullmatch(r"\d{10}"))
+    big["date"] = big.get("cofo_issue_date", "").astype(str).str[:10]
+    out["cofo_date"], out["cofo_units"] = None, np.nan
+    by = big.dropna(subset=["ain"]).sort_values("date").groupby("ain").agg(date=("date", "last"), du=("du", "max"))
+    hit = out.ain.map(by.date)
+    out.loc[hit.notna(), "cofo_date"] = hit[hit.notna()]
+    out.loc[hit.notna(), "cofo_units"] = out.ain.map(by.du)[hit.notna()]
+    # by location for new AINs (lots merged or split after redevelopment)
+    ll = big.get("latitude_longitude")
+    if ll is not None:
+        lat = pd.to_numeric(ll.map(lambda v: (v or {}).get("latitude") if isinstance(v, dict) else None), errors="coerce")
+        lon = pd.to_numeric(ll.map(lambda v: (v or {}).get("longitude") if isinstance(v, dict) else None), errors="coerce")
+        pts = gpd.GeoDataFrame(big[["date", "du"]], geometry=gpd.points_from_xy(lon, lat), crs=4326).dropna(subset=["date"])
+        pts = pts[pts.geometry.x.notna() & (pts.geometry.x != 0)]
+        if len(pts):
+            j = gpd.sjoin(pts.to_crs(M), out[["geometry"]].to_crs(M), predicate="within", how="inner")
+            for i, grp in j.groupby("index_right"):
+                if out.at[i, "cofo_date"] is None:
+                    out.at[i, "cofo_date"], out.at[i, "cofo_units"] = grp.date.max(), grp.du.max()
+    note("underused", cofo_sites=int(out.cofo_date.notna().sum()))
+
+
+def _flood_share(out):
+    """Share of each site inside a County Flood Control District right-of-way parcel (fee or easement)."""
+    w, s_, e, n = BBOX
+    xs, ys = np.linspace(w, e, 5), np.linspace(s_, n, 5)
+    parts = [arcgis_all(FLOOD_ROW, fields="Estate,Facility", bbox=(xs[i], ys[j], xs[i + 1], ys[j + 1]), max_rows=400000)
+             for i in range(4) for j in range(4)]
+    parts = [x for x in parts if x is not None and len(x)]
+    if not parts:
+        note("underused", flood_rows=0)
+        return
+    fl = gpd.GeoDataFrame(pd.concat(parts, ignore_index=True), crs=4326).to_crs(M)
+    fl = fl[fl.geom_type.isin(["Polygon", "MultiPolygon"])]
+    note("underused", flood_rows=len(fl))
+    sm = out.to_crs(M)
+    inter = gpd.overlay(sm[["geometry"]].assign(i=range(len(sm))), fl[["geometry"]], how="intersection", keep_geom_type=True)
+    a = inter.area.groupby(inter.i).sum()
+    share = np.zeros(len(sm))
+    share[a.index.values] = a.values / np.maximum(sm.area.values[a.index.values], 1)
+    out["flood"] = np.clip(share, 0, 1).round(3)
+    note("underused", flood_sites=int((out.flood > 0.3).sum()))
+
+
+def _public_owner(out):
+    """Public agency that owns the parcel (County public-agency parcels), for sites that could be screened."""
+    cand = out[(out.kind != "vacant") | ((out.sqft <= 25 * 43560) & ~out.use.astype(str).str.contains("Desert", na=False))]
+    ains = sorted(set(cand.ain.astype(str)))
+    own = {}
+    for k in range(0, len(ains), 250):
+        chunk = ains[k:k + 250]
+        try:
+            g = arcgis_all(PUBLIC_OWN, where="AIN IN (" + ",".join(f"'{a}'" for a in chunk) + ")", fields="AIN,AgencyName,AgencyType", geom=False)
+        except Exception:  # noqa: BLE001
+            continue
+        if g is not None:
+            for a, nm, t in zip(g.AIN.astype(str), g.get("AgencyName"), g.get("AgencyType")):
+                own[a] = f"{nm}" + (f" ({t})" if isinstance(t, str) and t else "")
+    out["owner"] = out.ain.astype(str).map(own)
+    note("underused", public_owner_sites=int(out.owner.notna().sum()), owner_lookups=len(ains))
+
+
+def _osm_cover(sites):
+    """Square feet of OSM building outlines on each site, and whether a construction site is mapped there."""
+    import json as _json
+    from shapely.geometry import shape
+    from shapely.strtree import STRtree
+    w, s_, e, n = BBOX
+    pbf = cached_download("https://download.geofabrik.de/north-america/us/california/socal-latest.osm.pbf", "geofabrik_socal.osm.pbf", 25)
+    cut = CACHE / "lacounty.pbf"
+    if not cut.exists():
+        bd._sh("osmium", "extract", "-b", f"{w},{s_},{e},{n}", str(pbf), "-o", str(cut), "--overwrite", "-s", "complete_ways")
+    f, gj = CACHE / "uu_bldg.pbf", CACHE / "uu_bldg.geojsonseq"
+    bd._sh("osmium", "tags-filter", str(cut), "a/building", "a/landuse=construction", "-o", str(f), "--overwrite")
+    bd._sh("osmium", "export", str(f), "-o", str(gj), "--overwrite", "-f", "geojsonseq", "-x", "print_record_separator=false")
+    sm = sites.to_crs(M).geometry.reset_index(drop=True)
+    tree = STRtree(list(sm))
+    bsq, con = np.zeros(len(sm)), np.zeros(len(sm), dtype=bool)
+    import pyproj
+    tf = pyproj.Transformer.from_crs(4326, M, always_xy=True).transform
+    from shapely.ops import transform as _tr
+    nb = 0
+    with open(gj) as fh:
+        for line in fh:
+            try:
+                ft = _json.loads(line.strip().lstrip("\x1e"))
+                geom = shape(ft["geometry"])
+            except Exception:  # noqa: BLE001
+                continue
+            if geom.geom_type not in ("Polygon", "MultiPolygon"):
+                continue
+            gm = _tr(tf, geom)
+            idx = tree.query(gm, predicate="intersects")
+            if not len(idx):
+                continue
+            pr = ft.get("properties", {})
+            for i in idx:
+                if pr.get("landuse") == "construction" or pr.get("building") == "construction":
+                    if sm[i].intersection(gm).area > 0.25 * min(gm.area, sm[i].area):
+                        con[i] = True
+                if pr.get("building") and pr.get("building") not in ("construction", "roof", "carport"):
+                    bsq[i] += sm[i].intersection(gm).area * 10.7639
+            nb += 1
+    note("underused", osm_features_on_sites=nb)
+    return pd.DataFrame({"bldg_sqft": bsq.round(0), "constr": con})
 
 
 # ------------------------------------------------------------------ what is already being done (round 7)
@@ -1573,6 +1733,10 @@ HE_COUNTY = "https://services.arcgis.com/RmCCgQtiZLDCtblq/arcgis/rest/services/L
 
 def _num(x):
     return pd.to_numeric(x, errors="coerce")
+
+
+BOE_CIP = "https://maps.lacity.org/arcgis/rest/services/Mapping/NavigateLA/MapServer/10"
+CCED = "https://gis.cnra.ca.gov/arcgis/rest/services/Boundaries/CCED_AccessType/MapServer/0"
 
 
 def _write_gz(g, name):
@@ -1648,6 +1812,28 @@ def stage_projects():
         note("projects", apr_la_rows=n)
     except Exception as e:  # noqa: BLE001
         note("projects", apr_error=str(e)[:200])
+    # 4. LA City Bureau of Engineering capital projects (points, with phase and dates)
+    try:
+        g = arcgis_all(BOE_CIP, max_rows=60000)
+        if g is not None and len(g):
+            cols = {c.lower(): c for c in g.columns}
+            pick = lambda *ks: next((cols[k.lower()] for k in ks if k.lower() in cols), None)  # noqa: E731
+            nm, ph, act, cost = pick("ProjectTitle", "ProjectName", "Project_Name", "NAME", "PROJ_NAME"), pick("CurrentPhaseDescription", "ActivePhase"), pick("ProjectActive"), pick("ConstructionCost")
+            end = pick("ConsEndDate", "EndDate")
+            g = g[g.geometry.notna()]
+            if act:
+                g = g[~g[act].astype(str).str.upper().isin(["N", "NO", "FALSE", "0", "INACTIVE"])]
+            for _, r in g.iterrows():
+                pt = r.geometry.representative_point()
+                yr = r.get(end) if end else None
+                if isinstance(yr, (int, float)) and yr == yr and yr > 1e11:
+                    yr = datetime.fromtimestamp(yr / 1000, timezone.utc).year
+                rows.append({"src": "LA City Bureau of Engineering", "kind": "city capital project", "name": r.get(nm) if nm else None,
+                             "addr": None, "stage": r.get(ph) if ph else None, "detail": f"construction cost ${float(r.get(cost)):,.0f}" if cost and r.get(cost) == r.get(cost) and r.get(cost) else None,
+                             "units": np.nan, "year": str(yr)[:4] if yr else "", "lat": pt.y, "lon": pt.x})
+            note("projects", boe_cip_rows=len(g), boe_fields=list(g.columns)[:40])
+    except Exception as e:  # noqa: BLE001
+        note("projects", boe_cip_error=str(e)[:200])
     if not rows:
         raise RuntimeError("no project feed answered")
     pj = gpd.GeoDataFrame(pd.DataFrame(rows), geometry=gpd.points_from_xy([r["lon"] for r in rows], [r["lat"] for r in rows]), crs=4326)
@@ -1660,6 +1846,54 @@ def stage_projects():
     pj = gpd.GeoDataFrame(pd.concat([keep, pj[~hcd]], ignore_index=True), crs=4326).drop(columns=["key"], errors="ignore")
     note("projects", total=len(pj), by_kind={k: int(v) for k, v in pj.kind.value_counts().items()})
     _write_gz(pj, "map_projects.geojson.gz")
+    # conservation easements (state CCED): parcels that generally can't be built on
+    try:
+        ce = arcgis_all(CCED, bbox=BBOX, max_rows=20000)
+        if ce is not None and len(ce):
+            keep = [c for c in ("sitename", "esmthldr", "pubaccess", "gis_acres") if c in ce.columns]
+            ce = ce[ce.geom_type.isin(["Polygon", "MultiPolygon"])]
+            ce["geometry"] = ce.to_crs(M).geometry.simplify(5).to_crs(4326)
+            _write_gz(ce[keep + ["geometry"]], "map_easements.geojson.gz")
+            note("projects", easements=len(ce))
+    except Exception as e:  # noqa: BLE001
+        note("projects", easements_error=str(e)[:200])
+    # known sites from the research (golf, LAUSD, surplus land, redevelopments): Census geocoder or parcel number
+    try:
+        ks = pd.read_csv(RESEARCH.parent / "round7b" / "known_sites.csv", dtype=str).fillna("")
+        k10 = RESEARCH.parent / "round10" / "known_sites_r10.csv"
+        if k10.exists():
+            ks = pd.concat([ks, pd.read_csv(k10, dtype=str).fillna("")], ignore_index=True)
+        pts = []
+        for _, r in ks.iterrows():
+            lat = lon = None
+            if r.ain:
+                try:
+                    q = get(PARCEL_URL + "/query", params={"where": f"AIN='{r.ain}'", "outFields": "AIN", "returnGeometry": "true", "outSR": 4326, "f": "geojson"}, timeout=60, tries=2).json()
+                    f = (q.get("features") or [None])[0]
+                    if f:
+                        from shapely.geometry import shape
+                        c = shape(f["geometry"]).representative_point()
+                        lat, lon = c.y, c.x
+                except Exception:  # noqa: BLE001
+                    pass
+            if lat is None and r.address:
+                try:
+                    q = get("https://geocoding.geo.census.gov/geocoder/locations/onelineaddress",
+                            params={"address": r.address, "benchmark": "Public_AR_Current", "format": "json"}, timeout=60, tries=2).json()
+                    m = (q.get("result", {}).get("addressMatches") or [None])[0]
+                    if m:
+                        lat, lon = m["coordinates"]["y"], m["coordinates"]["x"]
+                except Exception:  # noqa: BLE001
+                    pass
+            if lat is not None:
+                pts.append({**r.to_dict(), "lat": lat, "lon": lon})
+        if pts:
+            kd = pd.DataFrame(pts)
+            gpd.GeoDataFrame(kd.drop(columns=["lat", "lon"]), geometry=gpd.points_from_xy(kd.lon, kd.lat), crs=4326) \
+                .to_file(OUT / "map_known_sites.geojson", driver="GeoJSON")
+        note("projects", known_sites=len(ks), known_sites_located=len(pts))
+    except Exception as e:  # noqa: BLE001
+        note("projects", known_sites_error=str(e)[:200])
     # 4. Housing Element site inventories: parcels each city has already identified for new homes
     frames = []
     for url, src in ((HE_SCAG, "SCAG Housing Element sites"), (HE_COUNTY, "LA County Housing Element sites")):
@@ -1684,6 +1918,72 @@ def stage_projects():
         he["geometry"] = he.to_crs(M).geometry.simplify(2).to_crs(4326)
         _write_gz(he, "map_he_sites.geojson.gz")
         note("projects", he_sites=len(he), he_capacity=float(he.capacity.sum()))
+
+
+# ------------------------------------------------------------------ official SB 79 transit stops and zones (SCAG)
+SB79_APP = "6a2891fa768646f8a410b1e7d249d8e2"   # SCAG Regional Data Platform experience app (round-7 research, H41)
+SB79_PORTALS = ["https://rdp.scag.ca.gov/portal/sharing/rest", "https://www.arcgis.com/sharing/rest"]
+
+
+def _service_urls(obj, out):
+    """Collect every Feature/Map service URL mentioned anywhere in an item's JSON (apps -> web maps -> layers)."""
+    if isinstance(obj, dict):
+        for v in obj.values():
+            _service_urls(v, out)
+    elif isinstance(obj, list):
+        for v in obj:
+            _service_urls(v, out)
+    elif isinstance(obj, str) and re.search(r"/(FeatureServer|MapServer)(/\d+)?$", obj):
+        out.add(obj)
+
+
+def stage_sb79():
+    urls, items, seen = set(), [SB79_APP], set()
+    while items and len(seen) < 25:
+        it = items.pop()
+        if it in seen:
+            continue
+        seen.add(it)
+        for portal in SB79_PORTALS:
+            try:
+                data = get(f"{portal}/content/items/{it}/data", params={"f": "json"}, timeout=60, tries=1).json()
+            except Exception:  # noqa: BLE001
+                continue
+            _service_urls(data, urls)
+            # web maps / data sources referenced by id
+            for m in re.findall(r'"itemId"\s*:\s*"([0-9a-f]{32})"', json.dumps(data)):
+                items.append(m)
+            break
+    for u in _agol_find("SB 79 TOD stops zones tiers", ["79"])[:5]:
+        urls.add(u)
+    note("sb79", candidate_urls=sorted(urls)[:40], items_read=len(seen))
+    frames = []
+    for u in sorted(urls):
+        if not re.search(r"79|tod|transit", u, re.I):
+            continue
+        lyrs = [u] if re.search(r"/\d+$", u) else []
+        if not lyrs:
+            try:
+                meta = get(u, params={"f": "json"}, timeout=60, tries=1).json()
+                lyrs = [f"{u}/{l['id']}" for l in meta.get("layers", [])]
+            except Exception:  # noqa: BLE001
+                continue
+        for lu in lyrs:
+            try:
+                g = arcgis_all(lu, bbox=BBOX, max_rows=60000)
+                if g is None or not len(g):
+                    continue
+                g["layer_url"] = lu
+                frames.append(g)
+                note("sb79", **{f"rows_{len(frames)}": f"{lu}: {len(g)} {list(g.columns)[:25]}"})
+            except Exception as e:  # noqa: BLE001
+                note("sb79", **{f"err_{len(frames)}": f"{lu}: {e}"[:200]})
+    if not frames:
+        raise RuntimeError("official SB 79 layer not reachable")
+    g = gpd.GeoDataFrame(pd.concat(frames, ignore_index=True), geometry="geometry", crs=4326)
+    keep = [c for c in ("CITY", "STOP_NAME", "TRN_MODE", "TRN_LINE", "SB79_TIER", "TIER", "BUFFER", "NAME", "layer_url") if c in g.columns]
+    g[keep + ["geometry"]].to_file(OUT / "map_sb79.geojson", driver="GeoJSON", COORDINATE_PRECISION=5)
+    note("sb79", features=len(g), geometry=g.geom_type.value_counts().to_dict())
 
 
 # ------------------------------------------------------------------ research endpoint check (round 6)
@@ -1942,7 +2242,7 @@ STAGES = {"geo": stage_geo, "osm": stage_osm, "transit": stage_transit, "sales":
           "parcels": stage_parcels, "assets": stage_assets,
           "tra": stage_tra, "assessed": stage_assessed, "basemap": stage_basemap,
           "research_check": stage_research_check, "zoning": stage_zoning,
-          "underused": stage_underused, "projects": stage_projects}
+          "underused": stage_underused, "projects": stage_projects, "sb79": stage_sb79}
 
 
 def main():

@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-02T18:02:59.931189+00:00",
+ "generated_at": "2026-11-03T17:07:38.307441+00:00",
  "sources": {
   "osm": {
    "parks": 20954,
@@ -39,7 +39,7 @@
    "lamps": 40484,
    "resroads": 285979,
    "ok": true,
-   "seconds": 211.0
+   "seconds": 212.2
   }
  }
 }

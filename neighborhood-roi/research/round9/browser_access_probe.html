@@ -1,0 +1,59 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>City Pretty anonymous browser access check</title>
+<style>
+body{font:16px/1.5 system-ui,sans-serif;max-width:1100px;margin:40px auto;padding:0 20px;color:#20272b}h1{font-size:26px}button{padding:10px 18px;font:inherit;cursor:pointer}table{border-collapse:collapse;width:100%;margin-top:24px;font-size:14px}th,td{text-align:left;vertical-align:top;padding:10px;border-bottom:1px solid #ddd}th{background:#f2f4f5}code{overflow-wrap:anywhere}.note{color:#535e65}
+</style>
+<h1>City Pretty browser access check</h1>
+<p>This checks anonymous count queries from the origin of this file. It makes read-only requests when you click Run checks.</p>
+<p class="note">A network failure does not identify CORS as the cause. A successful fetch with valid API data proves cross-origin reading works from this origin at this time. Callback success is reported separately. These checks do not establish reuse rights, house-fact accuracy, or imagery texture access.</p>
+<p>Origin: <code id="origin"></code></p>
+<button id="run">Run checks</button>
+<table><thead><tr><th>Source</th><th>Fetch / CORS</th><th>JSONP callback</th></tr></thead><tbody id="results"></tbody></table>
+<script>
+const specs=[
+ ['S001 Assessor parcels','https://public.gis.lacounty.gov/public/rest/services/LACounty_Cache/LACounty_Parcel/MapServer/0','arcgis'],
+ ['S046 Recent sales','https://egispais.gis.lacounty.gov/pais/rest/services/PAIS/pais_sales_parcels/MapServer/0','arcgis'],
+ ['S077 CAMS addresses','https://rpgis.isd.lacounty.gov/arcgis/rest/services/GISNET_Public/MapServer/402','arcgis'],
+ ['S079 LA address labels','https://lacitydbs.org/arcgiswebad/rest/services/Map_Viewer_data_PRO/MapServer/0','arcgis'],
+ ['S030 LADBS current','https://data.lacity.org/resource/pi9x-tg5x.json','socrata'],
+ ['S031 LADBS legacy','https://data.lacity.org/resource/d9aa-v8bm.json','socrata']
+];
+document.querySelector('#origin').textContent=location.origin;
+function query(base,kind,callback){
+ const u=new URL(kind==='arcgis'?base+'/query':base);
+ if(kind==='arcgis'){
+  u.searchParams.set('where','1=1');u.searchParams.set('returnCountOnly','true');u.searchParams.set('f','json');
+  if(callback)u.searchParams.set('callback',callback);
+ }else{
+  u.searchParams.set('$select','count(*)');if(callback)u.searchParams.set('$jsonp',callback);
+ }
+ return u.href;
+}
+function valid(body){return body&&!body.error&&(typeof body.count==='number'||(Array.isArray(body)&&body.length&&Object.hasOwn(body[0],'count')));}
+function jsonp(url,cb){return new Promise(resolve=>{
+ const script=document.createElement('script');let settled=false;
+ const finish=text=>{if(settled)return;settled=true;clearTimeout(timer);resolve(text);script.remove();window[cb]=()=>{};setTimeout(()=>delete window[cb],10000);};
+ window[cb]=body=>finish(valid(body)?'PASS — count callback returned':'Callback ran; API error or unrecognized data');
+ script.onerror=()=>finish('NR — script/network failure');
+ const timer=setTimeout(()=>finish('NR — callback not observed'),12000);
+ script.src=url;document.head.append(script);
+});}
+document.querySelector('#run').onclick=async()=>{
+ const button=document.querySelector('#run');button.disabled=true;
+ const tbody=document.querySelector('#results');tbody.replaceChildren();
+ for(let i=0;i<specs.length;i++){
+  const [label,base,kind]=specs[i];const row=tbody.insertRow();row.insertCell().textContent=label;
+  const fetchCell=row.insertCell();const callbackCell=row.insertCell();fetchCell.textContent='Checking…';callbackCell.textContent='Checking…';
+  const cb='cityPrettyBrowserProbe_'+i+'_'+Date.now();
+  const fetchTask=(async()=>{try{
+   const response=await fetch(query(base,kind),{mode:'cors',credentials:'omit',signal:AbortSignal.timeout(12000)});
+   const body=await response.json();fetchCell.textContent=response.ok&&valid(body)?'PASS — count read cross-origin':`HTTP ${response.status}; API error or unrecognized data`;
+  }catch(error){fetchCell.textContent='NR — '+error.name+' (network/CORS/service)';}})();
+  const callbackTask=jsonp(query(base,kind,cb),cb).then(text=>callbackCell.textContent=text);
+  await Promise.all([fetchTask,callbackTask]);
+ }
+ button.disabled=false;
+};
+</script>

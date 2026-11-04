@@ -1,0 +1,70 @@
+{
+  "checkedAt": "2026-11-04T02:57:46.997Z",
+  "checks": [
+    {
+      "file": "sources.csv",
+      "rows": 105,
+      "columns": 8,
+      "bytes": 31784
+    },
+    {
+      "file": "partO_building_data.csv",
+      "rows": 25,
+      "columns": 19,
+      "bytes": 23029
+    },
+    {
+      "file": "partO_code_tables.csv",
+      "rows": 76,
+      "columns": 5,
+      "bytes": 6329
+    },
+    {
+      "file": "partP_parcel_rules.csv",
+      "rows": 38,
+      "columns": 17,
+      "bytes": 27899
+    },
+    {
+      "file": "partQ_map_identity.csv",
+      "rows": 12,
+      "columns": 15,
+      "bytes": 9085
+    },
+    {
+      "file": "partR_ranked.csv",
+      "rows": 12,
+      "columns": 8,
+      "bytes": 3568
+    }
+  ],
+  "exactCellRoundTrip": true,
+  "sourceReferencesValid": true,
+  "rankCount": 12,
+  "networkValidation": "NR; see README.txt",
+  "pythonCsvQuoteAllRoundTrip": true,
+  "nonNRsamples": [
+    [
+      "O",
+      "O18",
+      3
+    ],
+    [
+      "O",
+      "O19",
+      3
+    ],
+    [
+      "P",
+      "P01",
+      3
+    ],
+    [
+      "P",
+      "P02",
+      3
+    ]
+  ],
+  "pythonProbeSyntax": true,
+  "browserProbeJavaScriptSyntax": true
+}

@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-02T21:35:49.054542+00:00",
+ "generated_at": "2026-11-04T05:06:37.062021+00:00",
  "sources": {
   "underused": {
    "parking lot_where": "UPPER(UseDescription) LIKE '%PARKING%'",
@@ -10,6 +10,56 @@
    "vacant_rows": 99531,
    "lightly built commercial_where": "UseType IN ('Commercial','Industrial') AND Roll_ImpValue < Roll_LandValue * 0.2 AND Shape.STArea() >= 43560",
    "lightly built commercial_rows": 8534,
+   "osm_features_on_sites": 34308,
+   "osm_cover_lots": 11559,
+   "osm_constr_lots": 870,
+   "cofo_rows": 108168,
+   "cofo_fields": [
+    "cofo_number",
+    "cofo_issue_date",
+    "latest_status",
+    "status_date",
+    "assessor_book",
+    "assessor_page",
+    "assessor_parcel",
+    "tract",
+    "block",
+    "lot",
+    "reference_old_permit",
+    "pcis_permit",
+    "permit_type",
+    "permit_sub_type",
+    "permit_category",
+    "initiating_office",
+    "issue_date",
+    "address_start",
+    "address_fraction_start",
+    "address_end",
+    "address_fraction_end",
+    "street_direction",
+    "street_name",
+    "street_suffix",
+    "zip_code",
+    "work_description",
+    "valuation",
+    "floor_area_l_a_zoning_code_definition",
+    "of_stories",
+    "contractors_business_name",
+    "license_type",
+    "license",
+    "license_expiration_date",
+    "applicant_first_name",
+    "applicant_last_name",
+    "applicant_address_1",
+    "applicant_address_3",
+    "zone",
+    "floor_area_l_a_building_code_definition",
+    "census_tract"
+   ],
+   "cofo_sites": 118,
+   "_flood_share_error": "failed: https://dpw.gis.lacounty.gov/dpw/rest/services/FloodROWViewer/MapServer/0/query",
+   "public_owner_sites": 0,
+   "owner_lookups": 54854,
    "sites": 105420,
    "by_kind": {
     "vacant": 98339,
@@ -24,7 +74,7 @@
     "vacant": 1444303
    },
    "ok": true,
-   "seconds": 402.5
+   "seconds": 1278.8
   }
  }
 }

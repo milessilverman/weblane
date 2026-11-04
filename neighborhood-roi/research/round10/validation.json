@@ -1,0 +1,150 @@
+{
+  "createdAt": "2026-11-04T04:29:51.622Z",
+  "csvFiles": 9,
+  "checks": [
+    {
+      "file": "sources.csv",
+      "rows": 243,
+      "columns": 8,
+      "bytes": 95204,
+      "exactTextRoundTrip": true
+    },
+    {
+      "file": "partS_land_truth.csv",
+      "rows": 66,
+      "columns": 19,
+      "bytes": 53558,
+      "exactTextRoundTrip": true
+    },
+    {
+      "file": "partS_use_codes.csv",
+      "rows": 34,
+      "columns": 6,
+      "bytes": 4314,
+      "exactTextRoundTrip": true
+    },
+    {
+      "file": "partT_zoning_plain.csv",
+      "rows": 240,
+      "columns": 13,
+      "bytes": 109520,
+      "exactTextRoundTrip": true
+    },
+    {
+      "file": "partU_funding.csv",
+      "rows": 135,
+      "columns": 16,
+      "bytes": 119323,
+      "exactTextRoundTrip": true
+    },
+    {
+      "file": "partU_eifds.csv",
+      "rows": 19,
+      "columns": 14,
+      "bytes": 13874,
+      "exactTextRoundTrip": true
+    },
+    {
+      "file": "partU_project_stacks.csv",
+      "rows": 31,
+      "columns": 11,
+      "bytes": 22350,
+      "exactTextRoundTrip": true
+    },
+    {
+      "file": "partV_speed.csv",
+      "rows": 32,
+      "columns": 14,
+      "bytes": 29181,
+      "exactTextRoundTrip": true
+    },
+    {
+      "file": "partW_ranked.csv",
+      "rows": 12,
+      "columns": 8,
+      "bytes": 3696,
+      "exactTextRoundTrip": true
+    }
+  ],
+  "sourceReferencesValid": true,
+  "allCellsQuoted": true,
+  "encoding": "UTF-8 without BOM",
+  "rankCount": 12,
+  "projectCount": 12,
+  "stackChecks": [
+    {
+      "project": "Flower Street peak-hour bus lane pilot",
+      "total": "NR",
+      "sum": "NR",
+      "verifiedScope": "NR"
+    },
+    {
+      "project": "Colorado Avenue Protected Bikeway C0815",
+      "total": 546900,
+      "sum": 546900,
+      "balancedForStatedScope": true
+    },
+    {
+      "project": "Signal Hill Street Tree Planting90.25012",
+      "total": 1000000,
+      "sum": 1000000,
+      "balancedForStatedScope": true
+    },
+    {
+      "project": "Houghton Park Community Center expansion",
+      "total": 10224508,
+      "sum": 10224508,
+      "balancedForStatedScope": true
+    },
+    {
+      "project": "Carson aquatic facilities improvements Project1771",
+      "total": 1360000,
+      "sum": 1360000,
+      "balancedForStatedScope": true
+    },
+    {
+      "project": "Pomona Community Wellness Renovation CP87729,750 S Park Avenue",
+      "total": 3300000,
+      "sum": 3300000,
+      "balancedForStatedScope": true
+    },
+    {
+      "project": "Arroyo Charging Depot CITY CAPITAL SCOPE",
+      "total": 1250000,
+      "sum": 1250000,
+      "balancedForStatedScope": true
+    },
+    {
+      "project": "Pasadena Central Library Seismic Retrofit and Renovations71922",
+      "total": 204860000,
+      "sum": 204860000,
+      "balancedForStatedScope": true
+    },
+    {
+      "project": "Venice Boulevard Great Streets, Beethoven to Inglewood",
+      "total": "NR",
+      "sum": "NR",
+      "verifiedScope": "NR"
+    },
+    {
+      "project": "Willowbrook/Rosa Parks Station Improvements",
+      "total": 128348400,
+      "sum": 128348400,
+      "balancedForStatedScope": true
+    },
+    {
+      "project": "Taylor Yard Bicycle/Pedestrian Bridge MOU construction package",
+      "total": 25450000,
+      "sum": 25450000,
+      "balancedForStatedScope": true
+    },
+    {
+      "project": "Hollywood Arts Collective RESIDENTIAL construction financing,1637 Wilcox",
+      "total": 81802701,
+      "sum": 81802701,
+      "balancedForStatedScope": true
+    }
+  ],
+  "networkQualification": "Partial metadata/document retrieval only; endpoint CORS/JSONP, single-point browser timings and full-runner downloads NR. Row statuses control usability.",
+  "completeness": "Partial research; see README.txt"
+}

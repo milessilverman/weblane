@@ -1,11 +1,11 @@
 {
- "generated_at": "2026-11-02T18:02:11.786090+00:00",
+ "generated_at": "2026-11-03T17:07:21.243906+00:00",
  "sources": {
   "geo": {
    "acs_vintage": "2020-2024 ACS 5-year, block groups",
    "acs_rows": 6591,
    "tes_rows": 5251,
-   "hoods_Santa Monica": 4,
+   "hoods_Santa Monica": 3,
    "hoods_Santa Monica_field": "neighbor",
    "hoods_West Hollywood": 14,
    "hoods_West Hollywood_field": "Name",
@@ -15,7 +15,8 @@
    "hoods_Pasadena_field": "Association_Name",
    "hoods_Long Beach": 126,
    "hoods_Long Beach_field": "NEIGHBOR_NAME",
-   "hoods_Glendale_error": "failed: https://gismap.glendaleca.gov/arcgis/rest/services/Common/NeighborhoodZones/MapServer/1",
+   "hoods_Glendale": 37,
+   "hoods_Glendale_field": "NAME",
    "hoods_Torrance": 24,
    "hoods_Torrance_field": "Name",
    "la_times_hoods": 114,
@@ -62,21 +63,22 @@
     "Windsor Hills"
    ],
    "block_groups": 6587,
-   "named_official": 652,
+   "named_official": 777,
    "named_latimes": 2680,
    "by_source": {
-    "LA County Countywide Statistical Area": 3253,
+    "LA County Countywide Statistical Area": 3128,
     "LA Times Mapping L.A.": 2680,
     "Long Beach (city GIS)": 328,
+    "Glendale (city GIS)": 137,
     "Lancaster (city GIS)": 104,
     "Pasadena (city GIS)": 90,
     "Torrance (city GIS)": 76,
-    "Santa Monica (city GIS)": 44,
+    "Santa Monica (city GIS)": 32,
     "West Hollywood (city GIS)": 10,
     "City boundary (no neighborhood map)": 2
    },
    "ok": true,
-   "seconds": 324.9
+   "seconds": 41.4
   }
  }
 }

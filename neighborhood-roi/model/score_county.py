@@ -106,7 +106,7 @@ S = {  # sources, cited by key in the catalog
     "retail": "Ghorbani & Meltzer 2024 (NYC): more nearby retail raises 1-4 family values, lowers condo values; Teh 2007 (LA): liquor stores raise nearby crime",
     "market": "Farmers-market studies (Maryland 2020; Edmonton 2024): positive, inverted-U with distance",
     "library": "Gilpin, Karger & Nencka: library capital spending +21% visits; no detectable home-price change; LA Benjamin Franklin branch renovation $5.5M",
-    "lihtc": "Diamond & McQuade 2019: LIHTC +6.5% within 0.1 mi in low-income areas, -2.5% in high-income; LA HHH ~$597k per unit",
+    "lihtc": "Diamond & McQuade 2019: LIHTC +6.5% within 0.1 mi in low-income areas, -2.5% in high-income; LAHD (Mar 2026 report, p9): 2025 affordable/supportive cohort total development cost above $782k per unit (2024 dollars)",
     "upzone": "Kuhlmann 2021 (Minneapolis): +3-5% affected single-family prices; Kestelman 2025 (LA TOC); HCD SB 79 (eff. July 2026)",
     "coolpave": "Pacoima / Covina cool-pavement studies: surface -5 C, air -0.2 to -1.9 C; Middel 2020: midday radiant heat +4 C for pedestrians",
     "greenalley": "Avalon Green Alley North phase II (2015): $1.83M",
@@ -684,7 +684,7 @@ def size_projects(r, ref, tree_rate):
 
     # --- housing
     if poor and r.home_value < ref["value"]:
-        add("affordable_housing", 50, "50 affordable homes", reach(160, dens, H), 0.065, 34_600_000, 0,
+        add("affordable_housing", 50, "50 affordable homes", reach(160, dens, H), 0.065, 50 * 782_000, 0,
             why="below-median income area: new affordable housing raised nearby prices 6.5% within 0.1 mi")
     P_owner_v = r.home_value
     if r.sf_share > 0.4:

@@ -32,24 +32,38 @@ SOFT_AND_FINANCE = 0.30                             # assumption: design, permit
 FEES_PER_UNIT = 25_000                              # assumption: impact/school/utility fees (LA fee matrix not recovered, I34-I37)
 UNIT_SQFT = {"apartment": 850, "house": 1_500}
 RENT_2026Q3 = {"studio": 1707, "1br": 2102, "2br": 2680}   # I20-I22: LA average rents, all stock
-NEW_RENT_PREMIUM = 1.15                             # assumption: new buildings rent above the all-stock average
+NEW_RENT_PREMIUM = 1.25                             # round 7b I3_10: 2020+ buildings rent $3,375 vs ~$2,390 all-stock; new
+                                                    # buildings cluster in pricier areas, so only part of that gap is used
 OPEX_SHARE = 0.35                                   # assumption: operating costs + vacancy as a share of rent
 CAP_RATE = 0.059                                    # I23: LA multifamily cap rate, 2026-Q3
 NEW_UNIT_SHARE = 0.6                                # for-sale houses: new house worth ~60% of the area's typical home ...
 UNIT_PRICE_RANGE = (350_000, 1_200_000)  # ... within this range
 ACTIVE_USE = r"manufactur|mineral|motion picture|nurser|greenhouse|oil|petroleum|refin|quarr|landfill|utilit|cemeter|warehous|lumber|rail"
-GOLF_HOUSING_SHARE = 0.10              # golf courses: only the edge (10%) considered for housing, rest kept as open space
+# vacant-roll uses that are not buildable land (roads, channels, utilities, cemeteries, water, mining)
+NOT_BUILDABLE = r"right.?s? of way|pipeline|canal|river|lake|water right|utilit|pumping|cemeter|mausole|waste|petroleum|mineral|reservoir|flood"
+DONE_STAGES = {"completed", "cofo issued", "permit finaled", "cofo corrected", "in-service", "permit closed"}
+GOING_STAGES = {"permitted", "issued", "cofo in progress", "construction", "bid & award"}
+GOLF_HOUSING_SHARE = 0.10
+BIG_LOT_SHARE = 0.5                    # lots of 10+ acres: half counted for housing              # golf courses: only the edge (10%) considered for housing, rest kept as open space
 ASSUMPTIONS = {
     "density_homes_per_acre": DENSITY, "sb79_homes_per_acre_by_distance_m": SB79,
     "hard_cost_psf_2023 (round 7, I16-I19 avg)": HARD_COST_PSF_2023, "escalation_2023_2026": round(ESCALATE_2023_2026, 3),
     "soft_and_finance_share": SOFT_AND_FINANCE, "fees_per_unit": FEES_PER_UNIT, "unit_sqft": UNIT_SQFT,
     "rents_2026q3 (round 7, I20-I22)": RENT_2026Q3, "new_rent_premium": NEW_RENT_PREMIUM, "opex_share": OPEX_SHARE,
-    "cap_rate (round 7, I23)": CAP_RATE, "house_value_share_of_typical_home": NEW_UNIT_SHARE, "house_value_range": UNIT_PRICE_RANGE, "golf_course_share_for_housing": GOLF_HOUSING_SHARE,
+    "cap_rate (round 7, I23)": CAP_RATE, "house_value_share_of_typical_home": NEW_UNIT_SHARE, "house_value_range": UNIT_PRICE_RANGE, "golf_course_share_for_housing": GOLF_HOUSING_SHARE, "big_lot_share_for_housing": BIG_LOT_SHARE, "local_rent_factor_range": [0.7, 1.6],
     "market_land": "block-group land value per sq ft: 60% of typical home value over its share of land (or the "
                    "Assessor's vacant-land roll value if higher), clipped to $15-$600/sq ft"}
 
 
 RENT_MED = None
+OFFICIAL_SB79 = [False]
+# approximate SB 79 densities (homes/acre) by official stop tier and distance; check the statute for exact standards
+SB79_TIERS = [("T1", 402, 120), ("T1", 805, 100), ("T2", 402, 100), ("T2", 805, 80)]
+
+
+def sb79_density(t1_m, t2_m):
+    dist = {"T1": t1_m if t1_m == t1_m else 1e9, "T2": t2_m if t2_m == t2_m else 1e9}
+    return max((v for t, d_, v in SB79_TIERS if dist[t] <= d_), default=None)
 
 
 def unit_economics(b, houses):
@@ -59,7 +73,7 @@ def unit_economics(b, houses):
         price = float(np.clip(float(b.home_value) * NEW_UNIT_SHARE, *UNIT_PRICE_RANGE)) if b.home_value == b.home_value else np.nan
         sqft = UNIT_SQFT["house"]
     else:
-        local = float(np.clip((b.median_gross_rent / RENT_MED) if b.median_gross_rent == b.median_gross_rent else 1.0, 0.7, 2.0))
+        local = float(np.clip((b.median_gross_rent / RENT_MED) if b.median_gross_rent == b.median_gross_rent else 1.0, 0.7, 1.6))
         rent = (RENT_2026Q3["1br"] + RENT_2026Q3["2br"]) / 2 * NEW_RENT_PREMIUM * local
         price = rent * 12 * (1 - OPEX_SHARE) / CAP_RATE
         sqft = UNIT_SQFT["apartment"]
@@ -163,6 +177,128 @@ def main():
             pts["he_any"] = hj.groupby(level=0).index_right.count().reindex(pts.index).fillna(0) > 0
         else:
             pts["he_any"] = False
+        # official SB 79 stops and tiers (SCAG): distance from each site to the nearest Tier 1 and Tier 2 stop
+        pts["t1_m"], pts["t2_m"] = np.nan, np.nan
+        sbp = SRC / "map_sb79.geojson"
+        if sbp.exists():
+            sb = gpd.read_file(sbp)
+            sb = sb[sb.geom_type.eq("Point") & sb.get("SB79_TIER", pd.Series(index=sb.index, dtype=object)).notna()].to_crs(M)
+            for tier, col in (("T1", "t1_m"), ("T2", "t2_m")):
+                sub = sb[sb.SB79_TIER.astype(str).str.upper().eq(tier)]
+                if len(sub):
+                    j = gpd.sjoin_nearest(pts[["geometry"]], sub[["geometry"]], how="left", distance_col="d")
+                    pts[col] = j[~j.index.duplicated()].d
+            OFFICIAL_SB79[0] = bool(len(sb))
+        # known sites from the research (County golf, LAUSD housing sites, surplus land, redevelopments) and easements
+        pts["known"], pts["easement"] = None, False
+        ksp = SRC / "map_known_sites.geojson"
+        if ksp.exists():
+            ks = gpd.read_file(ksp).to_crs(M)
+            for kind_, rad in (("golf course", 700), ("public land", 120), ("redevelopment", 120)):
+                sub = ks[ks.kind == kind_]
+                if not len(sub):
+                    continue
+                mask = g.kind.eq("golf course") if kind_ == "golf course" else ~g.kind.eq("golf course")
+                cand = pts[mask.reindex(pts.index).fillna(False)]
+                if not len(cand):
+                    continue
+                j = gpd.sjoin_nearest(cand[["geometry"]], sub[["name", "note", "geometry"]], how="inner", max_distance=rad, distance_col="dk")
+                j = j[~j.index.duplicated()]
+                pts.loc[j.index, "known"] = (j["name"] + ": " + j["note"]).values
+        esp = SRC / "map_easements.geojson.gz"
+        if esp.exists():
+            es = gpd.read_file(f"/vsigzip/{esp}").to_crs(M)
+            if len(es):
+                ej = gpd.sjoin(pts[["geometry"]], es[["geometry"]], predicate="within", how="inner")
+                pts.loc[ej.index.unique(), "easement"] = True
+        # ---- round 10: is it still underused? The Assessor's use code can lag construction by years.
+        pts["bst"], pts["bnote"] = None, None
+        poly = gpd.GeoDataFrame(geometry=gm.geometry, crs=M)
+        pts["pp"] = (4 * np.pi * gm.area / gm.length.clip(lower=1) ** 2).reindex(pts.index)   # 1 = circle, near 0 = thin strip
+        def flag(idx, st, txt):
+            rank = {"built": 3, "building": 2, "planned": 1}
+            for i in idx:
+                cur = pts.at[i, "bst"]
+                if cur is None or rank[st] > rank[cur]:
+                    pts.at[i, "bst"], pts.at[i, "bnote"] = st, txt if isinstance(txt, str) else txt[i]
+        # (a) housing reports, LA permits and LAHD projects located on the parcel
+        pjp = SRC / "map_projects.geojson.gz"
+        if pjp.exists():
+            pj = gpd.read_file(f"/vsigzip/{pjp}").to_crs(M)
+            un = pd.to_numeric(pj.units, errors="coerce").fillna(0)
+            pj = pj[((un >= 5) | pj.kind.isin(["new apartments", "new building", "affordable housing"])) & ~pj.kind.eq("city capital project")]
+            jj = gpd.sjoin(pj[["stage", "units", "year", "addr", "src", "geometry"]], poly.assign(geometry=poly.buffer(15)), predicate="within", how="inner")
+            # also match by street address (house number + street name), since report geocodes can miss the parcel
+            def akey(x):
+                t = re.sub(r"[^A-Z0-9 ]", " ", str(x).upper().split(",")[0])
+                t = re.sub(r"\b(N|S|E|W|NORTH|SOUTH|EAST|WEST)\b", " ", t).split()
+                return " ".join(t[:3]) if len(t) >= 2 and t[0].isdigit() else None
+            sk = pts.addr.map(akey) if "addr" in pts else pd.Series(dtype=object)
+            pk = pj.addr.map(akey)
+            amap = {}
+            for i, k in sk.dropna().items():
+                amap.setdefault(k, []).append(i)
+            extra = [(j, i) for j, k in pk.dropna().items() for i in amap.get(k, [])]
+            if extra:
+                ex = pj.loc[[j for j, _ in extra], ["stage", "units", "year", "addr", "src", "geometry"]].copy()
+                ex["index_right"] = [i for _, i in extra]
+                jj = pd.concat([jj, ex[~ex.set_index("index_right", append=True).index.isin(jj.set_index("index_right", append=True).index)]])
+            for i, grp in jj.groupby("index_right"):
+                if i not in pts.index:
+                    continue
+                stg = grp.stage.astype(str).str.lower()
+                for st, mask, word in (("built", stg.isin(DONE_STAGES), "completed"), ("building", stg.isin(GOING_STAGES), "permitted / under construction"),
+                                       ("planned", stg.eq("approved"), "approved")):
+                    x = grp[mask]
+                    if not len(x):
+                        continue
+                    n = int(pd.to_numeric(x.units, errors="coerce").fillna(0).groupby(x.addr.fillna("")).max().sum())
+                    yr = str(x.year.dropna().astype(str).max() if x.year.notna().any() else "")[:4]
+                    ad = next((a for a in x.addr if isinstance(a, str) and a), "")
+                    flag([i], st, (f"{n:,} homes {word}" if n else f"a new building {word}") + (f" in {yr}" if yr else "") + (f" at {ad}" if ad else "") + f" ({x.src.iloc[0]})")
+        # (a2) research test set and earlier known redevelopments (round 7b, round 10 Part S)
+        kn = pd.Series([x if isinstance(x, str) else "" for x in pts.known], index=pts.index)
+        for pat, st in ((r"completed|redeveloped", "built"), (r"under construction", "building")):
+            ix = pts.index[kn.str.contains(pat, case=False).values]
+            flag(ix, st, {i: "research: " + str(kn.loc[i]) for i in ix})
+        # (a3) LA City certificate of occupancy since 2016 on the lot (round 10: LADBS 3f9m-afei)
+        if "cofo_date" in g.columns:
+            cd = g.cofo_date.reindex(pts.index)
+            cu = pd.to_numeric(g.get("cofo_units"), errors="coerce").reindex(pts.index)
+            m_ = cd.notna() & g.kind.reindex(pts.index).isin(["parking lot", "vacant", "lightly built commercial"])
+            flag(pts.index[m_], "built", {i: f"LA City certificate of occupancy issued {cd[i]}" + (f" ({int(cu[i]):,} homes)" if cu[i] == cu[i] and cu[i] > 0 else "") for i in pts.index[m_]})
+        # (a4) parking structures are not surface lots (Assessor use code 27x2 / 27x3)
+        if "code" in g.columns:
+            cc = g.code.astype(str).reindex(pts.index)
+            m_ = g.kind.reindex(pts.index).eq("parking lot") & cc.str.match(r"^27\d[23]")
+            flag(pts.index[m_], "built", "a parking structure (garage), not a surface lot (Assessor use code 27x2/27x3)")
+        # (b) the Assessor already values a sizable building here
+        kindv = g.kind.reindex(pts.index)
+        imp, land = pts.imp_av.astype(float), pts.land_av.astype(float)
+        heavy = kindv.isin(["parking lot", "vacant"]) & (imp >= 1_000_000) & (imp >= 0.5 * land)
+        flag(pts.index[heavy], "built", {i: f"the Assessor values the buildings here at ${imp[i] / 1e6:,.1f}M (land ${land[i] / 1e6:,.1f}M), so something large is "
+                                            "already built (a new building or a parking garage)" for i in pts.index[heavy]})
+        # (c) building outlines and construction sites mapped on the lot (OpenStreetMap; added by the underused stage)
+        if "bldg_sqft" in g.columns:
+            cov = pd.to_numeric(g.bldg_sqft, errors="coerce").reindex(pts.index).fillna(0) / (pts.acres * 43560).clip(lower=1)
+            m_ = kindv.isin(["parking lot", "vacant"]) & (cov >= 0.3)
+            flag(pts.index[m_], "built", {i: f"building outlines cover {cov[i]:.0%} of the lot (OpenStreetMap)" for i in pts.index[m_]})
+        if "constr" in g.columns:
+            m_ = g.constr.reindex(pts.index).fillna(False).astype(bool)
+            flag(pts.index[m_], "building", "mapped as a construction site (OpenStreetMap)")
+        # water, parks and open space mapped over a "vacant" parcel: not buildable
+        pts["green"] = 0.0
+        for f_ in ("map_water.geojson", "map_parks_all.geojson"):
+            if (SRC / f_).exists():
+                w_ = gpd.read_file(SRC / f_).to_crs(M)
+                w_ = w_[w_.geom_type.isin(["Polygon", "MultiPolygon"])]
+                vac = poly.loc[kindv.index[kindv.eq("vacant")]]
+                if len(w_) and len(vac):
+                    inter = gpd.overlay(vac.assign(i=vac.index), w_[["geometry"]], how="intersection", keep_geom_type=True)
+                    share = (inter.area.groupby(inter.i).sum() / vac.area).reindex(pts.index).fillna(0)
+                    pts["green"] = np.maximum(pts.green, share.values)
+        note_counts = pts.bst.value_counts().to_dict()
+        print("already built / under way:", note_counts)
         lpsf = {gid: land_psf(r) for gid, r in dd.iterrows()}
         for i, r in pts.iterrows():
             gid = r.GEOID
@@ -181,6 +317,16 @@ def main():
             # vacant land counts only inside built-up areas, at an infill scale, and not on open-space/farm zoning
             if r.kind == "vacant" and (not (b.density >= 0.0015) or not (0.5 <= ac <= 25) or cat0 in ("open space / public", "agricultural")):
                 continue
+            # not buildable: roads, channels, utilities, cemeteries; thin strips; land mapped as water or park
+            code_ = str(r.get("code") or "")
+            fl_ = float(r.get("flood") or 0) if r.get("flood") == r.get("flood") else 0.0
+            if fl_ >= 0.5 or (r.kind == "vacant" and fl_ >= 0.3):
+                continue   # County Flood Control District right-of-way
+            if r.kind == "vacant" and re.match(r"^(881[0-4]|8899|8[1457]\d\d)", code_):
+                continue   # roads, future streets, power lines, utilities, pipelines, rivers (round-10 use-code table)
+            if r.kind == "vacant" and (re.search(NOT_BUILDABLE, use, re.I) or r.pp < 0.12 or r.green >= 0.4
+                                       or (re.search(r"government", use, re.I) and r.pp < 0.3)):
+                continue
             sqft = ac * 43560
             psf = lpsf.get(gid, np.nan)
             lav = float(r.land_av) if r.land_av == r.land_av and r.land_av >= 10_000 else np.nan  # tiny values are common-area parcels
@@ -190,16 +336,30 @@ def main():
             cat = r.zcat if isinstance(r.zcat, str) else "other"
             dens = DENSITY.get(cat, 20)
             rail = r.rail_m if r.rail_m == r.rail_m else 1e9
-            sb79 = next((v for dist, v in SB79 if rail <= dist), None) if cat in ("single-family", "multifamily", "commercial / mixed use", "parking", "other") else None
+            eligible = cat in ("single-family", "multifamily", "commercial / mixed use", "parking", "other")
+            if OFFICIAL_SB79[0]:
+                sb79 = sb79_density(r.t1_m, r.t2_m) if eligible else None
+            else:
+                sb79 = next((v for dist, v in SB79 if rail <= dist), None) if eligible else None
             if sb79:
                 dens = max(dens, sb79)
-            usable = ac * (GOLF_HOUSING_SHARE if r.kind == "golf course" else 1.0)
+            # golf: only an edge; big lots (10+ acres, e.g. mall parking): half, since the main use keeps some parking
+            usable = ac * (GOLF_HOUSING_SHARE if r.kind == "golf course" else BIG_LOT_SHARE if ac >= 10 else 1.0)
             homes = int(round(usable * dens))
             houses = cat == "single-family" and not sb79
             price, cost = unit_economics(b, houses)
-            land_used = mkt * (GOLF_HOUSING_SHARE if r.kind == "golf course" else 1.0) if mkt == mkt else 0
+            land_used = mkt * (usable / ac) if mkt == mkt and ac > 0 else 0
             margin = homes * (price - cost) - land_used if homes and price == price else np.nan
-            if r.kind == "golf course":
+            known_ = r.get("known") if isinstance(r.get("known"), str) else ""
+            bst = r.bst if isinstance(r.bst, str) else None
+            if bst:
+                homes, margin = 0, np.nan
+                idea = {"built": "Already built: ", "building": "Under construction: ", "planned": "Already approved: "}[bst] + str(r.bnote) + "; not counted as underused"
+            elif re.search(r"completed|redeveloped", known_, re.I):
+                homes, margin, idea = 0, np.nan, "Already redeveloped (see the known-site note); not counted as underused"
+            elif bool(r.get("easement", False)):
+                homes, margin, idea = 0, np.nan, "Protected by a conservation easement: generally can't be built on; keep as open space"
+            elif r.kind == "golf course":
                 idea = (f"Keep as open space and open it to the public; a {GOLF_HOUSING_SHARE:.0%} edge (~{usable:.0f} acres) could hold ~{homes:,} homes"
                         if homes else "Keep as open space; add public trails and access")
             elif cat == "industrial":
@@ -209,7 +369,8 @@ def main():
             elif sb79:
                 idea = f"Apartments near rail (~{homes:,} homes; SB 79 and AB 2097 apply within ½ mile of {r.station or 'the station'})"
             elif r.kind == "parking lot":
-                idea = f"Housing over or in place of the lot (~{homes:,} homes); a pocket park or plaza on part of it"
+                idea = (f"Housing on half the lot (~{homes:,} homes), keeping parking for the store or mall; a plaza or park on part of it" if ac >= 10
+                        else f"Housing over or in place of the lot (~{homes:,} homes); a pocket park or plaza on part of it")
             elif r.kind == "vacant":
                 idea = f"Infill housing (~{homes:,} homes) or a pocket park / community garden if the neighborhood lacks parks"
             else:
@@ -222,8 +383,12 @@ def main():
                     "rail": None if rail >= 1e9 else round(rail), "st": r.station if isinstance(r.station, str) else None,
                     "sts": r.st_status if isinstance(r.st_status, str) else None, "homes": homes,
                     "margin": None if margin != margin else round(margin), "idea": idea, "gid": gid, "i": int(i),
-                    "he": (round(float(r.he_cap)) if r.he_cap == r.he_cap else 0) if bool(r.get("he_any", False)) else None}
+                    "he": (round(float(r.he_cap)) if r.he_cap == r.he_cap else 0) if bool(r.get("he_any", False)) else None,
+                    "known": r.known if isinstance(r.get("known"), str) else None, "ease": bool(r.get("easement", False)) or None, "bs": bst,
+                    "own": r.owner if isinstance(r.get("owner"), str) else None}
             out_sites.append(site)
+            if bst:
+                continue
             s_ = bg_sum.setdefault(gid, {"n": 0, "ac": 0.0, "homes": 0, "margin": 0.0, "mkt": 0.0})
             s_["n"] += 1
             s_["ac"] += ac
@@ -240,7 +405,7 @@ def main():
     d["hk"] = d.hood.fillna(d.city) + "|" + d.city
     d["net_proj"] = (d.pkg_value.fillna(0) - d.pkg_cost.fillna(0)).clip(lower=0)
     d["land_margin"] = d.GEOID.map(lambda x: bg_sum.get(x, {}).get("margin", 0))
-    d["homes_value"] = d.homes.fillna(0) * d.home_value.fillna(0)
+    d["homes_value"] = d.homes.fillna(0) * d.home_value.fillna(d.home_value.median())  # missing values: county median
     rail_soon = set()
     if (SRC / "map_stations_construction.geojson").exists():
         sc = gpd.read_file(SRC / "map_stations_construction.geojson").to_crs(M)
@@ -276,14 +441,16 @@ def main():
                 c_ = uw.setdefault(k, [0, 0])
                 c_[0] += n_
                 c_[1] += u_
-        prof[hk] = {"proj": round(a), "land": round(l_), "total": round(a + l_), "pct": round((a + l_) / hv, 4),
+        prof[hk] = {"proj": round(a), "land": round(l_), "total": round(a + l_),
+                    # a share of home value only means something where there are enough homes to share it
+                    "pct": round((a + l_) / hv, 4) if grp.homes.sum() >= 500 else None,
                     "per_home": round((a + l_) / max(float(grp.homes.sum()), 1)), "homes": int(grp.homes.sum()),
                     "sites": int(sum(bg_sum.get(g_, {}).get("n", 0) for g_ in grp.GEOID)),
                     "site_homes": int(sum(bg_sum.get(g_, {}).get("homes", 0) for g_ in grp.GEOID)), "soon": st_names, "way": uw}
     bgp_ = {gid: round(float((r.net_proj + r.land_margin) / r.homes_value), 4) for gid, r in d.set_index("GEOID").iterrows()
-            if r.homes_value > 0}
+            if r.homes_value > 0 and r.homes >= 150}
     (MOD / "underused.json").write_text(json.dumps({"sites": out_sites, "bg": bg_sum, "profit": prof, "bg_pct": bgp_,
-                                                     "soon": soon, "way": way, "assumptions": ASSUMPTIONS}, separators=(",", ":"), default=float))
+                                                     "soon": soon, "way": way, "assumptions": {**ASSUMPTIONS, "sb79_source": "SCAG official SB 79 stops and tiers; densities approximate" if OFFICIAL_SB79[0] else "distance to rail stations (official layer not found)"}}, separators=(",", ":"), default=float))
     ks = pd.Series([s["k"] for s in out_sites]).value_counts().to_dict() if out_sites else {}
     print(f"{len(out_sites):,} underused sites {ks}; {sum(s['homes'] for s in out_sites):,} homes possible; "
           f"{len(prof):,} neighborhoods ranked; {len(soon):,} block groups within 1.2 km of a station under construction")

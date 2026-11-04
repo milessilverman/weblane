@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-02T18:02:13.215138+00:00",
+ "generated_at": "2026-11-03T17:08:06.417227+00:00",
  "sources": {
   "requests311": {
    "2cy6-i7zn_cols": [
@@ -44,24 +44,7 @@
     "created_by_user_organization",
     "reported_anonymously__c",
     "closeddate",
-    "resolution_code__c",
-    "locator_gis_returned_address",
-    "locator_sr_house_number_",
-    "locator_direction_suffix",
-    "locator_sr_street_name__c",
-    "locator_service_request_suffix",
-    "zipcode__c",
-    "geolocation__latitude__s",
-    "geolocation__longitude__s",
-    "location",
-    "locator_sr_tb_map_grid_page",
-    "locator_sr_tb_column__c",
-    "locator_sr_tb_row__c",
-    "locator_sr_area_planning",
-    "locator_council_district",
-    "locator_sr_council_district",
-    "locator_sr_neigborhood_council",
-    "locator_sr_community_police"
+    "resolution_code__c"
    ],
    "73a2-6ar5_error": "",
    "h73f-gn57_cols": [
@@ -118,7 +101,7 @@
     "FEEDBACK": 180
    },
    "ok": true,
-   "seconds": 307.3
+   "seconds": 339.2
   }
  }
 }

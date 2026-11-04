@@ -154,20 +154,23 @@ def zoning_bundle():
     g = gpd.read_file(f"/vsigzip/{p}")
     g = g[g.geometry.notna() & ~g.geometry.is_empty]
     g["geometry"] = g.to_crs(M).geometry.simplify(8).to_crs(4326)
-    zones, zi, cells = [], {}, {}
+    zones, zi, cells, jur, zj = [], {}, {}, [], []
     for z, cat, juris, geom in zip(g.zone.astype(str), g.cat, g.juris, g.geometry):
         if geom is None or geom.is_empty:
             continue
         if z not in zi:
             zi[z] = len(zones)
             zones.append(z)
+            if juris not in jur:
+                jur.append(juris)
+            zj.append(jur.index(juris))
         ci = ZCATS.index(cat) if cat in ZCATS else len(ZCATS) - 1
         pt = geom.representative_point()
         key = f"{int((pt.x + 180) // CELL)},{int((pt.y + 90) // CELL)}"
         for poly in (geom.geoms if geom.geom_type == "MultiPolygon" else [geom]):
             rings = [encode_line(list(poly.exterior.coords))] + [encode_line(list(r.coords)) for r in poly.interiors]
             cells.setdefault(key, []).append([ci, zi[z], rings])
-    return {"cell": CELL, "zones": zones, "cats": ZCATS, "cells": cells}
+    return {"cell": CELL, "zones": zones, "cats": ZCATS, "cells": cells, "jur": jur, "zj": zj}
 
 
 def polys_in_cells(g, attrs, tol=2, cell=None):
@@ -224,7 +227,8 @@ def lines_bundle(name, keep):
     return out
 
 
-PJ_KINDS = ["housing completed", "housing permitted", "housing approved", "affordable housing", "new apartments", "new ADU", "new house", "new building"]
+PJ_KINDS = ["housing completed", "housing permitted", "housing approved", "affordable housing", "new apartments", "new ADU", "new house", "new building",
+            "city capital project"]
 
 
 def projects_bundle():
@@ -235,7 +239,7 @@ def projects_bundle():
     g = g[g.kind.isin(PJ_KINDS) & g.geometry.notna()]
     u = pd.to_numeric(g.units, errors="coerce")
     # single ADUs and houses are counted per neighborhood; the map shows projects of 5+ homes and city-tracked projects
-    g = g[(u >= 5) | g.kind.isin(["affordable housing", "new apartments", "new building"])]
+    g = g[(u >= 5) | g.kind.isin(["affordable housing", "new apartments", "new building", "city capital project"])]
     txt = lambda v: v if isinstance(v, str) and v.strip() and v.strip().lower() != "nan" else None  # noqa: E731
     out = []
     for r in g.itertuples():
@@ -243,6 +247,87 @@ def projects_bundle():
         out.append([PJ_KINDS.index(r.kind), txt(r.name), txt(r.addr), txt(r.stage), int(u) if u else None, txt(str(r.year)), round(r.geometry.y, 5), round(r.geometry.x, 5)])
     return out
 
+
+
+def round10_bundle():
+    """Round-10 research for the page: plain zoning rows, city funding amounts, EIFD register, real funding stacks."""
+    R = ROOT / "research" / "round10"
+    if not R.exists():
+        return None
+    rd = lambda n: pd.read_csv(R / n, dtype=str).fillna("").rename(columns=lambda c: c.split(" ")[0])
+    nr = lambda v: "" if str(v).strip().upper() in ("NR", "NAN") else str(v).strip()
+    jn = lambda j: "Unincorporated LA County" if "Unincorporated" in j else j.replace(" / guide", "")
+    zp = {}
+    for _, r in rd("partT_zoning_plain.csv").iterrows():
+        zp.setdefault(jn(r.jurisdiction), {})[r.code.strip()] = [nr(r.plain_meaning), nr(r.max_height_ft), nr(r.max_far_or_density), nr(r.min_lot_sqft), nr(r.adu_sb9)]
+
+    def money(v):
+        m = re.match(r"\s*([\d.,]+)\s*(million)?", str(v))
+        if not m:
+            return None
+        x = float(m.group(1).replace(",", ""))
+        return round(x * 1e6 if m.group(2) else x)
+    keys = {"Proposition A local return": "pa", "Proposition C local return": "pc", "Measure R local return": "mr", "Measure M local return": "mm",
+            "Measure W municipal projected return": "mw"}
+    city = {}
+    for _, r in rd("partU_funding.csv").iterrows():
+        if ":" not in r["name"] or r.amount_unit.strip() != "annual":
+            continue
+        head, place = [x.strip() for x in r["name"].split(":", 1)]
+        k = next((v for kk, v in keys.items() if head.lower() == kk.lower()), None)
+        amt = money(r.amount)
+        if k and amt:
+            city.setdefault(place, {})[k] = amt
+    ef = [[r.eifd_name, r.jurisdiction, nr(r.status), nr(r.participants_and_shares), nr(r.projected_increment_total), nr(r.projects)]
+          for _, r in rd("partU_eifds.csv").iterrows()]
+    TYPE = {"bus-lane corridor": ["bus_lane", "transit_priority", "brt"], "protected bike lane": ["protected_bike"], "street-tree program": ["street_trees", "tiny_forest"],
+            "park": ["park_upgrade", "pocket_park", "rec_center"], "public pool": ["pool", "splash_pad"], "community clinic": ["clinic"],
+            "EV fast-charging hub": ["ev_hub"], "library": ["library"], "road diet": ["road_diet", "slow_streets"], "rail station area": ["rail_station"],
+            "river path": ["corridor_trail"], "affordable housing on public parking lot": ["affordable_housing"]}
+    st = {}
+    for (proj, typ), g in rd("partU_project_stacks.csv").groupby(["project", "improvement_type"], sort=False):
+        tot = money(g.total_cost.iloc[0])
+        src = [[r.funding_source, money(r.amount)] for _, r in g.iterrows() if money(r.amount)]
+        if not tot or not src:
+            continue
+        NAMES = {"Colorado Avenue": ("Colorado Avenue protected bikeway", "under construction 2026"), "Signal Hill": ("Signal Hill street-tree planting (510 trees)", "completed 2026"),
+                 "Houghton Park": ("Houghton Park Community Center expansion", "completed 2020"), "Carson aquatic": ("Carson pool repairs (3 pools)", "completed 2023"),
+                 "Pomona Community": ("Pomona community wellness clinic renovation", "approved 2021"), "Arroyo Charging": ("Arroyo EV charging depot (city capital part)", "opened 2022"),
+                 "Pasadena Central Library": ("Pasadena Central Library seismic retrofit", "under construction, due 2028"), "Willowbrook": ("Willowbrook/Rosa Parks station improvements", "completed 2021"),
+                 "Taylor Yard": ("Taylor Yard bike/pedestrian bridge (construction)", "opened 2022"), "Hollywood Arts": ("Hollywood Arts Collective on a city parking lot (construction loans)", "completed 2023")}
+        nm, stt = next((v for k, v in NAMES.items() if k in proj), (proj, nr(g.status.iloc[0]).split(";")[0]))
+        clean = lambda x: re.sub(r";?\s*full sub-breakdown NR|,? ?approximately|, derived residual estimate| budget line|Fund\s?206", "", str(x)).replace("Proposition", "Prop").strip(" ,;")
+        ex = {"p": nm, "c": g.city.iloc[0], "s": stt, "t": tot, "src": [[clean(n), a] for n, a in src]}
+        for cid in TYPE.get(typ, []):
+            st.setdefault(cid, ex)
+    print(f"  round 10: {sum(len(v) for v in zp.values())} zoning rows, {len(city)} cities with funding amounts, {len(ef)} districts, {len(st)} funding examples")
+    return {"zp": zp, "city": city, "eifds": ef, "stacks": st}
+
+
+def compact_corridor(v):
+    """[street, from, to, miles, buses/hr, existing-bike text, bus lane 0/1, SB 79 stops, SB 79 tiers, rail names, station]"""
+    import re as _re
+    bike = next((h for h in v.get("have", []) if "lane" in h or "path" in h or "sharrows" in h), None)
+    bus = int(any("bus-only" in h for h in v.get("have", [])))
+    s79 = next((p for p in v.get("plan", []) if "SB 79" in p), None)
+    n79 = int(_re.match(r"(\d+)", s79).group(1)) if s79 else 0
+    t79 = (_re.search(r"\(([^)]*)\)", s79).group(1) if s79 else "")
+    rc = next((p for p in v.get("plan", []) if p.startswith("rail under construction")), None)
+    rcn = (_re.search(r"\((.*)\)", rc).group(1) if rc and "(" in rc else ("" if not rc else "-"))
+    return [v.get("st"), v.get("fr"), v.get("to"), v.get("mi"), v.get("tph"), bike, bus, n79, t79, rcn, v.get("station"),
+            v.get("metro") or [], v.get("city") or [], v.get("metro_area") or []]
+
+
+MONEY = {"cost", "capex", "land", "om", "value"}
+
+
+def sig3(v):
+    """Round dollar figures to 3 significant figures: the same on screen, and it compresses far better."""
+    if not isinstance(v, (int, float)) or v != v or v == 0:
+        return v
+    from math import floor, log10
+    d = 3 - int(floor(log10(abs(v)))) - 1
+    return int(round(v, d)) if d <= 0 else round(v, d)
 
 def labels(g, col):
     g = g[g[col].notna()].copy()
@@ -279,6 +364,20 @@ def main():
     det = {}
     dd = d.set_index("GEOID")
     gp = json.loads((MOD / "gaps.json").read_text()) if (MOD / "gaps.json").exists() else {"bg": {}, "plans": {}}
+    sb_d = {}
+    sbp = SRC / "map_sb79.geojson"
+    if sbp.exists():
+        sbg = gpd.read_file(sbp)
+        sbg = sbg[sbg.geom_type.eq("Point") & sbg.SB79_TIER.notna()].to_crs(M) if "SB79_TIER" in sbg else sbg.iloc[:0]
+        bpt = gpd.read_file(SRC / "map_block_groups.geojson")[["GEOID", "geometry"]].to_crs(M)
+        bpt["geometry"] = bpt.geometry.representative_point()
+        for tier in ("T1", "T2"):
+            sub = sbg[sbg.SB79_TIER.astype(str).str.upper().eq(tier)]
+            if len(sub):
+                j = gpd.sjoin_nearest(bpt, sub[["geometry"]], how="left", distance_col="d").drop_duplicates("GEOID")
+                for gid_, dd_ in zip(j.GEOID, j.d):
+                    sb_d.setdefault(gid_, [None, None])[0 if tier == "T1" else 1] = round(float(dd_))
+    corr = json.loads((MOD / "corridors.json").read_text()) if (MOD / "corridors.json").exists() else {}
     ef = MOD / "eifd.json"
     eifd = json.loads(ef.read_text()) if ef.exists() else {"meta": {}, "bg": {}}
     for gid, x in details.items():
@@ -293,7 +392,7 @@ def main():
              "pa": g_("park_acres_half_mile"), "pn": g_("park_nearest_m", 0), "bt": g_("bus_max_tph_400m", 0),
              "rm": num(min(r.get("rail_stop_nearest_m", np.nan) if r.get("rail_stop_nearest_m") == r.get("rail_stop_nearest_m") else 1e9,
                            r.get("rail_station_nearest_m", np.nan) if r.get("rail_station_nearest_m") == r.get("rail_station_nearest_m") else 1e9), 0),
-             "pop": g_("population", 0), "inc": g_("median_household_income", 0), "rent": g_("median_gross_rent", 0), "yb": g_("median_year_built", 0),
+             "pop": g_("population", 0), "inc": g_("median_household_income", 0), "rent": g_("median_gross_rent", 0), "fire": g_("fire_vh_share", 2), "yb": g_("median_year_built", 0),
              "sf": num(100 * r.sf_share, 0) if r.get("sf_share") == r.get("sf_share") else None, "nocar": num(100 * r.no_car_share, 0) if r.get("no_car_share") == r.get("no_car_share") else None,
              "st": g_("street_trees", 0), "ts": g_("vacant_tree_sites", 0), "tg": g_("tc_gap", 0),
              "pcr": g_("property_crimes", 0) if r.get("crime_covered") else None, "ksi": g_("crashes_ksi", 0), "dump": g_("illegal_dumping", 0) if r.get("in_311") else None,
@@ -304,7 +403,12 @@ def main():
             m["rm"] = None
         m = {k: v for k, v in m.items() if v is not None and not (isinstance(v, float) and np.isnan(v))}
         if gid in eifd["bg"]:
-            m["e"] = eifd["bg"][gid]
+            e_ = dict(eifd["bg"][gid])
+            e_["t"] = [[t_, sig3(v_)] for t_, v_ in e_.get("t", [])]
+            for k_ in ("av", "avr", "avc"):
+                if k_ in e_:
+                    e_[k_] = sig3(e_[k_])
+            m["e"] = e_
         if gid in gp["bg"]:
             gg = gp["bg"][gid]
             m["gp"] = {"g": [[r_[0]] + r_[2:8] for r_ in gg["g"]], "s": [[r_[0]] + r_[2:] for r_ in gg["s"]]}
@@ -316,8 +420,12 @@ def main():
             m["z"] = {"j": r.get("zone_juris"), "top": r.get("zone_top"), "cov": num(r.get("zone_coverage"), 2),
                       "sh": {c: num(r.get("zshare_" + re.sub(r"\W+", "_", c).strip("_")), 3) for c in ZCATS
                              if (r.get("zshare_" + re.sub(r"\W+", "_", c).strip("_")) or 0) > 0}}
+        if gid in corr:
+            m["co"] = {k: compact_corridor(v) for k, v in corr[gid].items()}
+        if gid in sb_d:
+            m["sb"] = sb_d[gid]
         m["tr"] = [num(r.get("rail_station_nearest_m"), 0), num(r.get("rail_stop_nearest_m"), 0), num(r.get("bus_max_tph_400m"), 0), num(r.get("bus_max_tph_800m"), 0)]
-        det[gid] = {"r": [[num(rec[k], 3) if isinstance(rec[k], float) else rec[k] for k in keys] for rec in x["recs"]], "m": m}
+        det[gid] = {"r": [[sig3(rec[k]) if k in MONEY else (num(rec[k], 3) if isinstance(rec[k], float) else rec[k]) for k in keys] for rec in x["recs"]], "m": m}
 
     L = {"freeways": layer("freeways", 40, ["name"], {"name": "n"}, prec=4), "arterials": merged_lines("arterials", 25),
          "parks": layer("parks", 20, ["name", "acres"], {"name": "n", "acres": "a"}, min_area_ac=2, prec=5), "water": layer("water", 40, [], prec=4),
@@ -430,7 +538,7 @@ def main():
         src_rows.append([f"EIFD calculator: Auditor-Controller {em.get('factor_year')} Modified ATI ratios (AF49)", '<span class="pill ok">loaded</span>',
                          f"{em.get('tras_with_factors', 0):,} tax-rate areas; {em.get('rows', 0):,} agency shares; report dated {em.get('prepared')}"])
     pr = sorted((und.get("profit") or {}).items(), key=lambda kv: -kv[1]["total"])[:30]
-    profit_rows = [[k.split("|")[0], k.split("|")[1], f"${v['total'] / 1e6:,.1f}M", f"{v['pct']:.1%}", f"${v['per_home']:,.0f}",
+    profit_rows = [[k.split("|")[0], k.split("|")[1], f"${v['total'] / 1e6:,.1f}M", f"{v['pct']:.1%}" if v.get("pct") is not None else "few homes", f"${v['per_home']:,.0f}",
                     f"${v['proj'] / 1e6:,.1f}M", f"${v['land'] / 1e6:,.1f}M", ", ".join(v.get("soon") or []) or "–"] for k, v in pr]
     bg_hood = dict(zip(d.GEOID, d.hood.fillna(d.city) + ", " + d.city))
     site_rows = [[s_["k"] + (f" ({s_['nm']})" if s_.get("nm") else ""), (s_.get("ad") or bg_hood.get(s_["gid"], "")), f"{s_['ac']:,.1f}",
@@ -497,7 +605,7 @@ def main():
             pts = cent.loc[idx]
             c = pts.union_all().centroid if hasattr(pts, "union_all") else pts.unary_union.centroid
             search[nm] = bg.GEOID.loc[pts.distance(c).idxmin()]
-    bundle = {"meta": {"built": date.today().isoformat(), "default_bg": default, "search": search}, "bgs": bgs, "details": det, "catalog": lib, "funding": meta.get("funding", {}), "eifd": eifd["meta"], "upgrades": meta.get("owner_upgrades", []), "plans": gp["plans"], "gap_labels": {r_[0]: r_[1] for v in gp["bg"].values() for r_ in v["g"] + v["s"]},
+    bundle = {"meta": {"built": date.today().isoformat(), "default_bg": default, "search": search, "rent_med": float(d.median_gross_rent.median())}, "bgs": bgs, "details": det, "catalog": lib, "funding": meta.get("funding", {}), "eifd": eifd["meta"], "r10": round10_bundle(), "upgrades": meta.get("owner_upgrades", []), "plans": gp["plans"], "gap_labels": {r_[0]: r_[1] for v in gp["bg"].values() for r_ in v["g"] + v["s"]},
               "under": {"sites": und.get("sites", []), "profit": und.get("profit", {}), "soon": und.get("soon", {}), "assumptions": und.get("assumptions", {})},
               "zone_rules": pd.read_csv(ROOT / "model" / "round6" / "zone_rules.csv").to_dict("records"),
               "layers": L, "hoods": hoods_js, "hood_labels": labels(bgn, "hood"), "cities": city_js,

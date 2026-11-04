@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-02T23:14:06.439705+00:00",
+ "generated_at": "2026-11-04T05:05:54.762543+00:00",
  "sources": {
   "projects": {
    "lahd_rows": 616,
@@ -147,17 +147,59 @@
     "SCORE"
    ],
    "apr_la_rows": 144216,
-   "total": 94399,
+   "boe_cip_rows": 1182,
+   "boe_fields": [
+    "geometry",
+    "ID",
+    "GeocodingID",
+    "Geotype",
+    "GeocodeDate",
+    "PROJECTID",
+    "NavLA_CIP",
+    "NavLA_Archive",
+    "ProgramID",
+    "ProgramName",
+    "ProjectTitle",
+    "WO_Status",
+    "PM_Name",
+    "PM_Phone",
+    "PM_EMail",
+    "ProjectActive",
+    "ProjectValid",
+    "ConsStartDate",
+    "ConsEndDate",
+    "ScheduledDesignStart",
+    "LastVisited",
+    "PrimaryWorkOrder",
+    "CouncilDistrict",
+    "ConstructionCost",
+    "ProjectNumber",
+    "CurrentPhaseDescription",
+    "CurrentPhasePercentComplete",
+    "ActivePhaseName",
+    "ActivePhasePercent",
+    "LastVisitedBy",
+    "ConstPercComp",
+    "StartDate",
+    "EndDate",
+    "TOOLTIP",
+    "NLA_URL"
+   ],
+   "total": 95581,
    "by_kind": {
     "housing completed": 43427,
     "housing permitted": 26936,
     "housing approved": 11440,
     "new ADU": 6015,
     "new house": 4914,
+    "city capital project": 1182,
     "affordable housing": 616,
     "new building": 564,
     "new apartments": 487
    },
+   "easements": 696,
+   "known_sites": 75,
+   "known_sites_located": 67,
    "SCAG Housing Element sites_rows": 173711,
    "SCAG Housing Element sites_fields": [
     "geometry",
@@ -221,7 +263,7 @@
    "he_sites": 175336,
    "he_capacity": 265013.57952251995,
    "ok": true,
-   "seconds": 296.5
+   "seconds": 368.3
   }
  }
 }

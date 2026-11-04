@@ -1,0 +1,43 @@
+research_id,name,address,expected,located,map_shows,ok,detail
+S010,Cumulus District / VOX,"3333 S La Cienega Boulevard, Los Angeles CA 90016",not underused,True,marked built,True,"parking lot, 10.88 ac: Already built: 300 homes completed in 2022 at 3311 S LA CIENEGA BLVD, Los Angeles (HCD housing progress report); not counted as underused"
+S011,The Grand LA,"Grand Avenue across from Walt Disney Concert Hall, Los Angeles, CA",not underused,False,,,address not geocoded
+S012,Park Fifth,"W 5th Street and S Olive Street, Los Angeles, CA",not underused,True,not listed,True,
+S013,Ivy Station,"Washington Boulevard and National Boulevard, Culver City / Los Angeles, CA",not underused,True,marked built,True,"parking lot, 0.7 ac: Already built: research: Ivy Station: completed (2021-11-10): Ivy Station; not counted as underused"
+S014,LA Plaza Village,"El Pueblo / Cesar Chavez Avenue, Los Angeles, CA",not underused,False,,,address not geocoded
+S015,Hallasan,"696 S New Hampshire Avenue, Los Angeles, CA",not underused,True,marked building,True,"parking lot, 1.4 ac: Under construction: 255 homes permitted / under construction in 2023 at 695 S VERMONT AVE 1-255, Los Angeles (HCD housing progress report); "
+S016,Alexandria HQ,"380 E Union Street, Pasadena, CA",not underused,True,marked built,True,"parking lot, 0.36 ac: Already built: research: Alexandria HQ: completed (2019-11-19): Alexandria HQ; not counted as underused"
+S017,Inspire Hollywood,"1522 Cassil Place, Los Angeles, CA",not underused,True,marked built,True,"parking lot, 1.76 ac: Already built: 200 homes completed in 2024 at 1530 N CASSIL PL, Los Angeles (HCD housing progress report); not counted as underused"
+S018,Ariadne Getty Foundation Senior Housing,"1127 N Las Palmas Avenue, Los Angeles, CA",not underused,True,marked built,True,"parking lot, 1.75 ac: Already built: 222 homes completed in 2023 at 1119 N MCCADDEN PL 1-26, Los Angeles (HCD housing progress report); not counted as underused"
+S019,City Center Motel courtyard conversion,"255 Atlantic Avenue, Long Beach, CA",not underused,True,not listed,True,
+S020,Rosa's Place,"501 E 5th Street, Los Angeles, CA",not underused,True,marked building,True,"vacant, 0.52 ac: Under construction: 98 homes permitted / under construction in 2025 at 448 S SAN PEDRO ST 1-98, Los Angeles (HCD housing progress report); n"
+S021,738 Normandie,"738 S Normandie Avenue, Los Angeles, CA",not underused,True,not listed,True,
+S022,600 San Pedro,"600 S San Pedro Street, Los Angeles, CA",not underused,True,marked built,True,"parking lot, 1.28 ac: Already built: 209 homes completed in 2024 at 401 E 6TH ST, Los Angeles (HCD housing progress report); not counted as underused"
+S023,Bethel Manor,"7924 S Western Avenue, Los Angeles, CA",not underused,True,not listed,True,
+S024,Brick and Machine,"Washington Boulevard and Delmas Terrace, Culver City, CA",not underused,True,not listed,True,
+S025,6401 Wilshire,"6401 Wilshire Boulevard, Los Angeles, CA",not underused,True,marked built,True,"parking lot, 0.87 ac: Already built: 112 homes completed in 2025 at 6401 W WILSHIRE BLVD, Los Angeles (HCD housing progress report); not counted as underused"
+S026,Bryson Legacy,"2721 Wilshire Boulevard, Los Angeles, CA",not underused,True,not listed,True,
+S027,640 St.Andrews,"626 S St Andrews Place, Los Angeles, CA",not underused,True,not listed,True,
+S028,Emerald,"Olive/Hill/14th Streets, Los Angeles, CA",not underused,False,,,address not geocoded
+S029,456 West,"456 W 9th Street, San Pedro, Los Angeles, CA",not underused,True,marked building,True,"parking lot, 0.43 ac: Under construction: research: 456 West: under construction (2022-08-25): 456 West; not counted as underused"
+S030,Chesterfield,"4719 S Normandie Avenue /48th Street, Los Angeles, CA",not underused,True,not listed,True,
+S031,444 W.5th,"444 W 5th Street, San Pedro, Los Angeles, CA",not underused,True,marked building,True,"parking lot, 0.42 ac: Under construction: research: 444 W.5th: under construction (2024-03-26): 444 W.5th; not counted as underused"
+S032,684 New Hampshire,"684 S New Hampshire Avenue, Los Angeles, CA",not underused,True,marked building,True,"parking lot, 1.4 ac: Under construction: 255 homes permitted / under construction in 2023 at 695 S VERMONT AVE 1-255, Los Angeles (HCD housing progress report); "
+S033,Madison Place,"127 N Madison Avenue, Pasadena, CA",not underused,True,marked building,True,"parking lot, 1.55 ac: Under construction: 49 homes permitted / under construction in 2024 at 127 N MADISON AVE MIXED USE
+PASADENA, CA 91101, Pasadena (HCD housing"
+S034,Cedars-Sinai Marina replacement hospital,"4640 Lincoln Boulevard, Marina del Rey / Los Angeles, CA",not underused,True,not listed,True,
+S035,Wilshire/Catalina apartments,"Catalina Street south of Wilshire Boulevard, Los Angeles, CA",not underused,False,,,address not geocoded
+S036,The Magnolia,"Broadway and Magnolia Avenue, Long Beach, CA",not underused,True,not listed,True,
+S037,Oceanaire,"Ocean Boulevard and Pine Avenue, Long Beach, CA",not underused,True,marked built,True,"parking lot, 1.58 ac: Already built: the Assessor values the buildings here at $1.1M (land $0.6M), so something large is already built (a new building or a parkin"
+S038,100 West Walnut,"100 W Walnut Street, Pasadena, CA",not underused,True,not listed,True,
+S039,1000 S.Hill / Olympic+Hill,"1000 S Hill Street, Los Angeles, CA",not underused,True,not listed,True,
+S040,5600 Hollywood,"5600 Hollywood Boulevard, Los Angeles, CA",underused,True,not listed,False,
+S041,Mercy Claremont,"1364 N Towne Avenue, Claremont, CA",underused,True,not listed,False,
+S042,820 Laguna,"820 N Laguna Avenue, Los Angeles, CA",underused,True,not listed,False,
+S043,7715 Crenshaw,"7715 S Crenshaw Boulevard, Los Angeles, CA",underused,True,not listed,False,
+S044,ROW DTLA parking,"787 S Alameda Street, Los Angeles, CA",underused,True,listed as underused,True,"lightly built commercial, 9.03 ac: Jobs: small-industrial or maker space; housing would need a rezoning"
+S045,402 Atlantic,"402 Atlantic Avenue, Long Beach, CA",underused,True,not listed,False,
+S046,Eaton Wash stormwater site,"East of Eaton Wash by Eaton Blanche Park, Pasadena, CA",underused,False,,,address not geocoded
+S047,1340 Glendale,"1340 N Glendale Boulevard, Los Angeles, CA",underused,True,not listed,False,
+S048,898 Crenshaw,"898 S Crenshaw Boulevard, Los Angeles, CA",underused,True,not listed,False,
+S049,421 E.4th,"421 E 4th Street, Long Beach, CA",underused,True,not listed,False,
+S058,Hollywood Arts Collective,"1630 Schrader Boulevard /1633 N Wilcox Avenue, Los Angeles, CA",not underused,True,marked built,True,"parking lot, 0.33 ac: Already built: research: Hollywood Arts Collective: completed (2023–2024 reported milestones): Hollywood Arts Collective; not counted as und"

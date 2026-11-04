@@ -108,7 +108,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        stage: [geo, osm, transit, sales, crime, requests311, crashes, trees, parcels, assets, tra, assessed, basemap, research_check, zoning, underused, projects]
+        stage: [geo, osm, transit, sales, crime, requests311, crashes, trees, parcels, assets, tra, assessed, basemap, research_check, zoning, underused, projects, sb79]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -122,7 +122,7 @@ jobs:
           key: nroi-county-${{ matrix.stage }}-${{ github.run_id }}
           restore-keys: nroi-county-${{ matrix.stage }}-
       - run: pip install -r neighborhood-roi/pipeline/requirements.txt
-      - if: matrix.stage == 'osm' || matrix.stage == 'basemap'
+      - if: matrix.stage == 'osm' || matrix.stage == 'basemap' || matrix.stage == 'underused'
         run: sudo apt-get update -qq && sudo apt-get install -y -qq osmium-tool
       - run: rm -rf neighborhood-roi/data/derived && mkdir -p neighborhood-roi/data/derived
       - name: Build county stage

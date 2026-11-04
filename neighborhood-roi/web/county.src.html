@@ -35,7 +35,23 @@
 .fac-pick { display: inline-block; } .fac-pick summary { cursor: pointer; color: var(--ink-2); } .fac-pick > div { position: absolute; z-index: 1000; background: var(--sheet); border: 1px solid var(--rule-strong); border-radius: 8px; padding: 6px 10px; box-shadow: 0 4px 14px rgba(0,0,0,.15); }
 .fac { font: 700 9px/14px var(--mono); width: 14px; height: 14px; border-radius: 50%; color: #fff; text-align: center; border: 1.5px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.35); }
 .lbl-zone { font: 600 10px/1 var(--mono); color: var(--ink-2); white-space: nowrap; pointer-events: none; text-shadow: 0 0 2px var(--sheet), 0 0 3px var(--sheet); }
+.site-done { font-weight: 600; color: #2f9e44; margin-bottom: 3px; }
+.fund { margin: 8px 0; padding: 8px 10px; border: 1px solid var(--rule); border-radius: 8px; } .fund .kv { margin-top: 6px; }
+.fund-bar { height: 8px; border-radius: 4px; background: var(--rule); margin-top: 6px; overflow: hidden; } .fund-bar i { display: block; height: 100%; background: #2f9e44; }
+.zone-key { background: var(--sheet); color: var(--ink); border: 1px solid var(--rule); border-radius: 8px; padding: 8px 10px; max-width: 300px; font-size: 12px; line-height: 1.35; box-shadow: 0 2px 8px rgba(0,0,0,.18); }
+.zone-key .zk-row { display: flex; gap: 6px; margin-top: 5px; } .zone-key .zk-row i { flex: none; width: 10px; height: 10px; margin-top: 3px; border-radius: 2px; }
+.zone-tip { width: 280px; white-space: normal; } .zplain div { margin: 3px 0; }
 .zkey { display: inline-flex; align-items: center; gap: 4px; margin-right: 10px; } .zkey i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.house-loading{display:flex;gap:10px;align-items:flex-start;margin:8px 0;padding:9px 11px;border-radius:8px;background:var(--sheet-2,rgba(127,127,127,.12));border:1px solid var(--rule);font-size:13px;line-height:1.45}
+.spin{flex:none;width:14px;height:14px;margin-top:3px;border-radius:50%;border:2px solid var(--rule);border-top-color:#e8590c;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.sticky-head thead th { position: sticky; top: 0; z-index: 2; background: var(--sheet); box-shadow: 0 -24px 0 var(--sheet), 0 1px 0 var(--rule-strong); padding-top: 4px; padding-bottom: 4px; }
+table.facts { width: 100%; border-collapse: collapse; } table.facts td { padding: 3px 6px 3px 0; border-top: 1px solid var(--rule); vertical-align: top; } table.facts td:first-child { color: var(--ink-2); width: 34%; }
+#addr-results { position: absolute; z-index: 1200; left: 0; right: 0; top: 100%; background: var(--sheet); border: 1px solid var(--rule-strong); border-radius: 8px; box-shadow: 0 6px 18px rgba(0,0,0,.18); overflow: hidden; }
+#addr-results button { display: block; width: 100%; text-align: left; padding: 7px 10px; font: 500 13px var(--body); color: var(--ink); background: none; border: 0; border-top: 1px solid var(--rule); cursor: pointer; }
+#addr-results button:hover { background: var(--ground); }
+.hnum { font: 700 10px/1 var(--mono); color: #111; background: rgba(255,255,255,.85); padding: 1px 3px; border-radius: 3px; pointer-events: none; }
+.house-tag { font: 700 12px/1 var(--body); color: #fff; background: #e8590c; padding: 4px 7px; border-radius: 6px; white-space: nowrap; box-shadow: 0 1px 4px rgba(0,0,0,.35); pointer-events: none; }
 .you { width: 14px; height: 14px; border-radius: 50%; background: #2b7de9; border: 3px solid #fff; box-shadow: 0 0 0 2px #2b7de9; }
 </style>
 </head>
@@ -63,7 +79,7 @@
       <option value="bus">Buses per hour at busiest stop</option>
       <option value="sites">Open street-tree sites</option>
     </select></div>
-  <div class="ctl grow"><label for="q">Find a neighborhood or city</label><input id="q" type="search" list="names" placeholder="Carlson Park, Boyle Heights, Pasadena…" autocomplete="off"><datalist id="names"></datalist></div>
+  <div class="ctl grow"><label for="q">Find a neighborhood or city</label><input id="q" type="search" list="names" placeholder="Neighborhood, city, or a street address…" autocomplete="off"><datalist id="names"></datalist></div>
   <fieldset class="layers"><legend>Show on map</legend>
     <label><input type="checkbox" id="l-roads" checked> Streets &amp; names</label>
     <label><input type="checkbox" id="l-transit" checked> Rail &amp; frequent buses</label>
@@ -73,6 +89,8 @@
     <label><input type="checkbox" id="l-under" checked> Underused land (parking, golf, vacant)</label>
     <label><input type="checkbox" id="l-proj" checked> Housing &amp; projects under way</label>
     <label><input type="checkbox" id="l-zone"> Zoning (zoom in)</label>
+    <label><input type="checkbox" id="l-lots" checked> Lot lines (zoom 17+, online)</label>
+    <label><input type="checkbox" id="l-aerial"> Aerial photo (USGS, online)</label>
     <label><input type="checkbox" id="l-amen"> Courts, pools, dog parks</label>
     <label><input type="checkbox" id="l-hoods" checked> Neighborhood lines</label>
     <label><input type="checkbox" id="l-tiles"> Street map underlay (online)</label>
@@ -128,7 +146,9 @@ function colorFor(p) {
   return ramp(METRICS[k].ramp)[i];
 }
 const zoningOn = () => typeof map !== "undefined" && map && map._loaded && $("#l-zone").checked && map.getZoom() >= 14;
-const styleBg = f => ({ fillColor: colorFor(f.properties), fillOpacity: zoningOn() ? 0.12 : tiles ? 0.45 : 0.75, color: css("--block-line"), weight: 0.4 });
+const streetLevel = () => typeof map !== "undefined" && map && map._loaded && map.getZoom() >= 17;
+const aerialOn = () => !!$("#l-aerial") && $("#l-aerial").checked;
+const styleBg = f => ({ fillColor: colorFor(f.properties), fillOpacity: zoningOn() ? 0.12 : aerialOn() ? (streetLevel() ? 0.05 : 0.3) : streetLevel() ? 0.22 : tiles ? 0.45 : 0.75, color: css("--block-line"), weight: 0.4 });
 function legend() {
   const k = $("#metric").value, el = $("#legend");
   if (k === "top") {
@@ -194,7 +214,7 @@ function zoomed() {
   toggle(layers.art, z >= 12); toggle(layers.walls, z >= 14); toggle(layers.stops, z >= 13); toggle(layers.amen, z >= 13);
   toggle(layers.hoods, z >= 12); toggle(layers.hoodLabels, z >= 13 && z < 15); toggle(layers.cityLabels, z >= 10 && z < 13);
   drawStreets(); drawLabels(); drawZoning(); drawFacilities(); drawUnder(); drawProjects();
-  const zon = zoningOn(); if (bgs && zon !== zoomed._last) { zoomed._last = zon; bgs.setStyle(styleBg); }
+  const zon = zoningOn() + "|" + streetLevel(); if (bgs && zon !== zoomed._last) { zoomed._last = zon; bgs.setStyle(styleBg); }
 }
 
 // ---------------- streets, names, shields and park labels (drawn only for what's on screen)
@@ -352,7 +372,7 @@ function drawFacilityAreas() {
 
 // ---------------- work already under way: housing approved/permitted/completed (HCD reports), LA affordable pipeline, new-building permits
 const PJ_STYLE = { "housing completed": "#15803d", "housing permitted": "#2563eb", "housing approved": "#7c3aed", "affordable housing": "#db2777",
-  "new apartments": "#0891b2", "new ADU": "#ca8a04", "new house": "#a16207", "new building": "#64748b" };
+  "new apartments": "#0891b2", "new ADU": "#ca8a04", "new house": "#a16207", "new building": "#64748b", "city capital project": "#0f766e" };
 function drawProjects() {
   if (!map._loaded || !layers.proj) return;
   layers.proj.clearLayers();
@@ -374,13 +394,15 @@ const UCOL = { "parking lot": "#6b7280", "golf course": "#65a30d", "vacant": "#d
 const _uDrawn = new Map();
 function siteHtml(s) {
   const A = D.under.assumptions || {};
-  return `<div class="small" style="max-width:300px"><b>${esc(s.k[0].toUpperCase() + s.k.slice(1))}</b>${s.nm ? " · " + esc(s.nm) : ""}${s.ad ? "<br>" + esc(s.ad) : ""}
+  const BS = { built: "Already built", building: "Under construction", planned: "Project already approved" };
+  return `<div class="small" style="max-width:300px">${s.bs ? `<div class="site-done">${BS[s.bs]}: not counted as underused</div>` : ""}<b>${esc(s.k[0].toUpperCase() + s.k.slice(1))}</b>${s.bs ? ' <span class="muted">(per the Assessor\'s use code, which can lag construction)</span>' : ""}${s.nm ? " · " + esc(s.nm) : ""}${s.ad ? "<br>" + esc(s.ad) : ""}
     <br>${s.ac.toFixed(s.ac < 10 ? 2 : 0)} acres${s.use ? " · " + esc(s.use) : ""}
     ${s.lav != null ? `<br>Assessed land value: <b>${fmt$(s.lav)}</b>${s.by ? ` (Prop 13 base from ${s.by})` : ""}` : ""}
     ${s.mkt != null ? `<br>Estimated market land value: <b>~${fmt$(s.mkt)}</b>` : ""}
     <br>Zoning: ${esc(s.z || s.zc || "unknown")}${s.rail != null && s.rail < 805 ? ` · ${(s.rail / 1609).toFixed(2)} mi from ${esc(s.st || "rail")}${s.sts === "coming" ? " (station under construction)" : ""}` : ""}
+    ${s.own ? `<br><b>Publicly owned:</b> ${esc(s.own)} (County public-agency parcels)` : ""}${s.known ? `<br><b>Known site:</b> ${esc(s.known)}` : ""}${s.ease ? `<br><b>Conservation easement:</b> recorded easement on this land (state CCED); building is generally not allowed.` : ""}
     ${s.he != null ? `<br><b>Already planned:</b> this site is in the city's Housing Element inventory${s.he ? ` for ~${fmtN(s.he)} homes` : ""}.` : ""}
-    <br><b>Could be:</b> ${esc(s.idea)}
+    <br><b>${s.bs ? "Status" : "Could be"}:</b> ${esc(s.idea)}
     ${s.margin != null && s.homes ? `<br>Rough development margin: <b>${s.margin >= 0 ? "~" + fmt$(s.margin) : "negative (" + fmt$(s.margin) + ")"}</b> (${fmtN(s.homes)} homes)` : ""}
     <br><span class="muted">Screening estimate: apartment value from LA rents and cap rates, build cost from LA case studies (round-7 research); land prices and fees are estimates.</span></div>`;
 }
@@ -391,11 +413,113 @@ function drawUnder() {
   for (const k of want) {
     if (_uDrawn.has(k)) continue;
     const g = L.layerGroup((U.cells[k] || []).map(([sid, rings]) => { const s = D.under.sites[sid]; if (!s) return null; const col = UCOL[s.k] || "#888";
-      return L.polygon(rings.map(decodeLine), { color: col, weight: 1.4, fillColor: col, fillOpacity: .35, dashArray: s.k === "parking lot" ? "3 3" : null })
-        .bindTooltip(`${esc(s.k)} · ${s.ac.toFixed(1)} ac${s.mkt ? " · ~" + fmt$(s.mkt) + " land" : ""} (click for more)`, { sticky: true }).bindPopup(() => siteHtml(s), { maxWidth: 320 })
+      const done = !!s.bs;
+      return L.polygon(rings.map(decodeLine), done ? { color: "#868e96", weight: 1.2, fillColor: "#868e96", fillOpacity: .08, dashArray: "1 4" }
+          : { color: col, weight: 1.4, fillColor: col, fillOpacity: .35, dashArray: s.k === "parking lot" ? "3 3" : null })
+        .bindTooltip(done ? `${{ built: "already built", building: "under construction", planned: "project approved" }[s.bs]} (was listed as ${esc(s.k)}) · click for details`
+          : `${esc(s.k)} · ${s.ac.toFixed(1)} ac${s.mkt ? " · ~" + fmt$(s.mkt) + " land" : ""} (click for more)`, { sticky: true }).bindPopup(() => siteHtml(s), { maxWidth: 320 })
         .on("click", () => { if (selected !== s.gid) select(s.gid, false); }); }).filter(Boolean));
     layers.under.addLayer(g); _uDrawn.set(k, g);
   }
+}
+
+// ---------------- plain-language zoning: what a zone code lets you build (summaries; the city's code is the authority)
+const ZBASE_LA = [
+  [/^OS$/, "Open space: parks and natural land; no homes."], [/^A1$/, "Agricultural: one home per 2+ acres, farming and animals."],
+  [/^A2$/, "Agricultural: one home per 5+ acres, farming."], [/^RA$/, "Suburban: one house per 17,500+ sq ft lot, some animals."],
+  [/^RE(\d+)$/, m => `Estate homes: one house per ${m[1]},000+ sq ft lot (plus ADUs).`], [/^RS$/, "Suburban: one house per 7,500+ sq ft lot (plus ADUs)."],
+  [/^R1[VFRH]\d?$/, "One house per 5,000+ sq ft lot (plus ADUs), with stricter house-size limits to curb mansions."],
+  [/^R1$/, "One house per 5,000+ sq ft lot, plus an ADU and junior ADU; SB 9 can allow two homes."],
+  [/^RU$|^RZ/, "Small-lot houses: one house per small lot (about 2,500–3,500 sq ft)."], [/^RW1$/, "Venice waterways: one house per lot."],
+  [/^RW2$/, "Venice waterways: up to two homes per lot."], [/^R2$/, "Two-family: a duplex or two houses per 5,000 sq ft lot."],
+  [/^RD(\d(\.\d)?)$/, m => `Townhomes or small apartments: one home per ${fmtN(+m[1] * 1000)} sq ft of lot.`],
+  [/^R3$/, "Apartments: about one home per 800 sq ft of lot (a 5,000 sq ft lot holds ~6)."], [/^RAS3$/, "Apartments with shops allowed on the ground floor (R3 density)."],
+  [/^R4$/, "Apartments: about one home per 400 sq ft of lot (a 5,000 sq ft lot holds ~12)."], [/^RAS4$/, "Apartments with ground-floor shops (R4 density)."],
+  [/^R5$/, "High-rise apartments: about one home per 200 sq ft of lot."], [/^RMP$/, "Mobile home park."],
+  [/^CR$/, "Limited commercial: offices, banks, clinics; homes at R4 density."], [/^C1$/, "Neighborhood shops and offices; homes allowed at R3 density."],
+  [/^C1\.5$/, "Shops, offices and hotels; homes allowed at R4 density."], [/^C2$/, "Commercial: shops, restaurants, offices; apartments allowed at R4 density."],
+  [/^C4$/, "Commercial like C2 (a few uses such as auto repair excluded); apartments at R4 density."], [/^C5$/, "Commercial including light industry; apartments at R4 density."],
+  [/^CM$/, "Commercial-manufacturing: workshops, wholesale, offices; apartments at R3 density."], [/^MR[12]$/, "Restricted industrial: light industry and offices, no new homes."],
+  [/^M1$/, "Limited industrial: light manufacturing, warehouses; no new homes."], [/^M2$/, "Light industrial: manufacturing, storage; no homes."],
+  [/^M3$/, "Heavy industrial; no homes."], [/^P$/, "Parking lots (often paired with a commercial zone next door)."], [/^PB$/, "Parking buildings."],
+  [/^PF$/, "Public facilities: schools, fire stations, government buildings."], [/^SL$/, "Submerged lands (harbor and ocean)."],
+  [/^HI$|^HJ$|^HR$/, "Hybrid industrial: light industry and creative offices, with live-work units."], [/^NI$/, "Neighborhood industrial: small industry and workshops."],
+  [/^U[RVICN]\d?$|^(RI|IG|GC)$/, "Zone from a specific plan (for example the Cornfield Arroyo Seco plan): see that plan's rules."],
+  [/^LAX|^ADP|^PV|^WC|^CEC|^USC|^PVSP/, "Covered by a specific plan or airport plan: see that plan's rules."],
+];
+const ZHD_LA = { "1": "height district 1: no fixed height in most zones, but floor area is capped (1.5× the lot in commercial zones, 3× in residential)",
+  "1L": "height limit 75 ft (about 6 stories)", "1VL": "height limit 45 ft (about 3–4 stories)", "1XL": "height limit 30 ft (2 stories)", "1SS": "one story only",
+  "2": "floor area up to 6× the lot (mid-rise)", "3": "floor area up to 10× the lot (high-rise)", "4": "floor area up to 13× the lot (high-rise)" };
+const ZTAG = { Q: "Q conditions: extra site-specific limits from the ordinance that zoned it", T: "T (tentative): the zone takes effect only after conditions such as street improvements are met",
+  F: "F: a special condition recorded for this site (check ZIMAS)", D: "D limit: height or floor area capped below the district's normal limit",
+  CPIO: "CPIO overlay: community-plan rules on design and height, sometimes with bonuses for affordable homes", HPOZ: "historic district: exterior changes need design review",
+  O: "oil drilling district", RIO: "LA River overlay: landscaping and design rules near the river", CUGU: "Clean Up Green Up overlay: stricter rules for polluting uses",
+  SN: "sign district", K: "horsekeeping allowed", POD: "pedestrian-oriented district: storefronts and limits on drive-throughs", CDO: "community design overlay",
+  HCR: "hillside construction rules", RFA: "residential floor-area limits", CA: "commercial and artcraft district", FH: "fence-height district", MU: "mixed-use district",
+  NSO: "neighborhood stabilization overlay", RG: "rear-yard rules", SP: "specific plan" };
+const ZBASE_CO = [
+  [/^R-1$/, "One house per lot (usually 5,000+ sq ft), plus ADUs; SB 9 can allow two homes."], [/^R-2$/, "Two-family: a duplex or two houses per lot."],
+  [/^R-3$/, "Apartments, limited density (about 30 homes per acre)."], [/^R-4$/, "Apartments, medium density (about 50 homes per acre)."],
+  [/^R-5$/, "High-density apartments."], [/^R-A$/, "Houses on large lots with small farm animals."], [/^RPD$/, "Planned residential development (density set by the plan)."],
+  [/^A-1$/, "Light agriculture: houses on large lots, some farming and animals."], [/^A-2$/, "Heavy agriculture: farming and ranching, houses on large lots."],
+  [/^C-1$/, "Restricted business: offices and small shops."], [/^C-2$/, "Neighborhood shops and services; homes allowed in mixed-use projects."],
+  [/^C-3$/, "General commercial; homes allowed in mixed-use projects."], [/^C-H$/, "Commercial highway: auto-oriented services."],
+  [/^C-M$/, "Commercial-manufacturing: workshops, wholesale."], [/^C-R$/, "Commercial recreation: amusement and sports uses."], [/^CPD$/, "Planned commercial development."],
+  [/^M-1$/, "Light manufacturing; no new homes."], [/^M-1\.5$/, "Restricted heavy manufacturing; no new homes."], [/^M-2/, "Heavy manufacturing; no homes."],
+  [/^MPD$/, "Planned industrial development."], [/^MXD/, "Mixed use: apartments with shops or offices."], [/^IT$/, "Institutional: schools, hospitals, churches."],
+  [/^O-S$|^OS$/, "Open space; no homes."], [/^W$/, "Watershed: protected natural land."], [/^SP$/, "Specific plan: see that plan's rules."], [/^B-[12]$/, "Buffer strip between zones."],
+  [/^PR$/, "Public recreation."], [/^SR-D$/, "Scientific research and development."],
+];
+const ZBASE_SC = [
+  [/^NU\d$/, "Rural homes on large lots (non-urban)."], [/^UR1$/, "Houses at up to ~2 per acre."], [/^UR2$/, "Houses at up to ~5 per acre."],
+  [/^UR3$/, "Houses and townhomes at up to ~11 per acre."], [/^UR4$/, "Townhomes and apartments at up to ~18 per acre."], [/^UR5$/, "Apartments at up to ~30 per acre."],
+  [/^CN$/, "Neighborhood shops."], [/^CC$/, "Community commercial."], [/^CR$/, "Regional commercial (malls, big stores)."], [/^CO$/, "Commercial offices."],
+  [/^MX/, "Mixed use: homes with shops or offices."], [/^BP$/, "Business park."], [/^I$/, "Industrial."], [/^OS$|^PI$/, "Open space or public land."],
+];
+const ZCAT_TXT = { "single-family": "Mostly one house per lot (plus ADUs).", "multifamily": "Apartments, townhomes or duplexes.", "commercial / mixed use": "Shops and offices; many commercial zones also allow apartments.",
+  "industrial": "Industry and warehouses; new homes generally not allowed.", "open space / public": "Parks, open space or public facilities.", "agricultural": "Farming, with homes on large lots.",
+  "parking": "Parking.", "other": "Special or planned zone: check the city's code." };
+function explainZone(code, cat, juris) {
+  const raw = String(code || "").toUpperCase().trim(); if (!raw) return null;
+  const tags = []; let t = raw;
+  t = t.replace(/[\[\(]([A-Z]+)[\]\)]/g, (_, x) => { for (const ch of x.length > 2 ? [x] : x.split("")) if (ZTAG[ch]) tags.push(ZTAG[ch]); return ""; });
+  const la = /los angeles/i.test(juris || "") && !/unincorporated/i.test(juris || ""), co = /unincorporated/i.test(juris || ""), sc = /santa clarita/i.test(juris || "");
+  let base = null, extra = [], bkey = null;
+  if (co || (!la && !sc && /^[A-Z]+-\d/.test(t))) {
+    const parts = t.split("-"); let b = parts[0];
+    if (parts.length > 1 && /^\d(\.\d)?$|^[A-Z]$/.test(parts[1])) { b += "-" + parts[1]; parts.splice(0, 2); } else parts.splice(0, 1);
+    const hit = ZBASE_CO.find(([re]) => re.test(b)); base = hit ? hit[1] : null; bkey = b;
+    for (const p of parts) { if (/^\d{4,}$/.test(p)) extra.push(`minimum lot ${fmtN(+p)} sq ft`); else if (/^\d+U$/.test(p)) extra.push(`up to ${parseInt(p)} homes per acre`);
+      else if (/^\d+$/.test(p)) extra.push(`minimum lot ${p} acre${+p > 1 ? "s" : ""}`); else if (p === "DP") extra.push("needs an approved development program");
+      else if (p === "P") extra.push("parking combining zone: parking lots allowed, the underlying zone still applies"); else if (ZTAG[p]) extra.push(ZTAG[p]); }
+  } else if (sc) {
+    const hit = ZBASE_SC.find(([re]) => re.test(t)); base = hit ? hit[1] : null; bkey = t;
+  } else {
+    const parts = t.split("-"); let b = parts.shift();
+    const qd = b.match(/^([QT]+)(?=[A-Z]{1,2}\d|C\d|R\d|RD|RE|RS|M\d|CM|CR|P)/); if (qd) { for (const ch of qd[1]) if (ZTAG[ch]) tags.push(ZTAG[ch]); b = b.slice(qd[1].length); }
+    const hit = ZBASE_LA.find(([re]) => re.test(b)); base = hit ? (typeof hit[1] === "function" ? hit[1](b.match(hit[0])) : hit[1]) : null; bkey = b;
+    for (let p of parts) { const d = /^(1L|1VL|1XL|1SS|[1-4])D$/.test(p); if (d) p = p.slice(0, -1);
+      if (ZHD_LA[p]) extra.push(ZHD_LA[p]); if (d) extra.push(ZTAG.D); else if (ZTAG[p]) extra.push(ZTAG[p]); }
+  }
+  // round-10 research rows (official zone names, verified height and floor-area limits)
+  const jz = la ? "Los Angeles" : co ? "Unincorporated LA County" : sc ? "Santa Clarita" : String(juris || "").replace(/ \(SCAG 2019\)$/, "");
+  const rz = ((D.r10 || {}).zp || {})[jz], row = rz && bkey ? rz[bkey] : null, facts = [];
+  if (row) {
+    if (!base && row[0]) base = row[0];
+    const hm = String(row[1]).match(/^(?:front )?(\d+)/);
+    if (hm) facts.push(/front/.test(row[1]) ? `height ${row[1].replace(/,/g, " ft,")} ft` : `height ${hm[1]} ft${/(\d) stor/.test(row[1]) ? " (" + row[1].match(/(\d) stor/)[1] + " stories)" : ""}`);
+    const rf = String(row[2]).match(/RFAR ([.\d]+),.*,([.\d]+) for lot bins/), rb = String(row[2]).match(/RFAR ([.\d]+)/), dl = String(row[2]).match(/^(?:Maximum generally |Generally )?1 dwelling\/(\d+) ?sqft|^Generally (\d+) sqft lot area per dwelling/);
+    if (rf) facts.push(`house size up to ${(+rf[1]).toFixed(2)}× the lot on lots of 6,000 sq ft or less, down to ${(+rf[2]).toFixed(2)}× on lots over 10,000 sq ft`);
+    else if (rb) facts.push(`house size up to ${(+rb[1]).toFixed(2)}× the lot area`);
+    else if (dl) facts.push(`one home per ${fmtN(+(dl[1] || dl[2]))} sq ft of lot`);
+    else if (/FAR/.test(row[2]) && row[2].length < 90) facts.push(row[2].replace(/sqft/g, "sq ft"));
+    const ml = String(row[3]).match(/^(\d+)/); if (ml) facts.push(`minimum lot ${fmtN(+ml[1])} sq ft${/generally/.test(row[3]) ? " (generally)" : ""}`);
+  }
+  return { base: base || ZCAT_TXT[cat] || "Special zone: check the city's code.", more: [...extra, ...tags], facts, known: !!base, official: row ? row[0] : null };
+}
+function zoneSentence(code, cat, juris) {
+  const e = explainZone(code, cat, juris); if (!e) return "";
+  return e.base + (e.facts.length ? " Code: " + e.facts.join("; ") + "." : "") + (e.more.length ? " Also: " + e.more.join("; ") + "." : "");
 }
 
 // ---------------- zoning polygons (zoom 14+), colored by what each zone allows
@@ -404,11 +528,38 @@ const ZCOL = { "single-family": "#f6d36b", "multifamily": "#e8833a", "commercial
 let _zCanvas = null; const _zDrawn = new Map(), _zDec = new Map();
 function zCell(key) {
   if (!_zDec.has(key)) _zDec.set(key, (D.layers.zoning.cells[key] || []).map(([c, z, rings]) => { const rr = rings.map(decodeLine), b = L.latLngBounds(rr[0]), cc = b.getCenter();
-    return { cat: D.layers.zoning.cats[c], zone: D.layers.zoning.zones[z], rings: rr, lat: cc.lat, lon: cc.lng }; }));
+    return { cat: D.layers.zoning.cats[c], zone: D.layers.zoning.zones[z], juris: (D.layers.zoning.jur || [])[(D.layers.zoning.zj || [])[z]] || "", rings: rr, lat: cc.lat, lon: cc.lng }; }));
   return _zDec.get(key);
 }
+let _zKey = null;
+function zoneKey(want) {
+  if (!_zKey) { _zKey = L.control({ position: "topright" }); _zKey.onAdd = () => { const d = L.DomUtil.create("div", "zone-key"); L.DomEvent.disableScrollPropagation(d); L.DomEvent.disableClickPropagation(d); return d; }; }
+  const show = layers.zone && want && want.size && map.getZoom() >= 14;
+  if (!show) { if (_zKey._map) _zKey.remove(); return; }
+  if (!_zKey._map) _zKey.addTo(map);
+  const b = map.getBounds(), cnt = new Map();
+  for (const k of want) for (const p of zCell(k)) { if (!b.contains([p.lat, p.lon])) continue;
+    const base = String(p.zone).toUpperCase().replace(/[\[\(][A-Z]+[\]\)]/g, "").split("-").slice(0, /^[A-Z]+-\d/.test(String(p.zone).replace(/[\[\(][A-Z]+[\]\)]/g, "")) && !/los angeles/i.test(p.juris) || /unincorporated/i.test(p.juris) ? 2 : 1).join("-").replace(/^[QT]+(?=[A-Z])/, "");
+    const e = cnt.get(base) || { n: 0, cat: p.cat, juris: p.juris }; e.n++; cnt.set(base, e); }
+  const top = [...cnt.entries()].sort((a, b) => b[1].n - a[1].n).slice(0, 7);
+  _zKey.getContainer().innerHTML = `<b>Zones in view, in plain words</b>${top.map(([c, e]) => `<div class="zk-row"><i style="background:${ZCOL[e.cat] || "#999"}"></i><span><b>${esc(c)}</b> ${esc(explainZone(c, e.cat, e.juris).base)}</span></div>`).join("")}
+    <div class="muted" style="margin-top:4px">Point at the map for the full code (height limits, overlays). Summaries only; the city's code decides.</div>`;
+}
+let _zTipT = null;
+function zoneTip(e) {
+  clearTimeout(_zTipT);
+  _zTipT = setTimeout(() => {
+    const z = map.getZoom();
+    const hide = () => { if (zoneTip.t) map.closeTooltip(zoneTip.t); };
+    if (!layers.zone || z < 14 || z >= 17) { hide(); return; }
+    const p = zoneAt(e.latlng); if (!p) { hide(); return; }
+    zoneTip.t = zoneTip.t || L.tooltip({ direction: "top", offset: [0, -8], className: "zone-tip" });
+    zoneTip.t.setLatLng(e.latlng).setContent(`<b>${esc(p.zone)}</b> <span class="muted">${esc(p.juris)}</span><br>${esc(zoneSentence(p.zone, p.cat, p.juris))}`);
+    map.openTooltip(zoneTip.t);
+  }, 120);
+}
 function drawZoning() {
-  if (!map._loaded || !layers.zone) return;
+  if (!map._loaded || !layers.zone) { zoneKey(null); return; }
   const z = map.getZoom(), Zc = D.layers.zoning.cell, want = new Set();
   if (z >= 14) { const b = map.getBounds().pad(.2);
     for (let x = Math.floor((b.getWest() + 180) / Zc); x <= Math.floor((b.getEast() + 180) / Zc); x++)
@@ -420,6 +571,7 @@ function drawZoning() {
     const g = L.layerGroup(zCell(k).map(p => L.polygon(p.rings, { renderer: _zCanvas, interactive: false, color: ZCOL[p.cat] || "#999", weight: .7, fillColor: ZCOL[p.cat] || "#999", fillOpacity: .55 })));
     layers.zone.addLayer(g); _zDrawn.set(k, g);
   }
+  zoneKey(want);
   layers.zoneLabels.clearLayers();
   if (z >= 16) { const b = map.getBounds(); let n = 0;
     for (const k of want) for (const p of zCell(k)) { if (n > 250 || !b.contains([p.lat, p.lon])) continue; n++;
@@ -432,12 +584,15 @@ function zoneRules(code, juris) {
   juris = String(juris).replace(/ \(SCAG 2019\)$/, "");
   return (D.zone_rules || []).find(r => r.jurisdiction === juris && new RegExp("^" + r.zone_prefix.replace(/[.]/g, "\\.") + "(?![0-9.])").test(t));
 }
+const p_city = m => (byId.get(selected) || { properties: {} }).properties.c || "";
 function zoningSection(m) {
   const z = m.z, tr = m.tr || [], rail = Math.min(tr[0] ?? 1e9, tr[1] ?? 1e9), tph = Math.max(tr[2] || 0, tr[3] || 0);
   let h = `<div class="section"><h3>Zoning: what can be built here</h3>`;
   if (z) {
     h += `<div class="small" style="margin:4px 0 6px">${Object.entries(z.sh).sort((a, b) => b[1] - a[1]).map(([c, v]) => `<span class="zkey"><i style="background:${ZCOL[c]}"></i>${esc(c)} ${Math.round(v * 100)}%</span>`).join("")}</div>
       <p class="small">Most common zones (${esc(z.j)}): <b>${esc(String(z.top || "").split("; ").filter(x => !/ 0%$/.test(x)).join("; "))}</b>. ${/SCAG/.test(z.j) ? "From SCAG's 2019 parcel data (this city's own zoning map isn't loaded yet, so recent rezonings may be missing)." : "Turn on <b>Zoning</b> above and zoom in to see each parcel's zone."}</p>`;
+    const tops = String(z.top || "").split("; ").filter(x => !/ 0%$/.test(x)).map(x => x.replace(/ \d+%$/, "")).slice(0, 5);
+    if (tops.length) h += `<div class="small zplain">${tops.map(c => `<div><b>${esc(c)}</b>: ${esc(zoneSentence(c, null, z.j))}</div>`).join("")}</div>`;
     const seen = new Set(), rules = String(z.top || "").split("; ").map(x => x.replace(/ \d+%$/, "")).map(c => zoneRules(c, z.j)).filter(r => r && !seen.has(r.zone_prefix) && seen.add(r.zone_prefix));
     if (rules.length) h += `<div style="overflow-x:auto"><table class="small" style="width:100%;border-collapse:collapse"><thead><tr style="text-align:left"><th>Zone</th><th>Allows</th><th>Homes/acre</th><th>Height</th><th>FAR</th><th>Setbacks F/S/R</th></tr></thead><tbody>
       ${rules.map(r => `<tr style="border-top:1px solid var(--rule)"><td><b>${esc(r.zone_prefix)}</b> ${esc(r.zone_name)}</td><td>${esc(r.allowed)}</td><td>${esc(r.units_per_acre)}</td><td>${esc(r.max_height_ft)} ft</td><td>${esc(r.max_far)}</td><td>${esc(r.front_ft)}/${esc(r.side_ft)}/${esc(r.rear_ft)} ft</td></tr>`).join("")}</tbody></table></div>
@@ -446,16 +601,20 @@ function zoningSection(m) {
   const L_ = [];
   L_.push("<b>ADUs:</b> state law allows an ADU (up to 1,200 sq ft) and a junior ADU on single-family lots, and more on apartment lots (Gov. Code 66310 and following).");
   if (z && (z.sh["single-family"] || 0) > 0) L_.push("<b>SB 9:</b> most single-family lots can hold two homes and be split into two lots, except in very-high fire zones and historic districts.");
-  if (rail <= 805) L_.push(`<b>SB 79 (in force July 2026):</b> rail is ${(rail / 1609).toFixed(2)} mi away, so parts of this area are likely in a transit upzoning zone (allowed height and density depend on the station's tier and the distance). Check SCAG's official SB 79 map.`);
+  const sb = m.sb || [null, null], near79 = [["Tier 1", sb[0]], ["Tier 2", sb[1]]].filter(([, d]) => d != null && d <= 805).sort((a, b) => a[1] - b[1]);
+  if (near79.length && /^Unincorporated/i.test(m.city || p_city(m))) L_.push("<b>SB 79:</b> the County says SB 79 does not yet apply in unincorporated areas (round-10 research), even near an official stop.");
+  else if (near79.length) L_.push(`<b>SB 79 (in force July 2026):</b> the nearest official ${near79[0][0]} stop (SCAG map) is ${(near79[0][1] / 1609).toFixed(2)} mi away, so ${near79[0][1] <= 402 ? "much of this area is within ¼ mile, the band with the highest allowed height and density" : "parts of this area are within ½ mile, where SB 79 allows more height and homes"}. Exact standards depend on the tier and the parcel.`);
+  else if (m.sb) L_.push("<b>SB 79:</b> no official SB 79 transit stop within ½ mile (SCAG map), so SB 79's transit upzoning doesn't apply here.");
+  else if (rail <= 805) L_.push(`<b>SB 79 (in force July 2026):</b> rail is ${(rail / 1609).toFixed(2)} mi away, so parts of this area are likely in a transit upzoning zone. Check SCAG's official SB 79 map.`);
   if (rail <= 805 || tph >= 8) L_.push("<b>AB 2097:</b> within ½ mile of a major transit stop, cities can't require parking for new homes. Here " + (rail <= 805 ? "rail is within ½ mile" : `buses run ${tph}/hr nearby (likely a major stop)`) + ".");
   if (m.city === "Los Angeles" && (rail <= 805 || tph >= 8)) L_.push("<b>LA City CHIP:</b> mixed-income and 100%-affordable projects near transit and on corridors get density and height bonuses.");
   h += `<ul class="small" style="margin:6px 0 0 18px;padding:0">${L_.map(x => `<li>${x}</li>`).join("")}</ul><p class="small muted">Transit distances are approximate (rail stations and bus frequency); official eligibility depends on the parcel.</p></div>`;
   return h;
 }
 function underSection(p) {
-  const S = (D.under.sites || []).filter(s => s.gid === p.id).sort((a, b) => (b.mkt || 0) - (a.mkt || 0));
-  if (!S.length) return "";
-  return `<div class="section"><h3>Underused land here</h3><p class="small muted">${S.length} site${S.length > 1 ? "s" : ""} in this block group: parking lots, golf courses, vacant parcels or lightly built commercial lots. Click one to zoom to it.</p>
+  const all = (D.under.sites || []).filter(s => s.gid === p.id), S = all.filter(s => !s.bs).sort((a, b) => (b.mkt || 0) - (a.mkt || 0)), done = all.filter(s => s.bs);
+  if (!S.length) return done.length ? `<div class="section"><h3>Underused land here</h3><p class="small muted">None left: ${done.length} site${done.length > 1 ? "s" : ""} the Assessor still lists as parking or vacant ${done.length > 1 ? "are" : "is"} already built, under construction or approved (${done.map(s => esc(s.idea.split(";")[0])).slice(0, 2).join("; ")}).</p></div>` : "";
+  return `<div class="section"><h3>Underused land here</h3><p class="small muted">${S.length} site${S.length > 1 ? "s" : ""} in this block group: parking lots, golf courses, vacant parcels or lightly built commercial lots. Click one to zoom to it.${done.length ? ` ${done.length} more listed by the Assessor ${done.length > 1 ? "are" : "is"} already built or under way, so ${done.length > 1 ? "they're" : "it's"} left out.` : ""}</p>
     <div class="recs">${S.slice(0, 6).map(s => `<div class="rec qolrec" style="cursor:pointer" data-site="${s.i}"><div class="small">${siteHtml(s)}</div></div>`).join("")}</div></div>`;
 }
 function facilitySection(m) {
@@ -511,6 +670,89 @@ function highlight() {
 const tile = (k, v, s) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div>${s ? `<div class="s">${s}</div>` : ""}</div>`;
 const REC_KEYS = ["id", "project", "homes", "cost", "capex", "land", "om", "value", "vpd", "pct", "why", "qol"];
 
+// where a transit, bike or street-safety project should go: the named street and segment, and what's there already
+const CORRIDOR_ROLE = { bus_lane: "bus", brt: "bus", transit_priority: "bus", transit_shade: "bus", bus_shelters: "bus", rail_station: "bus",
+  protected_bike: "bike", road_diet: "bike", speed_cameras: "art", slow_streets: "local", traffic_calming: "local" };
+function whereLine(id) {
+  const role = CORRIDOR_ROLE[id], co = role && ((D.details[selected] || {}).m || {}).co, c = co && co[role];
+  if (!c) return "";
+  const [st, fr, to, mi, tph, bike, bus, n79, t79, rc, station, metro, city, metroArea] = c;
+  const seg = `<b>${esc(st)}</b>${fr && to && fr !== to ? ` from ${esc(fr)} to ${esc(to)}` : fr ? ` near ${esc(fr)}` : ""} (~${mi} mi)`;
+  const lead = id === "rail_station" ? `Corridor: along ${seg}, the busiest bus street here${tph ? ` (${tph} buses/hr)` : ""}${station && station[0] ? `, linking to ${esc(station[0])} station (${station[1]} mi)` : ""}`
+    : role === "local" ? `Where: ${seg}, the main local street through this area`
+    : role === "bike" ? `Where: ${seg}`
+    : role === "bus" ? `Where: ${seg}${tph ? `, where the busiest stop gets ${tph} buses an hour` : ""}`
+    : `Where: ${seg}, the main arterial here`;
+  const notes = [];
+  if (bike) notes.push("already there: " + bike);
+  if (bus) notes.push("already there: a bus-only lane on part of it (LA City)");
+  if (n79) notes.push(`${n79} official SB 79 transit stop${n79 > 1 ? "s" : ""} on this stretch (${t79}), so state law already allows more homes here`);
+  if (rc) notes.push("rail under construction nearby" + (rc !== "-" ? ` (${rc})` : ""));
+  const planned = [...(metro || []), ...((id === "rail_station" ? metroArea : []) || []).filter(x => !(metro || []).includes(x)), ...(city || []).map(x => "LA City capital project: " + x)];
+  const status = planned.length ? `<b>Already planned:</b> ${planned.map(esc).join("; ")}.`
+    : `<span class="muted">No Metro project or LA City capital project found on this street${role === "bike" ? "; city bike-plan maps are still being added" : ""}.</span>`;
+  return `<p class="small" style="margin:4px 0 2px">${lead}.${notes.length ? " " + notes.map(esc).join("; ") + "." : ""} ${status}</p>`;
+}
+
+// ---------------- who pays: what an EIFD could raise from a project's own value gain, and the rest of the stack
+// Prop 13: a home's assessed value only catches up to market when it sells, so the project's value gain enters the
+// tax roll as homes turn over (~6% a year in LA County, an estimate pending round-10 research). The district keeps
+// the city's and County's shares of the 1% tax on that gain (pledges from the EIFD calculator defaults).
+// pledges: Artesia EIFD (formed Aug 2026): city 75% of its increment, County 49% of its share (round-10 research);
+// County shares in formed districts range from 11% (Santa Fe Springs) to 50% (La Verne, Norwalk), and policy keeps them under 100%.
+const FUND_ASSUME = { turnover: 0.06, cityPledge: 0.75, countyPledge: 0.49, countyPledgeUninc: 0.5, admin: 0.03, rate: 0.0525, dscr: 1.35, years: 30, housing: 0.20 };
+function fundPlan(r, gid) {
+  const c = D.catalog[r.id]; if (!c || c.kind === "owner" || c.kind === "policy") return null;
+  const m = (D.details[gid] || {}).m || {}, p = (byId.get(gid) || { properties: {} }).properties;
+  const uninc = /^Unincorporated/i.test(p.c || "") || p.c === "Los Angeles County";
+  const sh = m.e && m.e.sh ? m.e.sh : [uninc ? 0 : 0.20, 0.24];
+  const A = FUND_ASSUME, cityK = sh[0] * A.cityPledge, cntyK = sh[1] * (uninc ? A.countyPledgeUninc : A.countyPledge);
+  const ann = (1 - Math.pow(1 + A.rate, -A.years)) / A.rate;
+  let y10 = 0, tot = 0, cityTot = 0, cntyTot = 0;
+  for (let t = 1; t <= A.years; t++) {
+    const gain = (r.value || 0) * (1 - Math.pow(1 - A.turnover, t)) * Math.pow(1.02, t);   // reassessed share of the gain, +2%/yr
+    const city = gain * 0.01 * cityK * (1 - A.admin), cnty = gain * 0.01 * cntyK * (1 - A.admin);
+    tot += city + cnty; cityTot += city; cntyTot += cnty; if (t === 10) y10 = city + cnty;
+  }
+  const bond = y10 * (1 - (cntyK > 0 ? A.housing : 0)) / A.dscr * ann;
+  const buildable = (r.capex || 0) + (r.land || 0);                    // bonds pay for building and land, not yearly upkeep
+  const eifd = Math.min(bond, buildable), rest = Math.max(r.cost - eifd, 0), program = buildable <= 0;
+  const others = (c.funding || []).filter(k => k !== "EIFD" && D.funding[k]).map(k => D.funding[k]);
+  const cm = ((D.r10 || {}).city || {})[p.c] || null, ex = ((D.r10 || {}).stacks || {})[r.id] || null;
+  return { eifd, bond, y10, tot, cityTot, cntyTot, cityK, cntyK, rest, others, uninc, share: r.cost > 0 ? eifd / r.cost : 0, om: r.om || 0, sh, city: p.c, cm, ex, keys: c.funding || [], program };
+}
+function fundHtml(r, gid) {
+  const f = fundPlan(r, gid); if (!f) return "";
+  const pct = x => (x * 100).toFixed(x < 0.1 ? 1 : 0) + "%";
+  const who = f.uninc ? `the County (${pct(f.cntyK)} of each $1 of new tax here)` : `${esc(f.city)} (${pct(f.cityK)} of each $1 of new tax) and the County (${pct(f.cntyK)})`;
+  const lead = f.others[0];
+  return `<div class="fund small"><b>Who pays — a possible funding plan</b>
+    <div class="fund-bar" title="EIFD ${fmt$(f.eifd)} of ${fmt$(r.cost)}"><i style="width:${Math.min(100, f.share * 100).toFixed(1)}%"></i></div>
+    <div class="kv">${f.program ? `<span>EIFD</span><span>bonds can't pay for a yearly program, but the ~${fmt$(f.y10)}/yr of tax growth it creates could help cover it</span>` : `<span>EIFD bonds from this project's own value gain</span><span><b>${fmt$(f.eifd)}</b> (${pct(f.share)} of the cost)</span>`}
+      <span>Put in by</span><span>${who}: ~${fmt$(f.y10)}/yr of tax growth by year 10, ~${fmt$(f.tot)} over 30 years (city ${fmt$(f.cityTot)}, County ${fmt$(f.cntyTot)})</span>
+      <span>Left to raise</span><span><b>${fmt$(f.rest)}</b>${f.om ? ` (incl. ${fmt$(f.om)}/yr upkeep, which bonds can't pay)` : ""}</span>
+      ${f.others.length ? `<span>Best fits for the rest</span><span>${f.others.map((o, i) => `${o[2] ? `<a href="${esc(o[2])}" target="_blank" rel="noopener">${esc(o[0])}</a>` : esc(o[0])}${i === 0 ? "" : ""} <span class="muted">(${esc(o[1])})</span>`).join("; ")}</span>` : `<span>Rest</span><span>city general fund or capital budget</span>`}</div>
+    ${cityMoney(f)}${f.ex ? `<p style="margin:6px 0 0"><b>Real example:</b> ${esc(f.ex.p)} (${esc(f.ex.c)}${f.ex.s ? ", " + esc(f.ex.s.split(";")[0]) : ""}): ${fmt$(f.ex.t)} — ${f.ex.src.map(([n, a]) => `${esc(n)} ${fmt$(a)} (${Math.round(100 * a / f.ex.t)}%)`).join("; ")}.</p>` : ""}
+    <p class="muted" style="margin:4px 0 0">How: the city (and the County, if it joins) forms an EIFD, pledges its share of the property-tax growth this project creates, and issues bonds against it; ${lead ? esc(lead[0]) : "grants and the city's budget"} would cover most of the rest. Assumes ${pct(FUND_ASSUME.turnover)} of homes resell each year (Prop 13 reassesses only on sale), the city pledges 75% of its share and the County 49% (Artesia's 2026 district; County shares elsewhere run 11–50%)${f.uninc ? "; in unincorporated areas the County alone, assumed 50%" : ""}, ${(FUND_ASSUME.rate * 100).toFixed(2)}% 30-year bonds at ${FUND_ASSUME.dscr}x coverage${f.cntyK > 0 ? ", 20% of County-backed bonds held for housing" : ""}. A district over the whole area (calculator below) also captures ordinary growth and raises far more. Since AB 116 (2020) EIFD bonds need no public vote.</p></div>`;
+}
+function cityMoney(f) {
+  const cm = f.cm; if (!cm) return "";
+  const lr = (cm.pa || 0) + (cm.pc || 0) + (cm.mr || 0) + (cm.mm || 0), useLR = f.keys.includes("M"), useW = f.keys.includes("W") && cm.mw;
+  if (!useLR && !useW) return `<p style="margin:6px 0 0"><b>${esc(f.city)}'s own yearly money:</b> ~${fmt$(lr)} of Metro sales-tax local return${cm.mw ? ` and ${fmt$(cm.mw)} of Measure W` : ""} (FY 2026-27 estimates), mostly for transportation and water projects; this one would rely on grants or the general fund.</p>`;
+  const parts = [];
+  if (useLR && lr) parts.push(`~${fmt$(lr)} a year of Metro local return (Prop A ${fmt$(cm.pa || 0)}, Prop C ${fmt$(cm.pc || 0)}, Measure R ${fmt$(cm.mr || 0)}, Measure M ${fmt$(cm.mm || 0)}), which can pay for street and transit projects like this`);
+  if (useW) parts.push(`${fmt$(cm.mw)} a year of Measure W municipal money for green streets, trees and stormwater`);
+  return `<p style="margin:6px 0 0"><b>What ${esc(f.city)} already gets:</b> ${parts.join("; and ")} (FY 2026-27 estimates; much is already committed).</p>`;
+}
+function fundSummary(pkg, gid) {
+  const F = pkg.map(r => [r, fundPlan(r, gid)]).filter(([, f]) => f);
+  if (!F.length) return "";
+  const cost = F.reduce((s, [r]) => s + r.cost, 0), eifd = F.reduce((s, [, f]) => s + f.eifd, 0), y10 = F.reduce((s, [, f]) => s + f.y10, 0);
+  const src = new Map(); F.forEach(([r, f]) => { const o = f.others[0]; if (o) src.set(o[0], (src.get(o[0]) || 0) + Math.max(r.cost - f.eifd, 0)); });
+  const top = [...src].sort((a, b) => b[1] - a[1]).slice(0, 3);
+  return `<div class="pkg">${tile("EIFD could fund", fmt$(eifd), `${(100 * eifd / Math.max(cost, 1)).toFixed(0)}% of the cost, from these projects' own value gain`)}${tile("City + County put in", fmt$(y10) + "/yr", "their share of the new property tax by year 10")}${tile("Left for grants and budgets", fmt$(Math.max(cost - eifd, 0)), top.length ? "mostly " + top.map(([k]) => esc(k)).join(", ") : "")}</div>
+    <p class="small muted" style="margin:4px 0 0">Open any project's <i>Why here, cost and sources</i> for its funding plan; the EIFD calculator below shows a district over the whole area.</p>`;
+}
 function recCard(r, i, mode) {
   const c = D.catalog[r.id], ev = String(c.evidence);
   const head = mode === "value" ? `<span class="vpd">${fvpd(r.vpd)} / $1</span>` : mode === "owner" ? `<span class="vpd">${fvpd(r.vpd)} / $1</span>` : `<span class="vpd none">${mode === "qol" ? "need: " + (r.qol >= .8 ? "high" : r.qol >= .5 ? "medium" : "low") : "policy"}</span>`;
@@ -519,18 +761,24 @@ function recCard(r, i, mode) {
     <div class="cat">${esc(c.category)}</div>
     <div class="row1"><span class="nm">${esc(c.name)}</span>${head}</div>
     <div class="meta">${esc(r.project)} · <b>total ~${fmt$(r.cost)}</b>${r.value > 0 ? (c.kind === "owner" ? ` · adds ~${fmt$(r.value)} to that home's value` : ` · adds ~${fmt$(r.value)} across ~${fmtN(r.homes)} homes`) : ""}${c.grade !== "none" ? `<span class="chip${c.grade === "A" || c.grade === "B" ? " strong" : c.grade === "D" || c.grade === "U" ? " reg" : ""}" title="${esc(GRADE_TXT[c.grade])}">evidence ${c.grade}</span>` : `<span class="chip">${esc(ev.split(" (")[0])}</span>`}${c.kind === "regional" ? '<span class="chip reg">regional project</span>' : ""}</div>
+    ${whereLine(r.id)}
     <details><summary>Why here, cost and sources</summary>
       <p class="small"><b>Why:</b> ${esc(r.why)}</p>
       <div class="costline">total = ${costs}${r.om ? " (10 yrs, present value)" : ""}</div>
       ${c.benefit && mode === "qol" ? `<p class="small"><b>Public benefit (unverified estimate):</b> about ${fmt$(c.benefit[0])} a year from ${esc(c.benefit[1].toLowerCase())}, roughly <b>${fvpd(c.benefit[0] * 8.53 / Math.max(r.cost, 1))}</b> of benefit per $1 over 10 years. From the round-6 research, not yet checked against its sources.${c.benefit[2] ? " " + esc(c.benefit[2]) : ""}</p>` : ""}
       ${r.pct > 0 ? `<p class="small"><b>Price effect used:</b> +${r.pct}% for homes reached${c.years ? `, full effect after ~${c.years} yr (discounted)` : ""}.</p>` : `<p class="small"><b>Home-value effect:</b> not measured in the research, so it is ranked by how much this area needs it, not by value per $1.</p>`}
       ${c.grade !== "none" ? `<p class="small"><b>Evidence grade ${c.grade}:</b> ${esc(GRADE_TXT[c.grade].slice(4))}.${c.caveat ? " " + esc(c.caveat) : ""}</p>` : c.caveat ? `<p class="small">${esc(c.caveat)}</p>` : ""}
-      ${(c.funding || []).length ? `<p class="small"><b>Who pays:</b> ${c.funding.map(k => { const f = D.funding[k]; return f ? `${f[2] ? `<a href="${esc(f[2])}" target="_blank" rel="noopener">${esc(f[0])}</a>` : esc(f[0])} (${esc(f[1])})` : ""; }).filter(Boolean).join("; ")}</p>` : ""}
+      ${mode === "value" || mode === "qol" ? fundHtml(r, selected) : ""}
+      ${(c.funding || []).length && !(mode === "value" || mode === "qol") ? `<p class="small"><b>Who pays:</b> ${c.funding.map(k => { const f = D.funding[k]; return f ? `${f[2] ? `<a href="${esc(f[2])}" target="_blank" rel="noopener">${esc(f[0])}</a>` : esc(f[0])} (${esc(f[1])})` : ""; }).filter(Boolean).join("; ")}</p>` : ""}
       <p class="src muted">${c.sources.map(esc).join("<br>")}</p>
     </details></div>`;
 }
 
 // ---------------- what this place is missing (vs. its 50 most similar block groups) and the neighborhood's plan
+function stepWhere(st) {
+  const role = CORRIDOR_ROLE[st.fix], co = role && st.bg && ((D.details[st.bg] || {}).m || {}).co, c = co && co[role];
+  return c ? ` on <b>${esc(c[0])}</b>${c[1] && c[2] && c[1] !== c[2] ? ` from ${esc(c[1])} to ${esc(c[2])}` : ""}` : "";
+}
 function gapSection(p, m) {
   const G = m.gp || { g: [], s: [] }, plan = (D.plans || {})[p.n + "|" + p.c];
   const fixName = id => D.catalog[id] ? D.catalog[id].name : id;
@@ -543,12 +791,12 @@ function gapSection(p, m) {
   if (plan) {
     const steps = plan.steps || [];
     h += `<div class="pkg" style="display:block;margin-top:10px"><div class="small" style="font-weight:600;margin-bottom:6px">A plan for ${esc(p.n)} (${plan.bgs} block group${plan.bgs > 1 ? "s" : ""}, ${fmtN(plan.homes)} homes)</div>`;
-    if (steps.length) h += `<ol class="small" style="margin:0 0 0 18px;padding:0">${steps.map((st, i) => `<li style="margin-bottom:6px"><b>${i === 0 && steps.length > 1 ? "Quick win: " : ""}${esc(st.name)}</b>${st.project ? ` (${esc(st.project)}${st.near ? ", " + esc(st.near) : ""})` : ""}. ${esc(st.why)} This gap shows up in ${st.parts} of ${plan.bgs} parts of the neighborhood.${st.cost ? ` About ${fmt$(st.cost)}` : " Not costed here yet"}${st.vpd ? `, returning ${fvpd(st.vpd)} of home value per $1` : ""}${st.funding && D.funding[st.funding] ? `; could be paid for by ${esc(D.funding[st.funding][0])}` : ""}.</li>`).join("")}</ol>`;
+    if (steps.length) h += `<ol class="small" style="margin:0 0 0 18px;padding:0">${steps.map((st, i) => `<li style="margin-bottom:6px"><b>${i === 0 && steps.length > 1 ? "Quick win: " : ""}${esc(st.name)}</b>${st.project ? ` (${esc(st.project)}${st.near ? ", " + esc(st.near) : ""})` : ""}${stepWhere(st)}. ${esc(st.why)} This gap shows up in ${st.parts} of ${plan.bgs} parts of the neighborhood.${st.cost ? ` About ${fmt$(st.cost)}` : " Not costed here yet"}${st.vpd ? `, returning ${fvpd(st.vpd)} of home value per $1` : ""}${st.funding && D.funding[st.funding] ? `; could be paid for by ${esc(D.funding[st.funding][0])}` : ""}.</li>`).join("")}</ol>`;
     else h += `<p class="small">No neighborhood-wide gaps compared with similar areas. The best value-per-dollar projects are ranked below.</p>`;
     const pf = (D.under.profit || {})[p.n + "|" + p.c];
     if (pf && pf.total > 0) {
       const all = Object.values(D.under.profit).map(x => x.total).sort((a, b) => b - a), rank = all.indexOf(pf.total) + 1;
-      h += `<p class="small"><b>Profit potential:</b> about <b>${fmt$(pf.total)}</b> of value created (${(pf.pct * 100).toFixed(1)}% of the neighborhood's home value, ~${fmt$(pf.per_home)} per home), #${rank} of ${all.length} neighborhoods. ${fmt$(pf.proj)} from projects that pay back, net of cost${pf.land ? `, and ${fmt$(pf.land)} from developing ${pf.sites} underused site${pf.sites > 1 ? "s" : ""} (~${fmtN(pf.site_homes)} homes)` : ""}.${pf.soon && pf.soon.length ? ` Already under way: rail stations under construction nearby (${pf.soon.map(esc).join(", ")}), which usually lift nearby values.` : ""}</p>`;
+      h += `<p class="small"><b>Profit potential:</b> about <b>${fmt$(pf.total)}</b> of value created (${pf.pct != null ? (pf.pct * 100).toFixed(1) + "% of the neighborhood's home value, ~" + fmt$(pf.per_home) + " per home" : "few homes here, so it's shown as a total only"}), #${rank} of ${all.length} neighborhoods by total. ${fmt$(pf.proj)} from projects that pay back, net of cost${pf.land ? `, and ${fmt$(pf.land)} from developing ${pf.sites} underused site${pf.sites > 1 ? "s" : ""} (~${fmtN(pf.site_homes)} homes)` : ""}.${pf.soon && pf.soon.length ? ` Already under way: rail stations under construction nearby (${pf.soon.map(esc).join(", ")}), which usually lift nearby values.` : ""}</p>`;
     }
     const W = (pf && pf.way) || {}, wl = [];
     const wu = k => W[k] ? W[k][1] || W[k][0] : 0;
@@ -566,16 +814,441 @@ function gapSection(p, m) {
   return h + `</div>`;
 }
 
+// ---------------- per-house analysis: the clicked parcel, fetched live from the County Assessor's public parcel service
+const PARCEL_URL = "https://public.gis.lacounty.gov/public/rest/services/LACounty_Cache/LACounty_Parcel/MapServer/0/query";
+const PARCEL_FIELDS = ["AIN", "SitusFullAddress", "SitusHouseNo", "SitusStreet", "UseCode", "UseType", "UseDescription", "Roll_LandValue", "Roll_ImpValue",
+  "Roll_LandBaseYear", "Roll_ImpBaseYear", "Roll_HomeOwnersExemp",
+  ...[1, 2, 3, 4, 5].flatMap(i => [`DesignType${i}`, `QualityClass${i}`, `YearBuilt${i}`, `EffectiveYear${i}`, `Units${i}`, `Bedrooms${i}`, `Bathrooms${i}`, `SQFTmain${i}`])].join(",");
+const OVERPASS = ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter"];
+// round-9 sources (research/round9): per-lot checks queried live from the page
+const R9 = {
+  permits: "https://data.lacity.org/resource/pi9x-tg5x.json",          // LADBS permits 2020-present (ADU/JADU fields)
+  permitsOld: "https://data.lacity.org/resource/d9aa-v8bm.json",       // LADBS building permits (of_stories)
+  sales: "https://egispais.gis.lacounty.gov/pais/rest/services/PAIS/pais_sales_parcels/MapServer/0",
+  hpoz: "https://services5.arcgis.com/7nsPwEMP38bSkCjy/ArcGIS/rest/services/Historic_Preservation_Overlay_Zones/FeatureServer/5",
+  hcm: "https://services5.arcgis.com/7nsPwEMP38bSkCjy/ArcGIS/rest/services/Historic_Cultural_Monuments/FeatureServer/4",
+  histCounty: "https://rpgis.isd.lacounty.gov/arcgis/rest/services/GISNET_Public/MapServer/331",
+  hillside: "https://maps.lacity.org/lahub/rest/services/Special_Areas/MapServer/6",
+  landslide: "https://services2.arcgis.com/zr3KAIbsRSUyARHG/arcgis/rest/services/CGS_Landslide_Zones/FeatureServer/0",
+  liquefaction: "https://services2.arcgis.com/zr3KAIbsRSUyARHG/ArcGIS/rest/services/CGS_Liquefaction_Zones/FeatureServer/0",
+  fault: "https://services2.arcgis.com/zr3KAIbsRSUyARHG/arcgis/rest/services/CGS_Alquist_Priolo_Fault_Zones/FeatureServer/0",
+  fireSRA: "https://services1.arcgis.com/jUJYIo9tSA7EHvfZ/ArcGIS/rest/services/FHSZSRA_23_3/FeatureServer/0",
+  fireLRA: "https://services1.arcgis.com/jUJYIo9tSA7EHvfZ/arcgis/rest/services/FHSALRA25_v1_All/FeatureServer/0",
+  cams: "https://arcgis.gis.lacounty.gov/arcgis/rest/services/LACounty_Dynamic/CAMS/MapServer/1",
+};
+async function arcQuery(url, params, ms = 12000) {
+  const q = `${url}/query?` + new URLSearchParams({ f: "json", ...params }).toString();
+  try {
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), ms);
+    const r = await fetch(q, { signal: ctl.signal }); clearTimeout(t);
+    const d = await r.json(); if (d.error) throw new Error(d.error.message); return d;
+  } catch (e) { const d = await jsonp(q); if (d.error) throw new Error(d.error.message); return d; }
+}
+async function socrata(url, where, ms = 12000) {
+  const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), ms);
+  const r = await fetch(`${url}?$limit=60&$where=${encodeURIComponent(where)}`, { signal: ctl.signal }); clearTimeout(t);
+  if (!r.ok) throw new Error("HTTP " + r.status); return r.json();
+}
+const limit = (pr, ms = 8000) => Promise.race([pr, new Promise((_, rej) => setTimeout(() => rej(new Error("timed out")), ms))]);
+const settle = (pr) => limit(pr).then(v => ({ ok: true, v }), e => ({ ok: false, e: e.message || String(e) }));
+async function lotChecks(ll, a) {
+  const pt = { geometry: `${ll.lng},${ll.lat}`, geometryType: "esriGeometryPoint", inSR: 4326, spatialRel: "esriSpatialRelIntersects", returnGeometry: false };
+  const hit = (url, fields) => arcQuery(url, { ...pt, outFields: fields || "*", resultRecordCount: 3 }).then(d => (d.features || []).map(f => f.attributes));
+  const ain = String(a.AIN || "").replace(/\D/g, "");
+  const [hpoz, hcm, hc, hill, slide, liq, fault, sra, lra, sales, prm, old] = await Promise.all([
+    settle(hit(R9.hpoz, "NAME")), settle(hit(R9.hcm, "NAME,MNT_NUM")), settle(hit(R9.histCounty, "Name,Status_Code_Description,Mills_Act_Contract")),
+    settle(hit(R9.hillside, "H_TYPE")), settle(hit(R9.landslide, "QUAD_NAME")), settle(hit(R9.liquefaction, "QUAD_NAME")), settle(hit(R9.fault, "QUAD_NAME")),
+    settle(hit(R9.fireSRA, "*")), settle(hit(R9.fireLRA, "*")),
+    settle(arcQuery(R9.sales, { where: `AIN='${ain}'`, outFields: "SALEDATE,SALEPRICE,FORMATTED_SALEDATE,FORMATTED_SALEPRICE", returnGeometry: false }).then(d => (d.features || []).map(f => f.attributes))),
+    settle(socrata(R9.permits, `apn='${ain}'`)),
+    settle(socrata(R9.permitsOld, `assessor_book='${ain.slice(0, 4)}' AND assessor_page='${ain.slice(4, 7)}' AND assessor_parcel='${ain.slice(7, 10)}'`)),
+  ]);
+  const fireVals = [sra, lra].flatMap(x => x.ok ? x.v : []).map(r => String(r.FHSZ_Description || r.FHSZ || r.HAZ_CLASS || "")).filter(Boolean);
+  return { hpoz, hcm, hc, hill, slide, liq, fault, sales, prm, old,
+    fire: (sra.ok || lra.ok) ? { vh: fireVals.some(v => /very high|^3$/i.test(v)), any: fireVals.length > 0, label: fireVals[0] || "" } : null };
+}
+// Assessor code decoding (round-9 code tables): UseCode 0101/0103 pool, 0106 ADU, 0107 JADU, 0108 guest house,
+// 010G Mills Act; DesignType 01xx: 3rd digit heating/cooling, 4th digit pool/spa
+function decodeAssessor(a) {
+  const uc = String(a.UseCode || ""), dt = String(a.DesignType1 || "").padStart(4, "0");
+  const heat = { "0": "none recorded", "1": "floor or wall heat", "2": "central heat", "3": "central heating and cooling", "4": "central solar heat" };
+  const pool = { "0": null, "1": "pool", "2": null, "3": "pool", "4": "spa", "5": "solar-heated pool" };
+  return { pool: /^010[13]/.test(uc) || (dt.startsWith("01") && ["1", "3", "5"].includes(dt[3])) ? (pool[dt[3]] || "pool") : dt.startsWith("01") && dt[3] === "4" ? "spa" : null,
+    adu: uc.startsWith("0106") ? "ADU" : uc.startsWith("0107") ? "junior ADU" : uc.startsWith("0108") ? "guest house (no kitchen or bath)" : null,
+    mills: uc.startsWith("010G"), heat: dt.startsWith("01") ? heat[dt[2]] || null : null, ac: dt.startsWith("01") && dt[2] === "3" };
+}
+function permitFacts(L) {
+  const out = { list: [], stories: null, storiesSrc: null, adu: false };
+  if (L && L.prm.ok) for (const r of L.prm.v) {
+    const w = `${r.permit_type || ""} ${r.permit_sub_type || ""} ${r.work_desc || ""}`;
+    const kind = /adu|accessory dwelling/i.test(w) || +r.adu_changed > 0 || +r.junior_adu > 0 ? "ADU" : /pool|spa/i.test(w) ? "pool" : /solar|photovoltaic/i.test(w) ? "solar"
+      : /addition|add .*sq|second story|2nd story/i.test(w) ? "addition" : /re-?roof/i.test(w) ? "re-roof" : /new/i.test(r.permit_type || "") ? "new building" : null;
+    if (kind === "ADU") out.adu = true;
+    if (kind) out.list.push({ kind, date: String(r.issue_date || r.status_date || "").slice(0, 10), status: r.status_desc || "", desc: String(r.work_desc || "").slice(0, 120) });
+  }
+  if (L && L.old.ok) {
+    const st = L.old.v.filter(r => +r.of_stories > 0 && /new|dwelling|sfd|single family|addition/i.test(r.work_description || ""))
+      .sort((x, y) => String(y.issue_date || "").localeCompare(String(x.issue_date || "")));
+    if (st.length) { out.stories = +st[0].of_stories; out.storiesSrc = `LA City building permit (${String(st[0].issue_date || "").slice(0, 4)}): ${st[0].of_stories} stor${+st[0].of_stories > 1 ? "ies" : "y"} permitted`; }
+  }
+  return out;
+}
+let parcelLayer = null;
+function houseHint() {
+  const el = $("#house"); if (el) el.remove();
+  const box = document.createElement("div"); box.id = "house"; box.className = "section";
+  box.innerHTML = `<p class="small muted">Zoom in to street level (zoom 17) and click a single home to check what that house can add: ADU, SB 9 split, pool, solar and more.</p>`;
+  const v = $("#panel .verdict"); if (v) v.after(box);
+}
+function jsonp(url) {
+  return new Promise((res, rej) => { const cb = "cp" + Math.random().toString(36).slice(2), s = document.createElement("script");
+    window[cb] = d => { delete window[cb]; s.remove(); res(d); }; s.onerror = () => { delete window[cb]; s.remove(); rej(new Error("parcel service unreachable")); };
+    s.src = url + "&callback=" + cb; document.head.appendChild(s); setTimeout(() => { if (window[cb]) { delete window[cb]; s.remove(); rej(new Error("timeout")); } }, 15000); });
+}
+async function fetchParcel(ll) {
+  const q = `${PARCEL_URL}?geometry=${ll.lng.toFixed(6)},${ll.lat.toFixed(6)}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=${PARCEL_FIELDS}&returnGeometry=true&outSR=4326&f=json`;
+  let d;
+  try { d = await (await fetch(q)).json(); } catch (e) { d = await jsonp(q); }
+  if (d.error) throw new Error(d.error.message || "parcel service error");
+  return (d.features || [])[0];
+}
+function ringAreaM2(ring) {
+  // planar area after projecting lon/lat to meters around the ring (accurate at parcel scale)
+  const lat0 = ring[0][1] * Math.PI / 180, kx = 111320 * Math.cos(lat0), ky = 110540; let a = 0;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) a += (ring[j][0] * kx) * (ring[i][1] * ky) - (ring[i][0] * kx) * (ring[j][1] * ky);
+  return Math.abs(a / 2);
+}
+function zoneAt(ll) {
+  const Z = D.layers.zoning; if (!Z) return null;
+  const key = `${Math.floor((ll.lng + 180) / Z.cell)},${Math.floor((ll.lat + 90) / Z.cell)}`;
+  for (const k of [key, ...cellKeys(Z.cell, 0)]) for (const p of zCell(k)) {
+    const f = { geometry: { type: "Polygon", coordinates: p.rings.map(r => r.map(([la, lo]) => [lo, la])) } };
+    if (pointInFeature(f, ll.lng, ll.lat)) return p;
+  }
+  return null;
+}
+// building outlines (and pools) on this lot from OpenStreetMap; in LA most outlines come from the County's building
+// data import, often with a height. Returns null when OSM can't be reached.
+async function fetchOsmLot(rings) {
+  const ring = rings[0] || [];
+  const step = Math.max(1, Math.ceil(ring.length / 40));
+  const poly = ring.filter((_, i) => i % step === 0).map(([x, y]) => `${y.toFixed(6)} ${x.toFixed(6)}`).join(" ");
+  const q = `[out:json][timeout:12];(way["building"](poly:"${poly}");way["leisure"="swimming_pool"](poly:"${poly}"););out tags geom;`;
+  const one = async (url, delay) => {
+      if (delay) await new Promise(r => setTimeout(r, delay));
+      const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 10000);
+      const r = await fetch(url, { method: "POST", body: "data=" + encodeURIComponent(q), signal: ctl.signal,
+        headers: { "Content-Type": "application/x-www-form-urlencoded" } });
+      clearTimeout(t);
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const d = await r.json();
+      const ways = (d.elements || []).filter(e => e.type === "way" && e.geometry && e.geometry.length > 2);
+      const toRing = e => e.geometry.map(g => [g.lon, g.lat]);
+      const bl = ways.filter(e => e.tags && e.tags.building).map(e => {
+        const r_ = toRing(e), t_ = e.tags; const hm = parseFloat(String(t_.height || "").replace(/[^0-9.]/g, ""));
+        return { ring: r_, sqft: Math.round(ringAreaM2(r_) * 10.7639), levels: parseInt(t_["building:levels"]) || null,
+                 height: isFinite(hm) && hm > 0 ? hm : null, type: t_.building, roof: t_["roof:shape"] || null };
+      }).sort((a, b) => b.sqft - a.sqft);
+      const pools = ways.filter(e => e.tags && e.tags.leisure === "swimming_pool").length;
+      return { bl, pools };
+  };
+  try { return await Promise.any(OVERPASS.map((u, k) => one(u, k * 2500))); } catch (e) { /* every mirror failed */ }
+  return null;
+}
+function houseFacts(a, lot, osm, PF) {
+  // the Assessor lists up to five buildings per parcel; slot 1 is the main building
+  const slots = [1, 2, 3, 4, 5].map(i => ({ i, sqft: +a[`SQFTmain${i}`] || 0, units: +a[`Units${i}`] || 0, beds: +a[`Bedrooms${i}`] || 0,
+    baths: +a[`Bathrooms${i}`] || 0, yb: +a[`YearBuilt${i}`] || 0, eff: +a[`EffectiveYear${i}`] || 0, design: a[`DesignType${i}`] || "", qc: a[`QualityClass${i}`] || "" }))
+    .filter(x => x.sqft > 0 || x.units > 0);
+  const main = slots[0] || { sqft: 0, units: 0, beds: 0, baths: 0, yb: 0, eff: 0, design: "", qc: "" };
+  const F = { slots, main, bldg: main.sqft, beds: main.beds, baths: main.baths, units: slots.reduce((t, x) => t + x.units, 0) || main.units,
+    living: slots.reduce((t, x) => t + x.sqft, 0), yb: main.yb || main.eff, eff: main.eff, qc: main.qc, design: main.design, src: {} };
+  const B = osm && osm.bl ? osm.bl.filter(b => b.sqft >= 80) : [];
+  const big = B[0];
+  if (big) {
+    F.foot = big.sqft; F.footAll = B.reduce((t, b) => t + b.sqft, 0); F.outlines = B.map(b => b.ring); F.others = B.length - 1;
+    F.src.foot = "building outline (OpenStreetMap, from the County's building data)";
+    if (big.levels) { F.stories = big.levels; F.src.stories = `OpenStreetMap levels tag (${big.levels})`; F.conf = "recorded"; }
+    else if (big.height) { F.stories = Math.max(1, Math.round((big.height - 1) / 3.2)); F.src.stories = `building height ${big.height.toFixed(1)} m (County LiDAR via OpenStreetMap)`; F.conf = "measured"; }
+    else if (F.bldg) { const r = F.bldg / big.sqft; F.stories = r >= 1.55 ? 2 : 1; F.src.stories = `living area ÷ footprint = ${r.toFixed(2)}`; F.conf = "estimated"; }
+    F.roof = big.roof;
+    if (F.conf === "estimated" && PF && PF.stories) { F.stories = PF.stories; F.src.stories = PF.storiesSrc; F.conf = "permit"; }
+  } else {
+    F.foot = Math.min(F.bldg || lot * 0.3, lot * 0.6); F.footAll = F.foot + (slots.slice(1).reduce((t, x) => t + x.sqft, 0));
+    F.src.foot = osm ? "no building outline mapped here: estimated from living area" : "building outlines unavailable offline: estimated from living area";
+    F.stories = PF && PF.stories ? PF.stories : null; F.src.stories = PF && PF.stories ? PF.storiesSrc : "unknown (no building outline or permit record)"; F.conf = PF && PF.stories ? "permit" : "unknown";
+  }
+  F.dec = decodeAssessor(a);
+  F.pool = F.dec.pool ? true : osm ? osm.pools > 0 : null;
+  F.src.pool = F.dec.pool ? `County Assessor code (${F.dec.pool})` : osm ? "OpenStreetMap" : "";
+  F.yard = Math.max(lot - F.footAll - lot * 0.2, 0);   // about 20% of the lot goes to front/side setbacks and the driveway
+  F.second = slots.length > 1 || (F.others || 0) > 0 || !!F.dec.adu;
+  return F;
+}
+function houseChecks(a, lot, m, z, hMax, F, R) {
+  const res = /^0/.test(String(a.UseCode || "")) || /resid/i.test(a.UseType || "");
+  const { bldg, beds, baths, units, yb, foot, yard } = F;
+  const cat = z ? z.cat : null, sf = cat === "single-family" || (!cat && res && units <= 1);
+  const fire = R && R.fire ? R.fire.vh : (m.fire || 0) >= 0.5;
+  const hist = R ? [R.hpoz, R.hcm].some(x => x.ok && x.v.length) || (R.hc.ok && R.hc.v.some(r => /design|landmark|register/i.test(r.Status_Code_Description || ""))) : false;
+  const C = [], add = (name, v, why) => C.push({ name, v, why });
+  const out = () => ({ C, yard, foot, sf, yb, beds, baths, bldg, units, res, lot, stories: F.stories, pool: F.pool, hist, fire });
+  if (hist) add("Historic district or landmark", "note", "This lot is in a historic district or is a designated or listed resource: exterior changes need design review, and SB 9 doesn't apply.");
+  if (R && R.hill.ok && R.hill.v.length) add("Hillside area", "note", "LA's Hillside Ordinance applies: lower floor-area limits, grading limits and height rules make additions and second stories harder.");
+  if (R) { const gz = [["landslide", R.slide], ["liquefaction", R.liq], ["fault", R.fault]].filter(([, x]) => x.ok && x.v.length).map(([n]) => n);
+    if (gz.length) add("Geologic hazard zone", "note", `In a state ${gz.join(", ")} zone: new buildings and additions need a geotechnical investigation first.`); }
+  if (F.dec && F.dec.adu) add("Recorded ADU", "note", `The Assessor records ${/^[AEIOU]/.test(F.dec.adu) ? "an" : "a"} ${F.dec.adu} on this lot.`);
+  if (F.dec && F.dec.mills) add("Mills Act contract", "note", "This home has a Mills Act historic contract (lower property tax in exchange for preservation).");
+  if (!res) { add("Home upgrades", "no", `This parcel is ${esc(a.UseDescription || "not residential")}, so the homeowner checks don't apply.`); return out(); }
+  if (F.second) add("Second building on the lot", "note", F.slots.length > 1 ? `The Assessor lists ${F.slots.length} buildings (${F.slots.map(x => fmtN(x.sqft) + " sq ft").join(", ")}): a garage conversion, guest house or ADU may already exist.` : "There's a second structure on the lot (garage or shed) in the building outlines.");
+  if (yard >= 800) add("Detached ADU (backyard home)", "yes", `${F.dec && F.dec.adu ? `One ${F.dec.adu} is already recorded; this would be another. ` : ""}About ${fmtN(yard)} sq ft of open yard after the buildings and setbacks; an 800 sq ft ADU needs roughly that plus 4 ft side and rear setbacks.`);
+  else if (yard >= 400) add("Detached ADU", "maybe", `Only ~${fmtN(yard)} sq ft of open yard: a small ADU, or converting the garage, is more likely.`);
+  else add("Detached ADU", "no", `Little open yard (~${fmtN(yard)} sq ft); a garage conversion or junior ADU is the realistic option.`);
+  if (sf && bldg >= 1000) add("Junior ADU (inside the house, up to 500 sq ft)", "yes", `${fmtN(bldg)} sq ft home on a single-family lot.`);
+  if (units >= 2 && sf) add("Existing second unit", "note", `The roll shows ${units} units here, so an ADU or duplex may already exist.`);
+  if (sf && hist) add("SB 9 lot split", "no", "SB 9 doesn't apply to historic districts or designated properties.");
+  else if (sf && lot >= 2400 && !fire) add("SB 9 lot split / second home", "yes", `${fmtN(lot)} sq ft single-family lot: SB 9 allows two homes and a split into two lots of at least 1,200 sq ft (40% each). Not allowed in historic districts; a split needs an owner-occupancy affidavit.`);
+  else if (sf && lot >= 2400 && fire) add("SB 9 lot split", "no", R && R.fire ? "This lot is in a very-high fire hazard severity zone (CAL FIRE map), where SB 9 doesn't apply." : "Most of this area is a very-high fire hazard zone, where SB 9 doesn't apply.");
+  else if (sf) add("SB 9 lot split", "no", `Lot is ${fmtN(lot)} sq ft; a split needs room for two lots of at least 1,200 sq ft.`);
+  if (F.pool) add("Swimming pool", "note", `There's already a ${F.dec && F.dec.pool ? F.dec.pool : "pool"} on this lot (${F.src.pool}).`);
+  else if (yard >= 1200) add("Swimming pool", "yes", `~${fmtN(yard)} sq ft of open yard${F.pool === false ? "; no pool mapped here now" : ""}.`);
+  if (F.stories === 1 || F.stories == null) {
+    const one = F.stories === 1, why0 = one ? `One story (${F.src.stories})` : "Number of stories unknown";
+    add("Second story", hMax != null && hMax < 28 ? "no" : one && F.conf !== "estimated" ? "yes" : "maybe",
+      hMax != null && hMax < 28 ? `${why0}, but this zone's ${hMax} ft limit leaves little room for a second floor.` :
+      `${why0}${hMax ? `, and this zone allows up to ${hMax} ft` : ""}. Check floor-area limits (mansionization rules) and whether the foundation can carry a second floor.`);
+  } else add("Second story", "note", `Already ${F.stories} stories (${F.src.stories}).`);
+  add("Rooftop deck", F.roof === "flat" ? "yes" : F.roof ? "no" : "maybe", F.roof === "flat" ? "Flat roof recorded for this building: a deck needs a structural check and waterproofing." : F.roof ? `Roof is ${esc(F.roof)}: a rooftop deck would need a flat section or the garage roof.` : "Needs a flat roof (or a flat garage roof); roof shape isn't recorded for this building.");
+  if (yard >= 400) add("Garden, deck or patio", "yes", `~${fmtN(yard)} sq ft of open yard for a vegetable or native garden, deck, pergola or outdoor kitchen.`);
+  if (foot >= 350) add("Rooftop solar", "yes", `About ${fmtN(foot)} sq ft of roof footprint; check orientation and tree shade.`);
+  if (yb && yb < 1980 && sf) add("Seismic bolting and bracing", "yes", `Built in ${yb}: raised-foundation homes from before 1980 qualify for Earthquake Brace + Bolt grants (up to $3,000), and the work isn't reassessed.`);
+  if (yb && yb < 1975) add("Whole-house repiping", "maybe", `Built in ${yb}: galvanized pipes are common in homes this age.`);
+  if (beds >= 3 && baths && baths < beds - 1) add("Add a bathroom", "yes", `${beds} bedrooms but ${baths} bathroom${baths > 1 ? "s" : ""}: an extra bathroom usually adds more than it costs.`);
+  if (F.dec && F.dec.heat && !F.dec.ac) add("Heat-pump heating and cooling", "yes", `Recorded heating is ${F.dec.heat}, with no central cooling: a heat pump adds both.`);
+  if (fire) add("Wildfire hardening (Zone 0)", "yes", "Very-high fire hazard zone: ember-resistant vents and a clear 5-ft zone are required for new work and help insurance.");
+  return out();
+}
+function houseUpgrades(h, m) {
+  // every upgrade that fits this parcel, with costs and values sized to the house where size drives them
+  const hv = m.hv || 0, scale = Math.sqrt(Math.min(Math.max(hv / 900000, 0.6), 2));
+  const vpsf = Math.min(Math.max(hv / 1800, 250), 1400);   // this area's value per sq ft (typical home ~1,800 sq ft)
+  const loc = Math.min(Math.max((m.rent || D.meta.rent_med) / D.meta.rent_med, 0.7), 1.6), rent1 = 2102 * loc;
+  const check = n => (h.C.find(c => c.name.startsWith(n)) || {}).v;
+  const fits = { onestory: ["yes", "maybe"].includes(check("Second story")), yard800: h.yard >= 800, yard400: h.yard >= 400,
+    yard1200: h.yard >= 1200 && !h.pool, flatroof: true, roof350: h.foot >= 350, pre1980: !!h.yb && h.yb < 1980, pre1975: !!h.yb && h.yb < 1975,
+    fire: (m.fire || 0) >= 0.5 };
+  const rows = [];
+  for (const u of D.upgrades || []) {
+    if (u.applies_if && fits[u.applies_if] === false) continue;
+    let c = u.cost_2025, v = u.resale_value_added * scale, note = "";
+    if (/^Full second story/.test(u.name)) { const sq = Math.min(Math.max(h.foot, 600), 1500); c = sq * 600 + 40000; v = sq * vpsf * 0.8;
+      note = `${fmtN(sq)} sq ft at ~$600/sq ft all-in, plus ~$40k to live elsewhere during the work; new space valued at ~${fmt$(vpsf * 0.8)}/sq ft here`; }
+    else if (/^Partial second story/.test(u.name)) { c = 400 * 650 + 20000; v = 400 * vpsf * 0.8; note = `400 sq ft; new space valued at ~${fmt$(vpsf * 0.8)}/sq ft here`; }
+    else if (/^Ground-floor room addition/.test(u.name)) { c = 400 * 500; v = 400 * vpsf * 0.8; note = `400 sq ft at ~$500/sq ft; new space valued at ~${fmt$(vpsf * 0.8)}/sq ft here`; }
+    else if (/^Detached ADU/.test(u.name)) { v = Math.max(hv * 0.092, rent1 * 1.05 * 12 * 0.65 / 0.059); note = `~$${fmtN(Math.round(rent1 * 1.05))}/mo rent; LA studies find ADUs raise a lot's value ~9%`; }
+    else if (/^Junior ADU/.test(u.name)) { if (!(h.sf && h.bldg >= 1000)) continue; v = rent1 * 0.7 * 12 * 0.65 / 0.059 * 0.6; note = "rent ~70% of a 1-bedroom"; }
+    else if (/^Add a full bathroom/.test(u.name)) { if (!(h.beds >= 2 && h.baths < h.beds)) continue; v = hv * 0.06; note = "LA sales: an extra bath adds ~6%"; }
+    else if (/^Convert a den/.test(u.name)) { if (!(h.beds && h.bldg / h.beds > 550)) continue; v = hv * 0.07; note = "LA sales: an extra bedroom adds ~7%"; }
+    else if (/^In-ground pool/.test(u.name)) { v = (m.ht || 0) > 0 ? 65000 : 15000; note = (m.ht || 0) > 0 ? "warmer area: pools add more" : "cooler area: pools add little"; }
+    else if (/^Rooftop deck/.test(u.name)) { v = Math.min(hv * 0.03, 150000); note = "only on a flat roof or garage roof; worth more with a view"; }
+    else if (/^Garage to living space/.test(u.name)) { v = 300 * vpsf * 0.6; note = "~300 sq ft; loses the garage"; }
+    else if (/^Seismic/.test(u.name)) { c = c - 3000; note = "after the $3,000 Brace + Bolt grant"; }
+    else if (/^Legalize|^Staging|^Kitchen|^Bathroom remodel|^Home gym|^Kids/.test(u.name)) continue;  // not specific to this parcel
+    rows.push({ n: u.name, c: Math.round(c), v: Math.round(v), net: Math.round(v - c), per: v / Math.max(c, 1), note, sav: u.annual_savings });
+  }
+  return rows.sort((a, b) => b.net - a.net);
+}
+let houseLabel = null, houseBldgs = null;
+function showParcel(a, rings) {
+  if (parcelLayer) map.removeLayer(parcelLayer);
+  if (houseLabel) map.removeLayer(houseLabel);
+  if (!rings.length) return;
+  const ll = rings.map(r => r.map(([x, y]) => [y, x]));
+  parcelLayer = L.polygon(ll, { interactive: false, color: "#e8590c", weight: 4, fillColor: "#e8590c", fillOpacity: .14 }).addTo(map);
+  const c = parcelLayer.getBounds().getCenter(), label = a.SitusHouseNo ? `${a.SitusHouseNo} ${String(a.SitusStreet || "").replace(/\s+/g, " ").trim()}` : (a.SitusFullAddress || "").split(/\s{2,}| CA /)[0];
+  houseLabel = L.marker(c, { interactive: false, keyboard: false, icon: L.divIcon({ className: "", iconSize: null,
+    html: `<div class="house-tag" style="transform:translate(-50%,-140%)">${esc(label || "Parcel " + a.AIN)}</div>` }) }).addTo(map);
+}
+function showOutlines(F) {
+  if (houseBldgs) map.removeLayer(houseBldgs);
+  houseBldgs = F.outlines ? L.layerGroup(F.outlines.map((r, i) => L.polygon(r.map(([x, y]) => [y, x]), { interactive: false, color: "#111", weight: i ? 1 : 1.6, fillColor: "#111", fillOpacity: i ? .12 : .22 }))).addTo(map) : null;
+}
+async function houseAt(ll) {
+  clearTimeout(hoverTimer); if (hoverLayer) { map.removeLayer(hoverLayer); hoverLayer = null; }
+  const el0 = $("#house"); if (el0) el0.remove();
+  const box = document.createElement("div"); box.id = "house"; box.className = "section";
+  box.innerHTML = `<h3>This home</h3><p class="small muted">Looking up the parcel with the County Assessor…</p>`;
+  const v = $("#panel .verdict"); (v || $("#panel h2")).after(box);
+  const tok = {}; houseTok = tok;
+  let f = hoverFeat && hoverFeat.geometry && ringsContain(hoverFeat.geometry.rings, ll) ? hoverFeat : null;   // reuse the lot found on hover
+  if (!f) try { f = await fetchParcel(ll); } catch (e) {
+    box.innerHTML = `<h3>This home</h3><p class="small">Couldn't reach the County's parcel service (${esc(e.message)}). Per-house checks need an internet connection; the rest of the map works offline.</p>`; return; }
+  if (!f) { box.innerHTML = `<h3>This home</h3><p class="small muted">No parcel at that spot (street or public land). Click on a lot.</p>`; return; }
+  const a = f.attributes, rings = (f.geometry && f.geometry.rings) || [];
+  showParcel(a, rings);
+  const lot = rings.length ? Math.round(ringAreaM2(rings[0]) * 10.7639) : 0;
+  // show the Assessor facts at once; building outline and the live checks fill in as each one answers
+  const hit_ = houseCache.get(a.AIN) || {};
+  const st = { osm: hit_.osm, R: hit_.R, osmDone: "osm" in hit_ || !rings.length, rDone: "R" in hit_ };
+  const draw = () => { if (houseTok === tok && box.isConnected) renderHouse(box, a, lot, ll, st); };
+  draw();
+  const keep = () => { if (st.osmDone && st.rDone) houseCache.set(a.AIN, { osm: st.osm, R: st.R }); };
+  if (!st.osmDone) fetchOsmLot(rings).then(v => { st.osm = v; }, () => { st.osm = null; }).finally(() => { st.osmDone = true; keep(); draw(); });
+  if (!st.rDone) lotChecks(ll, a).then(v => { st.R = v; }, () => { st.R = null; }).finally(() => { st.rDone = true; keep(); draw(); });
+}
+let houseTok = null;
+const houseCache = new Map();
+function ringsContain(rings, ll) {
+  let inside = false;
+  for (const r of rings) for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+    const [xi, yi] = r[i], [xj, yj] = r[j];
+    if ((yi > ll.lat) !== (yj > ll.lat) && ll.lng < (xj - xi) * (ll.lat - yi) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+function renderHouse(box, a, lot, ll, st) {
+  const osm = st.osmDone ? st.osm : null, R = st.rDone ? st.R : null;
+  const PF = permitFacts(R);
+  const F = houseFacts(a, lot, osm, PF);
+  if (!st.osmDone) { F.src.foot = "estimated from living area; building outline still loading"; if (!F.stories) F.src.stories = "checking the building outline and permits…"; }
+  showOutlines(F);
+  const wait = st.rDone ? null : '<span class="muted">checking…</span>';
+  const waiting = [!st.osmDone && "building outline and height", !st.rDone && "permits, last sale, historic, fire and geologic zones"].filter(Boolean);
+  const p = byId.get(selected).properties, m = (D.details[selected] || {}).m || {}, z = zoneAt(ll);
+  const rule = z ? zoneRules(z.zone, (m.z || {}).j || p.c) : null;
+  const hMax = rule && +rule.max_height_ft ? +rule.max_height_ft : null;
+  const h = houseChecks(a, lot, m, z, hMax, F, R), ups = h.res ? houseUpgrades(h, m) : [];
+  // the package that pays back, counting each either/or choice once (one space addition, one kind of ADU)
+  const GROUPS = [/^(Full second story|Partial second story|Ground-floor room addition|Garage to living space|Convert a den)/, /^(Detached ADU|Junior ADU)/];
+  const pkgH = [], taken = new Set();
+  for (const u of ups.filter(u => u.per >= 1)) { const gi = GROUPS.findIndex(g => g.test(u.n)); if (gi >= 0) { if (taken.has(gi)) continue; taken.add(gi); } pkgH.push(u); }
+  const bestH = ups.slice().filter(u => u.per >= 1).sort((x, y) => y.per - x.per)[0];
+  const sale = R && R.sales.ok && R.sales.v.length ? R.sales.v.sort((x, y) => (y.SALEDATE || 0) - (x.SALEDATE || 0))[0] : null;
+  const chk = (x, yes, no) => !R ? "not checked" : !x.ok ? "couldn't check" : x.v.length ? yes(x.v) : no;
+  const tag = { yes: "✓", maybe: "?", no: "✗", note: "•" }, col = { yes: "var(--ok-ink, #15803d)", maybe: "var(--warn-ink)", no: "var(--ink-3)", note: "var(--ink-2)" };
+  const fact = (k, v, src) => v == null || v === "" ? "" : `<tr><td>${k}</td><td><b>${v}</b>${src ? `<br><span class="muted">${esc(src)}</span>` : ""}</td></tr>`;
+  const slotTxt = F.slots.length > 1 ? F.slots.map((x, i) => `${i ? "building " + (i + 1) : "main"}: ${fmtN(x.sqft)} sq ft${x.units ? `, ${x.units} unit${x.units > 1 ? "s" : ""}` : ""}${x.yb ? `, ${x.yb}` : ""}`).join("; ") : null;
+  box.innerHTML = `<h3>This home</h3>
+    <p class="small"><b>${esc(a.SitusFullAddress || "Parcel " + a.AIN)}</b> · AIN ${esc(a.AIN)} · ${esc(a.UseDescription || "")}</p>
+    ${waiting.length ? `<div class="house-loading"><span class="spin"></span><div><b>Still loading this home's ${waiting.join(" and ")}</b> from public services (usually a few seconds). The Assessor facts below are ready, and the neighborhood summary further down is complete; numbers here update when the checks finish.</div></div>` : ""}
+    <table class="small facts"><tbody>
+      ${fact("Stories", F.stories ? `${F.stories}${F.conf === "estimated" ? " (estimate)" : ""}` : "unknown", F.src.stories)}
+      ${fact("Living area", F.bldg ? `${fmtN(F.bldg)} sq ft${F.living > F.bldg ? ` (${fmtN(F.living)} across all buildings)` : ""}` : null, "County Assessor")}
+      ${fact("Bedrooms / baths", F.beds ? `${F.beds} / ${F.baths}` : null, "County Assessor")}
+      ${fact("Units", F.units || null, "County Assessor")}
+      ${fact("Built", F.yb ? `${F.yb}${F.eff && F.eff !== F.yb ? ` (effective year ${F.eff}, after updates)` : ""}` : null, "County Assessor")}
+      ${fact("Buildings on the lot", slotTxt || (F.others ? `${F.others + 1} structures` : null), slotTxt ? "County Assessor" : "building outlines")}
+      ${fact("Building footprint", F.foot ? `${fmtN(Math.round(F.foot))} sq ft${F.footAll > F.foot ? ` (${fmtN(Math.round(F.footAll))} with other buildings)` : ""}` : null, F.src.foot)}
+      ${fact("Lot", lot ? `${fmtN(lot)} sq ft` : null, "parcel outline (County Assessor)")}
+      ${fact("Open yard (est.)", `${fmtN(Math.round(F.yard))} sq ft`, "lot minus buildings, less ~20% for setbacks and driveway")}
+      ${fact("Pool", F.pool == null ? null : F.pool ? (F.dec.pool || "yes") : "none mapped", F.src.pool)}
+      ${fact("Roof", F.roof || null, "OpenStreetMap")}
+      ${fact("Quality class", F.qc || null, "County Assessor building class code")}
+      ${fact("Zone", z ? `${esc(z.zone)} (${esc(z.cat)})${rule ? `, up to ${esc(rule.max_height_ft)} ft, setbacks ${esc(rule.front_ft)}/${esc(rule.side_ft)}/${esc(rule.rear_ft)} ft` : ""}<br><span style="font-weight:400">${esc(zoneSentence(z.zone, z.cat, z.juris))}</span>` : "not mapped here", z ? "city or County zoning map; plain-language summary" : "")}
+      ${fact("Heating / cooling", F.dec.heat, "County Assessor design code")}
+      ${fact("Recorded ADU", F.dec.adu, "County Assessor use code")}
+      ${fact("Last sale", sale ? `${esc(sale.FORMATTED_SALEDATE || "")}${sale.FORMATTED_SALEPRICE ? ` · ${esc(sale.FORMATTED_SALEPRICE)}` : ""}` : wait, "County Assessor recent sales (transfer-tax indicated price)")}
+      ${fact("Permits since 2020", PF.list.length ? PF.list.slice(0, 4).map(x => `${esc(x.kind)} ${esc(x.date)}${x.status ? " (" + esc(x.status) + ")" : ""}`).join("; ") : R && R.prm.ok ? "none found" : wait, "LA City Building and Safety (City of LA only)")}
+      ${fact("Historic", R ? [chk(R.hpoz, v => "HPOZ: " + esc(v[0].NAME || ""), ""), chk(R.hcm, v => "Historic-Cultural Monument " + esc(v[0].MNT_NUM || ""), ""), chk(R.hc, v => esc(v[0].Status_Code_Description || v[0].Name || "County historic resource"), "")].filter(Boolean).join("; ") || "none mapped" : wait, "LA City HPOZ and monuments; County historic resources")}
+      ${fact("Fire zone", R && R.fire ? (R.fire.vh ? "very high fire hazard severity zone" : R.fire.any ? esc(R.fire.label) : "not in a mapped fire zone") : st.rDone && R ? "couldn't check" : wait, "CAL FIRE fire hazard severity zones")}
+      ${fact("Geologic zones", R ? [["landslide", R.slide], ["liquefaction", R.liq], ["fault", R.fault]].map(([n, x]) => x.ok && x.v.length ? n : null).filter(Boolean).join(", ") || "none mapped" : wait, "California Geological Survey (a missing zone isn't proof of safe ground)")}
+      ${fact("Assessed value", `land ${fmt$(+a.Roll_LandValue || 0)} + buildings ${fmt$(+a.Roll_ImpValue || 0)}${a.Roll_LandBaseYear ? ` (Prop 13 base ${esc(a.Roll_LandBaseYear)})` : ""}${+a.Roll_HomeOwnersExemp > 0 ? " · owner-occupied" : ""}`, "County Assessor 2026 roll")}
+      ${fact("Typical home here", fmt$(m.hv || 0), "recorded sales in this area")}
+    </tbody></table>
+    ${bestH ? `<p class="verdict" style="margin-top:8px">Best bet for this home: <b>${esc(bestH.n)}</b>. It adds about <b>${fvpd(bestH.per)}</b> of value for every $1 it costs.</p>` : h.res ? `<p class="verdict" style="margin-top:8px">No upgrade here returns $1 of value per $1 spent; the list below shows the closest.</p>` : ""}
+    ${pkgH.length ? `<div class="pkg">${tile("Upgrades that pay back", pkgH.length, "≥ $1 of value per $1; either/or options counted once")}${tile("Total cost", fmt$(pkgH.reduce((t, u) => t + u.c, 0)), "2025 LA estimates")}${tile("Value added", fmt$(pkgH.reduce((t, u) => t + u.v, 0)), "to this home")}</div>` : ""}
+    <ul class="small" style="margin:8px 0 0 0;padding:0;list-style:none">${h.C.map(c => `<li style="margin:3px 0"><b style="color:${col[c.v]}">${tag[c.v]} ${esc(c.name)}</b> — ${c.why}</li>`).join("")}</ul>
+    ${ups.length ? `<table class="small sticky-head" style="width:100%;border-collapse:collapse;margin-top:6px"><thead><tr style="text-align:left"><th>Upgrades for this house (best net first)</th><th style="text-align:right">Cost</th><th style="text-align:right">Adds</th><th style="text-align:right">Per $1</th><th style="text-align:right">Net</th></tr></thead><tbody>
+      ${ups.slice(0, 14).map(u => `<tr style="border-top:1px solid var(--rule)"><td>${esc(u.n)}${u.note ? `<br><span class="muted">${esc(u.note)}</span>` : ""}${u.sav > 0 ? `<br><span class="muted">${/ADU/.test(u.n) ? "rent" : "saves"} ~${fmt$(u.sav)}/yr</span>` : ""}</td><td style="text-align:right">${fmt$(u.c)}</td><td style="text-align:right">${fmt$(u.v)}</td><td style="text-align:right">${fvpd(u.per)}</td><td style="text-align:right;font-weight:600">${u.net >= 0 ? "+" + fmt$(u.net) : "−" + fmt$(-u.net)}</td></tr>`).join("")}</tbody></table>
+      ${ups.length > 14 ? `<p class="small muted">${ups.length - 14} more fit this lot but return less.</p>` : ""}` : ""}
+    <p class="small muted">Facts come from the County Assessor, LA City permits, state and local hazard and historic maps, and the building outline mapped for this lot; each one says where it came from. Check setbacks, easements, historic status and permits with the city. Values use this area's typical home price per sq ft and LA rents; costs are 2025 LA estimates (second stories ~$600/sq ft all-in).</p>`;
+}
+
+// ---------------- address search: find a home by street address (County Assessor parcels)
+let addrTimer = null;
+function hideAddr() { const el = $("#addr-results"); if (el) el.remove(); }
+async function goToParcel(f) {
+  hideAddr();
+  const rings = (f.geometry && f.geometry.rings) || []; if (!rings.length) return;
+  const poly = L.polygon(rings.map(r => r.map(([x, y]) => [y, x]))), c = poly.getBounds().getCenter();
+  map.fitBounds(poly.getBounds(), { maxZoom: 18, padding: [120, 120], animate: false });
+  const bg = D.bgs.features.find(ff => pointInFeature(ff, c.lng, c.lat));
+  if (bg) select(bg.properties.id, false);
+  houseAt(c);
+}
+async function addressSearch(text, go) {
+  const t = text.toUpperCase().replace(/[^A-Z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+  let d;
+  try { d = await arcQuery(PARCEL_URL.replace(/\/query$/, ""), { where: `SitusFullAddress LIKE '${t.replace(/'/g, "")}%'`, outFields: "AIN,SitusFullAddress", returnGeometry: true, outSR: 4326, resultRecordCount: 8 }); }
+  catch (e) { return; }
+  const feats = (d.features || []).filter(f => f.attributes.SitusFullAddress);
+  if (go && feats.length) return goToParcel(feats[0]);
+  hideAddr(); if (!feats.length) return;
+  const box = document.createElement("div"); box.id = "addr-results";
+  box.innerHTML = feats.map((f, i) => `<button type="button" data-i="${i}">${esc(f.attributes.SitusFullAddress.replace(/\s+/g, " "))}</button>`).join("");
+  $("#q").parentElement.style.position = "relative"; $("#q").after(box);
+  box.querySelectorAll("button").forEach(b => b.onclick = () => goToParcel(feats[+b.dataset.i]));
+}
+
+// ---------------- house numbers at zoom 18+ (County CAMS address points)
+let numLayer = null, numTimer = null;
+function drawNumbers() {
+  clearTimeout(numTimer);
+  numTimer = setTimeout(async () => {
+    if (!map._loaded) return;
+    if (map.getZoom() < 18) { if (numLayer) { map.removeLayer(numLayer); numLayer = null; } return; }
+    const b = map.getBounds();
+    let d; try { d = await arcQuery(R9.cams, { geometry: `${b.getWest()},${b.getSouth()},${b.getEast()},${b.getNorth()}`, geometryType: "esriGeometryEnvelope", inSR: 4326, outSR: 4326,
+      spatialRel: "esriSpatialRelIntersects", outFields: "Number,NumPrefix,NumSuffix", returnGeometry: true, resultRecordCount: 500 }); } catch (e) { return; }
+    if (numLayer) map.removeLayer(numLayer);
+    const seen = new Set();
+    numLayer = L.layerGroup((d.features || []).filter(f => f.geometry && f.attributes.Number).map(f => {
+      const n = `${f.attributes.NumPrefix || ""}${f.attributes.Number}${f.attributes.NumSuffix || ""}`, k = n + "@" + f.geometry.x.toFixed(4) + f.geometry.y.toFixed(4);
+      if (seen.has(k)) return null; seen.add(k);
+      return L.marker([f.geometry.y, f.geometry.x], { interactive: false, keyboard: false, icon: L.divIcon({ className: "", iconSize: null, html: `<div class="hnum" style="transform:translate(-50%,-50%)">${esc(n)}</div>` }) });
+    }).filter(Boolean)).addTo(map);
+  }, 350);
+}
+
+// ---------------- hover preview at street level: outline the lot under the mouse and show its address
+let hoverTimer = null, hoverLayer = null, hoverKey = "", hoverFeat = null;
+const hoverCache = new Map();
+function hoverParcel(e) {
+  clearTimeout(hoverTimer);
+  if (map.getZoom() < 17) { if (hoverLayer) { map.removeLayer(hoverLayer); hoverLayer = null; } return; }
+  hoverTimer = setTimeout(async () => {
+    const key = `${e.latlng.lat.toFixed(5)},${e.latlng.lng.toFixed(5)}`; if (key === hoverKey) return; hoverKey = key;
+    let f = hoverCache.get(key);
+    if (f === undefined) { try { f = await fetchParcel(e.latlng); } catch (er) { f = null; } hoverCache.set(key, f); }
+    if (hoverLayer) { map.removeLayer(hoverLayer); hoverLayer = null; }
+    hoverFeat = f;
+    if (!f || !f.geometry) return;
+    const a = f.attributes;
+    hoverLayer = L.polygon(f.geometry.rings.map(r => r.map(([x, y]) => [y, x])), { interactive: false, color: css("--ink", "#111"), weight: 2, fill: false, dashArray: "3 3" })
+      .bindTooltip(`<b>${esc(a.SitusFullAddress || "Parcel " + a.AIN)}</b><br><span class="muted">click to analyze this home</span>`, { permanent: true, direction: "top", className: "" }).addTo(map);
+  }, 450);
+}
+
+// ---------------- lot lines from the County parcel map (drawn by the County server, online only)
+const LotLines = L.TileLayer.extend({
+  getTileUrl(c) {
+    const s = this._tileSize || 256, nw = this._map.unproject([c.x * 256, c.y * 256], c.z), se = this._map.unproject([(c.x + 1) * 256, (c.y + 1) * 256], c.z);
+    const a = L.CRS.EPSG3857.project(nw), b = L.CRS.EPSG3857.project(se);
+    return `https://public.gis.lacounty.gov/public/rest/services/LACounty_Cache/LACounty_Parcel/MapServer/export?bbox=${a.x},${b.y},${b.x},${a.y}&bboxSR=3857&imageSR=3857&size=256,256&format=png32&transparent=true&f=image&dpi=96`;
+  }
+});
+
 // ---------------- homeowner upgrades (round 6; LA-metro averages, not this house)
 function upgradeTable(m) {
-  const U = (D.upgrades || []).filter(u => !(u.applies_if === "pre1975" && m.yb >= 1975) && !(u.applies_if === "pre1980" && m.yb >= 1980));
+  const fire = (m.fire || 0) >= 0.5;
+  const U = (D.upgrades || []).filter(u => !(u.applies_if === "pre1975" && m.yb >= 1975) && !(u.applies_if === "pre1980" && m.yb >= 1980) && !(u.applies_if === "fire" && !fire));
   if (!U.length) return "";
-  const rows = U.map(u => ({ ...u, net: u.resale_value_added - u.cost_2025 })).sort((a, b) => b.net - a.net);
-  return `<details class="more"><summary>${rows.length} more home upgrades: cost vs. resale value</summary>
-    <div style="overflow-x:auto"><table class="small" style="width:100%;border-collapse:collapse;margin-top:6px">
-      <thead><tr style="text-align:left"><th>Upgrade</th><th style="text-align:right">Cost</th><th style="text-align:right">Adds to resale</th><th style="text-align:right">Saves / yr</th><th>Rebates (Nov 2026)</th><th>Property tax</th><th>Permits</th></tr></thead>
-      <tbody>${rows.map(u => `<tr style="border-top:1px solid var(--rule)"><td>${esc(u.name)}</td><td style="text-align:right">${fmt$(u.cost_2025)}</td><td style="text-align:right;${u.net >= 0 ? "font-weight:600" : ""}">${fmt$(u.resale_value_added)}</td><td style="text-align:right">${u.annual_savings ? fmt$(u.annual_savings) : "–"}</td><td>${esc(u.rebates_nov_2026)}</td><td>${esc(u.property_tax)}</td><td>${esc(u.permits)}</td></tr>`).join("")}</tbody></table></div>
-    <p class="small muted">LA-metro averages from the round-6 research (Cost vs. Value and other sources, 2025 dollars), not an estimate for this house. Rebate notes are corrected where the research was out of date: federal 25C and 25D credits ended for work after 2025. ${m.yb ? `Repiping and seismic bracing are listed only because homes here date from about ${Math.round(m.yb)}.` : ""} Per-house checks (lot size, setbacks, fire zone, existing ADU) are coming next.</p></details>`;
+  const rows = U.map(u => ({ ...u, net: u.resale_value_added - u.cost_2025, per: u.resale_value_added / Math.max(u.cost_2025, 1) })).sort((a, b) => b.per - a.per);
+  return `<details class="more"><summary>${rows.length} home upgrades: cost, value added and return per $1</summary>
+    <div><table class="small sticky-head" style="width:100%;border-collapse:collapse;margin-top:6px">
+      <thead><tr style="text-align:left"><th>Upgrade</th><th style="text-align:right">Cost</th><th style="text-align:right">Adds to resale</th><th style="text-align:right">Per $1</th><th style="text-align:right">Saves / yr</th><th>Rebates (Nov 2026)</th><th>Property tax</th><th>Permits</th></tr></thead>
+      <tbody>${rows.map(u => `<tr style="border-top:1px solid var(--rule)"><td>${esc(u.name)}</td><td style="text-align:right">${fmt$(u.cost_2025)}</td><td style="text-align:right">${fmt$(u.resale_value_added)}</td><td style="text-align:right;font-weight:600">${fvpd(u.per)}</td><td style="text-align:right">${u.annual_savings > 0 ? fmt$(u.annual_savings) : u.annual_savings < 0 ? "−" + fmt$(-u.annual_savings) + " cost" : "–"}</td><td>${esc(u.rebates_nov_2026)}</td><td>${esc(u.property_tax)}</td><td>${esc(u.permits)}</td></tr>`).join("")}</tbody></table></div>
+    <p class="small muted">Typical 2025 LA costs and resale values (City Pretty estimates; second stories and additions run about $450–$700 per sq ft all-in). They're being checked against round-8 research. These are LA-wide averages: zoom in and click a home for numbers sized to that house and its yard. Federal 25C and 25D credits ended for work after 2025.</p></details>`;
 }
 
 // ---------------- EIFD calculator (Gov. Code 53398.50 et seq.)
@@ -604,14 +1277,23 @@ function eifdSection(p, m) {
     ${fld("e-g", "Yearly value growth (%)", 3.0, 0.1, "2% Prop 13 cap + resales")}
     ${fld("e-new", "New development, year 3 ($M)", 0, 1, "")}
     ${fld("e-city", "City share of the 1% tax (%)", "", 0.01, "")}
-    ${fld("e-cp", "City pledge (%)", 100, 5, "")}
+    ${fld("e-cp", "City pledge (%)", 75, 5, "Artesia 2026: 75%")}
     ${fld("e-county", "County General share of the 1% tax (%)", "", 0.01, "")}
-    ${fld("e-kp", "County pledge (%)", 50, 5, "")}
+    ${fld("e-kp", "County pledge (%)", 49, 1, "Artesia 49%; range 11–50%")}
     ${fld("e-rate", "Bond interest rate (%)", 5.25, 0.05, "")}
     ${fld("e-dscr", "Debt-service coverage (x)", 1.35, 0.05, "")}
     <div class="pkg" id="e-out" style="margin-top:10px"></div>
     <div id="e-split"></div>
-    <p class="small muted" id="e-note"></p><p class="small" id="e-warn"></p></div>`;
+    <p class="small muted" id="e-note"></p><p class="small" id="e-warn"></p>${eifdRegister()}</div>`;
+}
+function eifdRegister() {
+  const E = (D.r10 || {}).eifds || []; if (!E.length) return "";
+  const formed = E.filter(e => /^FORMED|ADOPTED/i.test(e[2])), other = E.filter(e => !/^FORMED|ADOPTED/i.test(e[2]));
+  const row = e => `<li><b>${esc(e[0])}</b> — ${esc(e[2].split(";")[0].toLowerCase())}${e[3] ? `; ${esc(e[3])}` : ""}${e[4] ? `; ${esc(e[4].split(";")[0])}` : ""}${e[5] ? `. Pays for: ${esc(e[5])}` : ""}.</li>`;
+  return `<details style="margin-top:8px"><summary class="small"><b>Real districts in LA County</b> (${formed.length} formed, ${other.length} proposed, expired or related)</summary>
+    <ul class="small" style="margin:6px 0 0 18px;padding:0">${formed.map(row).join("")}</ul>
+    <p class="small muted" style="margin:6px 0 2px">Proposed, expired or related:</p><ul class="small" style="margin:0 0 0 18px;padding:0">${other.map(row).join("")}</ul>
+    <p class="small muted">From the round-10 research (County, city and IFP documents, accessed Nov 2026). Shares are of each agency's own part of the 1% tax, not of the whole levy. Projected totals are lifetime forecasts, not money in hand.</p></details>`;
 }
 function eifdWire(p) {
   let scope = "bg";
@@ -672,7 +1354,7 @@ function select(id, fly) {
     <p class="subname">Name from ${esc(m.ns || "")}${m.csa && m.csa !== p.n ? " · County area: " + esc(m.csa) : ""}</p>`;
   h += top && top.vpd >= 1 ? `<p class="verdict">Best bet: <b>${esc(D.catalog[top.id].name.replace(/^([A-Z])(?=[a-z])/, c => c.toLowerCase()))}</b>${/\d/.test(top.project) ? ` (${esc(top.project)})` : ""}. It adds about <b>${fvpd(top.vpd)}</b> of home value for every $1 it costs.</p>`
     : `<p class="verdict">Nothing here returns $1 of home value per $1 spent. The quality-of-life projects below are still worth a look.</p>`;
-  if (pkg.length) h += `<div class="pkg">${tile("Projects that pay back", pkg.length, "≥ $1 of value per $1")}${tile("Total cost", fmt$(pkg.reduce((s, r) => s + r.cost, 0)), "build + land + 10-yr upkeep")}${tile("Value added", fmt$(pkg.reduce((s, r) => s + r.value, 0)), "nearby homes, combined")}</div>`;
+  if (pkg.length) h += `<div class="pkg">${tile("Projects that pay back", pkg.length, "≥ $1 of value per $1")}${tile("Total cost", fmt$(pkg.reduce((s, r) => s + r.cost, 0)), "build + land + 10-yr upkeep")}${tile("Value added", fmt$(pkg.reduce((s, r) => s + r.value, 0)), "nearby homes, combined")}</div>` + fundSummary(pkg, id);
   h += gapSection(p, m);
   h += `<div class="section"><div class="tiles">
     ${tile("Typical home value", fmt$(m.hv), esc(m.hvs || ""))}
@@ -726,7 +1408,7 @@ function report() {
 
 async function init() {
   D = await unpack();
-  map = L.map("map", { preferCanvas: true, zoomSnap: 0.5, minZoom: 9, maxZoom: 17 });
+  map = L.map("map", { preferCanvas: true, zoomSnap: 0.5, minZoom: 9, maxZoom: 19 });
   map.attributionControl.setPrefix(false).addAttribution("© OpenStreetMap contributors · US Census · LA County Assessor, Auditor-Controller and Parks · LAPD · LASD · MyLA311 · CHP · LA Metro · city tree surveys · Tree Equity Score");
   D.bgs.features.forEach(f => byId.set(f.properties.id, f));
   retop();
@@ -734,11 +1416,12 @@ async function init() {
   bgs = L.geoJSON(D.bgs, { style: styleBg, onEachFeature: (f, l) => {
     const p = f.properties;
     l.bindTooltip(() => `<b>${esc(p.n)}</b> · ${esc(p.c)}<br>${p.t && p.v >= 1 ? esc(D.catalog[p.t].name) + ": " + fvpd(p.v) + " per $1" : "Nothing returns $1 per $1"}`, { sticky: true });
-    l.on("click", () => select(p.id, false)); } }).addTo(map);
+    l.on("click", e => { select(p.id, false); if (map.getZoom() >= 17) houseAt(e.latlng); else houseHint(); }); } }).addTo(map);
   drawContext(); legend(); report();
   const names = new Map(Object.entries(D.meta.search || {}));
   $("#names").innerHTML = [...names.keys()].sort().map(n => `<option value="${esc(n)}">`).join("");
-  $("#q").onchange = e => { const id = names.get(e.target.value); if (id) select(id, true); };
+  $("#q").onchange = e => { const id = names.get(e.target.value); if (id) select(id, true); else if (/^\d+\s+\S/.test(e.target.value)) addressSearch(e.target.value, true); };
+  $("#q").addEventListener("input", e => { clearTimeout(addrTimer); const v = e.target.value; if (/^\d+\s+\S{2,}/.test(v)) addrTimer = setTimeout(() => addressSearch(v, false), 450); else hideAddr(); });
   $("#metric").onchange = restyle;
   $("#evid").onchange = () => { retop(); restyle(); if (selected) select(selected, false); };
   ["#l-roads", "#l-transit", "#l-parks", "#l-amen", "#l-hoods", "#l-fac", "#l-zone", "#l-under", "#l-proj"].forEach(id => $(id).onchange = drawContext);
@@ -751,15 +1434,32 @@ async function init() {
     restyle();
   };
   map.on("zoomend", zoomed);
+  let lots = null;
+  const syncLots = () => { const want = $("#l-lots").checked;
+    if (want && !lots) lots = new LotLines("", { minZoom: 17, maxZoom: 19, opacity: .9, attribution: "Parcels © LA County Assessor" }).addTo(map);
+    if (!want && lots) { map.removeLayer(lots); lots = null; } };
+  $("#l-lots").onchange = syncLots; syncLots();
+  map.on("moveend", drawNumbers);
+  let aerial = null;
+  const syncAerial = () => { const want = $("#l-aerial").checked;
+    if (want && !aerial) { aerial = L.tileLayer("https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}",
+      { maxNativeZoom: 16, maxZoom: 19, attribution: "Imagery: USGS The National Map (public domain)" }).addTo(map); aerial.bringToBack(); restyle(); }
+    if (!want && aerial) { map.removeLayer(aerial); aerial = null; restyle(); } };
+  $("#l-aerial").onchange = syncAerial;
+  map.on("mousemove", hoverParcel);
+  map.on("mousemove", zoneTip);
+  // at street level the address preview replaces the area tooltip
+  map.on("zoomend", () => { const hi = map.getZoom() >= 17; bgs.eachLayer(l => { const t = l.getTooltip(); if (t) { t.options.opacity = hi ? 0 : 0.9; if (hi) l.closeTooltip(); } }); });
+  map.on("mouseout", () => { clearTimeout(hoverTimer); });
   map.on("moveend", () => { drawStreets(); drawLabels(); drawZoning(); drawFacilities(); drawUnder(); drawProjects(); });
   L.control.scale({ imperial: true, metric: false, maxWidth: 140, position: "bottomleft" }).addTo(map);
   const Loc = L.Control.extend({ options: { position: "topleft" }, onAdd() { const b = L.DomUtil.create("button", "locate"); b.type = "button"; b.textContent = "📍 Find me";
     b.title = "Center the map on where you are and open your block group"; L.DomEvent.disableClickPropagation(b); b.onclick = () => locateMe(b); return b; } });
   new Loc().addTo(map);
-  map.fitBounds(L.geoJSON(D.bgs).getBounds());
+  map.fitBounds(L.geoJSON(D.bgs).getBounds(), { animate: false });
   const start = D.meta.default_bg && byId.has(D.meta.default_bg) ? D.meta.default_bg : D.bgs.features[0].properties.id;
   select(start, false);
-  map.setView(L.geoJSON(byId.get(start)).getBounds().getCenter(), 12);
+  map.setView(L.geoJSON(byId.get(start)).getBounds().getCenter(), 12, { animate: false });
   $("#loading").hidden = true;
   matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => { drawContext(); restyle(); });
 }
