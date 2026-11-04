@@ -178,11 +178,42 @@ def zoning_bundle():
 OVERLAY_CELL = 0.05  # degrees; per-house overlay polygons are clipped to this grid so a click unpacks one small cell
 
 
+def _clip(geom, bx):
+    try:
+        return geom.intersection(bx)
+    except Exception:  # noqa: BLE001  (rare topology errors: a zero-width buffer repairs them)
+        return geom.buffer(0).intersection(bx)
+
+
+def clip_to_cells(geom, c0=None, c1=None):
+    """Yield ((cx, cy), piece) for each OVERLAY_CELL grid cell the geometry touches. Splits the cell range in half
+    recursively, so each clip works on an already-clipped piece (a county-sized layer takes seconds, not hours)."""
+    from shapely.geometry import box
+    if geom.is_empty:
+        return
+    if c0 is None:
+        x0, y0, x1, y1 = geom.bounds
+        c0 = (int((x0 + 180) // OVERLAY_CELL), int((y0 + 90) // OVERLAY_CELL))
+        c1 = (int((x1 + 180) // OVERLAY_CELL), int((y1 + 90) // OVERLAY_CELL))
+    (a, b), (c, d) = c0, c1
+    if a == c and b == d:
+        yield (a, b), _clip(geom, box(a * OVERLAY_CELL - 180, b * OVERLAY_CELL - 90, (a + 1) * OVERLAY_CELL - 180, (b + 1) * OVERLAY_CELL - 90))
+        return
+    if c - a >= d - b:
+        m = (a + c) // 2
+        halves = [((a, b), (m, d)), ((m + 1, b), (c, d))]
+    else:
+        m = (b + d) // 2
+        halves = [((a, b), (c, m)), ((a, m + 1), (c, d))]
+    for (p, q), (r, t) in halves:
+        piece = _clip(geom, box(p * OVERLAY_CELL - 180, q * OVERLAY_CELL - 90, (r + 1) * OVERLAY_CELL - 180, (t + 1) * OVERLAY_CELL - 90))
+        yield from clip_to_cells(piece, (p, q), (r, t))
+
+
 def overlays_bundle():
     """Point-in-polygon layers for the house panel (pipeline stage `overlays`), clipped to grid cells with holes kept.
     Returns {"layers", "attrs", "cell", "chunks": {cell: gzip+base64 JSON [[layer i, attrs i, [ring, hole...]]...]}}
     or None when the stage hasn't produced data yet (the page then queries those services live)."""
-    from shapely.geometry import box
     p = SRC / "map_overlays.geojson.gz"
     if not p.exists():
         return None
@@ -195,21 +226,13 @@ def overlays_bundle():
             layers.append(lay)
         if at not in ai:
             ai[at] = len(attrs)
-            attrs.append(json.loads(at))
-        x0, y0, x1, y1 = geom.bounds
-        for cx in range(int((x0 + 180) // OVERLAY_CELL), int((x1 + 180) // OVERLAY_CELL) + 1):
-            for cy in range(int((y0 + 90) // OVERLAY_CELL), int((y1 + 90) // OVERLAY_CELL) + 1):
-                bx = box(cx * OVERLAY_CELL - 180, cy * OVERLAY_CELL - 90, (cx + 1) * OVERLAY_CELL - 180, (cy + 1) * OVERLAY_CELL - 90)
-                try:
-                    part = geom.intersection(bx)
-                except Exception:  # noqa: BLE001  (rare topology errors: a zero-width buffer repairs them)
-                    part = geom.buffer(0).intersection(bx)
-                if part.is_empty:
+            attrs.append({k: (None if isinstance(v, float) and v != v else v) for k, v in json.loads(at).items()})  # NaN → null
+        for (cx, cy), part in clip_to_cells(geom):
+            for q in getattr(part, "geoms", [part]):
+                if q.geom_type != "Polygon" or q.is_empty:
                     continue
-                polys = [q for q in getattr(part, "geoms", [part]) if q.geom_type == "Polygon" and not q.is_empty]
-                for q in polys:
-                    rings = [encode_line(list(q.exterior.coords))] + [encode_line(list(r.coords)) for r in q.interiors]
-                    cells.setdefault(f"{cx},{cy}", []).append([layers.index(lay), ai[at], rings])
+                rings = [encode_line(list(q.exterior.coords))] + [encode_line(list(r.coords)) for r in q.interiors]
+                cells.setdefault(f"{cx},{cy}", []).append([layers.index(lay), ai[at], rings])
     chunks = {k: base64.b64encode(gzip.compress(json.dumps(v, separators=(",", ":")).encode(), 9)).decode() for k, v in cells.items()}
     print(f"  overlays: {', '.join(layers)}; {sum(len(v) for v in cells.values()):,} polygon pieces in {len(cells)} cells, "
           f"{sum(len(c) for c in chunks.values()) / 1e6:.1f} MB packed")

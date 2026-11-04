@@ -2272,7 +2272,7 @@ def stage_overlays():
             g = g[g.geom_type == "Polygon"]
             for f in keep:
                 g[f] = g[f].astype(str).replace({"None": "", "nan": ""})
-            g["attrs"] = g[keep].apply(lambda r: json.dumps({k: v for k, v in r.items() if v}, sort_keys=True), axis=1) if keep else "{}"
+            g["attrs"] = g[keep].apply(lambda r: json.dumps({k: v for k, v in r.items() if v and v == v}, sort_keys=True), axis=1) if keep else "{}"
             g = g.to_crs(M)
             g["geometry"] = g.geometry.simplify(tol).make_valid()
             d = g.dissolve(by="attrs", as_index=False)[["attrs", "geometry"]]

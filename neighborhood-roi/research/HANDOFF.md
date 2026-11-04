@@ -221,6 +221,10 @@ Current deliverable: `reports/city-pretty-la-county.html` (V2.3: real EIFD input
   last sale (PAIS) plus the OSM outline still go out. `prefetchHouse()` starts those 350 ms after the mouse rests on
   a lot (max 3 in flight); a click reuses them. Loading text is now one line: "Pulling records from LA County…".
   The lot-line note shows only if lines take over `LOTS_NOTE_MS` (1.2 s).
+- Overlay build (V2.18): `clip_to_cells()` halves the cell range recursively so each clip works on an already-clipped
+  piece (whole build step ~100 s instead of >30 min for the county-wide hillside/fire layers). NaN attribute values
+  become null (the pipeline also drops them). Page is 21.0 MB with overlays (+4.9 MB). CI runs the overlay e2e checks
+  with a liquefaction point and a point in one of its holes (`OVERLAY_FIXTURE` in checks.yml).
 - Next for speed: serve `bgs`/`under`/`zoning`/`streets` as separate files or vector tiles (PMTiles + MapLibre) from
   static hosting (round 10 Part V: GitHub Pages ≤1 GB with range requests; Cloudflare Pages 25 MiB per file),
   with this single offline file kept as a fallback build.

@@ -76,3 +76,5 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Offline page checks
         run: node tests/e2e.cjs
+        env:
+          OVERLAY_FIXTURE: '{"inside":[33.937459,-118.101861],"hole":[33.938725,-118.056754],"layer":"liq"}'
