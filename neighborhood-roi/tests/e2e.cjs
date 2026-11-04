@@ -18,17 +18,32 @@ const check = (name, ok, extra = '') => { results.push(ok); console.log(`${ok ? 
 async function run({ cached }) {
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1280, height: 860 } });
-  const errors = [], lotUrls = [];
+  const errors = [], lotUrls = [], overlayCalls = [];
   page.on('pageerror', (e) => errors.push(e.message));
+  const OVERLAY_HOSTS = /Historic_Preservation|Historic_Cultural|GISNET_Public\/MapServer\/331|Special_Areas\/MapServer\/6|CGS_|FHSZ|FHSALRA/;
+  const ring = (lat, lng, d = 0.0002) => [[lng - d, lat - d], [lng + d, lat - d], [lng + d, lat + d], [lng - d, lat + d], [lng - d, lat - d]];
   await page.route('**/*', async (route) => {
     const url = route.request().url();
     if (url.startsWith('file:') || url.startsWith('data:')) return route.continue();
+    if (OVERLAY_HOSTS.test(url)) { overlayCalls.push(url); return route.fulfill({ contentType: 'application/json', body: '{"features":[]}' }); }
+    if (url.includes('LACounty_Parcel/MapServer/0/query')) { // the County parcel lookup (hover and click)
+      const m = /geometry=(-?[\d.]+),(-?[\d.]+)/.exec(decodeURIComponent(url)) || [];
+      const lng = +m[1], lat = +m[2];
+      return route.fulfill({ contentType: 'application/json', body: JSON.stringify({ features: [{ geometry: { rings: [ring(lat, lng)] },
+        attributes: { AIN: '5555012345', SitusFullAddress: '123 TEST ST', SitusHouseNo: '123', SitusStreet: 'TEST ST', UseCode: '0100', UseType: 'Residential',
+          Roll_LandValue: 500000, Roll_ImpValue: 200000, YearBuilt1: '1950', SQFTmain1: 1400, Units1: 1, Bedrooms1: 3, Bathrooms1: 2, DesignType1: '0100' } }] }) });
+    }
+    if (url.includes('overpass') || url.includes('kumi.systems')) { await new Promise((r) => setTimeout(r, 900)); return route.fulfill({ contentType: 'application/json', body: '{"elements":[]}' }); }
+    if (url.includes('data.lacity.org') || url.includes('pais_sales_parcels')) {
+      await new Promise((r) => setTimeout(r, 600));
+      return route.fulfill({ contentType: 'application/json', body: url.includes('data.lacity.org') ? '[]' : '{"features":[]}' });
+    }
     if (url.includes('LACounty_Parcel/MapServer?f=json')) {
       return route.fulfill({ contentType: 'application/json', body: JSON.stringify(cached ? CACHE_INFO : { singleFusedMapCache: false }) });
     }
     if (url.includes('LACounty_Parcel/MapServer/export') || url.includes('LACounty_Parcel/MapServer/tile/')) {
       lotUrls.push(url);
-      await new Promise((r) => setTimeout(r, 1200)); // the County server is slow; the note must cover the wait
+      await new Promise((r) => setTimeout(r, 2000)); // slower than LOTS_NOTE_MS, so the note must show
       return route.fulfill({ contentType: 'image/png', body: PNG });
     }
     return route.abort();
@@ -63,6 +78,32 @@ async function run({ cached }) {
     await page.click('#lots-hood');
     check(`${label} "explore this neighborhood" opens the area under the map`, await page.evaluate(() => !!selected));
   } else check(`${label} "explore this neighborhood" opens the area under the map`, false, 'note did not show');
+
+  // House panel: with overlay polygons shipped in the page, the nine map checks make no network calls,
+  // and hovering a lot first means the click finds the remaining checks already done.
+  if (process.env.OVERLAY_FIXTURE) {
+    const fx = JSON.parse(process.env.OVERLAY_FIXTURE); // {inside:[lat,lng], hole:[lat,lng], layer:"liq"}
+    const r = await page.evaluate(async (fx) => {
+      const a = { AIN: '5555012345' };
+      const inZone = await lotChecks(L.latLng(...fx.inside), a), inHole = await lotChecks(L.latLng(...fx.hole), a);
+      return { inZone: inZone[fx.layer].v.length, local: !!inZone[fx.layer].local, inHole: inHole[fx.layer].v.length };
+    }, fx);
+    check(`${label} overlay checks answered in the page (point in zone)`, r.inZone === 1 && r.local, JSON.stringify(r));
+    check(`${label} overlay checks respect holes in zones`, r.inHole === 0);
+    check(`${label} no live requests for the nine overlay layers`, overlayCalls.length === 0, `${overlayCalls.length} calls`);
+    // hover, then click: the panel should be complete within a moment of the click
+    const t = await page.evaluate(async (fx) => {
+      map.setView(fx.inside, 18, { animate: false });
+      const ll = L.latLng(...fx.inside);
+      hoverParcel({ latlng: ll });
+      await new Promise((r) => setTimeout(r, 2500)); // the mouse rests on the lot
+      const t0 = performance.now(); houseAt(ll);
+      while (!document.querySelector('#house') || /Pulling/.test(document.querySelector('#house').textContent)) {
+        await new Promise((r) => setTimeout(r, 25)); if (performance.now() - t0 > 8000) break; }
+      return Math.round(performance.now() - t0);
+    }, fx);
+    check(`${label} house panel complete soon after click when hovered first`, t < 400, `${t} ms`);
+  }
 
   check(`${label} no page errors`, errors.length === 0, errors.slice(0, 2).join(' | '));
   await browser.close();

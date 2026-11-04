@@ -101,8 +101,7 @@ table.facts { width: 100%; border-collapse: collapse; } table.facts td { padding
 </header>
 <div class="main">
   <div class="mapwrap"><div id="map" role="application" aria-label="Map of Los Angeles County neighborhoods"></div><div class="legend" id="legend"></div><div id="loading">Unpacking map data…</div>
-    <div class="lots-note" id="lots-note" role="status" aria-live="polite" hidden><span class="spin"></span><div><b>Loading property lines…</b> LA County's map server draws them as you zoom in, so this can take a few seconds.
-      In the meantime, <button type="button" id="lots-hood">explore this neighborhood's summary</button>.</div></div></div>
+    <div class="lots-note" id="lots-note" role="status" aria-live="polite" hidden><span class="spin"></span><div>Loading property lines from LA County… <button type="button" id="lots-hood">See the neighborhood meanwhile</button></div></div></div>
   <aside class="panel" id="panel" aria-live="polite"><p class="empty">Loading…</p></aside>
 </div>
 <main class="report gutter" id="report"></main>
@@ -111,6 +110,7 @@ table.facts { width: 100%; border-collapse: collapse; } table.facts td { padding
 <script>/*FFLATE_JS*/</script>
 <script type="application/octet-stream" id="bundle">/*BUNDLE*/</script>
 <script type="application/json" id="details-chunks">/*DETAILS*/</script>
+<script type="application/json" id="overlay-chunks">/*OVERLAYS*/</script>
 <script>
 const $ = s => document.querySelector(s);
 const css = (n, fb) => getComputedStyle(document.documentElement).getPropertyValue(n).trim() || fb;
@@ -158,6 +158,40 @@ function lazyDetails() {
     get: (_, id) => typeof id === "string" ? chunk(id.slice(0, key))[id] : undefined,
     has: (_, id) => typeof id === "string" && id in chunk(id.slice(0, key)),
   });
+}
+// Speed: the nine "is this lot inside X?" house checks (historic districts and monuments, hillside, landslide,
+// liquefaction, fault, fire zones) are answered from polygons shipped with the page (pipeline stage `overlays`),
+// unpacked one ~5 km grid cell at a time. Any layer missing from the build is still queried live.
+let OV;
+function overlayData() {
+  if (OV !== undefined) return OV;
+  const t = ($("#overlay-chunks") || {}).textContent, s = t && t.trim();
+  OV = s && !s.startsWith("/*") && s !== "null" ? JSON.parse(s) : null;
+  if (OV) OV.open = new Map();
+  return OV;
+}
+function inRing(r, lat, lng) {
+  let inside = false;
+  for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+    const [yi, xi] = r[i], [yj, xj] = r[j];
+    if ((yi > lat) !== (yj > lat) && lng < (xj - xi) * (lat - yi) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+function localOverlays(ll) {
+  const O = overlayData(); if (!O) return {};
+  const k = `${Math.floor((ll.lng + 180) / O.cell)},${Math.floor((ll.lat + 90) / O.cell)}`;
+  if (!O.open.has(k)) {
+    let items = [];
+    const b = O.chunks[k];
+    if (b) { const s = atob(b), u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i);
+      items = JSON.parse(fflate.strFromU8(fflate.gunzipSync(u))).map(([li, ai, rings]) => [li, ai, rings.map(decodeLine)]); }
+    O.open.set(k, items);
+  }
+  const out = Object.fromEntries(O.layers.map(l => [l, { ok: true, v: [], local: true }]));
+  for (const [li, ai, rings] of O.open.get(k))
+    if (inRing(rings[0], ll.lat, ll.lng) && !rings.slice(1).some(h => inRing(h, ll.lat, ll.lng))) out[O.layers[li]].v.push(O.attrs[ai]);
+  return out;
 }
 async function unpack() {
   const bin = await b64Bytes($("#bundle").textContent.trim());
@@ -891,10 +925,11 @@ async function lotChecks(ll, a) {
   const pt = { geometry: `${ll.lng},${ll.lat}`, geometryType: "esriGeometryPoint", inSR: 4326, spatialRel: "esriSpatialRelIntersects", returnGeometry: false };
   const hit = (url, fields) => arcQuery(url, { ...pt, outFields: fields || "*", resultRecordCount: 3 }).then(d => (d.features || []).map(f => f.attributes));
   const ain = String(a.AIN || "").replace(/\D/g, "");
+  const loc = localOverlays(ll), q = (key, run) => loc[key] ? Promise.resolve(loc[key]) : settle(run());
   const [hpoz, hcm, hc, hill, slide, liq, fault, sra, lra, sales, prm, old] = await Promise.all([
-    settle(hit(R9.hpoz, "NAME")), settle(hit(R9.hcm, "NAME,MNT_NUM")), settle(hit(R9.histCounty, "Name,Status_Code_Description,Mills_Act_Contract")),
-    settle(hit(R9.hillside, "H_TYPE")), settle(hit(R9.landslide, "QUAD_NAME")), settle(hit(R9.liquefaction, "QUAD_NAME")), settle(hit(R9.fault, "QUAD_NAME")),
-    settle(hit(R9.fireSRA, "*")), settle(hit(R9.fireLRA, "*")),
+    q("hpoz", () => hit(R9.hpoz, "NAME")), q("hcm", () => hit(R9.hcm, "NAME,MNT_NUM")), q("hc", () => hit(R9.histCounty, "Name,Status_Code_Description,Mills_Act_Contract")),
+    q("hill", () => hit(R9.hillside, "H_TYPE")), q("slide", () => hit(R9.landslide, "QUAD_NAME")), q("liq", () => hit(R9.liquefaction, "QUAD_NAME")), q("fault", () => hit(R9.fault, "QUAD_NAME")),
+    q("sra", () => hit(R9.fireSRA, "*")), q("lra", () => hit(R9.fireLRA, "*")),
     settle(arcQuery(R9.sales, { where: `AIN='${ain}'`, outFields: "SALEDATE,SALEPRICE,FORMATTED_SALEDATE,FORMATTED_SALEPRICE", returnGeometry: false }).then(d => (d.features || []).map(f => f.attributes))),
     settle(socrata(R9.permits, `apn='${ain}'`)),
     settle(socrata(R9.permitsOld, `assessor_book='${ain.slice(0, 4)}' AND assessor_page='${ain.slice(4, 7)}' AND assessor_parcel='${ain.slice(7, 10)}'`)),
@@ -1113,7 +1148,7 @@ async function houseAt(ll) {
   clearTimeout(hoverTimer); if (hoverLayer) { map.removeLayer(hoverLayer); hoverLayer = null; }
   const el0 = $("#house"); if (el0) el0.remove();
   const box = document.createElement("div"); box.id = "house"; box.className = "section";
-  box.innerHTML = `<h3>This home</h3><p class="small muted">Looking up the parcel with the County Assessor…</p>`;
+  box.innerHTML = `<h3>This home</h3><div class="house-loading"><span class="spin"></span><div>Pulling records from LA County…</div></div>`;
   const v = $("#panel .verdict"); (v || $("#panel h2")).after(box);
   const tok = {}; houseTok = tok;
   let f = hoverFeat && hoverFeat.geometry && ringsContain(hoverFeat.geometry.rings, ll) ? hoverFeat : null;   // reuse the lot found on hover
@@ -1129,11 +1164,21 @@ async function houseAt(ll) {
   const draw = () => { if (houseTok === tok && box.isConnected) renderHouse(box, a, lot, ll, st); };
   draw();
   const keep = () => { if (st.osmDone && st.rDone) houseCache.set(a.AIN, { osm: st.osm, R: st.R }); };
-  if (!st.osmDone) fetchOsmLot(rings).then(v => { st.osm = v; }, () => { st.osm = null; }).finally(() => { st.osmDone = true; keep(); draw(); });
-  if (!st.rDone) lotChecks(ll, a).then(v => { st.R = v; }, () => { st.R = null; }).finally(() => { st.rDone = true; keep(); draw(); });
+  const pend = housePending.get(a.AIN); // started while the mouse rested on this lot (prefetchHouse)
+  if (!st.osmDone) (pend ? pend.osm : fetchOsmLot(rings)).then(v => { st.osm = v; }, () => { st.osm = null; }).finally(() => { st.osmDone = true; keep(); draw(); });
+  if (!st.rDone) (pend ? pend.R : lotChecks(ll, a)).then(v => { st.R = v; }, () => { st.R = null; }).finally(() => { st.rDone = true; keep(); draw(); });
 }
 let houseTok = null;
-const houseCache = new Map();
+const houseCache = new Map(), housePending = new Map();
+// Speed: when the mouse rests on a lot, start its outline and live checks (permits, last sale) right away, so a
+// click usually finds them done. At most 3 lots are prefetched at a time.
+function prefetchHouse(f, ll) {
+  const a = f && f.attributes, rings = (f && f.geometry && f.geometry.rings) || [];
+  if (!a || !a.AIN || houseCache.has(a.AIN) || housePending.has(a.AIN) || housePending.size >= 3) return;
+  const p = { osm: rings.length ? fetchOsmLot(rings).catch(() => null) : Promise.resolve(null), R: lotChecks(ll, a).catch(() => null) };
+  housePending.set(a.AIN, p);
+  Promise.all([p.osm, p.R]).then(([osm, R]) => { houseCache.set(a.AIN, { osm, R }); housePending.delete(a.AIN); });
+}
 function ringsContain(rings, ll) {
   let inside = false;
   for (const r of rings) for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
@@ -1166,7 +1211,7 @@ function renderHouse(box, a, lot, ll, st) {
   const slotTxt = F.slots.length > 1 ? F.slots.map((x, i) => `${i ? "building " + (i + 1) : "main"}: ${fmtN(x.sqft)} sq ft${x.units ? `, ${x.units} unit${x.units > 1 ? "s" : ""}` : ""}${x.yb ? `, ${x.yb}` : ""}`).join("; ") : null;
   box.innerHTML = `<h3>This home</h3>
     <p class="small"><b>${esc(a.SitusFullAddress || "Parcel " + a.AIN)}</b> · AIN ${esc(a.AIN)} · ${esc(a.UseDescription || "")}</p>
-    ${waiting.length ? `<div class="house-loading"><span class="spin"></span><div><b>Still loading this home's ${waiting.join(" and ")}</b> from public services (usually a few seconds). The Assessor facts below are ready, and the neighborhood summary further down is complete; numbers here update when the checks finish.</div></div>` : ""}
+    ${waiting.length ? `<div class="house-loading"><span class="spin"></span><div>Pulling this home's records from LA County…</div></div>` : ""}
     <table class="small facts"><tbody>
       ${fact("Stories", F.stories ? `${F.stories}${F.conf === "estimated" ? " (estimate)" : ""}` : "unknown", F.src.stories)}
       ${fact("Living area", F.bldg ? `${fmtN(F.bldg)} sq ft${F.living > F.bldg ? ` (${fmtN(F.living)} across all buildings)` : ""}` : null, "County Assessor")}
@@ -1247,7 +1292,7 @@ function drawNumbers() {
 }
 
 // ---------------- hover preview at street level: outline the lot under the mouse and show its address
-let hoverTimer = null, hoverLayer = null, hoverKey = "", hoverFeat = null;
+let hoverTimer = null, hoverLayer = null, hoverKey = "", hoverFeat = null, prefetchTimer = null;
 const hoverCache = new Map();
 function hoverParcel(e) {
   clearTimeout(hoverTimer);
@@ -1260,6 +1305,8 @@ function hoverParcel(e) {
     hoverFeat = f;
     if (!f || !f.geometry) return;
     const a = f.attributes;
+    clearTimeout(prefetchTimer);
+    prefetchTimer = setTimeout(() => { if (hoverFeat === f) prefetchHouse(f, e.latlng); }, 350);
     hoverLayer = L.polygon(f.geometry.rings.map(r => r.map(([x, y]) => [y, x])), { interactive: false, color: css("--ink", "#111"), weight: 2, fill: false, dashArray: "3 3" })
       .bindTooltip(`<b>${esc(a.SitusFullAddress || "Parcel " + a.AIN)}</b><br><span class="muted">click to analyze this home</span>`, { permanent: true, direction: "top", className: "" }).addTo(map);
   }, 450);
@@ -1292,14 +1339,16 @@ async function cachedLotLines() {
 }
 // "Loading property lines…" note: shown while lot-line tiles are loading at zoom 17+, hidden when they finish.
 function watchLots(layer) {
+  // Shown only when lines take more than LOTS_NOTE_MS to arrive; fast loads show nothing.
   const note = $("#lots-note"); if (!note || !layer) return;
-  let shownAt = 0;
-  const hide = () => { note.hidden = true; };
-  layer.on("loading", () => { if (map.getZoom() >= 17) { note.hidden = false; shownAt = Date.now(); } });
-  layer.on("load", () => setTimeout(hide, Math.max(0, 400 - (Date.now() - shownAt)))); // no flicker on fast loads
+  let timer = null;
+  const hide = () => { clearTimeout(timer); timer = null; note.hidden = true; };
+  layer.on("loading", () => { clearTimeout(timer); if (map.getZoom() >= 17) timer = setTimeout(() => { note.hidden = false; }, LOTS_NOTE_MS); });
+  layer.on("load", hide);
   layer.on("remove", hide);
   map.on("zoomend", () => { if (map.getZoom() < 17) hide(); });
 }
+const LOTS_NOTE_MS = 1200;
 
 // ---------------- homeowner upgrades (round 6; LA-metro averages, not this house)
 function upgradeTable(m) {

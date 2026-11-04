@@ -2237,12 +2237,63 @@ def stage_zoning():
          categories={k: int(v) for k, v in z.cat.value_counts().items()})
 
 
+# ------------------------------------------------------------------ overlays: per-house map checks, answered offline
+# The house panel asks "is this point inside X?" for nine statewide / County / City layers. Downloading them once here
+# lets the page answer instantly with no network calls (it falls back to the live query for any layer missing here).
+# Keys and kept fields match lotChecks() in web/county.src.html.
+OVERLAYS = [
+    ("hpoz", "https://services5.arcgis.com/7nsPwEMP38bSkCjy/ArcGIS/rest/services/Historic_Preservation_Overlay_Zones/FeatureServer/5", ["NAME"], 2),
+    ("hcm", "https://services5.arcgis.com/7nsPwEMP38bSkCjy/ArcGIS/rest/services/Historic_Cultural_Monuments/FeatureServer/4", ["NAME", "MNT_NUM"], 1),
+    ("hc", "https://rpgis.isd.lacounty.gov/arcgis/rest/services/GISNET_Public/MapServer/331", ["Name", "Status_Code_Description", "Mills_Act_Contract"], 1),
+    ("hill", "https://maps.lacity.org/lahub/rest/services/Special_Areas/MapServer/6", ["H_TYPE"], 4),
+    ("slide", "https://services2.arcgis.com/zr3KAIbsRSUyARHG/arcgis/rest/services/CGS_Landslide_Zones/FeatureServer/0", ["QUAD_NAME"], 5),
+    ("liq", "https://services2.arcgis.com/zr3KAIbsRSUyARHG/ArcGIS/rest/services/CGS_Liquefaction_Zones/FeatureServer/0", ["QUAD_NAME"], 5),
+    ("fault", "https://services2.arcgis.com/zr3KAIbsRSUyARHG/arcgis/rest/services/CGS_Alquist_Priolo_Fault_Zones/FeatureServer/0", ["QUAD_NAME"], 4),
+    ("sra", "https://services1.arcgis.com/jUJYIo9tSA7EHvfZ/ArcGIS/rest/services/FHSZSRA_23_3/FeatureServer/0", ["FHSZ_Description", "FHSZ", "HAZ_CLASS"], 5),
+    ("lra", "https://services1.arcgis.com/jUJYIo9tSA7EHvfZ/arcgis/rest/services/FHSALRA25_v1_All/FeatureServer/0", ["FHSZ_Description", "FHSZ", "HAZ_CLASS"], 5),
+]
+
+
+def stage_overlays():
+    """Nine point-in-polygon layers for the house panel, simplified and merged by label -> map_overlays.geojson.gz."""
+    frames = []
+    for key, url, fields, tol in OVERLAYS:
+        try:
+            g = arcgis_all(url, bbox=BBOX, max_rows=400000)
+            if g is None or g.empty:
+                note("overlays", **{f"{key}_rows": 0})
+                continue
+            keep = [f for f in fields if f in g.columns]
+            g = g[keep + ["geometry"]].copy()
+            g = g[g.geometry.notna() & ~g.geometry.is_empty]
+            g["geometry"] = g.geometry.make_valid()
+            g = g[g.geom_type.isin(["Polygon", "MultiPolygon", "GeometryCollection"])]
+            g = g.explode(index_parts=False)
+            g = g[g.geom_type == "Polygon"]
+            for f in keep:
+                g[f] = g[f].astype(str).replace({"None": "", "nan": ""})
+            g["attrs"] = g[keep].apply(lambda r: json.dumps({k: v for k, v in r.items() if v}, sort_keys=True), axis=1) if keep else "{}"
+            g = g.to_crs(M)
+            g["geometry"] = g.geometry.simplify(tol)
+            d = g.dissolve(by="attrs", as_index=False)[["attrs", "geometry"]].to_crs(4326)
+            d["layer"] = key
+            frames.append(d)
+            note("overlays", **{f"{key}_rows": len(g), f"{key}_merged": len(d)})
+        except Exception as e:  # noqa: BLE001
+            note("overlays", **{f"{key}_error": str(e)[:200]})
+    if not frames:
+        raise RuntimeError("no overlay layer could be downloaded; keeping the previous file")
+    out = gpd.GeoDataFrame(pd.concat(frames, ignore_index=True), geometry="geometry", crs=4326)
+    _write_gz(out[["layer", "attrs", "geometry"]], "map_overlays.geojson.gz")
+    note("overlays", layers=sorted(out.layer.unique().tolist()), features=len(out))
+
+
 STAGES = {"geo": stage_geo, "osm": stage_osm, "transit": stage_transit, "sales": stage_sales, "crime": stage_crime,
           "requests311": stage_requests311, "crashes": stage_crashes, "trees": stage_trees,
           "parcels": stage_parcels, "assets": stage_assets,
           "tra": stage_tra, "assessed": stage_assessed, "basemap": stage_basemap,
           "research_check": stage_research_check, "zoning": stage_zoning,
-          "underused": stage_underused, "projects": stage_projects, "sb79": stage_sb79}
+          "underused": stage_underused, "projects": stage_projects, "sb79": stage_sb79, "overlays": stage_overlays}
 
 
 def main():

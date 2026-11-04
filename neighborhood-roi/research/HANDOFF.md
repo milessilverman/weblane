@@ -214,6 +214,13 @@ Current deliverable: `reports/city-pretty-la-county.html` (V2.3: real EIFD input
 - Tests: `tests/e2e.cjs` (Playwright, offline; fakes the County server with slow tiles, with and without a cache):
   startup budget, on-demand details, note show/hide, tile mode, the neighborhood link, no page errors. CI:
   `.github/workflows/checks.yml` rebuilds the page from committed data and runs it on every push.
+- House panel (V2.17): the nine map checks in `lotChecks` (HPOZ, monuments, County historic, hillside, landslide,
+  liquefaction, fault, SRA/LRA fire) are answered in the page from `overlay-chunks` (pipeline stage `overlays` ->
+  `map_overlays.geojson.gz`, polygons simplified 1-5 m, merged by label, clipped to a 0.05 degree grid with holes kept,
+  gzip per cell). A layer missing from the build falls back to its live query. Only permits (2 Socrata) and the
+  last sale (PAIS) plus the OSM outline still go out. `prefetchHouse()` starts those 350 ms after the mouse rests on
+  a lot (max 3 in flight); a click reuses them. Loading text is now one line: "Pulling records from LA County…".
+  The lot-line note shows only if lines take over `LOTS_NOTE_MS` (1.2 s).
 - Next for speed: serve `bgs`/`under`/`zoning`/`streets` as separate files or vector tiles (PMTiles + MapLibre) from
   static hosting (round 10 Part V: GitHub Pages ≤1 GB with range requests; Cloudflare Pages 25 MiB per file),
   with this single offline file kept as a fallback build.

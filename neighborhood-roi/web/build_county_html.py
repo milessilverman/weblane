@@ -175,6 +175,43 @@ def zoning_bundle():
     return {"cell": CELL, "zones": zones, "cats": ZCATS, "cells": cells, "jur": jur, "zj": zj}
 
 
+OVERLAY_CELL = 0.05  # degrees; per-house overlay polygons are clipped to this grid so a click unpacks one small cell
+
+
+def overlays_bundle():
+    """Point-in-polygon layers for the house panel (pipeline stage `overlays`), clipped to grid cells with holes kept.
+    Returns {"layers", "attrs", "cell", "chunks": {cell: gzip+base64 JSON [[layer i, attrs i, [ring, hole...]]...]}}
+    or None when the stage hasn't produced data yet (the page then queries those services live)."""
+    from shapely.geometry import box
+    p = SRC / "map_overlays.geojson.gz"
+    if not p.exists():
+        return None
+    g = gpd.read_file(f"/vsigzip/{p}")
+    g = g[g.geometry.notna() & ~g.geometry.is_empty]
+    layers, attrs, ai, cells = [], [], {}, {}
+    for lay, at, geom in zip(g["layer"], g["attrs"].fillna("{}"), g.geometry):  # g.attrs is pandas metadata, not the column
+        if lay not in layers:
+            layers.append(lay)
+        if at not in ai:
+            ai[at] = len(attrs)
+            attrs.append(json.loads(at))
+        x0, y0, x1, y1 = geom.bounds
+        for cx in range(int((x0 + 180) // OVERLAY_CELL), int((x1 + 180) // OVERLAY_CELL) + 1):
+            for cy in range(int((y0 + 90) // OVERLAY_CELL), int((y1 + 90) // OVERLAY_CELL) + 1):
+                bx = box(cx * OVERLAY_CELL - 180, cy * OVERLAY_CELL - 90, (cx + 1) * OVERLAY_CELL - 180, (cy + 1) * OVERLAY_CELL - 90)
+                part = geom.intersection(bx)
+                if part.is_empty:
+                    continue
+                polys = [q for q in getattr(part, "geoms", [part]) if q.geom_type == "Polygon" and not q.is_empty]
+                for q in polys:
+                    rings = [encode_line(list(q.exterior.coords))] + [encode_line(list(r.coords)) for r in q.interiors]
+                    cells.setdefault(f"{cx},{cy}", []).append([layers.index(lay), ai[at], rings])
+    chunks = {k: base64.b64encode(gzip.compress(json.dumps(v, separators=(",", ":")).encode(), 9)).decode() for k, v in cells.items()}
+    print(f"  overlays: {', '.join(layers)}; {sum(len(v) for v in cells.values()):,} polygon pieces in {len(cells)} cells, "
+          f"{sum(len(c) for c in chunks.values()) / 1e6:.1f} MB packed")
+    return {"layers": layers, "attrs": attrs, "cell": OVERLAY_CELL, "chunks": chunks}
+
+
 def polys_in_cells(g, attrs, tol=2, cell=None):
     """Polygons as encoded rings grouped by grid cell: {cell: [[attr..., [rings]]]} (drawn only on screen)."""
     cell = cell or CELL
@@ -638,6 +675,8 @@ def main():
     det_b64 = {k: base64.b64encode(gzip.compress(re.sub(r"\bNaN\b", "null", json.dumps(v, separators=(",", ":"), default=str)).encode(), 9)).decode()
                for k, v in chunks.items()}
     det_json = json.dumps({"key": CHUNK_KEY, "chunks": det_b64}, separators=(",", ":"))
+    ov = overlays_bundle()
+    ov_json = json.dumps(ov, separators=(",", ":")) if ov else "null"
     raw = json.dumps(bundle, separators=(",", ":"), default=str)
     raw = re.sub(r"\bNaN\b", "null", raw).encode()
     b64 = base64.b64encode(gzip.compress(raw, 9)).decode()
@@ -646,7 +685,7 @@ def main():
     html = html.replace("/*BASE_CSS*/", base_css).replace("/*LEAFLET_CSS*/", (WEB / "leaflet-1.9.4.css").read_text())
     html = html.replace("/*LEAFLET_JS*/", (WEB / "leaflet-1.9.4.js").read_text().replace("</script", "<\\/script"))
     html = html.replace("/*FFLATE_JS*/", (WEB / "fflate-0.8.3.min.js").read_text().replace("</script", "<\\/script"))
-    html = html.replace("/*DETAILS*/", det_json)
+    html = html.replace("/*DETAILS*/", det_json).replace("/*OVERLAYS*/", ov_json)
     html = html.replace("/*EYEBROW*/", f"CITY PRETTY · ALL OF LOS ANGELES COUNTY · {date.today():%d %b %Y}".upper()).replace("/*BUNDLE*/", b64)
     OUT.write_text(html)
     print(f"wrote {OUT} ({len(html)/1e6:.1f} MB; core data {len(raw)/1e6:.1f} MB raw, unpacked at start; "
