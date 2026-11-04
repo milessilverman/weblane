@@ -187,7 +187,8 @@ def overlays_bundle():
     if not p.exists():
         return None
     g = gpd.read_file(f"/vsigzip/{p}")
-    g = g[g.geometry.notna() & ~g.geometry.is_empty]
+    g = g[g.geometry.notna() & ~g.geometry.is_empty].copy()
+    g["geometry"] = g.geometry.make_valid()  # simplified, merged shapes can self-touch; repair before clipping
     layers, attrs, ai, cells = [], [], {}, {}
     for lay, at, geom in zip(g["layer"], g["attrs"].fillna("{}"), g.geometry):  # g.attrs is pandas metadata, not the column
         if lay not in layers:
@@ -199,7 +200,10 @@ def overlays_bundle():
         for cx in range(int((x0 + 180) // OVERLAY_CELL), int((x1 + 180) // OVERLAY_CELL) + 1):
             for cy in range(int((y0 + 90) // OVERLAY_CELL), int((y1 + 90) // OVERLAY_CELL) + 1):
                 bx = box(cx * OVERLAY_CELL - 180, cy * OVERLAY_CELL - 90, (cx + 1) * OVERLAY_CELL - 180, (cy + 1) * OVERLAY_CELL - 90)
-                part = geom.intersection(bx)
+                try:
+                    part = geom.intersection(bx)
+                except Exception:  # noqa: BLE001  (rare topology errors: a zero-width buffer repairs them)
+                    part = geom.buffer(0).intersection(bx)
                 if part.is_empty:
                     continue
                 polys = [q for q in getattr(part, "geoms", [part]) if q.geom_type == "Polygon" and not q.is_empty]

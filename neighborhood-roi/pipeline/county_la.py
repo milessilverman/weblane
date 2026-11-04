@@ -2274,8 +2274,10 @@ def stage_overlays():
                 g[f] = g[f].astype(str).replace({"None": "", "nan": ""})
             g["attrs"] = g[keep].apply(lambda r: json.dumps({k: v for k, v in r.items() if v}, sort_keys=True), axis=1) if keep else "{}"
             g = g.to_crs(M)
-            g["geometry"] = g.geometry.simplify(tol)
-            d = g.dissolve(by="attrs", as_index=False)[["attrs", "geometry"]].to_crs(4326)
+            g["geometry"] = g.geometry.simplify(tol).make_valid()
+            d = g.dissolve(by="attrs", as_index=False)[["attrs", "geometry"]]
+            d["geometry"] = d.geometry.make_valid()
+            d = d.to_crs(4326)
             d["layer"] = key
             frames.append(d)
             note("overlays", **{f"{key}_rows": len(g), f"{key}_merged": len(d)})
