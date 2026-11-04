@@ -1681,7 +1681,7 @@ def stage_projects():
         if g is not None and len(g):
             cols = {c.lower(): c for c in g.columns}
             pick = lambda *ks: next((cols[k.lower()] for k in ks if k.lower() in cols), None)  # noqa: E731
-            nm, ph, act, cost = pick("ProjectName", "Project_Name", "NAME", "PROJ_NAME"), pick("CurrentPhaseDescription", "ActivePhase"), pick("ProjectActive"), pick("ConstructionCost")
+            nm, ph, act, cost = pick("ProjectTitle", "ProjectName", "Project_Name", "NAME", "PROJ_NAME"), pick("CurrentPhaseDescription", "ActivePhase"), pick("ProjectActive"), pick("ConstructionCost")
             end = pick("ConsEndDate", "EndDate")
             g = g[g.geometry.notna()]
             if act:
